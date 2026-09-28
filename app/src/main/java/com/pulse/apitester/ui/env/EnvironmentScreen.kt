@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -16,8 +17,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
@@ -46,51 +49,44 @@ fun EnvironmentScreen(modifier: Modifier = Modifier, viewModel: EnvViewModel = v
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(8.dp)) {
                 environments.forEach { env ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = env.name + if (env.isActive) "  ✓ 已激活" else "",
-                                fontSize = 15.sp
-                            )
-                            Text(
-                                text = "${env.variables.size} 个变量",
-                                fontSize = 12.sp
-                            )
+                    BasicComponent(
+                        modifier = Modifier.fillMaxWidth(),
+                        title = env.name + if (env.isActive) "  ✓ 已激活" else "",
+                        summary = "${env.variables.size} 个变量",
+                        endActions = {
+                            IconButton(
+                                onClick = { viewModel.openRename(env) },
+                                modifier = Modifier
+                                    .padding(end = 2.dp)
+                                    .size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Edit,
+                                    contentDescription = "编辑"
+                                )
+                            }
+                            IconButton(
+                                onClick = { viewModel.requestDelete(env) },
+                                modifier = Modifier
+                                    .padding(end = 2.dp)
+                                    .size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Delete,
+                                    contentDescription = "删除"
+                                )
+                            }
                         }
-                        Icon(
-                            imageVector = Icons.Filled.Edit,
-                            contentDescription = "编辑",
-                            modifier = Modifier
-                                .clickable { viewModel.openRename(env) }
-                                .padding(6.dp)
-                        )
-                        Icon(
-                            imageVector = Icons.Filled.Delete,
-                            contentDescription = "删除",
-                            modifier = Modifier
-                                .clickable { viewModel.requestDelete(env) }
-                                .padding(6.dp)
-                        )
-                    }
+                    )
                 }
                 if (environments.isEmpty()) {
                     Text("当前项目还没有环境", modifier = Modifier.padding(8.dp), fontSize = 13.sp)
                 }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { viewModel.openCreate() }
-                        .padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Filled.Add, contentDescription = null)
-                    Text("新建环境", modifier = Modifier.padding(start = 6.dp))
-                }
+                BasicComponent(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { viewModel.openCreate() },
+                    title = "新建环境"
+                )
             }
         }
     }

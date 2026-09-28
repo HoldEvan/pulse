@@ -43,9 +43,6 @@ class HttpViewModel : ViewModel() {
     var basicPassword by mutableStateOf("")
 
     var activeTab by mutableIntStateOf(0)
-    var showMethodDialog by mutableStateOf(false)
-    var showBodyTypeDialog by mutableStateOf(false)
-    var showEnvDialog by mutableStateOf(false)
     var sending by mutableStateOf(false)
     var outcome by mutableStateOf<HttpCallOutcome?>(null)
     var missingVars by mutableStateOf<List<String>?>(null)

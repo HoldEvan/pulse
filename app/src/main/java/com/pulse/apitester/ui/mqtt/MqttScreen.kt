@@ -36,6 +36,7 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.extra.SuperDialog
+import top.yukonga.miuix.kmp.extra.SuperDropdown
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -139,13 +140,20 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                         label = "Topic，支持 + 与 # 通配符",
                         modifier = Modifier.weight(1f)
                     )
-                    Text(
-                        text = "QoS${viewModel.subQos}",
+                    SuperDropdown(
+                        items = listOf("QoS 0", "QoS 1", "QoS 2"),
+                        selectedIndex = viewModel.subQos,
+                        title = "订阅 QoS",
                         modifier = Modifier
-                            .clickable { viewModel.subQos = (viewModel.subQos + 1) % 3 }
-                            .padding(horizontal = 10.dp)
+                            .weight(0.4f)
+                            .padding(start = 6.dp),
+                        showValue = true,
+                        onSelectedIndexChange = { viewModel.subQos = it }
                     )
-                    Button(onClick = { viewModel.addSubscription() }, modifier = Modifier.padding(start = 6.dp)) {
+                    Button(
+                        onClick = { viewModel.addSubscription() },
+                        modifier = Modifier.padding(start = 6.dp)
+                    ) {
                         Text("订阅")
                     }
                 }
@@ -183,11 +191,15 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                         label = "目标 Topic",
                         modifier = Modifier.weight(1f)
                     )
-                    Text(
-                        text = "QoS${viewModel.pubQos}",
+                    SuperDropdown(
+                        items = listOf("QoS 0", "QoS 1", "QoS 2"),
+                        selectedIndex = viewModel.pubQos,
+                        title = "发布 QoS",
                         modifier = Modifier
-                            .clickable { viewModel.pubQos = (viewModel.pubQos + 1) % 3 }
-                            .padding(horizontal = 10.dp)
+                            .weight(0.4f)
+                            .padding(start = 6.dp),
+                        showValue = true,
+                        onSelectedIndexChange = { viewModel.pubQos = it }
                     )
                 }
                 Row(

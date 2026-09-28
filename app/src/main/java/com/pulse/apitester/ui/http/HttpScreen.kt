@@ -13,7 +13,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.runtime.Composable
@@ -29,6 +28,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.pulse.apitester.domain.model.AuthType
 import com.pulse.apitester.domain.model.BodyType
 import com.pulse.apitester.domain.model.FormField
 import com.pulse.apitester.domain.model.HttpCallOutcome
@@ -40,46 +40,26 @@ import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.SmallTitle
+import top.yukonga.miuix.kmp.basic.TabRowWithContour
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.extra.SuperDialog
+import top.yukonga.miuix.kmp.extra.SuperDropdown
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private val httpMethods = HttpMethod.entries.toList()
 private val bodyTypes = listOf(BodyType.NONE, BodyType.JSON, BodyType.RAW, BodyType.FORM_URLENCODED, BodyType.FORM_DATA)
-
-@Composable
-private fun SelectionDialog(
-    title: String,
-    options: List<String>,
-    selectedIndex: Int,
-    onSelect: (Int) -> Unit,
-    onDismiss: () -> Unit
-) {
-    SuperDialog(
-        show = true,
-        title = title,
-        onDismissRequest = onDismiss
-    ) {
-        Column {
-            options.forEachIndexed { index, option ->
-                Text(
-                    text = if (index == selectedIndex) "● $option" else "○ $option",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onSelect(index) }
-                        .padding(vertical = 10.dp)
-                )
-            }
-        }
-    }
-}
+private val authTypes = listOf(
+    AuthType.NONE to "无",
+    AuthType.BEARER to "Bearer",
+    AuthType.BASIC to "Basic"
+)
+private val httpTabs = listOf("参数", "请求头", "请求体", "认证", "环境")
 
 @Composable
 fun HttpScreen(modifier: Modifier = Modifier, viewModel: HttpViewModel = viewModel()) {
     val scroll = rememberScrollState()
-    val showEnvDialog = viewModel.showEnvDialog
     val missingVars = viewModel.missingVars
 
     Column(
@@ -92,50 +72,6 @@ fun HttpScreen(modifier: Modifier = Modifier, viewModel: HttpViewModel = viewMod
         RequestEditorCard(viewModel)
         SmallTitle(text = "响应")
         ResponseCard(viewModel)
-    }
-
-    if (viewModel.showMethodDialog) {
-        SelectionDialog(
-            title = "选择方法",
-            options = httpMethods.map { it.name },
-            selectedIndex = httpMethods.indexOf(viewModel.method),
-            onSelect = {
-                viewModel.method = httpMethods[it]
-                viewModel.showMethodDialog = false
-            },
-            onDismiss = { viewModel.showMethodDialog = false }
-        )
-    }
-
-    if (viewModel.showBodyTypeDialog) {
-        SelectionDialog(
-            title = "选择请求体类型",
-            options = bodyTypes.map { it.name },
-            selectedIndex = bodyTypes.indexOf(viewModel.bodyType),
-            onSelect = {
-                viewModel.bodyType = bodyTypes[it]
-                viewModel.showBodyTypeDialog = false
-            },
-            onDismiss = { viewModel.showBodyTypeDialog = false }
-        )
-    }
-
-    if (showEnvDialog) {
-        val envList = viewModel.environments.collectAsState().value
-        val pid = viewModel.currentProjectId.collectAsState().value
-        val projectEnvs = envList.filter { it.projectId == pid }
-        val options = listOf("无环境") + projectEnvs.map { it.name }
-        val activeIdx = projectEnvs.indexOfFirst { it.isActive }.let { if (it >= 0) it + 1 else 0 }
-        SelectionDialog(
-            title = "切换环境",
-            options = options,
-            selectedIndex = activeIdx,
-            onSelect = { idx ->
-                viewModel.showEnvDialog = false
-                if (idx > 0) viewModel.envStoreActivate(projectEnvs[idx - 1].id)
-            },
-            onDismiss = { viewModel.showEnvDialog = false }
-        )
     }
 
     missingVars?.let { missing ->
@@ -165,87 +101,93 @@ fun HttpScreen(modifier: Modifier = Modifier, viewModel: HttpViewModel = viewMod
 private fun RequestEditorCard(viewModel: HttpViewModel) {
     Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = viewModel.method.name,
-                    modifier = Modifier
-                        .clickable { viewModel.showMethodDialog = true }
-                        .background(
-                            MiuixTheme.colorScheme.primaryVariant,
-                            RoundedCornerShape(8.dp)
-                        )
-                        .padding(horizontal = 10.dp, vertical = 8.dp)
-                )
-                TextField(
-                    value = viewModel.url,
-                    onValueChange = { viewModel.url = it },
-                    label = "URL，支持 {{var}}",
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 8.dp)
-                )
-                Button(
-                    onClick = { viewModel.send() },
-                    enabled = !viewModel.sending,
-                    modifier = Modifier.padding(start = 8.dp)
-                ) {
-                    Text(if (viewModel.sending) "..." else "发送")
-                }
-            }
-
-            Row(
+            SuperDropdown(
+                items = httpMethods.map { it.name },
+                selectedIndex = httpMethods.indexOf(viewModel.method),
+                title = "请求方法",
+                modifier = Modifier.fillMaxWidth(),
+                showValue = true,
+                onSelectedIndexChange = { viewModel.method = httpMethods[it] }
+            )
+            TextField(
+                value = viewModel.url,
+                onValueChange = { viewModel.url = it },
+                label = "URL，支持 {{var}}",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    .padding(top = 8.dp)
+            )
+            Button(
+                onClick = { viewModel.send() },
+                enabled = !viewModel.sending,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
             ) {
-                val tabs = listOf("参数", "请求头", "请求体", "认证", "环境")
-                tabs.forEachIndexed { index, label ->
-                    Text(
-                        text = label,
-                        color = if (viewModel.activeTab == index) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onBackground,
-                        modifier = Modifier
-                            .clickable { viewModel.activeTab = index }
-                            .background(
-                                if (viewModel.activeTab == index) MiuixTheme.colorScheme.primaryContainer else Color.Transparent,
-                                RoundedCornerShape(8.dp)
-                            )
-                            .padding(horizontal = 10.dp, vertical = 6.dp)
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Filled.Send,
+                    contentDescription = null,
+                    modifier = Modifier.padding(end = 4.dp)
+                )
+                Text(if (viewModel.sending) "发送中…" else "发送请求", modifier = Modifier.padding(start = 4.dp))
             }
 
-            when (viewModel.activeTab) {
-                0 -> KeyValueEditor(
-                    items = viewModel.params,
-                    keyLabel = "参数名",
-                    valueLabel = "参数值",
-                    onChange = viewModel::updateParams,
-                    onAdd = viewModel::addParam,
-                    onRemove = viewModel::removeParam
-                )
+            TabRowWithContour(
+                tabs = httpTabs,
+                selectedTabIndex = viewModel.activeTab,
+                onTabSelected = { viewModel.activeTab = it },
+                modifier = Modifier.padding(top = 12.dp)
+            )
 
-                1 -> KeyValueEditor(
-                    items = viewModel.headers,
-                    keyLabel = "Header 名",
-                    valueLabel = "Header 值",
-                    onChange = viewModel::updateHeaders,
-                    onAdd = viewModel::addHeader,
-                    onRemove = viewModel::removeHeader
-                )
-
-                2 -> BodyEditor(viewModel)
-                3 -> AuthEditor(viewModel)
-                4 -> {
-                    TextButton(
-                        text = "当前环境：${viewModel.activeEnvName()}",
-                        onClick = { viewModel.showEnvDialog = true },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
+            TabContent(vm = viewModel)
         }
     }
+}
+
+@Composable
+private fun TabContent(vm: HttpViewModel) {
+    when (vm.activeTab) {
+        0 -> KeyValueEditor(
+            items = vm.params,
+            keyLabel = "参数名",
+            valueLabel = "参数值",
+            onChange = vm::updateParams,
+            onAdd = vm::addParam,
+            onRemove = vm::removeParam
+        )
+
+        1 -> KeyValueEditor(
+            items = vm.headers,
+            keyLabel = "Header 名",
+            valueLabel = "Header 值",
+            onChange = vm::updateHeaders,
+            onAdd = vm::addHeader,
+            onRemove = vm::removeHeader
+        )
+
+        2 -> BodyEditor(vm)
+        3 -> AuthEditor(vm)
+        4 -> EnvironmentTab(vm)
+    }
+}
+
+@Composable
+private fun EnvironmentTab(vm: HttpViewModel) {
+    val envList = vm.environments.collectAsState().value
+    val pid = vm.currentProjectId.collectAsState().value
+    val projectEnvs = envList.filter { it.projectId == pid }
+    val options = listOf("无环境") + projectEnvs.map { it.name }
+    val activeIdx = projectEnvs.indexOfFirst { it.isActive }.let { if (it >= 0) it + 1 else 0 }
+    SuperDropdown(
+        items = options,
+        selectedIndex = activeIdx,
+        title = "环境",
+        modifier = Modifier.fillMaxWidth(),
+        showValue = true,
+        onSelectedIndexChange = { idx ->
+            if (idx > 0) vm.envStoreActivate(projectEnvs[idx - 1].id)
+        }
+    )
 }
 
 @Composable
@@ -257,7 +199,7 @@ private fun KeyValueEditor(
     onAdd: () -> Unit,
     onRemove: (Int) -> Unit
 ) {
-    Column {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         items.forEachIndexed { index, kv ->
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -300,10 +242,13 @@ private fun KeyValueEditor(
 @Composable
 private fun BodyEditor(viewModel: HttpViewModel) {
     Column {
-        TextButton(
-            text = "类型：${viewModel.bodyType.name}",
-            onClick = { viewModel.showBodyTypeDialog = true },
-            modifier = Modifier.fillMaxWidth()
+        SuperDropdown(
+            items = bodyTypes.map { it.name },
+            selectedIndex = bodyTypes.indexOf(viewModel.bodyType),
+            title = "请求体类型",
+            modifier = Modifier.fillMaxWidth(),
+            showValue = true,
+            onSelectedIndexChange = { viewModel.bodyType = bodyTypes[it] }
         )
         when (viewModel.bodyType) {
             BodyType.NONE -> {}
@@ -392,26 +337,15 @@ private fun FormFileRow(viewModel: HttpViewModel) {
 
 @Composable
 private fun AuthEditor(viewModel: HttpViewModel) {
-    Column {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf(
-                com.pulse.apitester.domain.model.AuthType.NONE to "无",
-                com.pulse.apitester.domain.model.AuthType.BEARER to "Bearer",
-                com.pulse.apitester.domain.model.AuthType.BASIC to "Basic"
-            ).forEach { (type, label) ->
-                Text(
-                    text = label,
-                    color = if (viewModel.authType == type) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onBackground,
-                    modifier = Modifier
-                        .clickable { viewModel.authType = type }
-                        .background(
-                            if (viewModel.authType == type) MiuixTheme.colorScheme.primaryContainer else Color.Transparent,
-                            RoundedCornerShape(8.dp)
-                        )
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
-                )
-            }
-        }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SuperDropdown(
+            items = authTypes.map { it.second },
+            selectedIndex = authTypes.indexOfFirst { it.first == viewModel.authType },
+            title = "认证类型",
+            modifier = Modifier.fillMaxWidth(),
+            showValue = true,
+            onSelectedIndexChange = { viewModel.authType = authTypes[it].first }
+        )
         when (viewModel.authType) {
             com.pulse.apitester.domain.model.AuthType.NONE -> {}
             com.pulse.apitester.domain.model.AuthType.BEARER -> {
