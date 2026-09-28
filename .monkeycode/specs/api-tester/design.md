@@ -6,7 +6,7 @@ Status: Draft
 
 ## Description
 
-Android 单端 API 调试工具，UI 层使用 Jetpack Compose + Miuix（HyperOS/MIUI 设计语言），功能覆盖 HTTP 调试、WebSocket 会话测试、MQTT 订阅发布，配合环境变量系统与 Room 持久化。单 Activity 架构，底部导航切换五个主页面。
+Android 单端 API 调试工具，UI 层使用 Jetpack Compose + Miuix（HyperOS/MIUI 设计语言），功能覆盖 HTTP 调试、WebSocket 会话测试、MQTT 订阅发布，配合环境变量系统与 Room 持久化。数据组织为三级结构：**项目 → 集合 → 请求**，环境与历史记录归属项目，顶栏提供全局项目切换器。单 Activity 架构，底部导航切换五个主页面。
 
 ## 技术栈
 
@@ -129,11 +129,12 @@ sequenceDiagram
 
 | 页面 | 主要组件 | 交互要点 |
 |------|---------|---------|
-| HttpScreen | 顶栏环境切换器(SuperArrow/PopupHost)、方法+URL 输入行、发送按钮(SendButton)、Tab 行(Params/Headers/Body/Auth)、键值对编辑卡、响应卡 | Body 类型选择驱动编辑器切换；发送中按钮变加载态且禁用；响应 JSON 切 raw/pretty |
+| 全局顶栏（MiuixApp） | 项目切换器（下拉选择当前项目）、项目管理入口（新建/重命名/删除） | 切换项目后 HTTP/环境/历史页数据全部按当前项目过滤；删除需二次确认 |
+| HttpScreen | 环境切换器(SuperArrow/PopupHost)、方法+URL 输入行、发送按钮(SendButton)、Tab 行(Params/Headers/Body/Auth)、键值对编辑卡、响应卡 | Body 类型选择驱动编辑器切换；发送中按钮变加载态且禁用；响应 JSON 切 raw/pretty |
 | WebSocketScreen | 连接配置卡(URL/子协议/头)、状态徽标、连接/断开按钮、消息输入行、消息流 LazyColumn | 收/发消息左右分色+时间戳；连接后输入区启用 |
 | MqttScreen | 连接配置卡(broker/clientId/用户名密码/KeepAlive)、订阅列表卡(Topic+QoS)、发布卡(Topic/负载/QoS)、消息流 | 消息条目显示 topic/qos/方向；连接失败显示具体错误 |
-| EnvironmentScreen | 环境列表卡(激活开关)、变量编辑卡、新建环境入口 | 删除需 Miuix Dialog 二次确认 |
-| HistoryScreen | 搜索框、历史列表卡(方法徽标/URL/状态码/耗时/时间)、详情跳转 | 点击载入 HttpScreen 编辑器；顶部"清空历史" |
+| EnvironmentScreen | 环境列表卡(激活开关)、变量编辑卡、新建环境入口 | 标题显示当前项目；删除需 Miuix Dialog 二次确认 |
+| HistoryScreen | 搜索框、历史列表卡(方法徽标/URL/状态码/耗时/时间)、详情跳转 | 按当前项目过滤；点击载入 HttpScreen 编辑器；顶部"清空历史" |
 
 ### 导航
 
@@ -145,16 +146,20 @@ Room 实体（数组/对象字段经 `kotlinx.serialization` 编码为 TEXT 列�
 
 ```mermaid
 erDiagram
+    Project ||--o{ Environment : has
+    Project ||--o{ RequestCollection : has
+    Project ||--o{ HttpHistory : has
     Environment ||--o{ EnvironmentVariable : contains
     RequestCollection ||--o{ SavedRequest : contains
     WsSessionConfig ||--o{ WsMessage : has
     MqttSessionConfig ||--o{ MqttMessage : has
 
-    Environment { int id PK, string name, bool isActive }
+    Project { int id PK, string name, int sortOrder, int createdAt }
+    Environment { int id PK, int projectId FK, string name, bool isActive }
     EnvironmentVariable { int id PK, int envId FK, string key, string value }
-    RequestCollection { int id PK, string name, int sortOrder }
+    RequestCollection { int id PK, int projectId FK, string name, int sortOrder }
     SavedRequest { int id PK, int collectionId FK, string name, string method, string url, string headersJson, string paramsJson, string bodyType, string body, string authType, string authJson, int createdAt }
-    HttpHistory { int id PK, string method, string url, string headersJson, string paramsJson, string bodyType, string body, int statusCode, int durationMs, int responseSize, bool success, string errorMessage, int createdAt }
+    HttpHistory { int id PK, int projectId FK, string method, string url, string headersJson, string paramsJson, string bodyType, string body, int statusCode, int durationMs, int responseSize, bool success, string errorMessage, int createdAt }
     WsSessionConfig { int id PK, string name, string url, string headersJson, string subprotocols }
     WsMessage { int id PK, int sessionId FK, int direction, string content, int timestamp }
     MqttSessionConfig { int id PK, string name, string brokerUrl, string clientId, string username, string password, int keepAliveSec }
@@ -163,10 +168,11 @@ erDiagram
 
 要点：
 
-1. **SavedRequest 与 HttpHistory 分离**：History 存完整请求快照，点击即可原样回放。
-2. **清理策略落地**：HttpHistory 插入后执行 `DELETE FROM http_history WHERE id NOT IN (SELECT id ... ORDER BY createdAt DESC LIMIT 500)`；WsMessage/MqttMessage 同理按会话 LIMIT 1000。
-3. **激活环境唯一性**：`isActive` 切换在 Repository 事务内"先清后设"，全局仅一个激活环境。
-4. **级联删除**：envId/collectionId/sessionId 外键设置 `onDelete = CASCADE`。
+1. **SavedRequest 与 HttpHistory 分离**：History 存完整请求快照，点击即可原样回放；历史按 projectId 过滤展示。
+2. **清理策略落地**：HttpHistory 按项目插入后执行 `DELETE FROM http_history WHERE projectId = ? AND id NOT IN (SELECT id ... ORDER BY createdAt DESC LIMIT 500)`；WsMessage/MqttMessage 同理按会话 LIMIT 1000。
+3. **激活环境唯一性（项目作用域）**：`isActive` 切换在 Repository 事务内"先清后设"，每个项目内有且仅有一个激活环境。
+4. **级联删除**：projectId/envId/collectionId/sessionId 外键设置 `onDelete = CASCADE`，删除项目级联清除环境、集合、请求与历史。
+5. **首启种子数据**：数据库首次创建时写入默认项目"默认项目"及其激活环境"default"，DataStore 记录当前项目 ID。
 
 ### 占位符语法
 
@@ -181,9 +187,9 @@ erDiagram
 ## Correctness Properties
 
 1. 发送成功的请求配置中，任意 `{{var}}` 均已被替换，输出文本中残留占位符数量为 0。
-2. 激活环境在任意时刻有且仅有一个。
-3. HttpHistory 表行数 ≤ 500；任意 WsMessage/MqttMessage 会话行数 ≤ 1000。
-4. 删除环境后，该环境变量数为 0；删除集合后，其内请求为 0。
+2. 每个项目在任意时刻有且仅有一个激活环境。
+3. HttpHistory 每项目行数 ≤ 500；任意 WsMessage/MqttMessage 会话行数 ≤ 1000。
+4. 删除项目后，该项目的环境、集合、请求与历史记录数均为 0；删除环境后，该环境变量数为 0；删除集合后，其内请求为 0。
 5. 认证方式为 Bearer 时，实际发出的请求头 `Authorization` 值以 `Bearer ` 前缀开头；Basic 时为 `Basic Base64(user:pass)`。
 6. 正在发送中的请求未结束前，发送按钮处于禁用状态（防重复提交）。
 7. WsEngine/MqttEngine 断开后重新 connect 可恢复完整功能（状态机无残留）。

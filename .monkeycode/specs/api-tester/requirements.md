@@ -15,7 +15,8 @@ Status: Draft
 - **环境 (Environment)**: 一组命名变量的集合，例如 dev / test / prod。
 - **变量 (Variable)**: 环境内的键值对，键为变量名，值为替换文本。
 - **占位符 (Placeholder)**: 文本中 `{{变量名}}` 形式的引用，发送前由 App 替换为实际值。
-- **激活环境 (Active Environment)**: 当前占位符替换所使用的环境。
+- **项目 (Project)**: 顶层组织单元，包含环境、集合与历史记录，可创建多个并随时切换。
+- **激活环境 (Active Environment)**: 当前项目内占位符替换所使用的环境，每个项目各自维护一个。
 - **会话 (Session)**: 一次 WebSocket 或 MQTT 的连接实例及其消息流。
 - **消息流 (Message Log)**: 会话中按时间排列的收发消息列表。
 
@@ -47,28 +48,31 @@ Status: Draft
 
 ### R3 — 环境变量管理
 
-**User Story:** AS 一个开发者，I want 维护多套环境变量并在请求中引用, so that 我可以在开发、测试、生产环境间快速切换。
+**User Story:** AS 一个开发者，I want 按项目维护多套环境变量并在请求中引用, so that 我可以在项目的开发、测试、生产环境间快速切换。
 
 #### Acceptance Criteria
 
-1. The App SHALL 支持创建、重命名、删除环境，每个环境包含多个变量键值对。
-2. The App SHALL 在顶部提供激活环境切换器，切换后所有占位符引用立即生效。
-3. WHEN 用户发送请求，the App SHALL 将请求配置中的 `{{变量名}}` 替换为激活环境中对应变量的值。
-4. IF 占位符引用的变量在激活环境中不存在，the App SHALL 在发送前警告并列出缺失变量名。
-5. The App SHALL 在 URL、请求头、查询参数、请求体文本中均支持占位符替换。
+1. The App SHALL 支持创建、重命名、删除项目，环境与请求集合归属于项目。
+2. The App SHALL 支持在项目内创建、重命名、删除环境，每个环境包含多个变量键值对。
+3. The App SHALL 提供激活环境切换器，切换后所有占位符引用立即生效；每个项目各自维护一个激活环境。
+4. WHEN 用户发送请求，the App SHALL 将请求配置中的 `{{变量名}}` 替换为当前项目激活环境中对应变量的值。
+5. IF 占位符引用的变量在激活环境中不存在，the App SHALL 在发送前警告并列出缺失变量名。
+6. The App SHALL 在 URL、请求头、查询参数、请求体文本、WebSocket 消息与 MQTT 负载中均支持占位符替换。
+7. IF 用户删除项目，the App SHALL 级联删除该项目的环境、集合、请求与历史记录，删除前需用户二次确认。
 
 ### R4 — 请求持久化与历史
 
-**User Story:** AS 一个开发者，I want 保存常用请求并查看历史记录, so that 我可以复用调试成果并追溯问题。
+**User Story:** AS 一个开发者，I want 按项目组织保存的请求并查看历史记录, so that 我可以复用调试成果并追溯问题。
 
 #### Acceptance Criteria
 
-1. The App SHALL 支持将当前请求配置保存为命名请求，并按集合（文件夹）组织。
-2. WHEN 用户发送一次 HTTP 请求，the App SHALL 将方法、URL、耗时、状态码与时间戳写入历史记录。
-3. IF 用户点击历史条目，the App SHALL 将该请求的配置载入编辑器（含请求头与请求体）。
-4. The App SHALL 支持对历史记录按关键字搜索与按集合浏览。
-5. The App SHALL 将请求集合导出为 Postman Collection v2.1 格式的 JSON 文件。
-6. The App SHALL 支持从 Postman Collection v2.1 格式的 JSON 文件导入请求集合。
+1. The App SHALL 支持将当前请求配置保存为命名请求，组织结构为：项目 → 集合（文件夹）→ 请求。
+2. The App SHALL 在顶栏提供项目切换器，切换项目后集合、环境与历史记录按当前项目过滤显示。
+3. WHEN 用户发送一次 HTTP 请求，the App SHALL 将方法、URL、耗时、状态码与时间戳写入当前项目的历史记录。
+4. IF 用户点击历史条目，the App SHALL 将该请求的配置载入编辑器（含请求头与请求体）。
+5. The App SHALL 支持对历史记录按关键字搜索与按集合浏览。
+6. The App SHALL 将当前项目的集合导出为 Postman Collection v2.1 格式的 JSON 文件。
+7. The App SHALL 支持从 Postman Collection v2.1 格式的 JSON 文件导入到指定项目。
 
 ### R5 — WebSocket 测试
 
