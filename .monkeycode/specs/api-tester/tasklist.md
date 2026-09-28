@@ -1,6 +1,6 @@
 # 需求实施计划 — API Tester
 
-- [ ] 1. 工程初始化与核心接口
+- [x] 1. 工程初始化与核心接口
   - 初始化 Android 单模块工程骨架：Gradle Kotlin DSL、AGP + Kotlin + Compose 插件、minSdk 26 / targetSdk 最新稳定
   - 接入依赖：Miuix `top.yukonga.miuix.kmp:miuix-ui-android` 0.9.x、Ktor Client(okhttp 引擎)、Eclipse Paho `org.eclipse.paho.client.mqttv3`、Room、DataStore、kotlinx.serialization、Compose BOM
   - 创建包结构：`ui/{http,ws,mqtt,env,history,project}`、`domain`、`data/{local,remote,repo}`
