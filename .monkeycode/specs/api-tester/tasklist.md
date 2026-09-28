@@ -36,7 +36,7 @@
   - [ ] 6.4 HistoryRepository：写入+500 条自动清理、关键字搜索、清空（R4.3/R7.2/R7.4）
   - [ ] 6.5 SessionRepository：WS/MQTT 会话配置与消息流落库、1000 条清理（R7.1/R7.3）
 
-- [ ] 7. 应用骨架与导航（design.md 页面组件，需求 R8/R3）
+- [x] 7. 应用骨架与导航（design.md 页面组件，需求 R8/R3）
   - [ ] 7.1 MainActivity + MiuixApp：MiuixTheme 跟随系统深色模式（R8.3）、Scaffold + NavigationBar 五页底部导航（R8.2）
   - [ ] 7.2 全局顶栏项目切换器与项目管理对话框：新建/重命名/删除二次确认（R3.1/R3.7/R4.2/R8.4）
 
