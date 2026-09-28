@@ -1,12 +1,13 @@
-# Requirements Document — API Tester
+# Requirements Document — Pulse（API Tester）
 
 Feature Name: api-tester
+App Name: Pulse
 Updated: 2026-09-28
 Status: Draft
 
 ## Introduction
 
-一个基于 Jetpack Compose + Miuix UI 库的 Android API 测试工具，提供 HTTP 请求调试（GET/POST/PUT/DELETE 等）、WebSocket 连接测试、MQTT 连接测试三大能力，并通过环境变量系统实现多环境（开发/测试/生产）参数切换。数据通过 Room 持久化到本地。
+Pulse 是一个基于 Jetpack Compose + Miuix UI 库的 Android API 测试工具，提供 HTTP 请求调试（GET/POST/PUT/DELETE 等）、WebSocket 连接测试、MQTT 连接测试三大能力，并通过环境变量系统实现多环境（开发/测试/生产）参数切换。数据通过 Room 持久化到本地。
 
 ## Glossary
 
