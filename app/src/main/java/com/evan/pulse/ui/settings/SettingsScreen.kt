@@ -160,7 +160,7 @@ private fun probeDetail(stage: WebDavStage): String = when {
     stage.statusCode == null -> stage.message.ifBlank { stringResource(R.string.webdav_probe_unreachable) }
     stage.statusCode == 401 -> stringResource(R.string.webdav_probe_auth_failed)
     stage.statusCode == 403 -> stringResource(R.string.webdav_probe_forbidden)
-    stage.statusCode == 404 -> stringResource(R.string.webdav_probe_not_found)
+    stage.statusCode == 404 -> stringResource(R.string.webdav_probe_ok) // 目录不存在但服务器可达，后续自动创建
     stage.statusCode == 405 -> stringResource(R.string.webdav_probe_unsupported)
     else -> stringResource(R.string.webdav_probe_status, stage.statusCode)
 }

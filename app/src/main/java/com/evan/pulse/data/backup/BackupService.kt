@@ -252,7 +252,15 @@ class WebDavClient(
         entries.sortedByDescending { it.lastModified }.take(10)
     }
 
-    /** 只读探测：对目标目录发起 PROPFIND，校验连通性与认证 */
+    /** 只读探测：对目标目录发起 PROPFIND，校验连通性与认证
+     *
+     * 规则：
+     * - 2xx / 405 / 3xx -> 探测通过（服务器可达、协议支持）
+     * - 401 -> 认证失败（凭据不对）
+     * - 403 -> 无权访问
+     * - 404 -> 目录不存在，但服务器可达，探测仍视为通过（后续会自动创建目录）
+     * - 其他 4xx/5xx / 网络异常 -> 探测失败
+     */
     suspend fun probe(): WebDavStage = withContext(Dispatchers.IO) {
         val start = System.currentTimeMillis()
         try {
@@ -262,7 +270,14 @@ class WebDavClient(
                 headers = PROPFIND_HEADERS(0),
                 timeoutMillis = PROBE_TIMEOUT_MS
             ).use { response -> response.code }
-            WebDavStage(code in 200..299, code, "", System.currentTimeMillis() - start)
+            val ok = when (code) {
+                in 200..399 -> true
+                401 -> false  // 认证失败
+                403 -> false  // 无权访问
+                404 -> true   // 目录不存在，但服务器可达
+                else -> false
+            }
+            WebDavStage(ok, code, "", System.currentTimeMillis() - start)
         } catch (e: Exception) {
             WebDavStage(false, null, e.message ?: "连接失败", System.currentTimeMillis() - start)
         }
