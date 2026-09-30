@@ -136,7 +136,6 @@
     <string name="webdav_url_label">WebDAV 位址</string>
     <string name="webdav_path_label">子資料夾（可選）</string>
     <string name="backup_export_webdav">備份到 WebDAV</string>
-    <string name="backup_import_webdav">從 WebDAV 還原</string>
     <string name="webdav_test_connection">測試連線</string>
     <string name="webdav_testing">正在測試連線…</string>
     <string name="webdav_test_passed">測試通過（%1$d ms）</string>

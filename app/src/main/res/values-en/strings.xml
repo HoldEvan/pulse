@@ -136,7 +136,6 @@
     <string name="webdav_url_label">WebDAV URL</string>
     <string name="webdav_path_label">Subfolder (optional)</string>
     <string name="backup_export_webdav">Back up to WebDAV</string>
-    <string name="backup_import_webdav">Restore from WebDAV</string>
     <string name="webdav_test_connection">Test connection</string>
     <string name="webdav_testing">Testing connection…</string>
     <string name="webdav_test_passed">Connection test passed (%1$d ms)</string>

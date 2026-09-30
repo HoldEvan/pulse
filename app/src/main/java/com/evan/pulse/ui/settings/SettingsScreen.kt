@@ -365,26 +365,14 @@ fun SettingsScreen(
                         .padding(top = 8.dp)
                 )
                 WebDavTestResultView(webDavTest)
-                Row(
+                Button(
+                    onClick = { viewModel.exportToWebDav(settings) },
+                    enabled = !status.busy && webdavConfigured,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        .padding(top = 10.dp)
                 ) {
-                    Button(
-                        onClick = { viewModel.exportToWebDav(settings) },
-                        enabled = !status.busy && webdavConfigured,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(stringResource(R.string.backup_export_webdav))
-                    }
-                    Button(
-                        onClick = { viewModel.importFromWebDav(settings) },
-                        enabled = !status.busy && webdavConfigured,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(stringResource(R.string.backup_import_webdav))
-                    }
+                    Text(stringResource(R.string.backup_export_webdav))
                 }
                 TextButton(
                     text = stringResource(R.string.backup_browse_remote),

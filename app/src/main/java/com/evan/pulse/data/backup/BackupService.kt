@@ -63,13 +63,6 @@ class BackupService(context: Context) {
         return fileUrl
     }
 
-    /** 从 WebDAV 下载默认备份文件并恢复数据 */
-    suspend fun importFromWebDav(config: WebDavConfig): String {
-        val json = WebDavClient(config).download()
-        ServiceLocator.restoreFromJson(json)
-        return config.backupFileName()
-    }
-
     /** 从 WebDAV 下载指定历史备份文件并恢复数据 */
     suspend fun restoreFromWebDavUrl(config: WebDavConfig, fileUrl: String): String {
         val json = WebDavClient(config).downloadUrl(fileUrl)
@@ -112,20 +105,14 @@ data class WebDavConfig(
     val username: String?,
     val password: String?,
 ) {
-    fun backupFileName(): String = BackupService.BACKUP_FILE_NAME
-
-    /** 完整文件 URL：url + 可选 path + / + 文件名 */
-    fun fileUrl(): String = buildString {
+    /** 目标目录 URL：url + 可选 path，不含文件名 */
+    fun dirUrl(): String = buildString {
         append(url.trimEnd('/'))
         if (path.isNotBlank()) {
             append('/')
             append(path.trim { it == '/' })
         }
-        append('/').append(backupFileName())
     }
-
-    /** 目标目录 URL（不含文件名） */
-    fun dirUrl(): String = fileUrl().substringBeforeLast('/')
 
     /** 带时间戳的备份文件 URL，用于保留多份历史备份 */
     fun timestampedFileUrl(timestamp: String): String = dirUrl() + "/" + backupBaseName() + "_" + timestamp + ".json"
@@ -133,9 +120,10 @@ data class WebDavConfig(
     /** 不带扩展名的备份文件基名 */
     fun backupBaseName(): String = BackupService.BACKUP_FILE_NAME.substringBeforeLast('.')
 
-    /** 目录下的指定文件完整 URL；href 为绝对地址时原样返回 */
+    /** 目录下的指定文件完整 URL；列表是对 dirUrl 的 PROPFIND，条目必在该目录下，
+     *  因此无论 href 是相对路径、绝对路径还是完整 URL，都取尾段文件名拼回 dirUrl */
     fun entryUrl(href: String): String =
-        if (href.startsWith("http")) href else dirUrl() + "/" + href.trimStart('/')
+        dirUrl() + "/" + href.substringAfterLast('/').trimStart('/')
 }
 
 /** 远程备份条目 */
@@ -197,9 +185,6 @@ class WebDavClient(
         }
         return fileUrl
     }
-
-    /** 从 WebDAV 下载默认备份文件并返回 JSON 字符串 */
-    suspend fun download(): String = downloadUrl(config.fileUrl())
 
     /** 按完整 URL 下载并返回 JSON 字符串（用于恢复指定的历史备份文件） */
     suspend fun downloadUrl(fileUrl: String): String = withContext(Dispatchers.IO) {

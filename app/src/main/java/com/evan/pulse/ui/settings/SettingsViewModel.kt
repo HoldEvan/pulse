@@ -228,19 +228,6 @@ class SettingsViewModel(
         }
     }
 
-    /** 请求从 WebDAV 恢复 */
-    fun importFromWebDav(settings: AppSettings) {
-        viewModelScope.launch {
-            markBusy()
-            try {
-                val fileName = backupService.importFromWebDav(webDavConfigOf(settings))
-                markOk(L10n.t(R.string.backup_done_import_webdav, fileName))
-            } catch (e: Exception) {
-                markFail(e)
-            }
-        }
-    }
-
     /** 刷新 WebDAV 远程备份列表 */
     fun refreshRemoteBackups(settings: AppSettings) {
         if (!isWebdavConfigured(settings)) return
@@ -263,7 +250,7 @@ class SettingsViewModel(
             markBusy()
             try {
                 backupService.restoreFromWebDavUrl(webDavConfigOf(settings), fileUrl)
-                markOk(null)
+                markOk(L10n.t(R.string.backup_done_import_webdav, fileUrl.substringAfterLast('/')))
                 refreshRemoteBackups(settings)
             } catch (e: Exception) {
                 markFail(e)
