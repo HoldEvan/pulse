@@ -5,6 +5,7 @@ import android.net.Uri
 import com.evan.pulse.di.ServiceLocator
 import java.io.File
 import java.io.IOException
+import java.net.URLDecoder
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -138,13 +139,14 @@ data class WebDavConfig(
 }
 
 /** 远程备份条目 */
-/** WebDAV 远程备份条目：url 为完整地址，display 用于界面展示 */
+/** WebDAV 远程备份条目：url 为完整地址（保留编码），display 为解码后的文件名 */
 data class RemoteBackupEntry(
     val url: String,
     val size: Long,
     val lastModified: Date,
 ) {
-    val display: String = url.substringAfterLast('/')
+    val display: String = runCatching { URLDecoder.decode(url.substringAfterLast('/'), "UTF-8") }
+        .getOrDefault(url.substringAfterLast('/'))
 }
 
 /** WebDAV 单个探测阶段的结果；连接中断时 statusCode 为 null */
@@ -232,18 +234,32 @@ class WebDavClient(
         }
 
         val entries = mutableListOf<RemoteBackupEntry>()
-        val propRegex = Regex("<D:prop>(.*?)</D:prop>", RegexOption.DOT_MATCHES_ALL)
-        val hrefRegex = Regex("<D:href>([^<]+)</D:href>", RegexOption.IGNORE_CASE)
-        val lenRegex = Regex("<D:getcontentlength>(\\d+)</D:getcontentlength>", RegexOption.IGNORE_CASE)
-        val modRegex = Regex("<D:getlastmodified>([^<]+)</D:getlastmodified>", RegexOption.IGNORE_CASE)
+        // 按 <response> 块解析：href 是 response 的直接子元素，在 <prop> 外面；
+        // 命名空间前缀（D:/d:/默认无前缀）因服务器而异，统一可选并忽略大小写
+        val responseRegex = Regex(
+            "<(?:[\\w.-]+:)?response\\b[^>]*>(.*?)</(?:[\\w.-]+:)?response>",
+            setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE)
+        )
+        val hrefRegex = Regex(
+            "<(?:[\\w.-]+:)?href>\\s*([^<]+?)\\s*</(?:[\\w.-]+:)?href>",
+            RegexOption.IGNORE_CASE
+        )
+        val lenRegex = Regex(
+            "<(?:[\\w.-]+:)?getcontentlength>\\s*(\\d+)\\s*</(?:[\\w.-]+:)?getcontentlength>",
+            RegexOption.IGNORE_CASE
+        )
+        val modRegex = Regex(
+            "<(?:[\\w.-]+:)?getlastmodified>\\s*([^<]+?)\\s*</(?:[\\w.-]+:)?getlastmodified>",
+            RegexOption.IGNORE_CASE
+        )
 
-        propRegex.findAll(body).forEach { propMatch ->
-            val propXml = propMatch.groupValues[1]
-            val hrefMatch = hrefRegex.find(propXml) ?: return@forEach
-            val href = hrefMatch.groupValues[1].trimEnd('/')
+        responseRegex.findAll(body).forEach { respMatch ->
+            val respXml = respMatch.groupValues[1]
+            val hrefMatch = hrefRegex.find(respXml) ?: return@forEach
+            val href = hrefMatch.groupValues[1].trim().trimEnd('/')
             if (href.isEmpty() || !href.endsWith(".json")) return@forEach
-            val size = lenRegex.find(propXml)?.groupValues?.get(1)?.toLongOrNull() ?: 0L
-            val modText = modRegex.find(propXml)?.groupValues?.get(1)
+            val size = lenRegex.find(respXml)?.groupValues?.get(1)?.toLongOrNull() ?: 0L
+            val modText = modRegex.find(respXml)?.groupValues?.get(1)
             val lastModified = modText
                 ?.let { runCatching { modFormat.parse(it) }.getOrNull() }
                 ?: Date(0)

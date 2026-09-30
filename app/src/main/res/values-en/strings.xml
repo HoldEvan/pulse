@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Pulse</string>
+
+    <!-- Bottom navigation and page titles -->
+    <string name="tab_http">HTTP</string>
+    <string name="tab_ws">WS</string>
+    <string name="tab_mqtt">MQTT</string>
+    <string name="tab_sse">SSE</string>
+    <string name="tab_env">Env</string>
+    <string name="tab_history">History</string>
+    <string name="tab_home">Home</string>
+    <string name="tab_settings">Settings</string>
+    <string name="tab_collection">Collections</string>
+    <string name="title_settings">Settings</string>
+    <string name="theme_page_title">Appearance and Theme</string>
+    <string name="cd_back">Back</string>
+
+    <!-- Common actions -->
+    <string name="action_cancel">Cancel</string>
+    <string name="action_save">Save</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_clear">Clear</string>
+    <string name="action_connect">Connect</string>
+    <string name="action_disconnect">Disconnect</string>
+    <string name="action_subscribe">Subscribe</string>
+    <string name="action_unsubscribe">Unsubscribe</string>
+    <string name="action_publish">Publish</string>
+    <string name="action_send">Send</string>
+    <string name="action_sending">Sending…</string>
+    <string name="none_option">None</string>
+    <string name="field_type_label">Type</string>
+
+    <!-- Formatted strings -->
+    <string name="duration_value">%1$d ms</string>
+    <string name="duration_size">%1$d ms · %2$d B</string>
+    <string name="version_value">%1$s (%2$d)</string>
+
+    <!-- Connection states -->
+    <string name="state_idle">Idle</string>
+    <string name="state_connected">Connected, %1$d ms</string>
+    <string name="state_disconnected">Disconnected</string>
+    <string name="state_closed_message">Closed: %1$s</string>
+    <string name="state_failed_message">Connection error: %1$s</string>
+    <string name="proxy_in_use">Proxy: %1$s</string>
+
+    <!-- Project bar -->
+    <string name="project_none">No project selected</string>
+    <string name="cd_switch_project">Switch project</string>
+    <string name="project_manage_title">Projects</string>
+    <string name="project_selected_mark">" ✓"</string>
+    <string name="cd_rename">Rename</string>
+    <string name="project_new_title">New project</string>
+    <string name="project_rename_title">Rename project</string>
+    <string name="project_name_label">Project name</string>
+
+    <!-- HTTP screen -->
+    <string name="http_action_button">HTTP call</string>
+    <string name="http_url_label">URL (supports {{var}})</string>
+    <string name="tab_params">Params</string>
+    <string name="tab_headers">Headers</string>
+    <string name="tab_body">Body</string>
+    <string name="tab_auth">Auth</string>
+    <string name="kv_param_key">Param name</string>
+    <string name="kv_header_key">Header</string>
+    <string name="kv_value_label">Value</string>
+    <string name="cd_add_param">Add param</string>
+    <string name="cd_add_header">Add header</string>
+    <string name="body_json">JSON</string>
+    <string name="body_raw">Raw</string>
+    <string name="body_form">Form</string>
+    <string name="form_field_name">Field</string>
+    <string name="form_field_value">Field value</string>
+    <string name="form_file_selected">File selected</string>
+    <string name="form_add_text_field">Add text field</string>
+    <string name="form_add_file_field">Add file field</string>
+    <string name="auth_none">None</string>
+    <string name="auth_bearer">Bearer</string>
+    <string name="auth_basic">Basic</string>
+    <string name="bearer_token_label">Token (supports {{var}})</string>
+    <string name="username_label">Username</string>
+    <string name="password_label">Password</string>
+    <string name="env_label">Environment variables</string>
+    <string name="env_empty">No environments in this project</string>
+    <string name="env_none_used">No environment applied</string>
+    <string name="http_no_response">No request sent yet</string>
+    <string name="http_failure">Request failed (%1$s)</string>
+    <string name="http_request_label">Request</string>
+    <string name="http_response_label">Response</string>
+    <string name="http_response_headers">Response headers</string>
+    <string name="http_response_body">Response body</string>
+    <string name="http_format_json">Format JSON</string>
+    <string name="http_view_raw">View raw</string>
+
+    <!-- WebSocket screen -->
+    <string name="ws_action_button">WebSocket call</string>
+    <string name="ws_url_label">ws:// or wss:// URL (supports {{var}})</string>
+    <string name="ws_title_events">Events</string>
+    <string name="ws_input_label">Message to send</string>
+
+    <!-- MQTT screen -->
+    <string name="mqtt_action_button">MQTT call</string>
+    <string name="mqtt_title_broker">Broker</string>
+    <string name="mqtt_broker_url_label">tcp:// or ssl:// URL</string>
+    <string name="mqtt_client_id_label">Client ID</string>
+    <string name="mqtt_keepalive_label">KeepAlive(s)</string>
+    <string name="mqtt_title_sub">Subscribe</string>
+    <string name="mqtt_qos_label">Subscribe QoS</string>
+    <string name="mqtt_topic_label">Topic, supports + and # wildcards</string>
+    <string name="sub_item">%1$s · QoS %2$d</string>
+    <string name="mqtt_title_pub">Publish</string>
+    <string name="mqtt_pub_payload">Payload</string>
+    <string name="mqtt_title_log">Log</string>
+    <string name="mqtt_clear_log">Clear log</string>
+    <string name="mqtt_state_opened">Connected</string>
+    <string name="mqtt_state_error">Error: %1$s</string>
+    <string name="message_line">[%1$s] QoS %2$d %3$s</string>
+    <string name="qos_0">QoS 0</string>
+    <string name="qos_1">QoS 1</string>
+    <string name="qos_2">QoS 2</string>
+
+    <!-- Settings screen -->
+    <string name="settings_general">General</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="appearance_summary">Theme and back gesture</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_network">Network</string>
+    <string name="settings_backup">Backup &amp; restore</string>
+    <string name="backup_local_title">Local backup</string>
+    <string name="backup_webdav_title">WebDAV remote backup</string>
+    <string name="backup_configured">Configured</string>
+    <string name="backup_not_configured">Not configured</string>
+    <string name="settings_about">About</string>
+    <string name="backup_export_local">Back up to local file</string>
+    <string name="backup_import_local">Restore from local file</string>
+    <string name="webdav_url_label">WebDAV URL</string>
+    <string name="webdav_path_label">Subfolder (optional)</string>
+    <string name="backup_export_webdav">Back up to WebDAV</string>
+    <string name="backup_import_webdav">Restore from WebDAV</string>
+    <string name="webdav_test_connection">Test connection</string>
+    <string name="webdav_testing">Testing connection…</string>
+    <string name="webdav_test_passed">Connection test passed (%1$d ms)</string>
+    <string name="webdav_test_failed">Connection test failed (%1$d ms)</string>
+    <string name="webdav_stage_probe">Access</string>
+    <string name="webdav_stage_write">Write</string>
+    <string name="webdav_stage_line">%1$s: %2$s</string>
+    <string name="webdav_probe_ok">Directory is accessible</string>
+    <string name="webdav_probe_unreachable">Cannot reach the server. Check the URL and proxy settings</string>
+    <string name="webdav_probe_auth_failed">Authentication failed. Check the username and password</string>
+    <string name="webdav_probe_forbidden">Access to the directory is forbidden</string>
+    <string name="webdav_probe_not_found">The directory does not exist</string>
+    <string name="webdav_probe_unsupported">The server does not support PROPFIND</string>
+    <string name="webdav_probe_status">The server returned an unexpected status %1$d</string>
+    <string name="webdav_write_ok">Directory is writable</string>
+    <string name="webdav_write_failed">Directory is not writable</string>
+    <string name="backup_browse_remote">Browse remote backups</string>
+    <string name="backup_restore">Restore</string>
+    <string name="backup_delete">Delete</string>
+    <string name="backup_browse_empty">No backup files in the remote folder</string>
+    <string name="backup_busy">Working…</string>
+    <string name="backup_done">Done</string>
+    <string name="backup_done_export_webdav">Backed up to %1$s</string>
+    <string name="backup_done_import_webdav">Restored from %1$s</string>
+    <string name="backup_failed">Failed</string>
+    <string name="backup_failed_with_error">Failed: %1$s</string>
+    <string name="back_gesture">Predictive back gesture</string>
+    <string name="back_mode_miuix">Miuix predictive back</string>
+    <string name="back_mode_aosp">AOSP predictive back</string>
+    <string name="back_mode_miuix_summary">Custom implementation on Compose</string>
+    <string name="back_mode_aosp_summary">Uses the system predictive back</string>
+    <string name="settings_proxy">Request proxy</string>
+    <string name="proxy_http">HTTP</string>
+    <string name="proxy_socks5">SOCKS5</string>
+    <string name="proxy_summary">Shared by HTTP, WebSocket and MQTT</string>
+    <string name="proxy_host_label">Host</string>
+    <string name="proxy_port_label">Port</string>
+    <string name="version_label">Version</string>
+    <string name="about_footer">This release ships only a Release build. More features are on the way.</string>
+
+    <!-- Languages -->
+    <string name="lang_system">Follow system</string>
+    <string name="lang_zh_cn">简体中文</string>
+    <string name="lang_zh_tw">繁體中文</string>
+    <string name="lang_en">English</string>
+
+    <!-- Appearance settings -->
+    <string name="theme_mode_label">Appearance mode</string>
+    <string name="theme_mode_summary">Fixed colors or Material You</string>
+    <string name="appearance_system">Follow system</string>
+    <string name="appearance_dark">Dark</string>
+    <string name="appearance_light">Light</string>
+    <string name="appearance_monet_system">Material You, system</string>
+    <string name="appearance_monet_dark">Material You, dark</string>
+    <string name="appearance_monet_light">Material You, light</string>
+    <string name="theme_key_color_section">Custom theme color</string>
+    <string name="theme_key_color_label">Theme color</string>
+    <string name="theme_key_color_summary">Source of the Material You color</string>
+    <string name="theme_follow_system_color">Follow system color</string>
+    <string name="color_blue">Blue</string>
+    <string name="color_green">Green</string>
+    <string name="color_purple">Purple</string>
+    <string name="color_yellow">Yellow</string>
+    <string name="color_orange">Orange</string>
+    <string name="color_pink">Pink</string>
+    <string name="color_cyan">Cyan</string>
+    <string name="palette_label">Palette style</string>
+    <string name="palette_summary">How the full palette is derived</string>
+    <string name="palette_tonal_spot">Classic TonalSpot</string>
+    <string name="palette_neutral">Neutral</string>
+    <string name="palette_vibrant">Vibrant</string>
+    <string name="palette_expressive">Expressive</string>
+    <string name="palette_rainbow">Rainbow</string>
+    <string name="palette_fruit_salad">FruitSalad</string>
+    <string name="palette_monochrome">Monochrome</string>
+    <string name="palette_fidelity">Fidelity</string>
+    <string name="palette_content">Content</string>
+    <string name="spec_label">Color spec</string>
+    <string name="spec_summary">Expressive 2025 is supported by Classic, Neutral, Vibrant and Expressive only; other styles fall back</string>
+    <string name="spec_material_2021">Material 2021</string>
+    <string name="spec_expressive_2025">Expressive 2025</string>
+    <string name="theme_footer">Changes apply and save immediately</string>
+
+    <!-- Environment screen -->
+    <string name="env_title">Environments (current project)</string>
+    <string name="env_active_mark">Active</string>
+    <string name="vars_count">%1$d variables</string>
+    <string name="cd_edit">Edit</string>
+    <string name="env_create_title">New environment</string>
+    <string name="env_edit_title">Edit environment</string>
+    <string name="env_name_label">Environment name</string>
+    <string name="env_vars_title">Variables</string>
+    <string name="cd_add_var">Add variable</string>
+    <string name="var_name_label">Variable name</string>
+    <string name="cd_remove_var">Remove variable</string>
+    <string name="env_delete_title">Delete environment</string>
+    <string name="env_delete_confirm">Delete environment \"%1$s\" and all of its variables? This cannot be undone.</string>
+
+    <!-- History screen -->
+    <string name="history_title">HTTP history (current project)</string>
+    <string name="history_search_label">Search URL or method</string>
+    <string name="history_clear">Clear history</string>
+    <string name="history_clear_confirm">Clear all history for the current project? This cannot be undone.</string>
+    <string name="cd_add">Add</string>
+    <string name="cd_delete">Delete</string>
+    <string name="action_got_it">Got it</string>
+    <string name="http_method_label">Method</string>
+    <string name="http_send_button">Send request</string>
+    <string name="body_type_label">Body type</string>
+    <string name="body_none">None</string>
+    <string name="body_json_label">JSON content</string>
+    <string name="body_raw_label">Plain text</string>
+    <string name="body_form_urlencoded">URL-encoded form</string>
+    <string name="body_form_data">multipart form</string>
+    <string name="auth_type_label">Auth type</string>
+    <string name="kv_param_value">Param value</string>
+    <string name="kv_header_value">Header value</string>
+    <string name="kv_add_row">Add a row</string>
+    <string name="env_none">No environment</string>
+    <string name="missing_env_title">Missing environment variables</string>
+    <string name="missing_env_desc">The following variables are missing in the active environment:</string>
+    <string name="mqtt_section_broker">Broker connection</string>
+    <string name="mqtt_username_label">Username (optional)</string>
+    <string name="mqtt_password_label">Password (optional)</string>
+    <string name="mqtt_pub_qos_label">Publish QoS</string>
+    <string name="mqtt_pub_topic_label">Target topic</string>
+    <string name="mqtt_pub_payload_label">Payload, supports {{var}}</string>
+    <string name="event_stream_title">Event stream</string>
+    <string name="cd_clear_stream">Clear event stream</string>
+    <string name="ws_direction_system">SYS</string>
+    <string name="ws_direction_recv">RX</string>
+    <string name="event_time_direction">%1$s · %2$s</string>
+    <string name="ws_log_closed">Connection closed: %1$s</string>
+    <string name="ws_unknown_reason">unknown reason</string>
+    <string name="ws_log_failed">Connection failed: %1$s</string>
+    <string name="state_opened">Connected</string>
+    <string name="state_connecting">Connecting</string>
+    <string name="state_closed">Not connected</string>
+    <string name="state_failed">Failed</string>
+    <string name="proxy_summary_none">No proxy in use</string>
+    <string name="proxy_summary_http">HTTP proxy</string>
+    <string name="proxy_summary_socks5">SOCKS5 proxy</string>
+    <string name="auth_apikey">API Key</string>
+    <string name="apikey_name_label">Header name (defaults to X-API-Key)</string>
+    <string name="apikey_value_label">Key value</string>
+    <string name="ws_heartbeat_interval_label">Heartbeat interval (sec)</string>
+    <string name="ws_heartbeat_payload_label">Heartbeat payload</string>
+    <string name="cd_switch_env">Switch environment</string>
+    <string name="collection_new_title">New collection</string>
+    <string name="collection_name_label">Collection name</string>
+    <string name="collection_default_name">Default collection</string>
+    <string name="collection_empty">No collections in this project</string>
+    <string name="collection_card_empty">No saved requests</string>
+    <string name="collection_delete">Delete collection</string>
+    <string name="collection_delete_request">Delete</string>
+    <string name="cd_save_request">Save to collection</string>
+    <string name="save_request_title">Save to collection</string>
+    <string name="request_name_label">Request name</string>
+    <!-- SSE panel -->
+    <string name="sse_url_label">http:// or https:// URL, supports {{var}}</string>
+    <string name="sse_event_filter_label">Event name filter (empty = all)</string>
+    <string name="sse_reconnect_delay_label">Reconnect delay (sec)</string>
+    <string name="sse_auto_reconnect_label">Auto reconnect on drop</string>
+    <string name="sse_headers_title">Headers</string>
+    <string name="sse_direction_recv">recv</string>
+    <string name="sse_log_reconnecting">Reconnecting in %1$d sec</string>
+    <string name="sse_log_closed">Connection closed: %1$s</string>
+    <string name="sse_log_failed">Connection failed: %1$s</string>
+</resources>

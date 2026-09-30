@@ -405,7 +405,7 @@ fun SettingsScreen(
                 text = if (status.busy) {
                     stringResource(R.string.backup_busy)
                 } else if (status.success) {
-                    stringResource(R.string.backup_done)
+                    status.message ?: stringResource(R.string.backup_done)
                 } else {
                     status.message?.let { msg ->
                         if (msg.isBlank()) stringResource(R.string.backup_failed)

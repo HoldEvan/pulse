@@ -1,4 +1,308 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Pulse</string>
+
+    <!-- 底部导航与页面标题 -->
+    <string name="tab_http">HTTP</string>
+    <string name="tab_ws">WS</string>
+    <string name="tab_mqtt">MQTT</string>
+    <string name="tab_sse">SSE</string>
+    <string name="tab_env">环境</string>
+    <string name="tab_history">历史</string>
+    <string name="tab_home">首页</string>
+    <string name="tab_settings">设置</string>
+    <string name="tab_collection">集合</string>
+    <string name="title_settings">设置</string>
+    <string name="theme_page_title">外观与主题</string>
+    <string name="cd_back">返回</string>
+
+    <!-- 通用动作 -->
+    <string name="action_cancel">取消</string>
+    <string name="action_save">保存</string>
+    <string name="action_delete">删除</string>
+    <string name="action_clear">清空</string>
+    <string name="action_connect">连接</string>
+    <string name="action_disconnect">断开</string>
+    <string name="action_subscribe">订阅</string>
+    <string name="action_unsubscribe">取消订阅</string>
+    <string name="action_publish">发布</string>
+    <string name="action_send">发送</string>
+    <string name="action_sending">发送中…</string>
+    <string name="none_option">不使用</string>
+    <string name="field_type_label">类型</string>
+
+    <!-- 格式化文案 -->
+    <string name="duration_value">%1$dms</string>
+    <string name="duration_size">%1$dms · %2$d B</string>
+    <string name="version_value">%1$s (%2$d)</string>
+
+    <!-- 连接状态 -->
+    <string name="state_idle">空闲</string>
+    <string name="state_connected">已连接，耗时 %1$dms</string>
+    <string name="state_disconnected">已断开</string>
+    <string name="state_closed_message">已断开：%1$s</string>
+    <string name="state_failed_message">连接错误：%1$s</string>
+    <string name="proxy_in_use">代理：%1$s</string>
+
+    <!-- 项目栏 -->
+    <string name="project_none">未选择项目</string>
+    <string name="cd_switch_project">切换项目</string>
+    <string name="project_manage_title">项目管理</string>
+    <string name="project_selected_mark">" ✓"</string>
+    <string name="cd_rename">重命名</string>
+    <string name="project_new_title">新建项目</string>
+    <string name="project_rename_title">重命名项目</string>
+    <string name="project_name_label">项目名称</string>
+
+    <!-- HTTP 页 -->
+    <string name="http_action_button">HTTP 调用</string>
+    <string name="http_url_label">URL，支持 {{var}}</string>
+    <string name="tab_params">参数</string>
+    <string name="tab_headers">请求头</string>
+    <string name="tab_body">请求体</string>
+    <string name="tab_auth">认证</string>
+    <string name="kv_param_key">参数名</string>
+    <string name="kv_header_key">Header 名</string>
+    <string name="kv_value_label">值</string>
+    <string name="cd_add_param">添加参数</string>
+    <string name="cd_add_header">添加请求头</string>
+    <string name="body_json">JSON</string>
+    <string name="body_raw">Raw</string>
+    <string name="body_form">表单</string>
+    <string name="form_field_name">字段</string>
+    <string name="form_field_value">字段值</string>
+    <string name="form_file_selected">已选文件</string>
+    <string name="form_add_text_field">添加文本字段</string>
+    <string name="form_add_file_field">添加文件字段</string>
+    <string name="auth_none">无</string>
+    <string name="auth_bearer">Bearer</string>
+    <string name="auth_basic">Basic</string>
+    <string name="bearer_token_label">Token，支持 {{var}}</string>
+    <string name="username_label">用户名</string>
+    <string name="password_label">密码</string>
+    <string name="env_label">环境变量</string>
+    <string name="env_empty">当前项目暂无环境</string>
+    <string name="env_none_used">未使用任何环境</string>
+    <string name="http_no_response">尚未发送请求</string>
+    <string name="http_failure">请求失败（%1$s）</string>
+    <string name="http_request_label">请求</string>
+    <string name="http_response_label">响应</string>
+    <string name="http_response_headers">响应头</string>
+    <string name="http_response_body">响应体</string>
+    <string name="http_format_json">格式化 JSON</string>
+    <string name="http_view_raw">查看原文</string>
+
+    <!-- WebSocket 页 -->
+    <string name="ws_action_button">WebSocket 调用</string>
+    <string name="ws_url_label">ws:// 或 wss:// 地址，支持 {{var}}</string>
+    <string name="ws_title_events">事件</string>
+    <string name="ws_input_label">要发送的消息</string>
+
+    <!-- MQTT 页 -->
+    <string name="mqtt_action_button">MQTT 调用</string>
+    <string name="mqtt_title_broker">Broker</string>
+    <string name="mqtt_broker_url_label">tcp:// 或 ssl:// 地址</string>
+    <string name="mqtt_client_id_label">Client ID</string>
+    <string name="mqtt_keepalive_label">KeepAlive(s)</string>
+    <string name="mqtt_title_sub">订阅</string>
+    <string name="mqtt_qos_label">订阅 QoS</string>
+    <string name="mqtt_topic_label">Topic，支持 + 与 # 通配符</string>
+    <string name="sub_item">%1$s · QoS%2$d</string>
+    <string name="mqtt_title_pub">发布</string>
+    <string name="mqtt_pub_payload">负载</string>
+    <string name="mqtt_title_log">日志</string>
+    <string name="mqtt_clear_log">清空日志</string>
+    <string name="mqtt_state_opened">已连接</string>
+    <string name="mqtt_state_error">错误：%1$s</string>
+    <string name="message_line">[%1$s] QoS%2$d %3$s</string>
+    <string name="qos_0">QoS 0</string>
+    <string name="qos_1">QoS 1</string>
+    <string name="qos_2">QoS 2</string>
+
+    <!-- 设置页 -->
+    <string name="settings_general">通用</string>
+    <string name="settings_appearance">外观</string>
+    <string name="appearance_summary">设置主题和返回手势</string>
+    <string name="settings_language">语言</string>
+    <string name="settings_network">网络</string>
+    <string name="settings_backup">备份与恢复</string>
+    <string name="backup_local_title">本地备份</string>
+    <string name="backup_webdav_title">WebDAV 远程备份</string>
+    <string name="backup_configured">已配置</string>
+    <string name="backup_not_configured">未配置</string>
+    <string name="settings_about">关于</string>
+    <string name="backup_export_local">备份到本地文件</string>
+    <string name="backup_import_local">从本地文件恢复</string>
+    <string name="webdav_url_label">WebDAV 地址</string>
+    <string name="webdav_path_label">子目录（可选）</string>
+    <string name="backup_export_webdav">备份到 WebDAV</string>
+    <string name="backup_import_webdav">从 WebDAV 恢复</string>
+    <string name="webdav_test_connection">测试连接</string>
+    <string name="webdav_testing">正在测试连接…</string>
+    <string name="webdav_test_passed">测试通过（%1$d ms）</string>
+    <string name="webdav_test_failed">测试失败（%1$d ms）</string>
+    <string name="webdav_stage_probe">访问</string>
+    <string name="webdav_stage_write">写入</string>
+    <string name="webdav_stage_line">%1$s：%2$s</string>
+    <string name="webdav_probe_ok">目录可访问</string>
+    <string name="webdav_probe_unreachable">无法连接到服务器，请检查地址和代理设置</string>
+    <string name="webdav_probe_auth_failed">认证失败，请检查用户名和密码</string>
+    <string name="webdav_probe_forbidden">无权访问该目录</string>
+    <string name="webdav_probe_not_found">目录不存在</string>
+    <string name="webdav_probe_unsupported">服务器不支持 PROPFIND</string>
+    <string name="webdav_probe_status">服务器返回异常状态 %1$d</string>
+    <string name="webdav_write_ok">目录可写入</string>
+    <string name="webdav_write_failed">目录不可写入</string>
+    <string name="backup_browse_remote">浏览远程备份</string>
+    <string name="backup_restore">恢复</string>
+    <string name="backup_delete">删除</string>
+    <string name="backup_browse_empty">远程目录中没有备份文件</string>
+    <string name="backup_busy">正在处理…</string>
+    <string name="backup_done">操作完成</string>
+    <string name="backup_done_export_webdav">已备份到 %1$s</string>
+    <string name="backup_done_import_webdav">已从 %1$s 恢复</string>
+    <string name="backup_failed">操作失败</string>
+    <string name="backup_failed_with_error">操作失败：%1$s</string>
+    <string name="back_gesture">预测性返回手势</string>
+    <string name="back_mode_miuix">Miuix 预测性返回</string>
+    <string name="back_mode_aosp">AOSP 预测性返回</string>
+    <string name="back_mode_miuix_summary">基于 Compose 的自定义实现</string>
+    <string name="back_mode_aosp_summary">启用系统的预测性返回能力</string>
+    <string name="settings_proxy">请求代理</string>
+    <string name="proxy_http">HTTP</string>
+    <string name="proxy_socks5">SOCKS5</string>
+    <string name="proxy_summary">HTTP、WebSocket 与 MQTT 通用</string>
+    <string name="proxy_host_label">地址</string>
+    <string name="proxy_port_label">端口</string>
+    <string name="version_label">版本</string>
+    <string name="about_footer">当前版本仅提供 Release 包，后续版本逐步补齐功能。</string>
+
+    <!-- 语言 -->
+    <string name="lang_system">跟随系统</string>
+    <string name="lang_zh_cn">简体中文</string>
+    <string name="lang_zh_tw">繁體中文</string>
+    <string name="lang_en">English</string>
+
+    <!-- 外观设置 -->
+    <string name="theme_mode_label">外观模式</string>
+    <string name="theme_mode_summary">固定配色或莫奈取色</string>
+    <string name="appearance_system">跟随系统</string>
+    <string name="appearance_dark">深色</string>
+    <string name="appearance_light">浅色</string>
+    <string name="appearance_monet_system">莫奈跟随系统</string>
+    <string name="appearance_monet_dark">莫奈深色</string>
+    <string name="appearance_monet_light">莫奈浅色</string>
+    <string name="theme_key_color_section">自定义主题色</string>
+    <string name="theme_key_color_label">主题色</string>
+    <string name="theme_key_color_summary">莫奈取色的来源</string>
+    <string name="theme_follow_system_color">跟随系统取色</string>
+    <string name="color_blue">蓝色</string>
+    <string name="color_green">绿色</string>
+    <string name="color_purple">紫色</string>
+    <string name="color_yellow">黄色</string>
+    <string name="color_orange">橙色</string>
+    <string name="color_pink">粉色</string>
+    <string name="color_cyan">青色</string>
+    <string name="palette_label">调色板风格</string>
+    <string name="palette_summary">由主题色生成整套配色的方式</string>
+    <string name="palette_tonal_spot">经典 TonalSpot</string>
+    <string name="palette_neutral">中性 Neutral</string>
+    <string name="palette_vibrant">鲜艳 Vibrant</string>
+    <string name="palette_expressive">鲜明 Expressive</string>
+    <string name="palette_rainbow">彩虹 Rainbow</string>
+    <string name="palette_fruit_salad">果盘 FruitSalad</string>
+    <string name="palette_monochrome">单色 Monochrome</string>
+    <string name="palette_fidelity">保真 Fidelity</string>
+    <string name="palette_content">内容 Content</string>
+    <string name="spec_label">色彩规范</string>
+    <string name="spec_summary">Expressive 2025 仅经典、中性、鲜艳、鲜明支持，其余风格自动回退</string>
+    <string name="spec_material_2021">Material 2021</string>
+    <string name="spec_expressive_2025">Expressive 2025</string>
+    <string name="theme_footer">修改后立即生效并自动保存</string>
+
+    <!-- 环境页 -->
+    <string name="env_title">环境列表（当前项目）</string>
+    <string name="env_active_mark">已激活</string>
+    <string name="vars_count">%1$d 个变量</string>
+    <string name="cd_edit">编辑</string>
+    <string name="env_create_title">新建环境</string>
+    <string name="env_edit_title">编辑环境</string>
+    <string name="env_name_label">环境名称</string>
+    <string name="env_vars_title">变量</string>
+    <string name="cd_add_var">添加变量</string>
+    <string name="var_name_label">变量名</string>
+    <string name="cd_remove_var">删除变量</string>
+    <string name="env_delete_title">删除环境</string>
+    <string name="env_delete_confirm">确定删除环境「%1$s」及其全部变量？此操作不可恢复。</string>
+
+    <!-- 历史页 -->
+    <string name="history_title">HTTP 历史（当前项目）</string>
+    <string name="history_search_label">搜索 URL 或方法</string>
+    <string name="history_clear">清空历史</string>
+    <string name="history_clear_confirm">确定清空当前项目的全部历史记录？此操作不可恢复。</string>
+    <string name="cd_add">添加</string>
+    <string name="cd_delete">删除</string>
+    <string name="action_got_it">知道了</string>
+    <string name="http_method_label">请求方法</string>
+    <string name="http_send_button">发送请求</string>
+    <string name="body_type_label">请求体类型</string>
+    <string name="body_none">无</string>
+    <string name="body_json_label">JSON 内容</string>
+    <string name="body_raw_label">纯文本内容</string>
+    <string name="body_form_urlencoded">URL 编码表单</string>
+    <string name="body_form_data">multipart 表单</string>
+    <string name="auth_type_label">认证类型</string>
+    <string name="kv_param_value">参数值</string>
+    <string name="kv_header_value">Header 值</string>
+    <string name="kv_add_row">添加一行</string>
+    <string name="env_none">无环境</string>
+    <string name="missing_env_title">缺失环境变量</string>
+    <string name="missing_env_desc">以下变量在激活环境中不存在：</string>
+    <string name="mqtt_section_broker">Broker 连接</string>
+    <string name="mqtt_username_label">用户名（可选）</string>
+    <string name="mqtt_password_label">密码（可选）</string>
+    <string name="mqtt_pub_qos_label">发布 QoS</string>
+    <string name="mqtt_pub_topic_label">目标 Topic</string>
+    <string name="mqtt_pub_payload_label">负载内容，支持 {{var}}</string>
+    <string name="event_stream_title">消息流</string>
+    <string name="cd_clear_stream">清空消息流</string>
+    <string name="ws_direction_system">系统</string>
+    <string name="ws_direction_recv">收</string>
+    <string name="event_time_direction">%1$s · %2$s</string>
+    <string name="ws_log_closed">连接已断开：%1$s</string>
+    <string name="ws_unknown_reason">未知原因</string>
+    <string name="ws_log_failed">连接失败：%1$s</string>
+    <string name="state_opened">已连接</string>
+    <string name="state_connecting">连接中</string>
+    <string name="state_closed">未连接</string>
+    <string name="state_failed">失败</string>
+    <string name="proxy_summary_none">未使用代理</string>
+    <string name="proxy_summary_http">HTTP 代理</string>
+    <string name="proxy_summary_socks5">SOCKS5 代理</string>
+    <string name="auth_apikey">API Key</string>
+    <string name="apikey_name_label">Header 名（默认 X-API-Key）</string>
+    <string name="apikey_value_label">Key 值</string>
+    <string name="ws_heartbeat_interval_label">心跳间隔（秒）</string>
+    <string name="ws_heartbeat_payload_label">心跳内容</string>
+    <string name="cd_switch_env">切换环境</string>
+    <string name="collection_new_title">新建集合</string>
+    <string name="collection_name_label">集合名称</string>
+    <string name="collection_default_name">默认集合</string>
+    <string name="collection_empty">当前项目暂无集合</string>
+    <string name="collection_card_empty">暂无保存的请求</string>
+    <string name="collection_delete">删除集合</string>
+    <string name="collection_delete_request">删除</string>
+    <string name="cd_save_request">保存到集合</string>
+    <string name="save_request_title">保存到集合</string>
+    <string name="request_name_label">请求名称</string>
+    <!-- SSE 面板 -->
+    <string name="sse_url_label">http:// 或 https:// 地址，支持 {{var}}</string>
+    <string name="sse_event_filter_label">事件名过滤（留空接收全部）</string>
+    <string name="sse_reconnect_delay_label">重连延迟（秒）</string>
+    <string name="sse_auto_reconnect_label">断线自动重连</string>
+    <string name="sse_headers_title">请求头</string>
+    <string name="sse_direction_recv">收</string>
+    <string name="sse_log_reconnecting">%1$d 秒后重连</string>
+    <string name="sse_log_closed">连接已断开：%1$s</string>
+    <string name="sse_log_failed">连接失败：%1$s</string>
 </resources>
