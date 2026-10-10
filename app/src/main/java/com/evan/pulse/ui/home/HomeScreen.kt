@@ -2,6 +2,7 @@ package com.evan.pulse.ui.home
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -38,10 +39,10 @@ fun HomeScreen(modifier: Modifier = Modifier, onOpenScriptEditor: (Int) -> Unit 
             modifier = Modifier.padding(horizontal = 12.dp)
         )
         when (protocol) {
-            0 -> HttpScreen(modifier = Modifier.fillMaxSize(), onOpenScriptEditor = onOpenScriptEditor)
-            1 -> SseScreen(modifier = Modifier.fillMaxSize())
-            2 -> WsScreen(modifier = Modifier.fillMaxSize())
-            else -> MqttScreen(modifier = Modifier.fillMaxSize())
+            0 -> HttpScreen(modifier = Modifier.weight(1f).fillMaxWidth(), onOpenScriptEditor = onOpenScriptEditor)
+            1 -> SseScreen(modifier = Modifier.weight(1f).fillMaxWidth())
+            2 -> WsScreen(modifier = Modifier.weight(1f).fillMaxWidth())
+            else -> MqttScreen(modifier = Modifier.weight(1f).fillMaxWidth())
         }
     }
 }

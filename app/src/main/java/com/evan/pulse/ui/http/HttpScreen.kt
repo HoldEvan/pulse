@@ -111,10 +111,7 @@ fun HttpScreen(
     var showExport by remember { mutableStateOf(false) }
 
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(scroll)
-            .padding(horizontal = 12.dp)
+        modifier = modifier.fillMaxSize().padding(horizontal = 12.dp)
     ) {
         SectionTitleRow(
             label = stringResource(R.string.http_request_label),
@@ -133,27 +130,34 @@ fun HttpScreen(
                 }
             }
         )
-        RequestEditorCard(viewModel)
-        SaveRequestDialog(
-            show = showSave,
-            type = RequestType.HTTP,
-            defaultName = viewModel.url.pathOnly().ifEmpty { viewModel.url },
-            snapshotProvider = { viewModel.snapshot() },
-            onDismiss = { showSave = false }
-        )
-        ExportFormatDialog(show = showExport, viewModel = viewModel, onDismiss = { showExport = false })
-        SectionTitleRow(label = stringResource(R.string.tab_script))
-        ScriptEditorCard(viewModel, onOpenScriptEditor)
-        SectionTitleRow(
-            label = stringResource(R.string.http_response_label),
-            actions = {
-                CopyIconButton(
-                    text = (viewModel.outcome as? HttpCallOutcome.Success)?.body,
-                    label = stringResource(R.string.cd_copy_response)
-                )
-            }
-        )
-        ResponseCard(viewModel)
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(scroll)
+        ) {
+            RequestEditorCard(viewModel)
+            SaveRequestDialog(
+                show = showSave,
+                type = RequestType.HTTP,
+                defaultName = viewModel.url.pathOnly().ifEmpty { viewModel.url },
+                snapshotProvider = { viewModel.snapshot() },
+                onDismiss = { showSave = false }
+            )
+            ExportFormatDialog(show = showExport, viewModel = viewModel, onDismiss = { showExport = false })
+            SectionTitleRow(label = stringResource(R.string.tab_script))
+            ScriptEditorCard(viewModel, onOpenScriptEditor)
+            SectionTitleRow(
+                label = stringResource(R.string.http_response_label),
+                actions = {
+                    CopyIconButton(
+                        text = ((viewModel.outcome as? HttpCallOutcome.Success)?.body),
+                        label = stringResource(R.string.cd_copy_response)
+                    )
+                }
+            )
+            ResponseCard(viewModel)
+        }
     }
 
     missingVars?.let { missing ->

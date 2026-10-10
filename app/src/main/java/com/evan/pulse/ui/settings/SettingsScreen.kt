@@ -206,10 +206,14 @@ fun SettingsScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
             .padding(horizontal = 12.dp)
     ) {
         SmallTitle(text = stringResource(R.string.settings_general))
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+        ) {
 
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(CardContentPadding)) {
@@ -570,6 +574,7 @@ fun SettingsScreen(
                 .fillMaxWidth()
                 .padding(top = 12.dp, bottom = 24.dp)
         )
+    }
     }
 
     if (showCacheConfirm) {

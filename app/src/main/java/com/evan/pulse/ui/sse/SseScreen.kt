@@ -82,132 +82,140 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
     Column(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
             .padding(horizontal = 12.dp)
-            .padding(bottom = 12.dp)
+            .padding(bottom = 24.dp)
     ) {
         SectionTitleRow(
             label = stringResource(R.string.action_connect),
             onSaveClick = { showSave = true }
         )
-        // 整个页面统一滚动：请求头加多行时页面整体下移，消息卡固定高度内部滚动
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(12.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+        ) {
+            // 顶部表单区随标题固定，下面内容整体滚动；事件流卡片再在内部滚动
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextField(
+                            value = viewModel.url,
+                            onValueChange = { viewModel.url = it },
+                            label = stringResource(R.string.sse_url_label),
+                            useLabelAsPlaceholder = true,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 10.dp)
+                        )
+                        ConnectionStateIndicator(
+                            color = stateColor(state),
+                            label = stateLabel(state)
+                        )
+                    }
                     TextField(
-                        value = viewModel.url,
-                        onValueChange = { viewModel.url = it },
-                        label = stringResource(R.string.sse_url_label),
+                        value = viewModel.eventFilter,
+                        onValueChange = { viewModel.eventFilter = it },
+                        label = stringResource(R.string.sse_event_filter_label),
                         useLabelAsPlaceholder = true,
                         modifier = Modifier
-                            .weight(1f)
-                            .padding(end = 10.dp)
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
                     )
-                    ConnectionStateIndicator(
-                        color = stateColor(state),
-                        label = stateLabel(state)
+                    TextField(
+                        value = viewModel.reconnectDelaySec,
+                        onValueChange = { viewModel.reconnectDelaySec = it },
+                        label = stringResource(R.string.sse_reconnect_delay_label),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
                     )
-                }
-                TextField(
-                    value = viewModel.eventFilter,
-                    onValueChange = { viewModel.eventFilter = it },
-                    label = stringResource(R.string.sse_event_filter_label),
-                    useLabelAsPlaceholder = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
-                )
-                TextField(
-                    value = viewModel.reconnectDelaySec,
-                    onValueChange = { viewModel.reconnectDelaySec = it },
-                    label = stringResource(R.string.sse_reconnect_delay_label),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
-                )
-                CheckboxPreference(
-                    title = stringResource(R.string.sse_auto_reconnect_label),
-                    checked = viewModel.autoReconnect,
-                    onCheckedChange = { viewModel.autoReconnect = it },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                CardSectionTitle(
-                    text = stringResource(R.string.sse_headers_title),
-                    modifier = Modifier.padding(top = 10.dp)
-                )
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    KeyValueEditor(
-                        items = viewModel.headers,
-                        keyLabel = stringResource(R.string.kv_header_key),
-                        valueLabel = stringResource(R.string.kv_value_label),
-                        onChange = viewModel::updateHeaders,
-                        onAdd = viewModel::addHeader,
-                        onRemove = viewModel::removeHeader
+                    CheckboxPreference(
+                        title = stringResource(R.string.sse_auto_reconnect_label),
+                        checked = viewModel.autoReconnect,
+                        onCheckedChange = { viewModel.autoReconnect = it },
+                        modifier = Modifier.fillMaxWidth()
                     )
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Button(
-                        onClick = { viewModel.connect() },
-                        enabled = state == SseConnectionState.IDLE || state == SseConnectionState.CLOSED || state == SseConnectionState.FAILED,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(Icons.Filled.Link, contentDescription = null)
-                        Text(stringResource(R.string.action_connect), modifier = Modifier.padding(start = 4.dp))
+                    CardSectionTitle(
+                        text = stringResource(R.string.sse_headers_title),
+                        modifier = Modifier.padding(top = 10.dp)
+                    )
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        KeyValueEditor(
+                            items = viewModel.headers,
+                            keyLabel = stringResource(R.string.kv_header_key),
+                            valueLabel = stringResource(R.string.kv_value_label),
+                            onChange = viewModel::updateHeaders,
+                            onAdd = viewModel::addHeader,
+                            onRemove = viewModel::removeHeader
+                        )
                     }
-                    Button(
-                        onClick = { viewModel.disconnect() },
-                        enabled = state == SseConnectionState.CONNECTED || state == SseConnectionState.CONNECTING,
-                        modifier = Modifier.weight(1f)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(Icons.Filled.LinkOff, contentDescription = null)
-                        Text(stringResource(R.string.action_disconnect), modifier = Modifier.padding(start = 4.dp))
+                        Button(
+                            onClick = { viewModel.connect() },
+                            enabled = state == SseConnectionState.IDLE || state == SseConnectionState.CLOSED || state == SseConnectionState.FAILED,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Filled.Link, contentDescription = null)
+                            Text(stringResource(R.string.action_connect), modifier = Modifier.padding(start = 4.dp))
+                        }
+                        Button(
+                            onClick = { viewModel.disconnect() },
+                            enabled = state == SseConnectionState.CONNECTED || state == SseConnectionState.CONNECTING,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Filled.LinkOff, contentDescription = null)
+                            Text(stringResource(R.string.action_disconnect), modifier = Modifier.padding(start = 4.dp))
+                        }
                     }
-                }
-                viewModel.lastError?.let { err ->
-                    Text(
-                        text = stringResource(R.string.mqtt_state_error, err),
-                        color = Color(0xFFD32F2F),
-                        modifier = Modifier.padding(top = 8.dp),
-                        fontSize = 13.sp
-                    )
+                    viewModel.lastError?.let { err ->
+                        Text(
+                            text = stringResource(R.string.mqtt_state_error, err),
+                            color = Color(0xFFD32F2F),
+                            modifier = Modifier.padding(top = 8.dp),
+                            fontSize = 13.sp
+                        )
+                    }
                 }
             }
-        }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            SmallTitle(text = stringResource(R.string.event_stream_title), modifier = Modifier.weight(1f))
-            CopyIconButton(
-                text = eventLogText(lines),
-                label = stringResource(R.string.cd_copy_stream)
-            )
-            Icon(
-                imageVector = Icons.Filled.Delete,
-                contentDescription = stringResource(R.string.cd_clear_stream),
+            Row(
                 modifier = Modifier
-                    .clickable { viewModel.clearLog() }
-                    .padding(6.dp)
-            )
-        }
-        Card(modifier = Modifier.fillMaxWidth().height(360.dp)) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(8.dp)
+                    .fillMaxWidth()
+                    .padding(top = 10.dp),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                items(lines) { line ->
-                    EventLine(line, systemLabel, recvLabel)
+                SmallTitle(text = stringResource(R.string.event_stream_title), modifier = Modifier.weight(1f))
+                CopyIconButton(
+                    text = eventLogText(lines),
+                    label = stringResource(R.string.cd_copy_stream)
+                )
+                Icon(
+                    imageVector = Icons.Filled.Delete,
+                    contentDescription = stringResource(R.string.cd_clear_stream),
+                    modifier = Modifier
+                        .clickable { viewModel.clearLog() }
+                        .padding(6.dp)
+                )
+            }
+            Card(modifier = Modifier.fillMaxWidth().height(360.dp)) {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(8.dp)
+                ) {
+                    items(lines) { line ->
+                        EventLine(line, systemLabel, recvLabel)
+                    }
                 }
             }
         }

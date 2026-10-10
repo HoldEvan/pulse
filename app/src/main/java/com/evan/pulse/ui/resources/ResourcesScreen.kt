@@ -2,6 +2,7 @@ package com.evan.pulse.ui.resources
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,8 +35,8 @@ fun ResourcesScreen(modifier: Modifier = Modifier, onSwitchTab: (Int) -> Unit = 
             modifier = Modifier.padding(horizontal = 12.dp)
         )
         when (selection) {
-            0 -> CollectionScreen(Modifier.fillMaxSize(), onSwitchTab)
-            else -> EnvironmentScreen(Modifier.fillMaxSize())
+            0 -> CollectionScreen(Modifier.weight(1f).fillMaxWidth(), onSwitchTab)
+            else -> EnvironmentScreen(Modifier.weight(1f).fillMaxWidth())
         }
     }
 }
