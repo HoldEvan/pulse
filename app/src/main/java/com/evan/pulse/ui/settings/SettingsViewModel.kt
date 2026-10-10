@@ -132,10 +132,13 @@ class SettingsViewModel(
 
     fun goBack() {
         if (!_nav.value.canGoBack) return
+        val newStack = _nav.value.stack.dropLast(1)
+        val newTop = newStack.last()
+        val keepScriptTarget = newTop == LEVEL_SCRIPT_EDITOR || newTop == LEVEL_SCRIPT_DOCS
         _nav.value = _nav.value.copy(
-            stack = _nav.value.stack.dropLast(1),
+            stack = newStack,
             historyEntryId = null,
-            scriptTarget = null
+            scriptTarget = if (keepScriptTarget) _nav.value.scriptTarget else null
         )
     }
 
