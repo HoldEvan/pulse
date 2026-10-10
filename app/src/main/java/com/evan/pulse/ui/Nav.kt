@@ -1,6 +1,6 @@
 package com.evan.pulse.ui
 
-/** 主标签页层级：首页 / 资源 / 拨测 / 历史 / 设置 */
+/** 主标签页层级：首页 / 测试 / 资源 / 拨测 / 设置 */
 const val LEVEL_TABS = 0
 
 /** 设置二级页：外观与主题 */
@@ -17,6 +17,12 @@ const val LEVEL_SCRIPT_EDITOR = 5
 
 /** HTTP 三级页：脚本内置 API 文档 */
 const val LEVEL_SCRIPT_DOCS = 6
+
+/** 历史列表二级页：从 HTTP 页顶部历史图标进入 */
+const val LEVEL_HISTORY = 7
+
+/** 工具二级页：Base64 转换器 */
+const val LEVEL_BASE64_TOOL = 8
 
 /**
  * 页面栈状态。

@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -105,6 +106,7 @@ private val scriptTabLabels = listOf(
 fun HttpScreen(
     modifier: Modifier = Modifier,
     onOpenScriptEditor: (Int) -> Unit = {},
+    onOpenHistory: () -> Unit = {},
     viewModel: HttpViewModel = viewModel(),
 ) {
     val scroll = rememberScrollState()
@@ -118,6 +120,12 @@ fun HttpScreen(
         SectionTitleRow(
             label = stringResource(R.string.http_request_label),
             actions = {
+                IconButton(onClick = onOpenHistory, modifier = Modifier.size(36.dp)) {
+                    Icon(
+                        imageVector = Icons.Filled.History,
+                        contentDescription = stringResource(R.string.history_title)
+                    )
+                }
                 IconButton(onClick = { showExport = true }, modifier = Modifier.size(36.dp)) {
                     Icon(
                         imageVector = Icons.Filled.Code,

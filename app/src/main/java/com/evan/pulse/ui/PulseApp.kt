@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.NetworkCheck
+import androidx.compose.material.icons.filled.Science
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -24,11 +25,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.evan.pulse.R
 import com.evan.pulse.ui.back.MiuixPredictiveBack
 import com.evan.pulse.ui.common.ToastHost
+import com.evan.pulse.ui.dashboard.DashboardScreen
 import com.evan.pulse.ui.glass.LiquidGlassNavigationBar
 import com.evan.pulse.ui.history.HistoryDetailScreen
 import com.evan.pulse.ui.history.HistoryScreen
 import com.evan.pulse.ui.history.HistoryViewModel
-import com.evan.pulse.ui.home.HomeScreen
 import com.evan.pulse.ui.http.ScriptDocsScreen
 import com.evan.pulse.ui.http.ScriptEditorScreen
 import com.evan.pulse.ui.l10n.LocalizedRoot
@@ -41,6 +42,8 @@ import com.evan.pulse.ui.resources.ResourcesScreen
 import com.evan.pulse.ui.settings.SettingsScreen
 import com.evan.pulse.ui.settings.SettingsViewModel
 import com.evan.pulse.ui.settings.ThemeSettingsScreen
+import com.evan.pulse.ui.test.TestScreen
+import com.evan.pulse.ui.tools.Base64ToolScreen
 import top.yukonga.miuix.kmp.basic.FloatingNavigationBar
 import top.yukonga.miuix.kmp.basic.FloatingNavigationBarItem
 import top.yukonga.miuix.kmp.basic.Icon
@@ -88,9 +91,9 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
     val tabs = remember {
         listOf(
             PulseTab(R.string.tab_home, MiuixIcons.Light.Home),
+            PulseTab(R.string.tab_test, Icons.Filled.Science),
             PulseTab(R.string.tab_resources, MiuixIcons.Light.Folder),
             PulseTab(R.string.tab_monitor, Icons.Filled.NetworkCheck),
-            PulseTab(R.string.tab_history, Icons.Filled.History),
             PulseTab(R.string.tab_settings, MiuixIcons.Light.Settings)
         )
     }
@@ -165,25 +168,36 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                 modifier = Modifier.fillMaxSize()
             )
 
+            LEVEL_HISTORY -> HistoryScreen(
+                modifier = Modifier.fillMaxSize(),
+                onOpenDetail = { settingsViewModel.pushHistoryDetail(it) },
+                viewModel = historyViewModel
+            )
+
+            LEVEL_BASE64_TOOL -> Base64ToolScreen(
+                modifier = Modifier.fillMaxSize()
+            )
+
             else -> when (nav.selectedTab) {
-                0 -> HomeScreen(
+                0 -> DashboardScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    onOpenBase64 = { settingsViewModel.push(LEVEL_BASE64_TOOL) }
+                )
+                1 -> TestScreen(
                     modifier = Modifier.fillMaxSize(),
                     protocolTab = nav.homeProtocolTab,
                     onProtocolTabChange = { settingsViewModel.selectHomeProtocol(it) },
-                    onOpenScriptEditor = { settingsViewModel.pushScriptEditor(it) }
+                    onOpenScriptEditor = { settingsViewModel.pushScriptEditor(it) },
+                    onOpenHistory = { settingsViewModel.push(LEVEL_HISTORY) }
                 )
-                1 -> ResourcesScreen(
+                2 -> ResourcesScreen(
                     modifier = Modifier.fillMaxSize(),
                     onSwitchTab = { settingsViewModel.openHomeProtocol(it) }
                 )
-                2 -> MonitorScreen(
+                3 -> MonitorScreen(
                     modifier = Modifier.fillMaxSize(),
                     viewModel = monitorViewModel,
                     onOpenRecordsList = { settingsViewModel.push(LEVEL_MONITOR_RECORDS) }
-                )
-                3 -> HistoryScreen(
-                    modifier = Modifier.fillMaxSize(),
-                    onOpenDetail = { settingsViewModel.pushHistoryDetail(it) }
                 )
                 else -> SettingsScreen(
                     modifier = Modifier.fillMaxSize(),
@@ -258,11 +272,35 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                 }
             )
 
+            LEVEL_HISTORY -> TopAppBar(
+                title = stringResource(R.string.history_title),
+                navigationIcon = {
+                    IconButton(onClick = { settingsViewModel.goBack() }) {
+                        Icon(
+                            imageVector = MiuixIcons.Light.ChevronBackward,
+                            contentDescription = stringResource(R.string.cd_back)
+                        )
+                    }
+                }
+            )
+
+            LEVEL_BASE64_TOOL -> TopAppBar(
+                title = stringResource(R.string.base64_title),
+                navigationIcon = {
+                    IconButton(onClick = { settingsViewModel.goBack() }) {
+                        Icon(
+                            imageVector = MiuixIcons.Light.ChevronBackward,
+                            contentDescription = stringResource(R.string.cd_back)
+                        )
+                    }
+                }
+            )
+
             else -> ProjectBar(
                 title = stringResource(tabs[nav.selectedTab].label),
-                showProjectSelector = nav.selectedTab <= 1,
-                showEnvSelector = nav.selectedTab == 0,
-                onAddMonitor = if (nav.selectedTab == 2) {
+                showProjectSelector = nav.selectedTab in 1..2,
+                showEnvSelector = nav.selectedTab == 1,
+                onAddMonitor = if (nav.selectedTab == 3) {
                     { monitorViewModel.openCreate() }
                 } else {
                     null

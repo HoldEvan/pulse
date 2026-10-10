@@ -1,4 +1,4 @@
-package com.evan.pulse.ui.home
+package com.evan.pulse.ui.test
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,30 +15,36 @@ import com.evan.pulse.ui.sse.SseScreen
 import com.evan.pulse.ui.ws.WsScreen
 import top.yukonga.miuix.kmp.basic.TabRowWithContour
 
-private val homeTabLabels = listOf(
+private val testTabLabels = listOf(
     R.string.tab_http,
     R.string.tab_sse,
     R.string.tab_ws,
     R.string.tab_mqtt
 )
 
-/** 首页：HTTP / WS / MQTT / SSE 四个协议页通过顶部 TabRow 切换，协议选择由外层 NavState 持有 */
+/** 测试页：HTTP / WS / MQTT / SSE 四个协议页通过顶部 TabRow 切换，协议选择由外层 NavState 持有 */
 @Composable
-fun HomeScreen(
+fun TestScreen(
     modifier: Modifier = Modifier,
     onOpenScriptEditor: (Int) -> Unit = {},
+    onOpenHistory: () -> Unit = {},
     protocolTab: Int = 0,
     onProtocolTabChange: (Int) -> Unit = {}
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         TabRowWithContour(
-            tabs = homeTabLabels.localizedLabels(),
+            tabs = testTabLabels.localizedLabels(),
             selectedTabIndex = protocolTab,
             onTabSelected = onProtocolTabChange,
             modifier = Modifier.padding(horizontal = 12.dp)
         )
         when (protocolTab) {
-            0 -> HttpScreen(modifier = Modifier.weight(1f).fillMaxWidth(), onOpenScriptEditor = onOpenScriptEditor)
+            0 -> HttpScreen(
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                onOpenScriptEditor = onOpenScriptEditor,
+                onOpenHistory = onOpenHistory
+            )
+
             1 -> SseScreen(modifier = Modifier.weight(1f).fillMaxWidth())
             2 -> WsScreen(modifier = Modifier.weight(1f).fillMaxWidth())
             else -> MqttScreen(modifier = Modifier.weight(1f).fillMaxWidth())

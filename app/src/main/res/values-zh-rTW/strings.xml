@@ -10,6 +10,7 @@
     <string name="tab_env">環境</string>
     <string name="tab_history">歷史</string>
     <string name="tab_home">首頁</string>
+    <string name="tab_test">測試</string>
     <string name="tab_settings">設定</string>
     <string name="tab_collection">集合</string>
     <string name="tab_resources">資源</string>
@@ -17,6 +18,24 @@
     <string name="title_settings">設定</string>
     <string name="theme_page_title">外觀與主題</string>
     <string name="cd_back">返回</string>
+
+    <!-- 首頁面板 -->
+    <string name="dashboard_stats_title">統計</string>
+    <string name="dashboard_tools_title">工具</string>
+    <string name="dashboard_stat_projects">專案</string>
+    <string name="dashboard_stat_history">歷史紀錄</string>
+    <string name="dashboard_stat_requests">已存介面</string>
+    <string name="dashboard_stat_monitors">撥測目標</string>
+
+    <!-- Base64 轉換工具 -->
+    <string name="tool_base64">Base64 轉換</string>
+    <string name="base64_title">Base64 轉換</string>
+    <string name="base64_input_label">輸入內容</string>
+    <string name="base64_output_label">轉換結果</string>
+    <string name="base64_encode">編碼</string>
+    <string name="base64_decode">解碼</string>
+    <string name="base64_empty_hint">暫無內容</string>
+    <string name="base64_invalid">無效的 Base64 輸入</string>
 
     <!-- 通用動作 -->
     <string name="action_cancel">取消</string>

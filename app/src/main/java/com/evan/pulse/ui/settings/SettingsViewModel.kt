@@ -148,9 +148,9 @@ class SettingsViewModel(
         _nav.value = _nav.value.copy(homeProtocolTab = index)
     }
 
-    /** 从集合跳回首页并切到对应协议页，返回时回到主 tab 层级 */
+    /** 从集合跳回测试页并切到对应协议页，返回时回到主 tab 层级 */
     fun openHomeProtocol(index: Int) {
-        _nav.value = _nav.value.copy(selectedTab = 0, homeProtocolTab = index)
+        _nav.value = _nav.value.copy(selectedTab = 1, homeProtocolTab = index)
     }
 
     fun setThemeMode(index: Int) {
