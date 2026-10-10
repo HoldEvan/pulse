@@ -121,9 +121,8 @@ class RhinoScriptExecutor : ScriptExecutor {
                 sandbox.tests.toList()
             )
         } catch (e: ExecutionException) {
-            val cause = e.cause
             ScriptRunResult.Failed(
-                "脚本执行线程异常: ${cause?.message ?: e.message}",
+                "脚本执行线程异常: ${describeThrowable(e.cause)}",
                 sandbox.console.toList(),
                 sandbox.tests.toList()
             )
@@ -164,7 +163,20 @@ class RhinoScriptExecutor : ScriptExecutor {
         return ScriptRunResult.Ok(sandbox.console.toList(), sandbox.tests.toList())
     }
 
-    private fun describeFailure(error: Throwable, reporter: CollectorReporter): String {
+    /** 把异常连同根因链拼成可读文本，便于定位静态初始化失败等隐藏根因 */
+private fun describeThrowable(error: Throwable?): String {
+    if (error == null) return "未知错误"
+    val chain = mutableListOf<String>()
+    var cur: Throwable? = error
+    while (cur != null) {
+        val label = if (cur is ExceptionInInitializerError) "初始器错误" else cur.javaClass.simpleName
+        chain += "$label: ${cur.message ?: "(无信息)"}"
+        cur = cur.cause
+    }
+    return chain.joinToString(" <- ")
+}
+
+private fun describeFailure(error: Throwable, reporter: CollectorReporter): String {
         val lines = mutableListOf<String>()
         readJsStack(error)?.trim()?.takeIf { it.isNotEmpty() }?.let { lines += it }
         lines += reporter.messages

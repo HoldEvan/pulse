@@ -12,28 +12,11 @@
 # Eclipse Paho MQTT talks to itself via reflection and ServiceLoader
 -keep class org.eclipse.paho.client.mqttv3.** { *; }
 
-# Mozilla Rhino 通过类名字符串解析标准内建对象，反射不到就报 Cannot call native method
--keep class org.mozilla.javascript.NativeObject,
-         org.mozilla.javascript.NativeArray,
-         org.mozilla.javascript.NativeArrayIterator,
-         org.mozilla.javascript.NativeString,
-         org.mozilla.javascript.NativeDate,
-         org.mozilla.javascript.NativeError,
-         org.mozilla.javascript.NativePrimitiveError,
-         org.mozilla.javascript.NativeGlobal,
-         org.mozilla.javascript.NativeJSON,
-         org.mozilla.javascript.NativeMath,
-         org.mozilla.javascript.NativeNumber,
-         org.mozilla.javascript.NativeBoolean,
-         org.mozilla.javascript.NativePrimitive,
-         org.mozilla.javascript.NativeWith,
-         org.mozilla.javascript.NativeFunction,
-         org.mozilla.javascript.ScriptableObject,
-         org.mozilla.javascript.Function,
-         org.mozilla.javascript.NativeJavaObject,
-         org.mozilla.javascript.NativeJavaClass,
-         org.mozilla.javascript.NativeJavaMap,
-         org.mozilla.javascript.NativeJavaList { *; }
+# Mozilla Rhino 通过类名字符串解析标准内建对象，反射不到就报 Cannot call native method。
+# 解释执行（optimizationLevel = -1）会用到 Parser、TokenStream、AstRoot 等解析类，
+# 以及大量 Native*/内部类。这些类由 Rhino 内部按名字加载，R8 收缩/混淆掉会触发
+# ClassNotFoundException -> NoClassDefFoundError -> ExceptionInInitializerError。
+-keep class org.mozilla.javascript.** { *; }
 -keepclassmembers class org.mozilla.javascript.ScriptableObject {
     boolean hasProperty(int, org.mozilla.javascript.Scriptable);
 }
