@@ -14,8 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.RadioButtonChecked
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.runtime.Composable
@@ -38,6 +36,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.evan.pulse.R
 import com.evan.pulse.data.model.HistoryEntry
 import com.evan.pulse.data.model.ProjectInfo
+import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.MethodBadge
 import com.evan.pulse.ui.common.roundedPressable
 import com.evan.pulse.ui.common.statusColor
@@ -46,6 +45,9 @@ import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Delete
+import top.yukonga.miuix.kmp.icon.extended.ExpandMore
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlinx.coroutines.launch
@@ -112,6 +114,7 @@ fun HistoryScreen(
                     )
                 }
             }
+            item { BottomBarClearance() }
         }
     }
 
@@ -179,7 +182,7 @@ private fun SwipeToDeleteRow(
 
     Box(modifier = modifier.fillMaxWidth()) {
         Icon(
-            imageVector = Icons.Filled.Delete,
+            imageVector = MiuixIcons.Light.Delete,
             contentDescription = deleteLabel,
             tint = MiuixTheme.colorScheme.error,
             modifier = Modifier.align(Alignment.CenterStart).padding(start = 16.dp)
@@ -286,7 +289,7 @@ private fun ProjectFilterChip(label: String, onClick: () -> Unit) {
                 overflow = TextOverflow.Ellipsis
             )
             Icon(
-                imageVector = Icons.Filled.ArrowDropDown,
+                imageVector = MiuixIcons.Light.ExpandMore,
                 contentDescription = stringResource(R.string.history_filter_label)
             )
         }

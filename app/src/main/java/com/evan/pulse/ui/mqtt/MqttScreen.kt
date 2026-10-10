@@ -2,21 +2,20 @@ package com.evan.pulse.ui.mqtt
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.LinkOff
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.runtime.Composable
@@ -36,9 +35,11 @@ import com.evan.pulse.R
 import com.evan.pulse.data.model.RequestType
 import com.evan.pulse.domain.model.MqttConnectionState
 import com.evan.pulse.ui.collection.SaveRequestDialog
+import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.ConnectionStateIndicator
 import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.eventLogText
+import com.evan.pulse.ui.common.roundedPressable
 import com.evan.pulse.ui.history.UiEventLine
 import com.evan.pulse.ui.l10n.localizedLabels
 import top.yukonga.miuix.kmp.basic.Button
@@ -49,6 +50,11 @@ import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Close
+import top.yukonga.miuix.kmp.icon.extended.Delete
+import top.yukonga.miuix.kmp.icon.extended.Link
+import top.yukonga.miuix.kmp.icon.extended.Send
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -83,6 +89,12 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
             label = stringResource(R.string.mqtt_section_broker),
             onSaveClick = { showSave = true }
         )
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+        ) {
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(12.dp)) {
                 Row(
@@ -143,7 +155,7 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                         enabled = state == MqttConnectionState.IDLE || state == MqttConnectionState.DISCONNECTED || state == MqttConnectionState.FAILED,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Icon(Icons.Filled.Link, contentDescription = null)
+                        Icon(MiuixIcons.Light.Link, contentDescription = null)
                         Text(stringResource(R.string.action_connect), modifier = Modifier.padding(start = 4.dp))
                     }
                     Button(
@@ -204,7 +216,7 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                             fontSize = 13.sp
                         )
                         Icon(
-                            imageVector = Icons.Filled.Close,
+                            imageVector = MiuixIcons.Light.Close,
                             contentDescription = stringResource(R.string.action_unsubscribe),
                             modifier = Modifier
                                 .clickable { viewModel.removeSubscription(index) }
@@ -247,39 +259,44 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                         enabled = state == MqttConnectionState.CONNECTED,
                         modifier = Modifier.padding(start = 8.dp)
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(R.string.action_publish))
+                        Icon(MiuixIcons.Light.Send, contentDescription = stringResource(R.string.action_publish))
                     }
                 }
             }
         }
 
-        SmallTitle(text = stringResource(R.string.event_stream_title))
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            SmallTitle(
+                text = stringResource(R.string.event_stream_title),
+                modifier = Modifier.weight(1f)
+            )
             CopyIconButton(
                 text = eventLogText(lines),
                 label = stringResource(R.string.cd_copy_stream)
             )
             Icon(
-                imageVector = Icons.Filled.Delete,
+                imageVector = MiuixIcons.Light.Delete,
                 contentDescription = stringResource(R.string.cd_clear_stream),
                 modifier = Modifier
-                    .clickable { viewModel.clearLog() }
-                    .padding(end = 6.dp, bottom = 4.dp)
+                    .roundedPressable(onClick = { viewModel.clearLog() })
+                    .padding(6.dp)
             )
         }
-        Card(modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
+        Card(modifier = Modifier.fillMaxWidth().height(360.dp).padding(bottom = 0.dp)) {
             LazyColumn(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxSize()
                     .padding(8.dp)
             ) {
                 items(lines) { line ->
                     EventLine(line)
                 }
             }
+        }
+        BottomBarClearance()
         }
     }
 

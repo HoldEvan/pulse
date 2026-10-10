@@ -17,10 +17,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -51,6 +48,7 @@ import com.evan.pulse.domain.model.KeyValue
 import com.evan.pulse.domain.pathOnly
 import com.evan.pulse.ui.collection.SaveRequestDialog
 import com.evan.pulse.ui.common.BodyViewMode
+import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.KeyValueEditor
 import com.evan.pulse.ui.common.MonospaceBlock
@@ -69,6 +67,10 @@ import top.yukonga.miuix.kmp.basic.TabRowWithContour
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Add
+import top.yukonga.miuix.kmp.icon.extended.Close
+import top.yukonga.miuix.kmp.icon.extended.Send
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -157,6 +159,7 @@ fun HttpScreen(
                 }
             )
             ResponseCard(viewModel)
+            BottomBarClearance()
         }
     }
 
@@ -211,7 +214,7 @@ private fun RequestEditorCard(viewModel: HttpViewModel) {
                     .padding(top = 8.dp)
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Send,
+                    imageVector = MiuixIcons.Light.Send,
                     contentDescription = null,
                     modifier = Modifier.padding(end = 4.dp)
                 )
@@ -478,7 +481,7 @@ private fun BodyEditor(viewModel: HttpViewModel) {
                             )
                         }
                         Icon(
-                            imageVector = Icons.Filled.Close,
+                            imageVector = MiuixIcons.Light.Close,
                             contentDescription = stringResource(R.string.cd_delete),
                             modifier = Modifier
                                 .clickable { viewModel.removeFormField(index) }
@@ -513,7 +516,7 @@ private fun AddFieldButton(label: String, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            imageVector = Icons.Filled.Add,
+            imageVector = MiuixIcons.Light.Add,
             contentDescription = stringResource(R.string.cd_add)
         )
         Text(label, modifier = Modifier.padding(start = 6.dp))

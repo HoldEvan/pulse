@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.evan.pulse.R
+import com.evan.pulse.ui.common.BottomBarClearance
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
@@ -27,16 +28,16 @@ import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Add
+import top.yukonga.miuix.kmp.icon.extended.Close
+import top.yukonga.miuix.kmp.icon.extended.Delete
+import top.yukonga.miuix.kmp.icon.extended.Edit
+import top.yukonga.miuix.kmp.icon.extended.Settings
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.preference.RadioButtonPreference
 import top.yukonga.miuix.kmp.preference.RadioButtonLocation
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Settings
 
 @Composable
 fun EnvironmentScreen(modifier: Modifier = Modifier, viewModel: EnvViewModel = viewModel()) {
@@ -77,7 +78,7 @@ fun EnvironmentScreen(modifier: Modifier = Modifier, viewModel: EnvViewModel = v
                                     .size(32.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Filled.Edit,
+                                    imageVector = MiuixIcons.Light.Edit,
                                     contentDescription = stringResource(R.string.cd_edit)
                                 )
                             }
@@ -88,7 +89,7 @@ fun EnvironmentScreen(modifier: Modifier = Modifier, viewModel: EnvViewModel = v
                                     .size(32.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Filled.Delete,
+                                    imageVector = MiuixIcons.Light.Delete,
                                     contentDescription = stringResource(R.string.action_delete)
                                 )
                             }
@@ -103,7 +104,7 @@ fun EnvironmentScreen(modifier: Modifier = Modifier, viewModel: EnvViewModel = v
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.Settings,
+                            imageVector = MiuixIcons.Light.Settings,
                             contentDescription = null,
                             modifier = Modifier.size(28.dp),
                             tint = MiuixTheme.colorScheme.outline
@@ -122,13 +123,14 @@ fun EnvironmentScreen(modifier: Modifier = Modifier, viewModel: EnvViewModel = v
                     title = stringResource(R.string.env_create_title),
                     startAction = {
                         Icon(
-                            imageVector = Icons.Filled.Add,
+imageVector = MiuixIcons.Light.Add,
                             contentDescription = stringResource(R.string.cd_add)
                         )
                     }
                 )
             }
         }
+        BottomBarClearance()
     }
 
     if (showEditor) {
@@ -150,7 +152,7 @@ fun EnvironmentScreen(modifier: Modifier = Modifier, viewModel: EnvViewModel = v
                 Row(modifier = Modifier.padding(top = 8.dp)) {
                     Text(stringResource(R.string.env_vars_title), modifier = Modifier.weight(1f))
                     Icon(
-                        imageVector = Icons.Filled.Add,
+                        imageVector = MiuixIcons.Light.Add,
                         contentDescription = stringResource(R.string.cd_add_var),
                         modifier = Modifier.clickable { viewModel.addVar() }
                     )
@@ -177,7 +179,7 @@ fun EnvironmentScreen(modifier: Modifier = Modifier, viewModel: EnvViewModel = v
                                 .padding(start = 6.dp)
                         )
                         Icon(
-                            imageVector = Icons.Filled.Close,
+                            imageVector = MiuixIcons.Light.Close,
                             contentDescription = stringResource(R.string.cd_remove_var),
                             modifier = Modifier
                                 .clickable { viewModel.removeVar(index) }

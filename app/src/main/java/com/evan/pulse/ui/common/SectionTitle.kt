@@ -3,7 +3,14 @@ package com.evan.pulse.ui.common
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,4 +45,15 @@ fun SectionTitleRow(
         SmallTitle(text = label, modifier = Modifier.weight(1f))
         actions()
     }
+}
+
+/** 滚动内容末尾的底部留白 box：悬浮底栏浮在内容之上，滚动到最底部时
+ *  需要一个空白区让最后一条内容不被底栏遮住。放进各标签页滚动区末尾。 */
+@Composable
+fun BottomBarClearance(modifier: Modifier = Modifier) {
+    val navInset = WindowInsets.navigationBars
+        .only(WindowInsetsSides.Bottom)
+        .asPaddingValues()
+        .calculateBottomPadding()
+    Spacer(modifier = modifier.height(96.dp + navInset))
 }

@@ -2,8 +2,6 @@ package com.evan.pulse.ui.common
 
 import android.content.ClipData
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -24,6 +22,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Copy
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -81,7 +81,7 @@ fun CopyIconButton(text: String?, label: String, modifier: Modifier = Modifier) 
     }
 
     Icon(
-        imageVector = Icons.Filled.ContentCopy,
+        imageVector = MiuixIcons.Light.Copy,
         contentDescription = label,
         tint = if (copied) COPIED_TINT else MiuixTheme.colorScheme.onBackground,
         modifier = modifier

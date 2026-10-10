@@ -34,6 +34,7 @@ import com.evan.pulse.data.backup.WebDavStage
 import com.evan.pulse.data.cache.CacheCleaner
 import com.evan.pulse.di.ServiceLocator
 import com.evan.pulse.ui.common.AppToast
+import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.CardSectionTitle
 import com.evan.pulse.ui.l10n.localizedLabels
 import top.yukonga.miuix.kmp.basic.BasicComponent
@@ -568,12 +569,7 @@ fun SettingsScreen(
             }
         }
 
-        Text(
-            text = stringResource(R.string.about_footer),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 12.dp, bottom = 24.dp)
-        )
+        BottomBarClearance()
     }
     }
 

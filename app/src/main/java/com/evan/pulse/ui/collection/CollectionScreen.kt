@@ -15,11 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DragIndicator
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.RadioButtonChecked
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.runtime.Composable
@@ -43,6 +39,7 @@ import com.evan.pulse.data.model.CollectionTree
 import com.evan.pulse.data.model.SavedRequest
 import com.evan.pulse.data.model.httpMethod
 import com.evan.pulse.data.model.targetUrl
+import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.DialogActions
 import com.evan.pulse.ui.common.MethodBadge
 import com.evan.pulse.ui.common.roundedPressable
@@ -54,6 +51,11 @@ import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.ChevronForward
+import top.yukonga.miuix.kmp.icon.extended.Delete
+import top.yukonga.miuix.kmp.icon.extended.Edit
+import top.yukonga.miuix.kmp.icon.extended.Folder
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 
 /**
@@ -140,7 +142,7 @@ fun CollectionScreen(
                 current?.let { folder ->
                     RowAction(
                         label = stringResource(R.string.cd_rename),
-                        icon = Icons.Filled.Edit,
+icon = MiuixIcons.Light.Edit,
                         onClick = {
                             renameName = folder.name
                             renameOpen = true
@@ -148,7 +150,7 @@ fun CollectionScreen(
                     )
                     RowAction(
                         label = stringResource(R.string.cd_delete),
-                        icon = Icons.Filled.Delete,
+                        icon = MiuixIcons.Light.Delete,
                         onClick = { deleteOpen = true }
                     )
                 }
@@ -216,6 +218,7 @@ fun CollectionScreen(
                 modifier = Modifier.weight(1f)
             )
         }
+        BottomBarClearance()
     }
 
     if (showCreate) {
@@ -501,7 +504,7 @@ private fun FolderRow(
             onClick = onMoveClick
         )
         Icon(
-            imageVector = Icons.Filled.Folder,
+            imageVector = MiuixIcons.Light.Folder,
             contentDescription = null,
             modifier = Modifier.padding(end = 6.dp)
         )
@@ -518,7 +521,7 @@ private fun FolderRow(
             overflow = TextOverflow.Ellipsis
         )
         Icon(
-            imageVector = Icons.Filled.ChevronRight,
+            imageVector = MiuixIcons.Light.ChevronForward,
             contentDescription = null,
             modifier = Modifier.padding(end = 4.dp)
         )
@@ -578,7 +581,7 @@ private fun RequestRow(
         Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
             RowAction(
                 label = stringResource(R.string.cd_rename),
-                icon = Icons.Filled.Edit,
+                icon = MiuixIcons.Light.Edit,
                 onClick = onRename
             )
             RowAction(
@@ -588,7 +591,7 @@ private fun RequestRow(
             )
             RowAction(
                 label = stringResource(R.string.cd_delete),
-                icon = Icons.Filled.Delete,
+                icon = MiuixIcons.Light.Delete,
                 onClick = onDelete
             )
         }

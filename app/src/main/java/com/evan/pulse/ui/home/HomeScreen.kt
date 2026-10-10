@@ -5,10 +5,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.evan.pulse.R
@@ -26,19 +22,22 @@ private val homeTabLabels = listOf(
     R.string.tab_mqtt
 )
 
-/** 首页：HTTP / WS / MQTT / SSE 四个协议页通过顶部 TabRow 切换 */
+/** 首页：HTTP / WS / MQTT / SSE 四个协议页通过顶部 TabRow 切换，协议选择由外层 NavState 持有 */
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier, onOpenScriptEditor: (Int) -> Unit = {}) {
-    var protocol by rememberSaveable { mutableIntStateOf(0) }
-
+fun HomeScreen(
+    modifier: Modifier = Modifier,
+    onOpenScriptEditor: (Int) -> Unit = {},
+    protocolTab: Int = 0,
+    onProtocolTabChange: (Int) -> Unit = {}
+) {
     Column(modifier = modifier.fillMaxSize()) {
         TabRowWithContour(
             tabs = homeTabLabels.localizedLabels(),
-            selectedTabIndex = protocol,
-            onTabSelected = { protocol = it },
+            selectedTabIndex = protocolTab,
+            onTabSelected = onProtocolTabChange,
             modifier = Modifier.padding(horizontal = 12.dp)
         )
-        when (protocol) {
+        when (protocolTab) {
             0 -> HttpScreen(modifier = Modifier.weight(1f).fillMaxWidth(), onOpenScriptEditor = onOpenScriptEditor)
             1 -> SseScreen(modifier = Modifier.weight(1f).fillMaxWidth())
             2 -> WsScreen(modifier = Modifier.weight(1f).fillMaxWidth())

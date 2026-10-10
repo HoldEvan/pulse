@@ -14,8 +14,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.LinkOff
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.runtime.Composable
@@ -37,6 +35,7 @@ import com.evan.pulse.domain.model.SseConnectionState
 import com.evan.pulse.domain.pathOnly
 import com.evan.pulse.ui.collection.SaveRequestDialog
 import com.evan.pulse.ui.common.CardSectionTitle
+import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.ConnectionStateIndicator
 import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.EventLine
@@ -52,6 +51,9 @@ import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.preference.CheckboxPreference
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Delete
+import top.yukonga.miuix.kmp.icon.extended.Link
 
 @Composable
 private fun SectionTitleRow(label: String, onSaveClick: () -> Unit) {
@@ -83,7 +85,6 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
         modifier = modifier
             .fillMaxSize()
             .padding(horizontal = 12.dp)
-            .padding(bottom = 24.dp)
     ) {
         SectionTitleRow(
             label = stringResource(R.string.action_connect),
@@ -164,7 +165,7 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                             enabled = state == SseConnectionState.IDLE || state == SseConnectionState.CLOSED || state == SseConnectionState.FAILED,
                             modifier = Modifier.weight(1f)
                         ) {
-                            Icon(Icons.Filled.Link, contentDescription = null)
+                            Icon(MiuixIcons.Light.Link, contentDescription = null)
                             Text(stringResource(R.string.action_connect), modifier = Modifier.padding(start = 4.dp))
                         }
                         Button(
@@ -200,7 +201,7 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                     label = stringResource(R.string.cd_copy_stream)
                 )
                 Icon(
-                    imageVector = Icons.Filled.Delete,
+                    imageVector = MiuixIcons.Light.Delete,
                     contentDescription = stringResource(R.string.cd_clear_stream),
                     modifier = Modifier
                         .clickable { viewModel.clearLog() }
@@ -218,6 +219,7 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                     }
                 }
             }
+            BottomBarClearance()
         }
     }
 

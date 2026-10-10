@@ -6,9 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,6 +16,9 @@ import com.evan.pulse.domain.model.KeyValue
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Add
+import top.yukonga.miuix.kmp.icon.extended.Close
 
 /**
  * 通用键值对编辑器（参数 / 请求头等），供 HTTP 与 SSE 等协议页共用。
@@ -59,7 +59,7 @@ fun KeyValueEditor(
                         .padding(start = 6.dp)
                 )
                 Icon(
-                    imageVector = Icons.Filled.Close,
+                    imageVector = MiuixIcons.Light.Close,
                     contentDescription = stringResource(R.string.cd_delete),
                     modifier = Modifier
                         .clickable { onRemove(index) }
@@ -74,7 +74,7 @@ fun KeyValueEditor(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                imageVector = Icons.Filled.Add,
+                imageVector = MiuixIcons.Light.Add,
                 contentDescription = stringResource(R.string.cd_add)
             )
             Text(stringResource(R.string.kv_add_row), modifier = Modifier.padding(start = 6.dp))

@@ -431,6 +431,8 @@
     <string name="monitor_interval_hours">%1$d 小時</string>
     <string name="monitor_enabled_label">啟用自動檢查</string>
     <string name="monitor_run_now">立即檢查一次</string>
+    <string name="monitor_start">啟動</string>
+    <string name="monitor_pause">暫停</string>
     <string name="monitor_state_ok">通</string>
     <string name="monitor_state_down">不通</string>
     <string name="monitor_state_idle">未檢查</string>

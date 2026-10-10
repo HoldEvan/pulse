@@ -431,6 +431,8 @@
     <string name="monitor_interval_hours">%1$d h</string>
     <string name="monitor_enabled_label">Run automatic checks</string>
     <string name="monitor_run_now">Check now</string>
+    <string name="monitor_start">Start</string>
+    <string name="monitor_pause">Pause</string>
     <string name="monitor_state_ok">Up</string>
     <string name="monitor_state_down">Down</string>
     <string name="monitor_state_idle">Unchecked</string>

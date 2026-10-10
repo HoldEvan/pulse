@@ -136,8 +136,6 @@ class MonitorViewModel : ViewModel() {
         scheduler.sync()
     }
 
-    fun runOnce(target: MonitorTarget) = scheduler.runOnce(target.id)
-
     fun requestDelete(target: MonitorTarget) {
         deleteTarget = target
     }

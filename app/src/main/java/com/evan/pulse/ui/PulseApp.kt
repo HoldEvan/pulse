@@ -5,20 +5,12 @@ import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.NetworkCheck
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -33,7 +25,6 @@ import com.evan.pulse.R
 import com.evan.pulse.ui.back.MiuixPredictiveBack
 import com.evan.pulse.ui.common.ToastHost
 import com.evan.pulse.ui.glass.LiquidGlassNavigationBar
-import com.evan.pulse.ui.glass.liquidGlassBottomInset
 import com.evan.pulse.ui.history.HistoryDetailScreen
 import com.evan.pulse.ui.history.HistoryScreen
 import com.evan.pulse.ui.history.HistoryViewModel
@@ -63,6 +54,11 @@ import top.yukonga.miuix.kmp.blur.LayerBackdrop
 import top.yukonga.miuix.kmp.blur.isRuntimeShaderSupported
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.ChevronBackward
+import top.yukonga.miuix.kmp.icon.extended.Folder
+import top.yukonga.miuix.kmp.icon.extended.Home
+import top.yukonga.miuix.kmp.icon.extended.Settings
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.platform
 
@@ -91,11 +87,11 @@ private fun PageTransition(
 fun PulseApp(settingsViewModel: SettingsViewModel) {
     val tabs = remember {
         listOf(
-            PulseTab(R.string.tab_home, Icons.Filled.Home),
-            PulseTab(R.string.tab_resources, Icons.Filled.Folder),
+            PulseTab(R.string.tab_home, MiuixIcons.Light.Home),
+            PulseTab(R.string.tab_resources, MiuixIcons.Light.Folder),
             PulseTab(R.string.tab_monitor, Icons.Filled.NetworkCheck),
             PulseTab(R.string.tab_history, Icons.Filled.History),
-            PulseTab(R.string.tab_settings, Icons.Filled.Settings)
+            PulseTab(R.string.tab_settings, MiuixIcons.Light.Settings)
         )
     }
 
@@ -172,11 +168,13 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
             else -> when (nav.selectedTab) {
                 0 -> HomeScreen(
                     modifier = Modifier.fillMaxSize(),
+                    protocolTab = nav.homeProtocolTab,
+                    onProtocolTabChange = { settingsViewModel.selectHomeProtocol(it) },
                     onOpenScriptEditor = { settingsViewModel.pushScriptEditor(it) }
                 )
                 1 -> ResourcesScreen(
                     modifier = Modifier.fillMaxSize(),
-                    onSwitchTab = { settingsViewModel.selectTab(it) }
+                    onSwitchTab = { settingsViewModel.openHomeProtocol(it) }
                 )
                 2 -> MonitorScreen(
                     modifier = Modifier.fillMaxSize(),
@@ -203,7 +201,7 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                 navigationIcon = {
                     IconButton(onClick = { settingsViewModel.goBack() }) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            imageVector = MiuixIcons.Light.ChevronBackward,
                             contentDescription = stringResource(R.string.cd_back)
                         )
                     }
@@ -215,7 +213,7 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                 navigationIcon = {
                     IconButton(onClick = { settingsViewModel.goBack() }) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            imageVector = MiuixIcons.Light.ChevronBackward,
                             contentDescription = stringResource(R.string.cd_back)
                         )
                     }
@@ -227,7 +225,7 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                 navigationIcon = {
                     IconButton(onClick = { settingsViewModel.goBack() }) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            imageVector = MiuixIcons.Light.ChevronBackward,
                             contentDescription = stringResource(R.string.cd_back)
                         )
                     }
@@ -241,7 +239,7 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                 navigationIcon = {
                     IconButton(onClick = { settingsViewModel.goBack() }) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            imageVector = MiuixIcons.Light.ChevronBackward,
                             contentDescription = stringResource(R.string.cd_back)
                         )
                     }
@@ -253,7 +251,7 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                 navigationIcon = {
                     IconButton(onClick = { settingsViewModel.goBack() }) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            imageVector = MiuixIcons.Light.ChevronBackward,
                             contentDescription = stringResource(R.string.cd_back)
                         )
                     }
@@ -326,12 +324,7 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                         .fillMaxSize()
                         .padding(
                             top = paddingValues.calculateTopPadding(),
-                            bottom = contentBottomPadding(
-                                paddingValues,
-                                page,
-                                settings.floatingBottomBar,
-                                glassBottomBar
-                            )
+                            bottom = contentBottomPadding(paddingValues, page)
                         )
                 ) {
                     inner(page)
@@ -368,33 +361,11 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
     }
 }
 
-/** 悬浮底栏（非玻璃版）从屏幕底边占用的竖向空间：栏高 52dp + 底部安全区，
- *  取值与 miuix FloatingNavigationBar 内部一致，用于给页面内容留位 */
+/** 悬浮底栏浮在内容之上，内容区底部不再预留底栏高度，改为在每页滚动内容末尾放一个
+ *  空白 box（见 BottomBarClearance），这样内容能滚到底栏下面、最后一条也不会被压住。
+ *  非标签页（无底栏）仍保留 Scaffold 底部留白。 */
 @Composable
-private fun floatingNavigationBarInset(): Dp {
-    val navInset = WindowInsets.navigationBars
-        .only(WindowInsetsSides.Bottom)
-        .asPaddingValues()
-        .calculateBottomPadding()
-    return 52.dp + if (navInset != 0.dp) 26.dp + navInset else 36.dp
-}
-
-/** 悬浮底栏浮在内容之上，内容底部再多留一段，最后一行才不会贴到栏上沿或被压住 */
-private val floatingBarSlack: Dp = 24.dp
-
-/** 页面内容底部的留位：标签页按悬浮底栏的实际高度预留，避免最后一条被底栏遮住 */
-@Composable
-private fun contentBottomPadding(
-    paddingValues: PaddingValues,
-    page: Int,
-    floating: Boolean,
-    glass: Boolean,
-): Dp {
+private fun contentBottomPadding(paddingValues: PaddingValues, page: Int): Dp {
     val scaffold = paddingValues.calculateBottomPadding()
-    return when {
-        page != LEVEL_TABS -> scaffold
-        glass -> scaffold.coerceAtLeast(liquidGlassBottomInset() + floatingBarSlack)
-        floating -> scaffold.coerceAtLeast(floatingNavigationBarInset() + floatingBarSlack)
-        else -> scaffold
-    }
+    return if (page == LEVEL_TABS) 0.dp else scaffold
 }

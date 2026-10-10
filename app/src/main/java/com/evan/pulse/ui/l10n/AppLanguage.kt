@@ -1,7 +1,10 @@
 package com.evan.pulse.ui.l10n
 
 import android.content.Context
+import android.content.ContextWrapper
+import android.content.res.AssetManager
 import android.content.res.Configuration
+import android.content.res.Resources
 import android.os.LocaleList
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -25,6 +28,23 @@ enum class AppLanguage(val tag: String?) {
 /** 下标越界或历史数据缺失时回退到简体中文，避免出现空白文案 */
 fun fromIndex(index: Int): AppLanguage =
     AppLanguage.entries.getOrElse(index) { AppLanguage.ZH_CN }
+
+/**
+ * 保持 Activity 引用链的本地化 Context 包装。
+ *
+ * createConfigurationContext 返回的 Context 不是 ContextWrapper，
+ * 直接用作 LocalContext 会让 rememberLauncherForActivityResult 等
+ * 沿 baseContext 链查找 ActivityResultRegistryOwner 时失败并崩溃。
+ * 这里以原始 Context（Activity）为 base，仅把资源/Assets 委托给
+ * 本地化派生 Context，保证资源语言生效的同时 Activity 链仍然完整。
+ */
+private class LocalizedContextWrapper(
+    base: Context,
+    private val localized: Context,
+) : ContextWrapper(base) {
+    override fun getResources(): Resources = localized.resources
+    override fun getAssets(): AssetManager = localized.assets
+}
 
 /**
  * 按固定 locale 派生出一个新的 Context，供 stringResource 解析本地化资源。
@@ -52,7 +72,12 @@ fun Context.localeContext(language: AppLanguage): Context {
  */
 @Composable
 fun LocalizedRoot(language: AppLanguage, content: @Composable () -> Unit) {
-    val localized = LocalContext.current.localeContext(language)
+    val base = LocalContext.current
+    val localized = if (language.tag == null) {
+        base
+    } else {
+        LocalizedContextWrapper(base, base.localeContext(language))
+    }
 
     CompositionLocalProvider(
         LocalContext provides localized,

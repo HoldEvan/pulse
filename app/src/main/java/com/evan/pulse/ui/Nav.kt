@@ -28,6 +28,8 @@ const val LEVEL_SCRIPT_DOCS = 6
 data class NavState(
     val stack: List<Int> = listOf(LEVEL_TABS),
     val selectedTab: Int = 0,
+    /** 首页内的协议子页：0=HTTP、1=SSE、2=WS、3=MQTT，随主 tab 一起保存 */
+    val homeProtocolTab: Int = 0,
     val historyEntryId: Long? = null,
     val scriptTarget: Int? = null,
 ) {

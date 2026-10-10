@@ -12,11 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -29,7 +24,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.state.ToggleableState
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.evan.pulse.R
 import com.evan.pulse.data.model.MonitorRecord
@@ -50,13 +44,18 @@ import java.util.Locale
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
-import top.yukonga.miuix.kmp.basic.Checkbox
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.preference.CheckboxLocation
 import top.yukonga.miuix.kmp.preference.CheckboxPreference
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Delete
+import top.yukonga.miuix.kmp.icon.extended.Edit
+import top.yukonga.miuix.kmp.icon.extended.More
+import top.yukonga.miuix.kmp.icon.extended.Pause
+import top.yukonga.miuix.kmp.icon.extended.Play
 import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -100,7 +99,7 @@ fun MonitorScreen(
             actions = {
                 IconButton(onClick = onOpenRecordsList) {
                     Icon(
-                        imageVector = Icons.Filled.MoreVert,
+                        imageVector = MiuixIcons.Light.More,
                         contentDescription = stringResource(R.string.monitor_records_more)
                     )
                 }
@@ -160,7 +159,6 @@ fun MonitorScreen(
                                 target = target,
                                 run = runs[target.id],
                                 onToggleEnabled = { viewModel.toggleEnabled(target) },
-                                onRunNow = { viewModel.runOnce(target) },
                                 onEdit = { viewModel.openEdit(target) },
                                 onDelete = { viewModel.requestDelete(target) },
                                 modifier = Modifier
@@ -178,7 +176,7 @@ fun MonitorScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.PlayArrow,
+                            imageVector = MiuixIcons.Light.Play,
                             contentDescription = null,
                             modifier = Modifier.size(28.dp),
                             tint = MiuixTheme.colorScheme.outline
@@ -363,13 +361,12 @@ fun MonitorScreen(
 
 }
 
-/** 单个拨测目标：勾选框控制启停，右侧可立即检查一次 */
+/** 单个拨测目标：启停按钮控制启停，右侧提供编辑与删除 */
 @Composable
 private fun MonitorTargetRow(
     target: MonitorTarget,
     run: MonitorRun?,
     onToggleEnabled: () -> Unit,
-    onRunNow: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
@@ -391,15 +388,9 @@ private fun MonitorTargetRow(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Checkbox(
-                state = if (target.enabled) ToggleableState.On else ToggleableState.Off,
-                onClick = onToggleEnabled
-            )
             Text(
                 text = target.name,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 12.dp),
+                modifier = Modifier.weight(1f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 fontSize = 15.sp
@@ -416,9 +407,7 @@ private fun MonitorTargetRow(
             ConnectionStateIndicator(color = stateColor, label = stateLabel)
         }
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 44.dp, end = 4.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -430,14 +419,18 @@ private fun MonitorTargetRow(
                 color = MiuixTheme.colorScheme.outline
             )
             IconButton(
-                onClick = onRunNow,
+                onClick = onToggleEnabled,
                 modifier = Modifier
                     .padding(end = 2.dp)
                     .size(32.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Filled.PlayArrow,
-                    contentDescription = stringResource(R.string.monitor_run_now)
+                    imageVector = if (target.enabled) MiuixIcons.Light.Pause else MiuixIcons.Light.Play,
+                    contentDescription = if (target.enabled) {
+                        stringResource(R.string.monitor_pause)
+                    } else {
+                        stringResource(R.string.monitor_start)
+                    }
                 )
             }
             IconButton(
@@ -447,7 +440,7 @@ private fun MonitorTargetRow(
                     .size(32.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Filled.Edit,
+                    imageVector = MiuixIcons.Light.Edit,
                     contentDescription = stringResource(R.string.cd_edit)
                 )
             }
@@ -458,7 +451,7 @@ private fun MonitorTargetRow(
                     .size(32.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Filled.Delete,
+                    imageVector = MiuixIcons.Light.Delete,
                     contentDescription = stringResource(R.string.action_delete)
                 )
             }

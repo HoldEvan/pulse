@@ -8,10 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -34,6 +31,10 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.basic.TopAppBar
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Add
+import top.yukonga.miuix.kmp.icon.extended.Delete
+import top.yukonga.miuix.kmp.icon.extended.Edit
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.preference.CheckboxPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -107,7 +108,7 @@ fun ProjectBar(
             if (onAddMonitor != null) {
                 IconButton(onClick = onAddMonitor) {
                     Icon(
-                        imageVector = Icons.Filled.Add,
+                        imageVector = MiuixIcons.Light.Add,
                         contentDescription = stringResource(R.string.monitor_add)
                     )
                 }
@@ -147,7 +148,7 @@ fun ProjectBar(
                                 modifier = Modifier.weight(1f)
                             )
                             Icon(
-                                imageVector = Icons.Filled.Edit,
+                                imageVector = MiuixIcons.Light.Edit,
                                 contentDescription = stringResource(R.string.cd_rename),
                                 modifier = Modifier
                                     .clickable {
@@ -157,7 +158,7 @@ fun ProjectBar(
                                     .padding(6.dp)
                             )
                             Icon(
-                                imageVector = Icons.Filled.Delete,
+                                imageVector = MiuixIcons.Light.Delete,
                                 contentDescription = stringResource(R.string.action_delete),
                                 modifier = Modifier
                                     .clickable { deleting = project }

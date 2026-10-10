@@ -21,18 +21,12 @@ import com.evan.pulse.domain.AuthApplier
 import com.evan.pulse.domain.PlaceholderResolver
 import com.evan.pulse.domain.model.AuthConfig
 import com.evan.pulse.domain.model.KeyValue
-import com.evan.pulse.domain.model.MqttConfig
-import com.evan.pulse.domain.model.MqttConnectionState
-import com.evan.pulse.domain.model.MqttEvent
-import com.evan.pulse.domain.model.SseConfig
-import com.evan.pulse.domain.model.SseConnectionState
-import com.evan.pulse.domain.model.SseEvent
-import com.evan.pulse.domain.model.WsConfig
-import com.evan.pulse.domain.model.WsConnectionState
-import com.evan.pulse.domain.model.WsEvent
 import com.evan.pulse.domain.net.HttpEngine
+import com.evan.pulse.domain.net.KtorSseEngine
+import com.evan.pulse.domain.net.KtorWsEngine
 import com.evan.pulse.domain.net.MqttEngine
 import com.evan.pulse.domain.net.OkHttpEngine
+import com.evan.pulse.domain.net.PahoMqttEngine
 import com.evan.pulse.domain.net.SseEngine
 import com.evan.pulse.domain.net.WsEngine
 import com.evan.pulse.domain.script.RhinoScriptExecutor
@@ -40,23 +34,11 @@ import com.evan.pulse.domain.script.ScriptEnvWriter
 import android.content.Context
 import android.util.Base64
 import java.io.File
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 class SimplePlaceholderResolver : PlaceholderResolver {
     override fun resolve(text: String, vars: Map<String, String>): PlaceholderResolver.ResolveResult {
@@ -113,135 +95,6 @@ class ActiveEnvWriter : ScriptEnvWriter {
         val envId = ServiceLocator.envStore.activeEnvId(projectId) ?: return
         val env = ServiceLocator.envStore.environments.value.firstOrNull { it.id == envId } ?: return
         ServiceLocator.envStore.setVariables(envId, env.variables.filter { it.first != name })
-    }
-}
-
-class StubWsEngine : WsEngine {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val _state = MutableStateFlow(WsConnectionState.IDLE)
-    override val state: StateFlow<WsConnectionState> = _state.asStateFlow()
-    private val _events = MutableSharedFlow<WsEvent>(extraBufferCapacity = 256)
-    override val events: SharedFlow<WsEvent> = _events.asSharedFlow()
-    private var closed = CompletableDeferred<Unit>()
-
-    override suspend fun connect(config: WsConfig) {
-        _state.value = WsConnectionState.CONNECTING
-        delay(700)
-        closed = CompletableDeferred()
-        _state.value = WsConnectionState.CONNECTED
-        _events.emit(WsEvent.Connected(System.currentTimeMillis()))
-        _events.emit(
-            WsEvent.TextReceived(
-                "{\"stub\":true,\"message\":\"WebSocket 引擎尚未接入，这是本地模拟连接\"}",
-                System.currentTimeMillis()
-            )
-        )
-    }
-
-    override suspend fun send(text: String) {
-        if (_state.value != WsConnectionState.CONNECTED) return
-        _events.emit(WsEvent.Sent(text, System.currentTimeMillis()))
-        scope.launch {
-            delay(300)
-            _events.emit(
-                WsEvent.TextReceived(
-                    text.reversed().ifEmpty { text },
-                    System.currentTimeMillis()
-                )
-            )
-        }
-    }
-
-    override suspend fun close() {
-        _state.value = WsConnectionState.CLOSED
-        _events.emit(WsEvent.Closed("用户断开 (stub)", System.currentTimeMillis()))
-        closed.complete(Unit)
-    }
-}
-
-/** 本地模拟 SSE 引擎：连接后按固定间隔推送事件帧，用于在网络层接入前验证 UI 与数据流 */
-class StubSseEngine : SseEngine {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val _state = MutableStateFlow(SseConnectionState.IDLE)
-    override val state: StateFlow<SseConnectionState> = _state.asStateFlow()
-    private val _events = MutableSharedFlow<SseEvent>(extraBufferCapacity = 256)
-    override val events: SharedFlow<SseEvent> = _events.asSharedFlow()
-
-    @Volatile private var streamJob: Job? = null
-    @Volatile private var eventFilter = ""
-
-    override suspend fun connect(config: SseConfig) {
-        _state.value = SseConnectionState.CONNECTING
-        eventFilter = config.eventFilter.trim()
-        delay(700)
-        _state.value = SseConnectionState.CONNECTED
-        _events.emit(SseEvent.Connected(System.currentTimeMillis()))
-        _events.emit(SseEvent.Comment("SSE 引擎尚未接入，以下为本地模拟事件流", System.currentTimeMillis()))
-
-        streamJob?.cancel()
-        streamJob = scope.launch {
-            var index = 0
-            while (true) {
-                index++
-                val name = eventFilter.ifEmpty { "message" }
-                _events.emit(
-                    SseEvent.FrameReceived(
-                        id = index.toString(),
-                        event = name,
-                        data = """{"stub":true,"index":$index,"url":"${config.url}","timestamp":${System.currentTimeMillis()}}""",
-                        timestamp = System.currentTimeMillis()
-                    )
-                )
-                delay(2_000)
-            }
-        }
-    }
-
-    override suspend fun close() {
-        streamJob?.cancel()
-        streamJob = null
-        _state.value = SseConnectionState.CLOSED
-        _events.emit(SseEvent.Closed("用户断开 (stub)", System.currentTimeMillis()))
-    }
-}
-
-class StubMqttEngine : MqttEngine {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val _state = MutableStateFlow(MqttConnectionState.IDLE)
-    override val state: StateFlow<MqttConnectionState> = _state.asStateFlow()
-    private val _events = MutableSharedFlow<MqttEvent>(extraBufferCapacity = 256)
-    override val events: SharedFlow<MqttEvent> = _events.asSharedFlow()
-    private val subscribed = Mutex()
-
-    override suspend fun connect(config: MqttConfig) {
-        _state.value = MqttConnectionState.CONNECTING
-        delay(800)
-        _state.value = MqttConnectionState.CONNECTED
-        _events.emit(MqttEvent.Connected(801, System.currentTimeMillis()))
-    }
-
-    override suspend fun subscribe(topic: String, qos: Int) {
-        subscribed.withLock { delay(200) }
-        _events.emit(
-            MqttEvent.MessageReceived(
-                topic,
-                "{\"stub\":true,\"message\":\"MQTT 引擎尚未接入，这是本地模拟订阅确认\"}",
-                qos,
-                System.currentTimeMillis()
-            )
-        )
-    }
-
-    override suspend fun publish(topic: String, payload: String, qos: Int) {
-        scope.launch {
-            delay(400)
-            _events.emit(MqttEvent.MessageReceived(topic, payload, qos, System.currentTimeMillis()))
-        }
-    }
-
-    override suspend fun disconnect() {
-        _state.value = MqttConnectionState.DISCONNECTED
-        _events.emit(MqttEvent.Disconnected("用户断开 (stub)", System.currentTimeMillis()))
     }
 }
 
@@ -719,9 +572,9 @@ object ServiceLocator {
     val scriptExecutor: com.evan.pulse.domain.script.ScriptExecutor = RhinoScriptExecutor()
     val scriptEnvWriter: ScriptEnvWriter = ActiveEnvWriter()
     val httpEngine: HttpEngine = OkHttpEngine()
-    val wsEngine: WsEngine = StubWsEngine()
-    val mqttEngine: MqttEngine = StubMqttEngine()
-    val sseEngine: SseEngine = StubSseEngine()
+    val wsEngine: WsEngine = KtorWsEngine()
+    val mqttEngine: MqttEngine = PahoMqttEngine()
+    val sseEngine: SseEngine = KtorSseEngine()
 
     /** 拨测目标与未通记录。必须在 httpEngine 之后声明，MonitorChecker 依赖它 */
     val monitorStore = MonitorStore(persistHandle)

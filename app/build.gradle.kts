@@ -30,8 +30,8 @@ android {
         applicationId = "com.evan.pulse"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 26
-        versionName = "0.1.26"
+        versionCode = 28
+        versionName = "0.1.28"
         buildConfigField("long", "BUILD_TIME_MS", "${buildTimeMillis}L")
     }
 
@@ -92,6 +92,7 @@ dependencies {
     implementation(libs.miuix)
     implementation(libs.miuix.preference)
     implementation(libs.miuix.blur)
+    implementation(libs.miuix.icons)
 
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.okhttp)

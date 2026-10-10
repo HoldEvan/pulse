@@ -1,6 +1,5 @@
 package com.evan.pulse.ui.ws
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,9 +10,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.LinkOff
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.runtime.Composable
@@ -34,10 +30,12 @@ import com.evan.pulse.data.model.RequestType
 import com.evan.pulse.domain.model.WsConnectionState
 import com.evan.pulse.domain.pathOnly
 import com.evan.pulse.ui.collection.SaveRequestDialog
+import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.ConnectionStateIndicator
 import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.EventLine
 import com.evan.pulse.ui.common.eventLogText
+import com.evan.pulse.ui.common.roundedPressable
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
@@ -46,6 +44,10 @@ import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Delete
+import top.yukonga.miuix.kmp.icon.extended.Link
+import top.yukonga.miuix.kmp.icon.extended.Send
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 
 @Composable
@@ -123,7 +125,7 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
                         enabled = state == WsConnectionState.IDLE || state == WsConnectionState.CLOSED || state == WsConnectionState.FAILED,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Icon(Icons.Filled.Link, contentDescription = null)
+                        Icon(MiuixIcons.Light.Link, contentDescription = null)
                         Text(stringResource(R.string.action_connect), modifier = Modifier.padding(start = 4.dp))
                     }
                     Button(
@@ -146,30 +148,30 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
             }
         }
 
-        SmallTitle(text = stringResource(R.string.event_stream_title))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            SmallTitle(
+                text = stringResource(R.string.event_stream_title),
+                modifier = Modifier.weight(1f)
+            )
+            CopyIconButton(
+                text = eventLogText(lines),
+                label = stringResource(R.string.cd_copy_stream)
+            )
+            Icon(
+                imageVector = MiuixIcons.Light.Delete,
+                contentDescription = stringResource(R.string.action_clear),
+                modifier = Modifier
+                    .roundedPressable(onClick = { viewModel.clearLog() })
+                    .padding(6.dp)
+            )
+        }
         Card(modifier = Modifier.fillMaxWidth().weight(1f)) {
-            Column(modifier = Modifier.padding(8.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    CopyIconButton(
-                        text = eventLogText(lines),
-                        label = stringResource(R.string.cd_copy_stream)
-                    )
-                    Icon(
-                        imageVector = Icons.Filled.Delete,
-                        contentDescription = stringResource(R.string.action_clear),
-                        modifier = Modifier
-                            .clickable { viewModel.clearLog() }
-                            .padding(6.dp)
-                    )
-                }
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(lines) { line ->
-                        EventLine(line, systemLabel, recvLabel)
-                    }
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                items(lines) { line ->
+                    EventLine(line, systemLabel, recvLabel)
                 }
             }
         }
@@ -191,9 +193,10 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
                 enabled = state == WsConnectionState.CONNECTED,
                 modifier = Modifier.padding(start = 8.dp)
             ) {
-                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(R.string.action_send))
+                Icon(MiuixIcons.Light.Send, contentDescription = stringResource(R.string.action_send))
             }
         }
+        BottomBarClearance()
     }
 
     missingVars?.let { missing ->
