@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="620" height="460" viewBox="0 0 620 460">
+  <rect width="620" height="460" fill="#ffffff"/>
+
+  <defs>
+    <!-- 正确的图形：波形显式 fillColor="#00000000"，无填充 -->
+    <g id="good">
+      <circle cx="54" cy="54" r="33" fill="#3482FF"/>
+      <path d="M22.5,54 a5.5,5.5 0 1,0 11,0 a5.5,5.5 0 1,0 -11,0 z" fill="#ffffff"/>
+      <path d="M41,54 Q51,27 61,54 T81,54" fill="#00000000" stroke="#ffffff"
+            stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <!-- 修复前的旧写法：波形没有 fillColor，Paint 默认黑色 -->
+    <g id="buggy">
+      <circle cx="54" cy="54" r="33" fill="#3482FF"/>
+      <path d="M22.5,54 a5.5,5.5 0 1,0 11,0 a5.5,5.5 0 1,0 -11,0 z" fill="#ffffff"/>
+      <path d="M41,54 Q51,27 61,54 T81,54" stroke="#ffffff"
+            stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </defs>
+
+  <!-- 尺寸阶梯 -->
+  <use xlink:href="#good" transform="translate(30,20) scale(1.4815)"/>
+  <use xlink:href="#good" transform="translate(210,52) scale(0.8889)"/>
+  <use xlink:href="#good" transform="translate(326,68) scale(0.5926)"/>
+  <use xlink:href="#good" transform="translate(410,76) scale(0.4444)"/>
+  <use xlink:href="#good" transform="translate(478,84) scale(0.2963)"/>
+  <use xlink:href="#good" transform="translate(530,88) scale(0.2222)"/>
+
+  <!-- 上排标签刻度线 -->
+  <line x1="30" y1="200" x2="554" y2="200" stroke="#dddddd" stroke-width="1"/>
+
+  <!-- 对比：正确（左） vs 遗留缺陷（右） -->
+  <use xlink:href="#good"  transform="translate(85,245) scale(1.3889)"/>
+  <use xlink:href="#buggy" transform="translate(325,245) scale(1.3889)"/>
+
+  <line x1="30" y1="420" x2="554" y2="420" stroke="#dddddd" stroke-width="1"/>
+</svg>
