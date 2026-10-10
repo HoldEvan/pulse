@@ -1,0 +1,495 @@
+package com.evan.pulse.ui.monitor
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.state.ToggleableState
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.evan.pulse.R
+import com.evan.pulse.data.model.MonitorRecord
+import com.evan.pulse.data.model.MonitorRun
+import com.evan.pulse.data.model.MonitorTarget
+import com.evan.pulse.data.model.MonitorType
+import com.evan.pulse.data.model.addressText
+import com.evan.pulse.data.model.MONITOR_INTERVAL_PRESETS
+import com.evan.pulse.data.monitor.TargetValidation
+import com.evan.pulse.ui.common.ConnectionStateIndicator
+import com.evan.pulse.ui.common.SectionTitleRow
+import com.evan.pulse.ui.l10n.localizedLabels
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.IconButton
+import top.yukonga.miuix.kmp.basic.Checkbox
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TextButton
+import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.overlay.OverlayDialog
+import top.yukonga.miuix.kmp.preference.CheckboxLocation
+import top.yukonga.miuix.kmp.preference.CheckboxPreference
+import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+
+private val recordTimeFormat = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
+
+private val STATE_OK_COLOR = Color(0xFF2E7D32)
+private val STATE_DOWN_COLOR = Color(0xFFC62828)
+private val STATE_IDLE_COLOR = Color(0xFF9E9E9E)
+
+internal val monitorTypeLabels = listOf(
+    R.string.monitor_type_ip,
+    R.string.monitor_type_port,
+    R.string.monitor_type_http
+)
+
+private val timeoutOptions = listOf(1000L, 3000L, 5000L, 10000L, 30000L, 60000L)
+
+/** 拨测页：目标列表 + 未通记录，检查按各目标频率由调度器自动执行 */
+@Composable
+fun MonitorScreen(
+    modifier: Modifier = Modifier,
+    viewModel: MonitorViewModel = viewModel(),
+    onOpenRecordsList: () -> Unit = {}
+) {
+    val targets by viewModel.targets.collectAsState()
+    val records by viewModel.records.collectAsState()
+    val runs by viewModel.runs.collectAsState()
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 12.dp)
+            .padding(bottom = 12.dp)
+    ) {
+        SectionTitleRow(
+            label = stringResource(R.string.monitor_records_title),
+            actions = {
+                TextButton(
+                    text = stringResource(R.string.monitor_records_more),
+                    onClick = onOpenRecordsList
+                )
+            }
+        )
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp)) {
+                if (records.isEmpty()) {
+                    Text(
+                        text = stringResource(R.string.monitor_records_empty),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 10.dp),
+                        textAlign = TextAlign.Center,
+                        fontSize = 13.sp,
+                        color = MiuixTheme.colorScheme.outline
+                    )
+                }
+                records.take(2).forEach { record ->
+                    MonitorRecordRow(
+                        record = record,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 2.dp)
+                    )
+                }
+            }
+        }
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp)
+        ) {
+            Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)) {
+                targets.forEach { target ->
+                    MonitorTargetRow(
+                        target = target,
+                        run = runs[target.id],
+                        onToggleEnabled = { viewModel.toggleEnabled(target) },
+                        onRunNow = { viewModel.runOnce(target) },
+                        onEdit = { viewModel.openEdit(target) },
+                        onDelete = { viewModel.requestDelete(target) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 2.dp)
+                    )
+                }
+                if (targets.isEmpty()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.PlayArrow,
+                            contentDescription = null,
+                            modifier = Modifier.size(28.dp),
+                            tint = MiuixTheme.colorScheme.outline
+                        )
+                        Text(
+                            text = stringResource(R.string.monitor_empty),
+                            modifier = Modifier.padding(top = 8.dp),
+                            fontSize = 13.sp,
+                            color = MiuixTheme.colorScheme.outline
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    if (viewModel.showEditor) {
+        OverlayDialog(
+            show = true,
+            title = if (viewModel.creating) {
+                stringResource(R.string.monitor_create_title)
+            } else {
+                stringResource(R.string.monitor_edit_title)
+            },
+            onDismissRequest = { viewModel.closeEditor() }
+        ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                TextField(
+                    value = viewModel.nameInput,
+                    onValueChange = { viewModel.nameInput = it },
+                    label = stringResource(R.string.monitor_name_label),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OverlayDropdownPreference(
+                    title = stringResource(R.string.monitor_type_label),
+                    items = monitorTypeLabels.localizedLabels(),
+                    selectedIndex = viewModel.type.ordinal,
+                    showValue = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    onSelectedIndexChange = { viewModel.type = MonitorType.entries[it] }
+                )
+                if (viewModel.type != MonitorType.HTTP) {
+                    TextField(
+                        value = viewModel.hostInput,
+                        onValueChange = { viewModel.hostInput = it },
+                        label = stringResource(R.string.monitor_host_label),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                    )
+                }
+                if (viewModel.type == MonitorType.PORT) {
+                    TextField(
+                        value = viewModel.portInput,
+                        onValueChange = { viewModel.portInput = it },
+                        label = stringResource(R.string.monitor_port_label),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                    )
+                }
+                if (viewModel.type == MonitorType.HTTP) {
+                    TextField(
+                        value = viewModel.urlInput,
+                        onValueChange = { viewModel.urlInput = it },
+                        label = stringResource(R.string.monitor_url_label),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                    )
+                    Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                        TextField(
+                            value = viewModel.statusMinInput,
+                            onValueChange = { viewModel.statusMinInput = it },
+                            label = stringResource(R.string.monitor_status_min_label),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.weight(0.45f)
+                        )
+                        TextField(
+                            value = viewModel.statusMaxInput,
+                            onValueChange = { viewModel.statusMaxInput = it },
+                            label = stringResource(R.string.monitor_status_max_label),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier
+                                .weight(0.45f)
+                                .padding(start = 6.dp)
+                        )
+                    }
+                }
+                OverlayDropdownPreference(
+                    title = stringResource(R.string.monitor_timeout_label),
+                    items = timeoutOptions.map { durationLabel(it / 1000L) },
+                    selectedIndex = timeoutOptions.indexOf(viewModel.timeoutMs)
+                        .coerceAtLeast(0),
+                    showValue = true,
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    onSelectedIndexChange = { viewModel.timeoutMs = timeoutOptions[it] }
+                )
+                OverlayDropdownPreference(
+                    title = stringResource(R.string.monitor_interval_label),
+                    items = MONITOR_INTERVAL_PRESETS.map { durationLabel(it) },
+                    selectedIndex = MONITOR_INTERVAL_PRESETS.indexOf(viewModel.intervalSec)
+                        .coerceAtLeast(0),
+                    showValue = true,
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    onSelectedIndexChange = { viewModel.intervalSec = MONITOR_INTERVAL_PRESETS[it] }
+                )
+                CheckboxPreference(
+                    title = stringResource(R.string.monitor_enabled_label),
+                    checked = viewModel.enabled,
+                    onCheckedChange = { viewModel.enabled = it },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                val validation = viewModel.editorValidation
+                if (validation is TargetValidation.Invalid) {
+                    Text(
+                        text = stringResource(validation.message),
+                        color = MiuixTheme.colorScheme.error,
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    TextButton(
+                        text = stringResource(R.string.action_cancel),
+                        onClick = { viewModel.closeEditor() },
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(
+                        text = stringResource(R.string.action_save),
+                        onClick = { viewModel.save() },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+    }
+
+    viewModel.deleteTarget?.let { target ->
+        OverlayDialog(
+            show = true,
+            title = stringResource(R.string.monitor_delete_title),
+            onDismissRequest = { viewModel.cancelDelete() }
+        ) {
+            Column {
+                Text(stringResource(R.string.monitor_delete_confirm, target.name))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.padding(top = 12.dp)
+                ) {
+                    TextButton(
+                        text = stringResource(R.string.action_cancel),
+                        onClick = { viewModel.cancelDelete() },
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(
+                        text = stringResource(R.string.action_delete),
+                        onClick = { viewModel.confirmDelete() },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+    }
+
+}
+
+/** 单个拨测目标：勾选框控制启停，右侧可立即检查一次 */
+@Composable
+private fun MonitorTargetRow(
+    target: MonitorTarget,
+    run: MonitorRun?,
+    onToggleEnabled: () -> Unit,
+    onRunNow: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val stateColor = when {
+        !target.enabled -> STATE_IDLE_COLOR
+        run == null -> STATE_IDLE_COLOR
+        run.ok -> STATE_OK_COLOR
+        else -> STATE_DOWN_COLOR
+    }
+    val stateLabel = when {
+        !target.enabled -> stringResource(R.string.monitor_state_disabled)
+        run == null -> stringResource(R.string.monitor_state_idle)
+        run.ok -> stringResource(R.string.monitor_state_ok)
+        else -> stringResource(R.string.monitor_state_down)
+    }
+    Column(modifier = modifier) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(
+                state = if (target.enabled) ToggleableState.On else ToggleableState.Off,
+                onClick = onToggleEnabled
+            )
+            Text(
+                text = target.name,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 12.dp),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                fontSize = 15.sp
+            )
+            if (run != null) {
+                Text(
+                    text = recordTimeFormat.format(Date(run.checkedAt)),
+                    modifier = Modifier.padding(end = 10.dp),
+                    maxLines = 1,
+                    fontSize = 12.sp,
+                    color = MiuixTheme.colorScheme.outline
+                )
+            }
+            ConnectionStateIndicator(color = stateColor, label = stateLabel)
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 44.dp, end = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = targetSummary(target, run),
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                fontSize = 13.sp,
+                color = MiuixTheme.colorScheme.outline
+            )
+            IconButton(
+                onClick = onRunNow,
+                modifier = Modifier
+                    .padding(end = 2.dp)
+                    .size(32.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.PlayArrow,
+                    contentDescription = stringResource(R.string.monitor_run_now)
+                )
+            }
+            IconButton(
+                onClick = onEdit,
+                modifier = Modifier
+                    .padding(end = 2.dp)
+                    .size(32.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Edit,
+                    contentDescription = stringResource(R.string.cd_edit)
+                )
+            }
+            IconButton(
+                onClick = onDelete,
+                modifier = Modifier
+                    .padding(end = 2.dp)
+                    .size(32.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Delete,
+                    contentDescription = stringResource(R.string.action_delete)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+internal fun MonitorRecordRow(record: MonitorRecord, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            ConnectionStateIndicator(
+                color = STATE_DOWN_COLOR,
+                label = stringResource(R.string.monitor_state_down)
+            )
+            Text(
+                text = record.targetName,
+                modifier = Modifier.padding(start = 10.dp),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                fontSize = 14.sp
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            Text(
+                text = stringResource(monitorTypeLabels[record.type.ordinal]),
+                fontSize = 12.sp,
+                color = MiuixTheme.colorScheme.outline
+            )
+            Text(
+                text = stringResource(R.string.duration_value, record.durationMs),
+                modifier = Modifier.padding(start = 8.dp),
+                fontSize = 12.sp,
+                color = MiuixTheme.colorScheme.outline
+            )
+            Text(
+                text = recordTimeFormat.format(Date(record.checkedAt)),
+                modifier = Modifier.padding(start = 8.dp),
+                fontSize = 12.sp,
+                color = MiuixTheme.colorScheme.outline
+            )
+        }
+        Text(
+            text = record.message,
+            modifier = Modifier.padding(top = 4.dp),
+            fontSize = 13.sp,
+            color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+    }
+}
+
+@Composable
+private fun targetSummary(target: MonitorTarget, run: MonitorRun?): String {
+    val meta = stringResource(
+        R.string.monitor_row_meta,
+        stringResource(monitorTypeLabels[target.type.ordinal]),
+        durationLabel(target.intervalSec)
+    )
+    val address = target.addressText()
+    return when {
+        !target.enabled -> "$address · ${stringResource(R.string.monitor_state_disabled)}"
+        run == null -> "$address · $meta"
+        else -> "$address · $meta · ${run.detail}"
+    }
+}
+
+@Composable
+private fun durationLabel(seconds: Long): String = when {
+    seconds < 60L -> stringResource(R.string.monitor_interval_seconds, seconds.toInt())
+    seconds < 3600L -> stringResource(R.string.monitor_interval_minutes, (seconds / 60L).toInt())
+    else -> stringResource(R.string.monitor_interval_hours, (seconds / 3600L).toInt())
+}

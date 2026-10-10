@@ -78,6 +78,7 @@
 *.war
 *.ear
 **/.gradle/
+**/.kotlin/
 
 # C/C++/Go/Rust
 *.o
@@ -110,6 +111,8 @@
 **/.env.*.local
 *.pem
 *.key
+*.jks
+keystore/
 
 # Temporary files
 *.tmp

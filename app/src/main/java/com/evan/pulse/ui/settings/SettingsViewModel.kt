@@ -8,15 +8,23 @@ import com.evan.pulse.data.backup.RemoteBackupEntry
 import com.evan.pulse.data.backup.WebDavConfig
 import com.evan.pulse.data.backup.WebDavStage
 import com.evan.pulse.data.backup.WebDavTestResult
+import com.evan.pulse.data.cache.CacheCleaner
+import com.evan.pulse.data.cache.CacheStats
 import com.evan.pulse.data.settings.AppSettings
 import com.evan.pulse.data.settings.SettingsStore
 import com.evan.pulse.R
+import com.evan.pulse.ui.LEVEL_HISTORY_DETAIL
+import com.evan.pulse.ui.LEVEL_SCRIPT_DOCS
+import com.evan.pulse.ui.LEVEL_SCRIPT_EDITOR
 import com.evan.pulse.ui.NavState
+import com.evan.pulse.ui.common.AppToast
 import com.evan.pulse.ui.l10n.L10n
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** 备份状态：空闲 / 进行中 / 成功 / 失败 */
 data class BackupStatus(
@@ -43,6 +51,7 @@ data class WebDavTestState(
 class SettingsViewModel(
     private val store: SettingsStore,
     private val backupService: BackupService,
+    private val cacheCleaner: CacheCleaner,
 ) : ViewModel() {
 
     val settings: StateFlow<AppSettings> = store.settings
@@ -67,6 +76,16 @@ class SettingsViewModel(
     /** WebDAV 连接测试的进度与结果 */
     val webDavTest: StateFlow<WebDavTestState> = _webDavTest.asStateFlow()
 
+    private val _cacheStats = MutableStateFlow(cacheCleaner.stats())
+
+    /** 当前本地缓存占用 */
+    val cacheStats: StateFlow<CacheStats> = _cacheStats.asStateFlow()
+
+    private val _cacheBusy = MutableStateFlow(false)
+
+    /** 缓存清理是否进行中 */
+    val cacheBusy: StateFlow<Boolean> = _cacheBusy.asStateFlow()
+
     /** 标记下一步 SAF 选择是导出保存，还是恢复读取 */
     private var pendingExport = false
 
@@ -81,12 +100,43 @@ class SettingsViewModel(
     }
 
     fun push(level: Int) {
-        _nav.value = _nav.value.copy(stack = _nav.value.stack + level)
+        _nav.value = _nav.value.copy(stack = _nav.value.stack + level, historyEntryId = null, scriptTarget = null)
+    }
+
+    /** 打开某条历史记录的详情页，记录 id 随栈帧一起保存 */
+    fun pushHistoryDetail(entryId: Long) {
+        _nav.value = _nav.value.copy(
+            stack = _nav.value.stack + LEVEL_HISTORY_DETAIL,
+            historyEntryId = entryId,
+            scriptTarget = null
+        )
+    }
+
+    /** 打开脚本代码编辑器，target 0 为前置脚本、1 为后置脚本 */
+    fun pushScriptEditor(target: Int) {
+        _nav.value = _nav.value.copy(
+            stack = _nav.value.stack + LEVEL_SCRIPT_EDITOR,
+            historyEntryId = null,
+            scriptTarget = target
+        )
+    }
+
+    /** 打开脚本内置 API 文档页，与编辑器共用 target 语义 */
+    fun pushScriptDocs(target: Int) {
+        _nav.value = _nav.value.copy(
+            stack = _nav.value.stack + LEVEL_SCRIPT_DOCS,
+            historyEntryId = null,
+            scriptTarget = target
+        )
     }
 
     fun goBack() {
         if (!_nav.value.canGoBack) return
-        _nav.value = _nav.value.copy(stack = _nav.value.stack.dropLast(1))
+        _nav.value = _nav.value.copy(
+            stack = _nav.value.stack.dropLast(1),
+            historyEntryId = null,
+            scriptTarget = null
+        )
     }
 
     fun selectTab(index: Int) {
@@ -111,6 +161,18 @@ class SettingsViewModel(
 
     fun setBackGestureMode(index: Int) {
         viewModelScope.launch { store.update { it.copy(backGestureModeIndex = index) } }
+    }
+
+    fun setMonitorNotify(enabled: Boolean) {
+        viewModelScope.launch { store.update { it.copy(monitorNotify = enabled) } }
+    }
+
+    fun setFloatingBottomBar(enabled: Boolean) {
+        viewModelScope.launch { store.update { it.copy(floatingBottomBar = enabled) } }
+    }
+
+    fun setLiquidGlassBottomBar(enabled: Boolean) {
+        viewModelScope.launch { store.update { it.copy(liquidGlassBottomBar = enabled) } }
     }
 
     fun setLanguage(index: Int) {
@@ -268,6 +330,20 @@ class SettingsViewModel(
                 refreshRemoteBackups(settings)
             } catch (e: Exception) {
                 markFail(e)
+            }
+        }
+    }
+
+    /** 清除本地缓存：只删系统缓存目录与残留临时文件，不动用户数据 */
+    fun clearCache() {
+        if (_cacheBusy.value) return
+        _cacheBusy.value = true
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) { cacheCleaner.clear() }
+            _cacheStats.value = result.remaining
+            _cacheBusy.value = false
+            if (result.freed.bytes > 0L) {
+                AppToast.show(L10n.t(R.string.cache_cleared, CacheCleaner.formatBytes(result.freed.bytes)))
             }
         }
     }

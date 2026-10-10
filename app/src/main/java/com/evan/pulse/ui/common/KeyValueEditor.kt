@@ -35,7 +35,10 @@ fun KeyValueEditor(
     onAdd: () -> Unit,
     onRemove: (Int) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.Start
+    ) {
         items.forEachIndexed { index, kv ->
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -66,10 +69,9 @@ fun KeyValueEditor(
         }
         Row(
             modifier = Modifier
-                .clickable { onAdd() }
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start
+                .roundedPressable { onAdd() }
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = Icons.Filled.Add,

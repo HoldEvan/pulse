@@ -12,6 +12,8 @@
     <string name="tab_home">Home</string>
     <string name="tab_settings">Settings</string>
     <string name="tab_collection">Collections</string>
+    <string name="tab_resources">Resources</string>
+    <string name="tab_monitor">Monitor</string>
     <string name="title_settings">Settings</string>
     <string name="theme_page_title">Appearance and Theme</string>
     <string name="cd_back">Back</string>
@@ -51,6 +53,8 @@
     <string name="project_selected_mark">" ✓"</string>
     <string name="cd_rename">Rename</string>
     <string name="project_new_title">New project</string>
+    <string name="project_delete_title">Delete project</string>
+    <string name="project_delete_confirm">Delete project "%1$s"? This cannot be undone.</string>
     <string name="project_rename_title">Rename project</string>
     <string name="project_name_label">Project name</string>
 
@@ -61,6 +65,25 @@
     <string name="tab_headers">Headers</string>
     <string name="tab_body">Body</string>
     <string name="tab_auth">Auth</string>
+    <string name="tab_script">Scripts</string>
+    <string name="script_tab_pre">Pre-request</string>
+    <string name="script_tab_post">Post-response</string>
+    <string name="script_pre_label">Pre-request script: runs before sending; can change method, URL, headers, body and variables</string>
+    <string name="script_post_label">Post-response script: runs after the response; can read it and assert on it</string>
+    <string name="script_pre_title">Pre-request script</string>
+    <string name="script_post_title">Post-response script</string>
+    <string name="cd_script_docs">Open script docs</string>
+    <string name="script_docs_title">Script API Reference</string>
+    <string name="script_docs_intro">These APIs mirror the Postman pm runtime object. Scripts run on the Rhino JavaScript engine.</string>
+    <string name="script_docs_props_note">pm.variables, pm.environment and pm.globals refer to the same object. Read with .get(name) and write with .set(name, value).</string>
+    <string name="script_docs_group_request">Request</string>
+    <string name="script_docs_group_response">Response</string>
+    <string name="script_docs_group_variables">Variables</string>
+    <string name="script_docs_group_log">Logging &amp; assertions</string>
+    <string name="script_docs_examples_title">Examples</string>
+    <string name="script_docs_example_pre">// Stamp a trace id, add a header, then build a JSON body\npm.variables.set(\"traceId\", Date.now());\npm.request.setHeader(\"X-Request-Id\", pm.variables.get(\"traceId\"));\npm.request.body.mode = \"raw\";\npm.request.body.json = { token: pm.variables.get(\"token\") };</string>
+    <string name="script_docs_example_post">// Assert status and latency, then persist the id\nif (pm.response.statusCode !== 200) {\n    throw new Error(\"expected 200, got \" + pm.response.statusCode);\n}\nif (pm.response.time &gt; 2000) {\n    throw new Error(\"too slow: \" + pm.response.time + \"ms\");\n}\nconst body = pm.response.json();\nif (body.id) pm.environment.set(\"userId\", body.id);\npm.log(\"done in \" + pm.response.time + \"ms\");</string>
+    <string name="script_console">Script output</string>
     <string name="kv_param_key">Param name</string>
     <string name="kv_header_key">Header</string>
     <string name="kv_value_label">Value</string>
@@ -91,6 +114,12 @@
     <string name="http_response_body">Response body</string>
     <string name="http_format_json">Format JSON</string>
     <string name="http_view_raw">View raw</string>
+    <string name="resp_view_raw">RAW</string>
+    <string name="resp_view_json">JSON</string>
+    <string name="resp_view_xml">XML</string>
+    <string name="resp_view_hex">HEX</string>
+    <string name="resp_view_b64">Base64</string>
+    <string name="resp_truncated">Truncated (full body %1$s)</string>
 
     <!-- WebSocket screen -->
     <string name="ws_action_button">WebSocket call</string>
@@ -121,6 +150,7 @@
 
     <!-- Settings screen -->
     <string name="settings_general">General</string>
+    <string name="settings_monitor_notify">Monitor notifications</string>
     <string name="settings_appearance">Appearance</string>
     <string name="appearance_summary">Theme and back gesture</string>
     <string name="settings_language">Language</string>
@@ -171,9 +201,14 @@
     <string name="proxy_http">HTTP</string>
     <string name="proxy_socks5">SOCKS5</string>
     <string name="proxy_summary">Shared by HTTP, WebSocket and MQTT</string>
-    <string name="proxy_host_label">Host</string>
+    <string name="proxy_host_label">Address (host:port)</string>
     <string name="proxy_port_label">Port</string>
     <string name="version_label">Version</string>
+    <string name="build_time_label">Build time</string>
+    <string name="cache_clear_label">Clear cache</string>
+    <string name="cache_size_value">Size %1$s</string>
+    <string name="cache_cleared">Cleared %1$s of cache</string>
+    <string name="cache_clear_confirm">Clear %1$s of local cache?</string>
     <string name="about_footer">This release ships only a Release build. More features are on the way.</string>
 
     <!-- Languages -->
@@ -218,6 +253,11 @@
     <string name="spec_material_2021">Material 2021</string>
     <string name="spec_expressive_2025">Expressive 2025</string>
     <string name="theme_footer">Changes apply and save immediately</string>
+    <string name="settings_bottom_bar">Bottom bar</string>
+    <string name="floating_bottom_bar_label">Floating bottom bar</string>
+    <string name="floating_bottom_bar_summary">Show the bottom bar as a floating pill</string>
+    <string name="liquid_glass_label">Liquid glass</string>
+    <string name="liquid_glass_summary">Enable a translucent glass look for the floating bar</string>
 
     <!-- Environment screen -->
     <string name="env_title">Environments (current project)</string>
@@ -235,10 +275,21 @@
     <string name="env_delete_confirm">Delete environment \"%1$s\" and all of its variables? This cannot be undone.</string>
 
     <!-- History screen -->
-    <string name="history_title">HTTP history (current project)</string>
+    <string name="history_title">HTTP history</string>
     <string name="history_search_label">Search URL or method</string>
     <string name="history_clear">Clear history</string>
-    <string name="history_clear_confirm">Clear all history for the current project? This cannot be undone.</string>
+    <string name="history_clear_confirm">Clear history for all projects? This cannot be undone.</string>
+    <string name="history_delete">Delete this record? This cannot be undone.</string>
+    <string name="history_detail_title">History detail</string>
+    <string name="history_detail_missing">This record no longer exists</string>
+    <string name="history_detail_legacy">This record was written by an earlier version and has no request or response details</string>
+    <string name="history_filter_label">Filter by project</string>
+    <string name="history_filter_all">All projects</string>
+    <string name="history_request_headers">Request headers</string>
+    <string name="history_request_body">Request body</string>
+    <string name="history_size_value">%1$d B</string>
+    <string name="history_body_truncated">Body too long, shown truncated</string>
+    <string name="toast_copied">Copied</string>
     <string name="cd_add">Add</string>
     <string name="cd_delete">Delete</string>
     <string name="action_got_it">Got it</string>
@@ -291,6 +342,14 @@
     <string name="collection_card_empty">No saved requests</string>
     <string name="collection_delete">Delete collection</string>
     <string name="collection_delete_request">Delete</string>
+    <string name="collection_new_child">New subfolder</string>
+    <string name="collection_rename">Rename</string>
+    <string name="collection_delete_confirm">Delete %1$d folders and %2$d requests</string>
+    <string name="collection_move_to">Move to</string>
+    <string name="cd_move_request">Move request</string>
+    <string name="collection_move_forbidden">Cannot move a folder into itself</string>
+    <string name="collection_folder_empty">Empty</string>
+    <string name="collection_root_level">Top level</string>
     <string name="cd_save_request">Save to collection</string>
     <string name="save_request_title">Save to collection</string>
     <string name="request_name_label">Request name</string>
@@ -304,4 +363,100 @@
     <string name="sse_log_reconnecting">Reconnecting in %1$d sec</string>
     <string name="sse_log_closed">Connection closed: %1$s</string>
     <string name="sse_log_failed">Connection failed: %1$s</string>
+
+    <string name="collection_import_spec">Import Spec</string>
+    <string name="spec_import_title">Import API Spec</string>
+    <string name="spec_import_source_label">Spec file URL or raw text</string>
+    <string name="spec_import_source_desc">Supports http/https URLs of OpenAPI 3.x and Swagger 2.0 files, or paste JSON / YAML content directly. YAML anchors and aliases, plus $ref resolution, are supported.</string>
+    <string name="spec_import_parse">Parse</string>
+    <string name="spec_import_parsing">Parsing…</string>
+    <string name="spec_import_untagged">Ungrouped</string>
+    <string name="spec_import_error_empty">Spec content is empty</string>
+    <string name="spec_import_error_unparseable">Cannot parse, please check the JSON or YAML is valid</string>
+    <string name="spec_import_error_not_openapi">Not a valid OpenAPI or Swagger spec, the paths node is missing</string>
+    <string name="spec_import_error_no_operations">No importable operations found in the spec</string>
+    <string name="spec_import_error_fetch">Download failed, please check the URL is reachable</string>
+    <string name="spec_import_error_unknown">Parsing failed</string>
+    <string name="import_preview_title">Import Preview</string>
+    <string name="import_summary_format">%1$d operations, %2$d tags in total</string>
+    <string name="import_confirm_button">Import</string>
+    <string name="action_expand">Expand</string>
+    <string name="action_collapse">Collapse</string>
+
+    <string name="cd_export_request">Copy as another format</string>
+    <string name="cd_copy_response">Copy response body</string>
+    <string name="cd_copy_stream">Copy event stream</string>
+    <string name="export_format_title">Copy as</string>
+    <string name="export_format_curl_bash">cURL (bash)</string>
+    <string name="export_format_curl_powershell">cURL (PowerShell)</string>
+    <string name="export_format_http_raw">Raw HTTP request</string>
+    <string name="export_format_python">Python requests</string>
+    <string name="export_format_js_fetch">JavaScript fetch</string>
+    <string name="export_tab_curl_bash">cURL</string>
+    <string name="export_tab_curl_powershell">cURL.exe</string>
+    <string name="export_tab_http_raw">HTTP</string>
+    <string name="export_tab_python">Python</string>
+    <string name="export_tab_js_fetch">fetch</string>
+    <string name="action_copy">Copy</string>
+    <!-- Monitor -->
+    <string name="monitor_add">Add monitor</string>
+    <string name="monitor_empty">No monitor targets yet. Add one from the top right.</string>
+    <string name="monitor_notify">Notify when a target goes down</string>
+    <string name="monitor_notify_summary">A system notification is sent when a target goes from up to down</string>
+    <string name="monitor_permission_denied">Notification permission was not granted, so no system notification will appear when a target goes down</string>
+    <string name="monitor_create_title">Add monitor</string>
+    <string name="monitor_edit_title">Edit monitor</string>
+    <string name="monitor_name_label">Name</string>
+    <string name="monitor_name_required">Enter a name</string>
+    <string name="monitor_type_label">Check type</string>
+    <string name="monitor_type_ip">IP reachability</string>
+    <string name="monitor_type_port">Port</string>
+    <string name="monitor_type_http">HTTP</string>
+    <string name="monitor_host_label">Host (IP or domain)</string>
+    <string name="monitor_host_required">Enter a host</string>
+    <string name="monitor_port_label">Port</string>
+    <string name="monitor_port_invalid">Port must be between 1 and 65535</string>
+    <string name="monitor_url_label">URL (GET without parameters only)</string>
+    <string name="monitor_url_required">Enter a URL</string>
+    <string name="monitor_url_scheme">URL must start with http:// or https://</string>
+    <string name="monitor_status_min_label">Minimum status</string>
+    <string name="monitor_status_max_label">Maximum status</string>
+    <string name="monitor_status_range">Status codes must be between 100 and 599, with the minimum not above the maximum</string>
+    <string name="monitor_timeout_label">Check timeout</string>
+    <string name="monitor_interval_label">Check interval</string>
+    <string name="monitor_interval_seconds">%1$d s</string>
+    <string name="monitor_interval_minutes">%1$d min</string>
+    <string name="monitor_interval_hours">%1$d h</string>
+    <string name="monitor_enabled_label">Run automatic checks</string>
+    <string name="monitor_run_now">Check now</string>
+    <string name="monitor_state_ok">Up</string>
+    <string name="monitor_state_down">Down</string>
+    <string name="monitor_state_idle">Unchecked</string>
+    <string name="monitor_state_disabled">Disabled</string>
+    <string name="monitor_row_meta">%1$s · %2$s</string>
+    <string name="monitor_delete_title">Delete monitor</string>
+    <string name="monitor_delete_confirm">Delete "%1$s" and its failure records? This cannot be undone.</string>
+    <string name="monitor_records_title">Failure records</string>
+    <string name="monitor_records_clear">Clear records</string>
+    <string name="monitor_records_clear_confirm">Clear all failure records of this project? This cannot be undone.</string>
+    <string name="monitor_records_more">More</string>
+    <string name="monitor_records_search_hint">Search by name, address or failure reason</string>
+    <string name="monitor_records_no_match">No matching records</string>
+    <string name="monitor_records_empty">No failure records yet</string>
+    <string name="monitor_unresolved">Cannot resolve host %1$s</string>
+    <string name="monitor_ip_ok">Port %1$d is reachable</string>
+    <string name="monitor_ip_unreachable">None of ports %1$s are reachable</string>
+    <string name="monitor_port_ok">%1$s:%2$d is open</string>
+    <string name="monitor_port_closed">%1$s:%2$d is closed</string>
+    <string name="monitor_missing_vars">Missing variables: %1$s</string>
+    <string name="monitor_http_result">HTTP %1$d</string>
+    <string name="monitor_http_error">Request failed: %1$s</string>
+    <string name="monitor_connect_failed">Connection failed</string>
+    <string name="monitor_timeout">Connection timed out</string>
+    <string name="monitor_channel_name">Monitor alerts</string>
+    <string name="monitor_channel_desc">Alerts sent when a target goes from up to down</string>
+    <string name="monitor_notify_down_title">"%1$s" is down</string>
+    <string name="monitor_notify_up_title">"%1$s" is back up</string>
+    <string name="monitor_notify_up_body">The most recent check of this target passed</string>
+
 </resources>

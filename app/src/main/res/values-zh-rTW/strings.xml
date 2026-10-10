@@ -12,6 +12,8 @@
     <string name="tab_home">首頁</string>
     <string name="tab_settings">設定</string>
     <string name="tab_collection">集合</string>
+    <string name="tab_resources">資源</string>
+    <string name="tab_monitor">撥測</string>
     <string name="title_settings">設定</string>
     <string name="theme_page_title">外觀與主題</string>
     <string name="cd_back">返回</string>
@@ -51,6 +53,8 @@
     <string name="project_selected_mark">" ✓"</string>
     <string name="cd_rename">重新命名</string>
     <string name="project_new_title">新增專案</string>
+    <string name="project_delete_title">刪除專案</string>
+    <string name="project_delete_confirm">確定刪除專案「%1$s」嗎？刪除後無法復原。</string>
     <string name="project_rename_title">重新命名專案</string>
     <string name="project_name_label">專案名稱</string>
 
@@ -61,6 +65,25 @@
     <string name="tab_headers">請求標頭</string>
     <string name="tab_body">請求本體</string>
     <string name="tab_auth">認證</string>
+    <string name="tab_script">腳本</string>
+    <string name="script_tab_pre">前置</string>
+    <string name="script_tab_post">後置</string>
+    <string name="script_pre_label">前置腳本：發送前執行，可改 method、URL、請求標頭、請求本體與變數</string>
+    <string name="script_post_label">後置腳本：收到回應後執行，可讀取回應並寫斷言</string>
+    <string name="script_pre_title">前置腳本</string>
+    <string name="script_post_title">後置腳本</string>
+    <string name="cd_script_docs">檢視腳本文件</string>
+    <string name="script_docs_title">腳本 API 文件</string>
+    <string name="script_docs_intro">以下 API 與 Postman Runtime 的 pm 物件一致，腳本在 Rhino JavaScript 引擎中執行。</string>
+    <string name="script_docs_props_note">pm.variables、pm.environment 與 pm.globals 指向同一個物件，用 .get(name) 讀取，用 .set(name, value) 寫入。</string>
+    <string name="script_docs_group_request">請求</string>
+    <string name="script_docs_group_response">回應</string>
+    <string name="script_docs_group_variables">變數</string>
+    <string name="script_docs_group_log">日誌與斷言</string>
+    <string name="script_docs_examples_title">範例</string>
+    <string name="script_docs_example_pre">// 寫入追蹤 ID，設定請求標頭，並組裝 JSON 請求體\npm.variables.set(\"traceId\", Date.now());\npm.request.setHeader(\"X-Request-Id\", pm.variables.get(\"traceId\"));\npm.request.body.mode = \"raw\";\npm.request.body.json = { token: pm.variables.get(\"token\") };</string>
+    <string name="script_docs_example_post">// 校驗狀態碼與耗時，並把 id 寫入環境\nif (pm.response.statusCode !== 200) {\n    throw new Error(\"expected 200, got \" + pm.response.statusCode);\n}\nif (pm.response.time &gt; 2000) {\n    throw new Error(\"too slow: \" + pm.response.time + \"ms\");\n}\nconst body = pm.response.json();\nif (body.id) pm.environment.set(\"userId\", body.id);\npm.log(\"done in \" + pm.response.time + \"ms\");</string>
+    <string name="script_console">腳本輸出</string>
     <string name="kv_param_key">參數名</string>
     <string name="kv_header_key">Header 名</string>
     <string name="kv_value_label">值</string>
@@ -91,6 +114,12 @@
     <string name="http_response_body">回應本體</string>
     <string name="http_format_json">格式化 JSON</string>
     <string name="http_view_raw">檢視原文</string>
+    <string name="resp_view_raw">RAW</string>
+    <string name="resp_view_json">JSON</string>
+    <string name="resp_view_xml">XML</string>
+    <string name="resp_view_hex">HEX</string>
+    <string name="resp_view_b64">Base64</string>
+    <string name="resp_truncated">已截斷顯示（完整 %1$s）</string>
 
     <!-- WebSocket 頁 -->
     <string name="ws_action_button">WebSocket 呼叫</string>
@@ -121,6 +150,7 @@
 
     <!-- 設定頁 -->
     <string name="settings_general">一般</string>
+    <string name="settings_monitor_notify">撥測通知</string>
     <string name="settings_appearance">外觀</string>
     <string name="appearance_summary">設定主題與返回手勢</string>
     <string name="settings_language">語言</string>
@@ -171,9 +201,14 @@
     <string name="proxy_http">HTTP</string>
     <string name="proxy_socks5">SOCKS5</string>
     <string name="proxy_summary">HTTP、WebSocket 與 MQTT 通用</string>
-    <string name="proxy_host_label">地址</string>
+    <string name="proxy_host_label">位址（主機:埠號）</string>
     <string name="proxy_port_label">埠號</string>
     <string name="version_label">版本</string>
+    <string name="build_time_label">建置時間</string>
+    <string name="cache_clear_label">清除快取</string>
+    <string name="cache_size_value">大小 %1$s</string>
+    <string name="cache_cleared">已清除 %1$s 快取</string>
+    <string name="cache_clear_confirm">確定清除 %1$s 本機快取？</string>
     <string name="about_footer">目前版本僅提供 Release 套件，後續版本逐步補齊功能。</string>
 
     <!-- 語言 -->
@@ -218,6 +253,11 @@
     <string name="spec_material_2021">Material 2021</string>
     <string name="spec_expressive_2025">Expressive 2025</string>
     <string name="theme_footer">修改後立即生效並自動儲存</string>
+    <string name="settings_bottom_bar">底欄</string>
+    <string name="floating_bottom_bar_label">懸浮底欄</string>
+    <string name="floating_bottom_bar_summary">底欄以懸浮膠囊樣式顯示</string>
+    <string name="liquid_glass_label">液態玻璃</string>
+    <string name="liquid_glass_summary">為懸浮底欄啟用半透明玻璃質感</string>
 
     <!-- 環境頁 -->
     <string name="env_title">環境列表（目前專案）</string>
@@ -235,10 +275,21 @@
     <string name="env_delete_confirm">確定刪除環境「%1$s」及其全部變數？此操作無法復原。</string>
 
     <!-- 歷史頁 -->
-    <string name="history_title">HTTP 歷史（目前專案）</string>
+    <string name="history_title">HTTP 歷史</string>
     <string name="history_search_label">搜尋 URL 或方法</string>
     <string name="history_clear">清空歷史</string>
-    <string name="history_clear_confirm">確定清空目前專案的全部歷史記錄？此操作無法復原。</string>
+    <string name="history_clear_confirm">確定清空全部專案的歷史記錄？此操作無法復原。</string>
+    <string name="history_delete">確定刪除這條歷史記錄？此操作無法復原。</string>
+    <string name="history_detail_title">歷史詳情</string>
+    <string name="history_detail_missing">這條記錄已不存在</string>
+    <string name="history_detail_legacy">這條記錄由較早的版本寫入，沒有保存請求與回應詳情</string>
+    <string name="history_filter_label">專案篩選</string>
+    <string name="history_filter_all">全部專案</string>
+    <string name="history_request_headers">請求標頭</string>
+    <string name="history_request_body">請求本體</string>
+    <string name="history_size_value">%1$d B</string>
+    <string name="history_body_truncated">內容過長，已截斷顯示</string>
+    <string name="toast_copied">已複製</string>
     <string name="cd_add">新增</string>
     <string name="cd_delete">刪除</string>
     <string name="action_got_it">知道了</string>
@@ -291,6 +342,14 @@
     <string name="collection_card_empty">尚無已儲存的請求</string>
     <string name="collection_delete">刪除集合</string>
     <string name="collection_delete_request">刪除</string>
+    <string name="collection_new_child">新增子資料夾</string>
+    <string name="collection_rename">重新命名</string>
+    <string name="collection_delete_confirm">將刪除 %1$d 個集合和 %2$d 個接口</string>
+    <string name="collection_move_to">移動到</string>
+    <string name="cd_move_request">移動介面</string>
+    <string name="collection_move_forbidden">不能移動到自身或其子資料夾</string>
+    <string name="collection_folder_empty">尚無內容</string>
+    <string name="collection_root_level">根層級</string>
     <string name="cd_save_request">儲存到集合</string>
     <string name="save_request_title">儲存到集合</string>
     <string name="request_name_label">請求名稱</string>
@@ -304,4 +363,100 @@
     <string name="sse_log_reconnecting">%1$d 秒後重連</string>
     <string name="sse_log_closed">連接已斷開：%1$s</string>
     <string name="sse_log_failed">連接失敗：%1$s</string>
+
+    <string name="collection_import_spec">匯入規範</string>
+    <string name="spec_import_title">匯入 API 規範</string>
+    <string name="spec_import_source_label">規範檔案 URL 或原始文字</string>
+    <string name="spec_import_source_desc">支援 http/https 的 OpenAPI 3.x 與 Swagger 2.0 檔案位址，也可直接貼上 JSON 或 YAML 內容。支援 YAML 錨點與別名，以及 $ref 引用解析。</string>
+    <string name="spec_import_parse">解析</string>
+    <string name="spec_import_parsing">解析中…</string>
+    <string name="spec_import_untagged">未分類</string>
+    <string name="spec_import_error_empty">規範內容為空</string>
+    <string name="spec_import_error_unparseable">無法解析，請確認是合法的 JSON 或 YAML</string>
+    <string name="spec_import_error_not_openapi">不是有效的 OpenAPI 或 Swagger 規範，缺少 paths 節點</string>
+    <string name="spec_import_error_no_operations">規範中沒有可匯入的介面</string>
+    <string name="spec_import_error_fetch">下載失敗，請確認位址可存取</string>
+    <string name="spec_import_error_unknown">解析失敗</string>
+    <string name="import_preview_title">匯入預覽</string>
+    <string name="import_summary_format">共 %1$d 個介面，%2$d 個標籤</string>
+    <string name="import_confirm_button">匯入</string>
+    <string name="action_expand">展開</string>
+    <string name="action_collapse">收起</string>
+
+    <string name="cd_export_request">複製為其他格式</string>
+    <string name="cd_copy_response">複製回應體</string>
+    <string name="cd_copy_stream">複製訊息流</string>
+    <string name="export_format_title">複製為</string>
+    <string name="export_format_curl_bash">cURL (bash)</string>
+    <string name="export_format_curl_powershell">cURL (PowerShell)</string>
+    <string name="export_format_http_raw">HTTP 原始報文</string>
+    <string name="export_format_python">Python requests</string>
+    <string name="export_format_js_fetch">JavaScript fetch</string>
+    <string name="export_tab_curl_bash">cURL</string>
+    <string name="export_tab_curl_powershell">cURL.exe</string>
+    <string name="export_tab_http_raw">HTTP</string>
+    <string name="export_tab_python">Python</string>
+    <string name="export_tab_js_fetch">fetch</string>
+    <string name="action_copy">複製</string>
+    <!-- 撥測 -->
+    <string name="monitor_add">新增撥測</string>
+    <string name="monitor_empty">還沒有撥測目標，點右上角新增</string>
+    <string name="monitor_notify">未通時發送通知</string>
+    <string name="monitor_notify_summary">目標由通轉為不通時會收到一條系統通知</string>
+    <string name="monitor_permission_denied">通知權限未授予，未通時不會彈出系統通知</string>
+    <string name="monitor_create_title">新增撥測</string>
+    <string name="monitor_edit_title">編輯撥測</string>
+    <string name="monitor_name_label">名稱</string>
+    <string name="monitor_name_required">請填寫名稱</string>
+    <string name="monitor_type_label">檢查類型</string>
+    <string name="monitor_type_ip">IP 連通</string>
+    <string name="monitor_type_port">埠</string>
+    <string name="monitor_type_http">介面</string>
+    <string name="monitor_host_label">主機（IP 或網域名稱）</string>
+    <string name="monitor_host_required">請填寫主機</string>
+    <string name="monitor_port_label">埠號</string>
+    <string name="monitor_port_invalid">埠號需在 1-65535 之間</string>
+    <string name="monitor_url_label">位址（只支援不帶參數的 GET）</string>
+    <string name="monitor_url_required">請填寫位址</string>
+    <string name="monitor_url_scheme">位址需以 http:// 或 https:// 開頭</string>
+    <string name="monitor_status_min_label">起始狀態碼</string>
+    <string name="monitor_status_max_label">結束狀態碼</string>
+    <string name="monitor_status_range">狀態碼需在 100-599 之間且起始不超過結束</string>
+    <string name="monitor_timeout_label">檢查逾時</string>
+    <string name="monitor_interval_label">檢查頻率</string>
+    <string name="monitor_interval_seconds">%1$d 秒</string>
+    <string name="monitor_interval_minutes">%1$d 分鐘</string>
+    <string name="monitor_interval_hours">%1$d 小時</string>
+    <string name="monitor_enabled_label">啟用自動檢查</string>
+    <string name="monitor_run_now">立即檢查一次</string>
+    <string name="monitor_state_ok">通</string>
+    <string name="monitor_state_down">不通</string>
+    <string name="monitor_state_idle">未檢查</string>
+    <string name="monitor_state_disabled">已停用</string>
+    <string name="monitor_row_meta">%1$s · %2$s</string>
+    <string name="monitor_delete_title">刪除撥測</string>
+    <string name="monitor_delete_confirm">確定刪除「%1$s」及其未通記錄？此操作不可復原。</string>
+    <string name="monitor_records_title">未通記錄</string>
+    <string name="monitor_records_clear">清空記錄</string>
+    <string name="monitor_records_clear_confirm">確定清空當前專案的全部未通記錄？此操作不可復原。</string>
+    <string name="monitor_records_more">更多</string>
+    <string name="monitor_records_search_hint">搜尋名稱、位址或失敗原因</string>
+    <string name="monitor_records_no_match">沒有比對的記錄</string>
+    <string name="monitor_records_empty">暫無未通記錄</string>
+    <string name="monitor_unresolved">無法解析主機 %1$s</string>
+    <string name="monitor_ip_ok">埠號 %1$d 可連</string>
+    <string name="monitor_ip_unreachable">埠號 %1$s 均不可連</string>
+    <string name="monitor_port_ok">%1$s:%2$d 可連</string>
+    <string name="monitor_port_closed">%1$s:%2$d 不可連</string>
+    <string name="monitor_missing_vars">缺少變數：%1$s</string>
+    <string name="monitor_http_result">HTTP %1$d</string>
+    <string name="monitor_http_error">請求失敗：%1$s</string>
+    <string name="monitor_connect_failed">連線失敗</string>
+    <string name="monitor_timeout">連線逾時</string>
+    <string name="monitor_channel_name">撥測告警</string>
+    <string name="monitor_channel_desc">目標由通轉為不通時發送的告警通知</string>
+    <string name="monitor_notify_down_title">「%1$s」已不通</string>
+    <string name="monitor_notify_up_title">「%1$s」已恢復</string>
+    <string name="monitor_notify_up_body">該目標最近一次檢查已通過</string>
+
 </resources>

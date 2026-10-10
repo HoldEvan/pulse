@@ -1,7 +1,12 @@
 package com.evan.pulse.ui.settings
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,10 +31,11 @@ import com.evan.pulse.BuildConfig
 import com.evan.pulse.R
 import com.evan.pulse.data.backup.RemoteBackupEntry
 import com.evan.pulse.data.backup.WebDavStage
+import com.evan.pulse.data.cache.CacheCleaner
+import com.evan.pulse.di.ServiceLocator
+import com.evan.pulse.ui.common.AppToast
 import com.evan.pulse.ui.common.CardSectionTitle
-import com.evan.pulse.ui.l10n.AppLanguage
 import com.evan.pulse.ui.l10n.localizedLabels
-import com.evan.pulse.ui.theme.PulseTheme
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.Card
@@ -40,6 +46,7 @@ import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.preference.ArrowPreference
 import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference
+import top.yukonga.miuix.kmp.preference.SwitchPreference
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -61,13 +68,15 @@ private val BackGestureModeSummaries: Map<Int, Int> = mapOf(
     1 to R.string.back_mode_aosp_summary
 )
 
-private fun formatSize(bytes: Long): String = when {
-    bytes >= 1 shl 20 -> String.format(Locale.getDefault(), "%.1f MB", bytes / 1024.0 / 1024.0)
-    bytes >= 1024 -> String.format(Locale.getDefault(), "%.1f KB", bytes / 1024.0)
-    else -> "$bytes B"
-}
-
 private val backupDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+
+/** 构建时间在打包时只存毫秒值，这里按设备本地时区渲染 */
+private val buildTimeFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+
+// 页面内间距统一走这三个值，避免各区块之间的间距和卡片内容内边距不一致
+private val SectionTopGap = 12.dp
+private val CardGap = 8.dp
+private val CardContentPadding = 12.dp
 
 @Composable
 private fun RemoteBackupItem(
@@ -77,10 +86,10 @@ private fun RemoteBackupItem(
     onDelete: () -> Unit
 ) {
     Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(modifier = Modifier.padding(CardContentPadding)) {
             Text(entry.display)
             Text(
-                text = formatSize(entry.size) + " · " + backupDateFormat.format(entry.lastModified),
+                text = CacheCleaner.formatBytes(entry.size) + " · " + backupDateFormat.format(entry.lastModified),
                 fontSize = 13.sp,
                 modifier = Modifier.padding(top = 4.dp)
             )
@@ -181,7 +190,18 @@ fun SettingsScreen(
     val status by viewModel.backupStatus.collectAsStateWithLifecycle()
     val remoteBackups by viewModel.remoteBackups.collectAsStateWithLifecycle()
     val webDavTest by viewModel.webDavTest.collectAsStateWithLifecycle()
+    val cacheStats by viewModel.cacheStats.collectAsStateWithLifecycle()
+    val cacheBusy by viewModel.cacheBusy.collectAsStateWithLifecycle()
     var showRemoteList by remember { mutableStateOf(false) }
+    var showCacheConfirm by remember { mutableStateOf(false) }
+    val permissionDeniedText = stringResource(R.string.monitor_permission_denied)
+    var notifyPermissionGranted by remember { mutableStateOf(ServiceLocator.monitorNotifier.isGranted()) }
+    val requestNotificationPermission = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        notifyPermissionGranted = granted
+        if (!granted) AppToast.show(permissionDeniedText)
+    }
 
     Column(
         modifier = modifier
@@ -192,35 +212,63 @@ fun SettingsScreen(
         SmallTitle(text = stringResource(R.string.settings_general))
 
         Card(modifier = Modifier.fillMaxWidth()) {
-            OverlayDropdownPreference(
-                title = stringResource(R.string.settings_language),
-                items = LanguageLabels.localizedLabels(),
-                selectedIndex = settings.languageIndex,
-                onSelectedIndexChange = { viewModel.setLanguage(it) }
-            )
+            Column(modifier = Modifier.padding(CardContentPadding)) {
+                OverlayDropdownPreference(
+                    title = stringResource(R.string.settings_language),
+                    items = LanguageLabels.localizedLabels(),
+                    selectedIndex = settings.languageIndex,
+                    onSelectedIndexChange = { viewModel.setLanguage(it) },
+                    insideMargin = PaddingValues(0.dp)
+                )
 
-            ArrowPreference(
-                title = stringResource(R.string.settings_appearance),
-                summary = stringResource(R.string.appearance_summary),
-                onClick = onOpenAppearance,
-            )
+                ArrowPreference(
+                    title = stringResource(R.string.settings_appearance),
+                    summary = stringResource(R.string.appearance_summary),
+                    onClick = onOpenAppearance,
+                    insideMargin = PaddingValues(0.dp)
+                )
 
-            OverlayDropdownPreference(
-                title = stringResource(R.string.back_gesture),
-                summary = stringResource(
-                    BackGestureModeSummaries[settings.backGestureModeIndex]
-                        ?: R.string.back_mode_miuix_summary
-                ),
-                items = BackGestureModeLabels.localizedLabels(),
-                selectedIndex = settings.backGestureModeIndex,
-                onSelectedIndexChange = { viewModel.setBackGestureMode(it) }
-            )
+                OverlayDropdownPreference(
+                    title = stringResource(R.string.back_gesture),
+                    summary = stringResource(
+                        BackGestureModeSummaries[settings.backGestureModeIndex]
+                            ?: R.string.back_mode_miuix_summary
+                    ),
+                    items = BackGestureModeLabels.localizedLabels(),
+                    selectedIndex = settings.backGestureModeIndex,
+                    onSelectedIndexChange = { viewModel.setBackGestureMode(it) },
+                    insideMargin = PaddingValues(0.dp)
+                )
+
+                SwitchPreference(
+                    checked = settings.monitorNotify,
+                    onCheckedChange = { value ->
+                        if (value &&
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                            !ServiceLocator.monitorNotifier.isGranted()
+                        ) {
+                            requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                        viewModel.setMonitorNotify(value)
+                    },
+                    title = stringResource(R.string.settings_monitor_notify),
+                    summary = if (settings.monitorNotify && !notifyPermissionGranted) {
+                        permissionDeniedText
+                    } else {
+                        null
+                    },
+                    insideMargin = PaddingValues(0.dp)
+                )
+            }
         }
 
-        SmallTitle(text = stringResource(R.string.settings_network))
+        SmallTitle(
+            text = stringResource(R.string.settings_network),
+            modifier = Modifier.padding(top = SectionTopGap)
+        )
 
         Card(modifier = Modifier.fillMaxWidth()) {
-            Column {
+            Column(modifier = Modifier.padding(CardContentPadding)) {
                 OverlayDropdownPreference(
                     title = stringResource(R.string.settings_proxy),
                     summary = stringResource(
@@ -228,44 +276,74 @@ fun SettingsScreen(
                     ),
                     items = ProxyTypeLabels.localizedLabels(),
                     selectedIndex = settings.proxyTypeIndex,
-                    onSelectedIndexChange = { viewModel.setProxyType(it) }
+                    onSelectedIndexChange = { viewModel.setProxyType(it) },
+                    insideMargin = PaddingValues(0.dp)
                 )
 
                 if (settings.proxyTypeIndex > 0) {
+                    var proxyAddress by remember {
+                        mutableStateOf(
+                            if (settings.proxyPort.isBlank()) {
+                                settings.proxyHost
+                            } else {
+                                "${settings.proxyHost}:${settings.proxyPort}"
+                            }
+                        )
+                    }
                     TextField(
-                        value = settings.proxyHost,
-                        onValueChange = { viewModel.setProxyHost(it) },
-                        label = stringResource(R.string.proxy_host_label)
+                        value = proxyAddress,
+                        onValueChange = { text ->
+                            proxyAddress = text
+                            val (host, port) = splitProxyAddress(text)
+                            viewModel.setProxyHost(host)
+                            viewModel.setProxyPort(port)
+                        },
+                        label = stringResource(R.string.proxy_host_label),
+                        useLabelAsPlaceholder = true,
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 10.dp)
                     )
 
-                    TextField(
-                        value = settings.proxyPort,
-                        onValueChange = { viewModel.setProxyPort(it) },
-                        label = stringResource(R.string.proxy_port_label),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        TextField(
+                            value = settings.proxyUsername,
+                            onValueChange = { viewModel.setProxyUsername(it) },
+                            label = stringResource(R.string.username_label),
+                            useLabelAsPlaceholder = true,
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
 
-                    TextField(
-                        value = settings.proxyUsername,
-                        onValueChange = { viewModel.setProxyUsername(it) },
-                        label = stringResource(R.string.username_label)
-                    )
-
-                    TextField(
-                        value = settings.proxyPassword,
-                        onValueChange = { viewModel.setProxyPassword(it) },
-                        label = stringResource(R.string.password_label)
-                    )
+                        TextField(
+                            value = settings.proxyPassword,
+                            onValueChange = { viewModel.setProxyPassword(it) },
+                            label = stringResource(R.string.password_label),
+                            useLabelAsPlaceholder = true,
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
             }
         }
 
-        SmallTitle(text = stringResource(R.string.settings_backup))
+        SmallTitle(
+            text = stringResource(R.string.settings_backup),
+            modifier = Modifier.padding(top = SectionTopGap)
+        )
 
         val webdavConfigured = viewModel.isWebdavConfigured(settings)
 
         Card(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(12.dp)) {
+            Column(modifier = Modifier.padding(CardContentPadding)) {
                 CardSectionTitle(
                     text = stringResource(R.string.backup_local_title),
                     modifier = Modifier.fillMaxWidth()
@@ -294,8 +372,8 @@ fun SettingsScreen(
             }
         }
 
-        Card(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-            Column(modifier = Modifier.padding(12.dp)) {
+        Card(modifier = Modifier.fillMaxWidth().padding(top = CardGap)) {
+            Column(modifier = Modifier.padding(CardContentPadding)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -365,26 +443,29 @@ fun SettingsScreen(
                         .padding(top = 8.dp)
                 )
                 WebDavTestResultView(webDavTest)
-                Button(
-                    onClick = { viewModel.exportToWebDav(settings) },
-                    enabled = !status.busy && webdavConfigured,
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 10.dp)
+                        .padding(top = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(stringResource(R.string.backup_export_webdav))
+                    Button(
+                        onClick = { viewModel.exportToWebDav(settings) },
+                        enabled = !status.busy && webdavConfigured,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(stringResource(R.string.backup_export_webdav))
+                    }
+                    TextButton(
+                        text = stringResource(R.string.backup_browse_remote),
+                        onClick = {
+                            showRemoteList = true
+                            viewModel.refreshRemoteBackups(settings)
+                        },
+                        enabled = !status.busy && webdavConfigured,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
-                TextButton(
-                    text = stringResource(R.string.backup_browse_remote),
-                    onClick = {
-                        showRemoteList = true
-                        viewModel.refreshRemoteBackups(settings)
-                    },
-                    enabled = !status.busy && webdavConfigured,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 6.dp)
-                )
             }
         }
 
@@ -408,7 +489,7 @@ fun SettingsScreen(
                 fontSize = 13.sp,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 8.dp, bottom = 4.dp)
+                    .padding(top = CardGap, bottom = 4.dp)
             )
         }
 
@@ -449,17 +530,38 @@ fun SettingsScreen(
             }
         }
 
-        SmallTitle(text = stringResource(R.string.settings_about))
+        SmallTitle(
+            text = stringResource(R.string.settings_about),
+            modifier = Modifier.padding(top = SectionTopGap)
+        )
 
         Card(modifier = Modifier.fillMaxWidth()) {
-            BasicComponent(
-                title = stringResource(R.string.version_label),
-                summary = stringResource(
-                    R.string.version_value,
-                    BuildConfig.VERSION_NAME,
-                    BuildConfig.VERSION_CODE
+            Column(modifier = Modifier.padding(CardContentPadding)) {
+                BasicComponent(
+                    title = stringResource(R.string.version_label),
+                    summary = stringResource(
+                        R.string.version_value,
+                        BuildConfig.VERSION_NAME,
+                        BuildConfig.VERSION_CODE
+                    ),
+                    insideMargin = PaddingValues(0.dp)
                 )
-            )
+                BasicComponent(
+                    title = stringResource(R.string.build_time_label),
+                    summary = buildTimeFormat.format(Date(BuildConfig.BUILD_TIME_MS)),
+                    insideMargin = PaddingValues(0.dp)
+                )
+                BasicComponent(
+                    title = stringResource(R.string.cache_clear_label),
+                    summary = stringResource(
+                        R.string.cache_size_value,
+                        CacheCleaner.formatBytes(cacheStats.bytes)
+                    ),
+                    enabled = !cacheBusy,
+                    onClick = { showCacheConfirm = !cacheBusy },
+                    insideMargin = PaddingValues(0.dp)
+                )
+            }
         }
 
         Text(
@@ -468,5 +570,35 @@ fun SettingsScreen(
                 .fillMaxWidth()
                 .padding(top = 12.dp, bottom = 24.dp)
         )
+    }
+
+    if (showCacheConfirm) {
+        OverlayDialog(
+            show = true,
+            title = stringResource(R.string.cache_clear_label),
+            onDismissRequest = { showCacheConfirm = false }
+        ) {
+            Column {
+                Text(stringResource(R.string.cache_clear_confirm, CacheCleaner.formatBytes(cacheStats.bytes)))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.padding(top = 12.dp)
+                ) {
+                    TextButton(
+                        text = stringResource(R.string.action_cancel),
+                        onClick = { showCacheConfirm = false },
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(
+                        text = stringResource(R.string.cache_clear_label),
+                        onClick = {
+                            showCacheConfirm = false
+                            viewModel.clearCache()
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
     }
 }

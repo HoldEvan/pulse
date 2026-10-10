@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 背景必须是单一纯色：Android 12+ 才据此生成莫奈取色变体；带渐变或图案会整层失效 -->
     <background android:drawable="@color/ic_launcher_background" />
     <foreground android:drawable="@drawable/ic_launcher_foreground" />
+    <!-- 单层实心剪影：用户开了「主题化图标」时，Android 13+ 按壁纸取色整体染色 -->
+    <monochrome android:drawable="@drawable/ic_launcher_foreground" />
 </adaptive-icon>
