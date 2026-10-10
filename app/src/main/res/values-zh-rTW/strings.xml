@@ -150,7 +150,7 @@
 
     <!-- 設定頁 -->
     <string name="settings_general">一般</string>
-    <string name="settings_monitor_notify">撥測通知</string>
+    <string name="settings_monitor_notify">通知</string>
     <string name="settings_appearance">外觀</string>
     <string name="appearance_summary">設定主題與返回手勢</string>
     <string name="settings_language">語言</string>
@@ -407,6 +407,8 @@
     <string name="monitor_create_title">新增撥測</string>
     <string name="monitor_edit_title">編輯撥測</string>
     <string name="monitor_name_label">名稱</string>
+    <string name="monitor_group_label">分組</string>
+    <string name="monitor_group_ungrouped">未分組</string>
     <string name="monitor_name_required">請填寫名稱</string>
     <string name="monitor_type_label">檢查類型</string>
     <string name="monitor_type_ip">IP 連通</string>

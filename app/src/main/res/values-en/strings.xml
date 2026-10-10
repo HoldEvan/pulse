@@ -150,7 +150,7 @@
 
     <!-- Settings screen -->
     <string name="settings_general">General</string>
-    <string name="settings_monitor_notify">Monitor notifications</string>
+    <string name="settings_monitor_notify">Notifications</string>
     <string name="settings_appearance">Appearance</string>
     <string name="appearance_summary">Theme and back gesture</string>
     <string name="settings_language">Language</string>
@@ -407,6 +407,8 @@
     <string name="monitor_create_title">Add monitor</string>
     <string name="monitor_edit_title">Edit monitor</string>
     <string name="monitor_name_label">Name</string>
+    <string name="monitor_group_label">Group</string>
+    <string name="monitor_group_ungrouped">Ungrouped</string>
     <string name="monitor_name_required">Enter a name</string>
     <string name="monitor_type_label">Check type</string>
     <string name="monitor_type_ip">IP reachability</string>

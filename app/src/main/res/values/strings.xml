@@ -150,7 +150,7 @@
 
     <!-- 设置页 -->
     <string name="settings_general">通用</string>
-    <string name="settings_monitor_notify">拨测通知</string>
+    <string name="settings_monitor_notify">通知</string>
     <string name="settings_appearance">外观</string>
     <string name="appearance_summary">设置主题和返回手势</string>
     <string name="settings_language">语言</string>
@@ -407,6 +407,8 @@
     <string name="monitor_create_title">新增拨测</string>
     <string name="monitor_edit_title">编辑拨测</string>
     <string name="monitor_name_label">名称</string>
+    <string name="monitor_group_label">分组</string>
+    <string name="monitor_group_ungrouped">未分组</string>
     <string name="monitor_name_required">请填写名称</string>
     <string name="monitor_type_label">检查类型</string>
     <string name="monitor_type_ip">IP 连通</string>

@@ -15,6 +15,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -38,6 +39,8 @@ import com.evan.pulse.data.model.MonitorType
 import com.evan.pulse.data.model.addressText
 import com.evan.pulse.data.model.MONITOR_INTERVAL_PRESETS
 import com.evan.pulse.data.monitor.TargetValidation
+import com.evan.pulse.ui.common.BottomBarClearance
+import com.evan.pulse.ui.common.CardSectionTitle
 import com.evan.pulse.ui.common.ConnectionStateIndicator
 import com.evan.pulse.ui.common.SectionTitleRow
 import com.evan.pulse.ui.l10n.localizedLabels
@@ -62,6 +65,9 @@ private val recordTimeFormat = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault
 private val STATE_OK_COLOR = Color(0xFF2E7D32)
 private val STATE_DOWN_COLOR = Color(0xFFC62828)
 private val STATE_IDLE_COLOR = Color(0xFF9E9E9E)
+
+/** 未分组目标的空分组名 */
+private const val UNGROUPED = ""
 
 internal val monitorTypeLabels = listOf(
     R.string.monitor_type_ip,
@@ -92,10 +98,12 @@ fun MonitorScreen(
         SectionTitleRow(
             label = stringResource(R.string.monitor_records_title),
             actions = {
-                TextButton(
-                    text = stringResource(R.string.monitor_records_more),
-                    onClick = onOpenRecordsList
-                )
+                IconButton(onClick = onOpenRecordsList) {
+                    Icon(
+                        imageVector = Icons.Filled.MoreVert,
+                        contentDescription = stringResource(R.string.monitor_records_more)
+                    )
+                }
             }
         )
         Card(modifier = Modifier.fillMaxWidth()) {
@@ -128,18 +136,39 @@ fun MonitorScreen(
                 .padding(top = 12.dp)
         ) {
             Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)) {
-                targets.forEach { target ->
-                    MonitorTargetRow(
-                        target = target,
-                        run = runs[target.id],
-                        onToggleEnabled = { viewModel.toggleEnabled(target) },
-                        onRunNow = { viewModel.runOnce(target) },
-                        onEdit = { viewModel.openEdit(target) },
-                        onDelete = { viewModel.requestDelete(target) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 2.dp)
-                    )
+                if (targets.isNotEmpty()) {
+                    val grouped = targets.groupBy { it.group }
+                    val groups: List<Pair<String, List<MonitorTarget>>> = buildList {
+                        grouped[UNGROUPED]?.let { add(UNGROUPED to it) }
+                        grouped.filterKeys { it != UNGROUPED }.forEach { (name, list) ->
+                            add(name to list)
+                        }
+                    }
+                    groups.forEach { (groupName, groupTargets) ->
+                        CardSectionTitle(
+                            text = if (groupName.isBlank()) {
+                                stringResource(R.string.monitor_group_ungrouped)
+                            } else {
+                                groupName
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp, bottom = 2.dp)
+                        )
+                        groupTargets.forEach { target ->
+                            MonitorTargetRow(
+                                target = target,
+                                run = runs[target.id],
+                                onToggleEnabled = { viewModel.toggleEnabled(target) },
+                                onRunNow = { viewModel.runOnce(target) },
+                                onEdit = { viewModel.openEdit(target) },
+                                onDelete = { viewModel.requestDelete(target) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 2.dp)
+                            )
+                        }
+                    }
                 }
                 if (targets.isEmpty()) {
                     Column(
@@ -164,6 +193,7 @@ fun MonitorScreen(
                 }
             }
         }
+        BottomBarClearance()
     }
 
     if (viewModel.showEditor) {
@@ -182,6 +212,14 @@ fun MonitorScreen(
                     onValueChange = { viewModel.nameInput = it },
                     label = stringResource(R.string.monitor_name_label),
                     modifier = Modifier.fillMaxWidth()
+                )
+                TextField(
+                    value = viewModel.groupInput,
+                    onValueChange = { viewModel.groupInput = it },
+                    label = stringResource(R.string.monitor_group_label),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
                 )
                 OverlayDropdownPreference(
                     title = stringResource(R.string.monitor_type_label),

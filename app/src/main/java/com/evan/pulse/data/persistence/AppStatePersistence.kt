@@ -343,6 +343,7 @@ class AppStatePersistence(context: Context) {
                         put("statusMin", m.statusMin)
                         put("statusMax", m.statusMax)
                         put("enabled", m.enabled)
+                        put("group", m.group)
                         put("createdAt", m.createdAt)
                     })
                 }
@@ -438,6 +439,7 @@ class AppStatePersistence(context: Context) {
             statusMin = o.intValue("statusMin", 200),
             statusMax = o.intValue("statusMax", 399),
             enabled = o.booleanValue("enabled", true),
+            group = o.stringValue("group"),
             createdAt = o.longValue("createdAt", 0L)
         ).takeIf { it.id >= 0 }
     }

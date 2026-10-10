@@ -24,6 +24,8 @@ data class MonitorTarget(
     /** 接口类型判定为通的结束状态码 */
     val statusMax: Int = 399,
     val enabled: Boolean = true,
+    /** 一级分组名，空字符串表示未分组 */
+    val group: String = "",
     val createdAt: Long = 0L
 )
 

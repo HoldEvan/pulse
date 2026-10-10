@@ -52,6 +52,7 @@ class MonitorViewModel : ViewModel() {
     var creating by mutableStateOf(false)
     var editing by mutableStateOf<MonitorTarget?>(null)
     var nameInput by mutableStateOf("")
+    var groupInput by mutableStateOf("")
     var type by mutableStateOf(MonitorType.HTTP)
     var hostInput by mutableStateOf("")
     var portInput by mutableStateOf("443")
@@ -81,6 +82,7 @@ class MonitorViewModel : ViewModel() {
         creating = true
         editing = null
         nameInput = ""
+        groupInput = ""
         type = MonitorType.HTTP
         hostInput = ""
         portInput = "443"
@@ -97,6 +99,7 @@ class MonitorViewModel : ViewModel() {
         creating = false
         editing = target
         nameInput = target.name
+        groupInput = target.group
         type = target.type
         hostInput = target.host
         portInput = target.port.toString()
@@ -176,6 +179,7 @@ class MonitorViewModel : ViewModel() {
             id = existing?.id ?: 0L,
             projectId = existing?.projectId ?: currentProjectId.value,
             name = nameInput.trim(),
+            group = groupInput.trim(),
             type = type,
             host = hostInput.trim(),
             port = portInput.trim().toIntOrNull() ?: 0,
