@@ -132,6 +132,14 @@ fun prettyBody(body: String, pretty: Boolean): String {
     }
 }
 
+/** 判断字符串是否为合法 JSON，供展示层决定用树形还是纯文本 */
+fun isJson(body: String): Boolean = try {
+    Json.parseToJsonElement(body)
+    true
+} catch (_: Exception) {
+    false
+}
+
 /** 响应体的五种展示形态；顺序即界面标签顺序 */
 enum class BodyViewMode { RAW, JSON, XML, HEX, BASE64 }
 

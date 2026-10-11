@@ -44,6 +44,8 @@ import com.evan.pulse.ui.settings.SettingsViewModel
 import com.evan.pulse.ui.settings.ThemeSettingsScreen
 import com.evan.pulse.ui.test.TestScreen
 import com.evan.pulse.ui.tools.Base64ToolScreen
+import com.evan.pulse.ui.tools.JsonToolScreen
+import com.evan.pulse.ui.tools.TimestampToolScreen
 import top.yukonga.miuix.kmp.basic.FloatingNavigationBar
 import top.yukonga.miuix.kmp.basic.FloatingNavigationBarItem
 import top.yukonga.miuix.kmp.basic.Icon
@@ -178,10 +180,20 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                 modifier = Modifier.fillMaxSize()
             )
 
+            LEVEL_JSON_TOOL -> JsonToolScreen(
+                modifier = Modifier.fillMaxSize()
+            )
+
+            LEVEL_TIMESTAMP_TOOL -> TimestampToolScreen(
+                modifier = Modifier.fillMaxSize()
+            )
+
             else -> when (nav.selectedTab) {
                 0 -> DashboardScreen(
                     modifier = Modifier.fillMaxSize(),
-                    onOpenBase64 = { settingsViewModel.push(LEVEL_BASE64_TOOL) }
+                    onOpenBase64 = { settingsViewModel.push(LEVEL_BASE64_TOOL) },
+                    onOpenJson = { settingsViewModel.push(LEVEL_JSON_TOOL) },
+                    onOpenTimestamp = { settingsViewModel.push(LEVEL_TIMESTAMP_TOOL) }
                 )
                 1 -> TestScreen(
                     modifier = Modifier.fillMaxSize(),
@@ -286,6 +298,30 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
 
             LEVEL_BASE64_TOOL -> TopAppBar(
                 title = stringResource(R.string.base64_title),
+                navigationIcon = {
+                    IconButton(onClick = { settingsViewModel.goBack() }) {
+                        Icon(
+                            imageVector = MiuixIcons.Light.ChevronBackward,
+                            contentDescription = stringResource(R.string.cd_back)
+                        )
+                    }
+                }
+            )
+
+            LEVEL_JSON_TOOL -> TopAppBar(
+                title = stringResource(R.string.json_tool_title),
+                navigationIcon = {
+                    IconButton(onClick = { settingsViewModel.goBack() }) {
+                        Icon(
+                            imageVector = MiuixIcons.Light.ChevronBackward,
+                            contentDescription = stringResource(R.string.cd_back)
+                        )
+                    }
+                }
+            )
+
+            LEVEL_TIMESTAMP_TOOL -> TopAppBar(
+                title = stringResource(R.string.timestamp_tool_title),
                 navigationIcon = {
                     IconButton(onClick = { settingsViewModel.goBack() }) {
                         Icon(

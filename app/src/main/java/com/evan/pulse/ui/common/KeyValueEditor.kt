@@ -25,6 +25,7 @@ import top.yukonga.miuix.kmp.icon.extended.Close
  *
  * @param keyLabel 键列输入框标签
  * @param valueLabel 值列输入框标签
+ * @param valueHintProvider 非空时，对每个值的占位符解析提示，供环境变量可视化
  */
 @Composable
 fun KeyValueEditor(
@@ -33,38 +34,44 @@ fun KeyValueEditor(
     valueLabel: String,
     onChange: (Int, KeyValue) -> Unit,
     onAdd: () -> Unit,
-    onRemove: (Int) -> Unit
+    onRemove: (Int) -> Unit,
+    valueHintProvider: ((String) -> List<Pair<String, String?>>)? = null
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.Start
     ) {
         items.forEachIndexed { index, kv ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                TextField(
-                    value = kv.key,
-                    onValueChange = { onChange(index, kv.copy(key = it)) },
-                    label = keyLabel,
-                    modifier = Modifier.weight(0.4f)
-                )
-                TextField(
-                    value = kv.value,
-                    onValueChange = { onChange(index, kv.copy(value = it)) },
-                    label = valueLabel,
-                    modifier = Modifier
-                        .weight(0.5f)
-                        .padding(start = 6.dp)
-                )
-                Icon(
-                    imageVector = MiuixIcons.Light.Close,
-                    contentDescription = stringResource(R.string.cd_delete),
-                    modifier = Modifier
-                        .clickable { onRemove(index) }
-                        .padding(6.dp)
-                )
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    TextField(
+                        value = kv.key,
+                        onValueChange = { onChange(index, kv.copy(key = it)) },
+                        label = keyLabel,
+                        modifier = Modifier.weight(0.4f)
+                    )
+                    TextField(
+                        value = kv.value,
+                        onValueChange = { onChange(index, kv.copy(value = it)) },
+                        label = valueLabel,
+                        modifier = Modifier
+                            .weight(0.5f)
+                            .padding(start = 6.dp)
+                    )
+                    Icon(
+                        imageVector = MiuixIcons.Light.Close,
+                        contentDescription = stringResource(R.string.cd_delete),
+                        modifier = Modifier
+                            .clickable { onRemove(index) }
+                            .padding(6.dp)
+                    )
+                }
+                valueHintProvider?.let { provider ->
+                    ValueHints(hints = provider(kv.value), modifier = Modifier.padding(start = 6.dp))
+                }
             }
         }
         Row(

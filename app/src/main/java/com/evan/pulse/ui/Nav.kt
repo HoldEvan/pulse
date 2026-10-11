@@ -24,6 +24,12 @@ const val LEVEL_HISTORY = 7
 /** 工具二级页：Base64 转换器 */
 const val LEVEL_BASE64_TOOL = 8
 
+/** 工具二级页：JSON 格式化/压缩 */
+const val LEVEL_JSON_TOOL = 9
+
+/** 工具二级页：时间戳转换 */
+const val LEVEL_TIMESTAMP_TOOL = 10
+
 /**
  * 页面栈状态。
  *

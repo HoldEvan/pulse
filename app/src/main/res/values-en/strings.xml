@@ -37,6 +37,30 @@
     <string name="base64_empty_hint">No content</string>
     <string name="base64_invalid">Invalid Base64 input</string>
 
+    <!-- JSON formatting tool -->
+    <string name="tool_json">JSON Formatter</string>
+    <string name="json_tool_title">JSON Formatter</string>
+    <string name="json_tool_input_label">JSON content</string>
+    <string name="json_tool_output_label">Output</string>
+    <string name="json_tool_pretty">Format</string>
+    <string name="json_tool_minify">Minify</string>
+    <string name="json_tool_invalid">Invalid JSON input</string>
+
+    <!-- Timestamp converter tool -->
+    <string name="tool_timestamp">Timestamp Converter</string>
+    <string name="timestamp_tool_title">Timestamp Converter</string>
+    <string name="timestamp_tool_input_label">Timestamp (seconds or millis)</string>
+    <string name="timestamp_tool_seconds">Seconds</string>
+    <string name="timestamp_tool_millis">Milliseconds</string>
+    <string name="timestamp_tool_utc">UTC</string>
+    <string name="timestamp_tool_local">Local time</string>
+    <string name="timestamp_tool_invalid">Invalid timestamp</string>
+    <string name="timestamp_tool_now">Now</string>
+    <string name="timestamp_tool_now_tip">Tap to fill current timestamp</string>
+
+    <!-- Env variable hints -->
+    <string name="env_hint_missing">%1$s undefined</string>
+
     <!-- Common actions -->
     <string name="action_cancel">Cancel</string>
     <string name="action_save">Save</string>

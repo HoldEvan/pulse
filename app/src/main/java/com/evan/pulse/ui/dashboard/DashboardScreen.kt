@@ -37,6 +37,8 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 fun DashboardScreen(
     modifier: Modifier = Modifier,
     onOpenBase64: () -> Unit = {},
+    onOpenJson: () -> Unit = {},
+    onOpenTimestamp: () -> Unit = {},
     viewModel: DashboardViewModel = viewModel()
 ) {
     val stats by viewModel.stats.collectAsState()
@@ -88,6 +90,16 @@ fun DashboardScreen(
             title = stringResource(R.string.tool_base64),
             onClick = onOpenBase64,
             icon = { Icon(MiuixIcons.Light.ConvertFile, contentDescription = null) }
+        )
+        ToolEntryCard(
+            title = stringResource(R.string.tool_json),
+            onClick = onOpenJson,
+            icon = { Icon(MiuixIcons.Light.Notes, contentDescription = null) }
+        )
+        ToolEntryCard(
+            title = stringResource(R.string.tool_timestamp),
+            onClick = onOpenTimestamp,
+            icon = { Icon(MiuixIcons.Light.Stopwatch, contentDescription = null) }
         )
 
         BottomBarClearance()

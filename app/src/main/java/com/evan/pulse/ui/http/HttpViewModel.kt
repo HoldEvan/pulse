@@ -144,6 +144,18 @@ class HttpViewModel : ViewModel() {
         return env?.variables?.toMap() ?: emptyMap()
     }
 
+    /** 供输入框下方提示：把文本里的 {{var}} 逐项解析成“名字 → 解析值”，缺失的 value 为 null */
+    fun placeholderHints(text: String): List<Pair<String, String?>> {
+        if (text.isBlank()) return emptyList()
+        val vars = activeEnvVars()
+        val seen = LinkedHashMap<String, String?>()
+        for (m in PlaceholderResolver.PLACEHOLDER_REGEX.findAll(text)) {
+            val key = m.groupValues[1]
+            seen.putIfAbsent(key, vars[key])
+        }
+        return seen.map { (k, v) -> k to v }
+    }
+
     fun updateParams(index: Int, value: KeyValue) {
         params = params.mapIndexed { i, kv -> if (i == index) value else kv }
     }

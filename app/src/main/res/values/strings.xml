@@ -37,6 +37,30 @@
     <string name="base64_empty_hint">暂无内容</string>
     <string name="base64_invalid">无效的 Base64 输入</string>
 
+    <!-- JSON 格式化/压缩工具 -->
+    <string name="tool_json">JSON 格式化</string>
+    <string name="json_tool_title">JSON 格式化</string>
+    <string name="json_tool_input_label">JSON 内容</string>
+    <string name="json_tool_output_label">输出结果</string>
+    <string name="json_tool_pretty">格式化</string>
+    <string name="json_tool_minify">压缩</string>
+    <string name="json_tool_invalid">无效的 JSON 输入</string>
+
+    <!-- 时间戳转换工具 -->
+    <string name="tool_timestamp">时间戳转换</string>
+    <string name="timestamp_tool_title">时间戳转换</string>
+    <string name="timestamp_tool_input_label">时间戳（秒或毫秒）</string>
+    <string name="timestamp_tool_seconds">秒</string>
+    <string name="timestamp_tool_millis">毫秒</string>
+    <string name="timestamp_tool_utc">UTC</string>
+    <string name="timestamp_tool_local">本地时间</string>
+    <string name="timestamp_tool_invalid">无效的时间戳</string>
+    <string name="timestamp_tool_now">当前时间</string>
+    <string name="timestamp_tool_now_tip">点击填入当前时间戳</string>
+
+    <!-- 环境变量提示 -->
+    <string name="env_hint_missing">%1$s 未定义</string>
+
     <!-- 通用动作 -->
     <string name="action_cancel">取消</string>
     <string name="action_save">保存</string>

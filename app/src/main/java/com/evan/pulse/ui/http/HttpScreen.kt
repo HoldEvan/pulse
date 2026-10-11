@@ -55,6 +55,9 @@ import com.evan.pulse.ui.common.KeyValueEditor
 import com.evan.pulse.ui.common.MonospaceBlock
 import com.evan.pulse.ui.common.SectionTitleRow
 import com.evan.pulse.ui.common.StatusBadge
+import com.evan.pulse.ui.common.JsonTreeView
+import com.evan.pulse.ui.common.ValueHints
+import com.evan.pulse.ui.common.isJson
 import com.evan.pulse.ui.common.renderBody
 import com.evan.pulse.ui.common.rememberCopyToClipboard
 import com.evan.pulse.ui.common.roundedPressable
@@ -214,6 +217,7 @@ private fun RequestEditorCard(viewModel: HttpViewModel) {
                     .fillMaxWidth()
                     .padding(top = 8.dp)
             )
+            ValueHints(hints = viewModel.placeholderHints(viewModel.url))
             Button(
                 onClick = { viewModel.send() },
                 enabled = !viewModel.sending,
@@ -315,7 +319,8 @@ private fun TabContent(vm: HttpViewModel) {
             valueLabel = stringResource(R.string.kv_header_value),
             onChange = vm::updateHeaders,
             onAdd = vm::addHeader,
-            onRemove = vm::removeHeader
+            onRemove = vm::removeHeader,
+            valueHintProvider = vm::placeholderHints
         )
 
         2 -> BodyEditor(vm)
@@ -658,7 +663,11 @@ private fun ResponseCard(viewModel: HttpViewModel) {
                     cornerRadius = 10.dp
                 )
                 val rendered = remember(outcome.body, mode) { renderBody(outcome.body, mode) }
-                MonospaceBlock(rendered.text, selectable = true)
+                if (mode == BodyViewMode.JSON && isJson(outcome.body)) {
+                    JsonTreeView(outcome.body)
+                } else {
+                    MonospaceBlock(rendered.text, selectable = true)
+                }
                 if (rendered.truncated) {
                     Text(
                         text = stringResource(

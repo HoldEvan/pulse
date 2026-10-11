@@ -267,6 +267,70 @@ private fun toStr(value: Any?): String = when (value) {
     else -> value.toString()
 }
 
+/**
+ * pm.console 里打印对象时按 JSON 展开，方便查看响应/请求结构。
+ * [toStr] 对 Scriptable 走 Context.toString，对象只会输出 [object Object]；
+ * 这里在对象场景换成递归序列化。普通流程仍走 Context.toString，避免改动语义。
+ */
+private fun consoleStr(value: Any?): String = when (value) {
+    null, is Undefined -> ""
+    is Scriptable -> scriptableJson(value, mutableSetOf())
+    is Boolean -> value.toString()
+    is Double, is Float -> toJsNumber((value as Number).toDouble())
+    else -> toStr(value)
+}
+
+private fun scriptableJson(value: Scriptable, visiting: MutableSet<Scriptable>): String {
+    if (value is NativeArray) {
+        if (!visiting.add(value)) return "[Circular]"
+        val items = buildList {
+            for (i in 0 until value.length.toInt()) {
+                val item = value.get(i, value)
+                add(
+                    when {
+                        item is Undefined || item == null -> "null"
+                        item is Scriptable -> scriptableJson(item, visiting)
+                        else -> jsonScalar(item)
+                    }
+                )
+                if (i >= MAX_JSON_NODES - 1) { add("…"); break }
+            }
+        }
+        visiting.remove(value)
+        return "[${items.joinToString(", ")}]"
+    }
+    if (value !is ScriptableObject) return toStr(value)
+    if (!visiting.add(value)) return "[Circular]"
+    val ids = value.ids
+    val parts = ArrayList<String>(ids.size.coerceAtMost(MAX_JSON_NODES))
+    var added = 0
+    for (i in 0 until ids.size) {
+        if (added >= MAX_JSON_NODES) { parts += "\"…\""; break }
+        val key = ids[i].toString()
+        val item = value.get(key, value)
+        if (item is JsCallable) continue
+        val rendered = when {
+            item is Undefined || item == null -> "null"
+            item is Scriptable -> scriptableJson(item, visiting)
+            else -> jsonScalar(item)
+        }
+        parts += "\"$key\": $rendered"
+        added++
+    }
+    visiting.remove(value)
+    return "{${parts.joinToString(", ")}}"
+}
+
+private fun jsonScalar(value: Any): String = when (value) {
+    is String -> "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
+    is Boolean -> value.toString()
+    is Double, is Float -> toJsNumber((value as Number).toDouble())
+    is Int, is Long -> value.toString()
+    else -> "\"$value\""
+}
+
+private const val MAX_JSON_NODES = 200
+
 /** JS 数字过桥是 Double，整数值不该被显示成 3.0 */
 private fun toJsNumber(value: Double): String {
     if (!value.isFinite()) return value.toString()
@@ -657,9 +721,9 @@ private fun consoleObject(
     sandbox: ScriptSession
 ): ScriptableObject {
     val n = b.node()
-    n.method("log") { args -> sandbox.log("", args.joinToString(" ") { value -> toStr(value) }) }
-    n.method("warn") { args -> sandbox.log("warn", args.joinToString(" ") { value -> toStr(value) }) }
-    n.method("error") { args -> sandbox.log("error", args.joinToString(" ") { value -> toStr(value) }) }
+    n.method("log") { args -> sandbox.log("", args.joinToString(" ") { value -> consoleStr(value) }) }
+    n.method("warn") { args -> sandbox.log("warn", args.joinToString(" ") { value -> consoleStr(value) }) }
+    n.method("error") { args -> sandbox.log("error", args.joinToString(" ") { value -> consoleStr(value) }) }
     return n.self
 }
 
@@ -731,7 +795,7 @@ private fun buildPm(
         sandbox.test(name) { fn.call(b.cx, b.scope, b.scope, emptyArray()) }
         null
     }
-    n.method("log") { args -> sandbox.log("", args.joinToString(" ") { value -> toStr(value) }) }
+    n.method("log") { args -> sandbox.log("", args.joinToString(" ") { value -> consoleStr(value) }) }
     return n.self
 }
 
