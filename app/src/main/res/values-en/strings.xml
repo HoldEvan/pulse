@@ -406,6 +406,18 @@
     <string name="sse_log_reconnecting">Reconnecting in %1$d sec</string>
     <string name="sse_log_closed">Connection closed: %1$s</string>
     <string name="sse_log_failed">Connection failed: %1$s</string>
+    <string name="sse_method_label">Method</string>
+    <string name="sse_connect_button">Connect</string>
+    <string name="sse_disconnect_button">Disconnect</string>
+    <string name="sse_preview_title">Assembled Preview</string>
+    <string name="sse_preview_path_label">Extract field (JSONPath, blank to disable)</string>
+    <string name="sse_preview_path_hint">e.g. $.choices[0].delta.content</string>
+    <string name="sse_preview_tab_raw">Raw</string>
+    <string name="sse_preview_tab_markdown">Markdown</string>
+    <string name="sse_preview_empty">Extracted, assembled per-frame output appears here</string>
+    <string name="sse_preview_nonjson">Current frame data is not valid JSON, skipped</string>
+    <string name="cd_copy_preview">Copy assembled output</string>
+    <string name="cd_clear_preview">Clear assembled output</string>
 
     <string name="collection_import_spec">Import Spec</string>
     <string name="spec_import_title">Import API Spec</string>

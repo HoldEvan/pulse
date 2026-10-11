@@ -30,8 +30,8 @@ android {
         applicationId = "com.evan.pulse"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 30
-        versionName = "0.1.30"
+        versionCode = 31
+        versionName = "0.1.31"
         buildConfigField("long", "BUILD_TIME_MS", "${buildTimeMillis}L")
     }
 
@@ -107,6 +107,10 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kaml)
     implementation(libs.kotlinx.coroutines.android)
+
+    // 拼接预览的 Markdown 渲染
+    implementation(libs.markdown.renderer)
+    implementation(libs.markdown.renderer.m3)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

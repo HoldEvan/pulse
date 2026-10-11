@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.filled.Save
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -31,6 +33,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.evan.pulse.R
 import com.evan.pulse.data.model.RequestType
+import com.evan.pulse.domain.model.BodyType
+import com.evan.pulse.domain.model.HttpMethod
 import com.evan.pulse.domain.model.SseConnectionState
 import com.evan.pulse.domain.pathOnly
 import com.evan.pulse.ui.collection.SaveRequestDialog
@@ -39,21 +43,43 @@ import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.ConnectionStateIndicator
 import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.EventLine
-import com.evan.pulse.ui.common.eventLogText
 import com.evan.pulse.ui.common.KeyValueEditor
+import com.evan.pulse.ui.common.MarkdownBlock
+import com.evan.pulse.ui.common.ValueHints
+import com.evan.pulse.ui.common.eventLogText
+import com.evan.pulse.ui.l10n.localizedLabels
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.SmallTitle
+import top.yukonga.miuix.kmp.basic.TabRowWithContour
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.preference.CheckboxPreference
+import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Link
+
+private val sseMethods = listOf(HttpMethod.GET, HttpMethod.POST)
+private val sseBodyTypes = listOf(BodyType.NONE, BodyType.JSON, BodyType.RAW)
+private val sseBodyTypeLabels = listOf(
+    R.string.body_none,
+    R.string.body_json,
+    R.string.body_raw
+)
+private val sseTabLabels = listOf(
+    R.string.tab_params,
+    R.string.tab_headers,
+    R.string.tab_body
+)
+private val previewTabLabels = listOf(
+    R.string.sse_preview_tab_raw,
+    R.string.sse_preview_tab_markdown
+)
 
 @Composable
 private fun SectionTitleRow(label: String, onSaveClick: () -> Unit) {
@@ -71,7 +97,7 @@ private fun SectionTitleRow(label: String, onSaveClick: () -> Unit) {
     }
 }
 
-/** SSE 单向流页面：顶部状态 + URL + 事件过滤 / 重连 / 请求头，底部消息流 */
+/** SSE 单向流页面：方法/参数/请求头/请求体 + 拼接预览（原始/Markdown），底部消息流 */
 @Composable
 fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel()) {
     val state by viewModel.state.collectAsState()
@@ -99,8 +125,18 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
             // 顶部表单区随标题固定，下面内容整体滚动；事件流卡片再在内部滚动
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(12.dp)) {
-                    Row(
+                    OverlayDropdownPreference(
+                        items = sseMethods.map { it.name },
+                        selectedIndex = sseMethods.indexOf(viewModel.method),
+                        title = stringResource(R.string.sse_method_label),
                         modifier = Modifier.fillMaxWidth(),
+                        showValue = true,
+                        onSelectedIndexChange = { viewModel.method = sseMethods[it] }
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         TextField(
@@ -117,6 +153,7 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                             label = stateLabel(state)
                         )
                     }
+                    ValueHints(hints = viewModel.placeholderHints(viewModel.url))
                     TextField(
                         value = viewModel.eventFilter,
                         onValueChange = { viewModel.eventFilter = it },
@@ -140,24 +177,41 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                         onCheckedChange = { viewModel.autoReconnect = it },
                         modifier = Modifier.fillMaxWidth()
                     )
-                    CardSectionTitle(
-                        text = stringResource(R.string.sse_headers_title),
+                    TabRowWithContour(
+                        tabs = sseTabLabels.localizedLabels(),
+                        selectedTabIndex = viewModel.activeTab,
+                        onTabSelected = { viewModel.activeTab = it },
                         modifier = Modifier.padding(top = 10.dp)
                     )
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        KeyValueEditor(
-                            items = viewModel.headers,
-                            keyLabel = stringResource(R.string.kv_header_key),
-                            valueLabel = stringResource(R.string.kv_value_label),
-                            onChange = viewModel::updateHeaders,
-                            onAdd = viewModel::addHeader,
-                            onRemove = viewModel::removeHeader
-                        )
+                    Column(modifier = Modifier.padding(top = 10.dp)) {
+                        when (viewModel.activeTab) {
+                            0 -> KeyValueEditor(
+                                items = viewModel.params,
+                                keyLabel = stringResource(R.string.kv_param_key),
+                                valueLabel = stringResource(R.string.kv_value_label),
+                                onChange = viewModel::updateParams,
+                                onAdd = viewModel::addParam,
+                                onRemove = viewModel::removeParam,
+                                valueHintProvider = viewModel::placeholderHints
+                            )
+
+                            1 -> KeyValueEditor(
+                                items = viewModel.headers,
+                                keyLabel = stringResource(R.string.kv_header_key),
+                                valueLabel = stringResource(R.string.kv_value_label),
+                                onChange = viewModel::updateHeaders,
+                                onAdd = viewModel::addHeader,
+                                onRemove = viewModel::removeHeader,
+                                valueHintProvider = viewModel::placeholderHints
+                            )
+
+                            2 -> BodyEditor(viewModel)
+                        }
                     }
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 10.dp),
+                            .padding(top = 14.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Button(
@@ -166,7 +220,7 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                             modifier = Modifier.weight(1f)
                         ) {
                             Icon(MiuixIcons.Light.Link, contentDescription = null)
-                            Text(stringResource(R.string.action_connect), modifier = Modifier.padding(start = 4.dp))
+                            Text(stringResource(R.string.sse_connect_button), modifier = Modifier.padding(start = 4.dp))
                         }
                         Button(
                             onClick = { viewModel.disconnect() },
@@ -174,7 +228,7 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                             modifier = Modifier.weight(1f)
                         ) {
                             Icon(Icons.Filled.LinkOff, contentDescription = null)
-                            Text(stringResource(R.string.action_disconnect), modifier = Modifier.padding(start = 4.dp))
+                            Text(stringResource(R.string.sse_disconnect_button), modifier = Modifier.padding(start = 4.dp))
                         }
                     }
                     viewModel.lastError?.let { err ->
@@ -184,6 +238,72 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                             modifier = Modifier.padding(top = 8.dp),
                             fontSize = 13.sp
                         )
+                    }
+                }
+            }
+
+            Card(modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    TextField(
+                        value = viewModel.previewPath,
+                        onValueChange = { viewModel.previewPath = it },
+                        label = stringResource(R.string.sse_preview_path_label),
+                        useLabelAsPlaceholder = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TabRowWithContour(
+                            tabs = previewTabLabels.localizedLabels(),
+                            selectedTabIndex = viewModel.previewTab,
+                            onTabSelected = { viewModel.previewTab = it },
+                            modifier = Modifier.weight(1f)
+                        )
+                        CopyIconButton(
+                            text = viewModel.previewText,
+                            label = stringResource(R.string.cd_copy_preview),
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                        Icon(
+                            imageVector = MiuixIcons.Light.Delete,
+                            contentDescription = stringResource(R.string.cd_clear_preview),
+                            modifier = Modifier
+                                .clickable { viewModel.clearPreview() }
+                                .padding(6.dp)
+                        )
+                    }
+                    if (viewModel.previewText.isBlank()) {
+                        Text(
+                            text = stringResource(R.string.sse_preview_empty),
+                            color = Color.Gray,
+                            fontSize = 13.sp,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    } else {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp)
+                                .heightIn(min = 120.dp, max = 300.dp)
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            if (viewModel.previewTab == 0) {
+                                Text(
+                                    text = viewModel.previewText,
+                                    fontSize = 13.sp,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            } else {
+                                MarkdownBlock(
+                                    markdown = viewModel.previewText,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -208,7 +328,7 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                         .padding(6.dp)
                 )
             }
-            Card(modifier = Modifier.fillMaxWidth().height(360.dp)) {
+            Card(modifier = Modifier.fillMaxWidth().height(300.dp)) {
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
@@ -248,6 +368,34 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
         snapshotProvider = { viewModel.snapshot() },
         onDismiss = { showSave = false }
     )
+}
+
+@Composable
+private fun BodyEditor(viewModel: SseViewModel) {
+    Column {
+        OverlayDropdownPreference(
+            items = sseBodyTypeLabels.localizedLabels(),
+            selectedIndex = sseBodyTypes.indexOf(viewModel.bodyType),
+            title = stringResource(R.string.body_type_label),
+            modifier = Modifier.fillMaxWidth(),
+            showValue = true,
+            onSelectedIndexChange = { viewModel.bodyType = sseBodyTypes[it] }
+        )
+        if (viewModel.bodyType != BodyType.NONE) {
+            TextField(
+                value = viewModel.bodyText,
+                onValueChange = { viewModel.bodyText = it },
+                label = if (viewModel.bodyType == BodyType.JSON) {
+                    stringResource(R.string.body_json_label)
+                } else {
+                    stringResource(R.string.body_raw_label)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+            )
+        }
+    }
 }
 
 @Composable

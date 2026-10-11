@@ -94,10 +94,16 @@ data class MqttSnapshot(
 @Serializable
 data class SseSnapshot(
     val url: String = "",
+    val method: String = "GET",
+    val params: List<KeyValueEntry> = emptyList(),
     val headers: List<KeyValueEntry> = emptyList(),
+    val bodyType: String = "NONE",
+    val bodyText: String = "",
     val eventFilter: String = "",
     val autoReconnect: Boolean = false,
-    val reconnectDelaySec: Int = 3
+    val reconnectDelaySec: Int = 3,
+    /** 拼接预览的 JSONPath 表达式，空表示不提取 */
+    val previewPath: String = ""
 )
 
 /** 快照统一序列化配置：字段只增不减，旧快照缺字段时用默认值兜底 */

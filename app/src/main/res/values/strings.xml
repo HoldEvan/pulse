@@ -406,6 +406,18 @@
     <string name="sse_log_reconnecting">%1$d 秒后重连</string>
     <string name="sse_log_closed">连接已断开：%1$s</string>
     <string name="sse_log_failed">连接失败：%1$s</string>
+    <string name="sse_method_label">请求方法</string>
+    <string name="sse_connect_button">连接</string>
+    <string name="sse_disconnect_button">断开</string>
+    <string name="sse_preview_title">拼接预览</string>
+    <string name="sse_preview_path_label">提取字段（JSONPath，留空关闭）</string>
+    <string name="sse_preview_path_hint">如 $.choices[0].delta.content</string>
+    <string name="sse_preview_tab_raw">原始</string>
+    <string name="sse_preview_tab_markdown">Markdown</string>
+    <string name="sse_preview_empty">逐帧按表达式提取并拼接的结果会显示在这里</string>
+    <string name="sse_preview_nonjson">当前帧 data 不是合法 JSON，已跳过</string>
+    <string name="cd_copy_preview">复制拼接结果</string>
+    <string name="cd_clear_preview">清空拼接结果</string>
 
     <string name="collection_import_spec">导入规范</string>
     <string name="spec_import_title">导入 API 规范</string>

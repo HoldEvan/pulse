@@ -1,6 +1,7 @@
 package com.evan.pulse.ui.sse
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -12,7 +13,11 @@ import com.evan.pulse.data.model.RequestType
 import com.evan.pulse.data.model.SseSnapshot
 import com.evan.pulse.data.model.snapshotJson
 import com.evan.pulse.di.ServiceLocator
+import com.evan.pulse.domain.JsonPath
 import com.evan.pulse.domain.PlaceholderResolver
+import com.evan.pulse.domain.extractString
+import com.evan.pulse.domain.model.BodyType
+import com.evan.pulse.domain.model.HttpMethod
 import com.evan.pulse.domain.model.KeyValue
 import com.evan.pulse.domain.model.SseConfig
 import com.evan.pulse.domain.model.SseEvent
@@ -22,6 +27,8 @@ import kotlinx.coroutines.launch
 
 /**
  * SSE 页面状态。SSE 为单向流，故只提供连接与断开，没有发送入口。
+ * 支持与 HTTP 一致的请求方法/参数/请求体配置，并在接收帧时按
+ * JSONPath 表达式提取字段做拼接预览（如 OpenAI 的 delta.content）。
  */
 class SseViewModel : ViewModel() {
 
@@ -31,11 +38,22 @@ class SseViewModel : ViewModel() {
     private val settingsStore = ServiceLocator.settingsStore
     private val collectionStore = ServiceLocator.collectionStore
 
-    var url by mutableStateOf("{{sseUrl}}/stream")
+    var method by mutableStateOf(HttpMethod.POST)
+    var url by mutableStateOf("{{sseUrl}}/v1/chat/completions")
+    var params by mutableStateOf(listOf(KeyValue()))
     var headers by mutableStateOf(listOf(KeyValue()))
+    var bodyType by mutableStateOf(BodyType.JSON)
+    var bodyText by mutableStateOf("")
     var eventFilter by mutableStateOf("")
     var autoReconnect by mutableStateOf(false)
     var reconnectDelaySec by mutableStateOf("3")
+
+    var activeTab by mutableIntStateOf(0)
+
+    /** 拼接预览：表达式 + 累计文本；previewTab 0=原始 1=Markdown */
+    var previewPath by mutableStateOf("$.choices[0].delta.content")
+    var previewText by mutableStateOf("")
+    var previewTab by mutableIntStateOf(0)
 
     val state = engine.state
     val lines = mutableStateListOf<UiEventLine>()
@@ -47,7 +65,11 @@ class SseViewModel : ViewModel() {
             engine.events.collect { event ->
                 when (event) {
                     is SseEvent.Connected -> add(L10n.t(R.string.state_opened), true)
-                    is SseEvent.FrameReceived -> add(frameText(event), false)
+                    is SseEvent.FrameReceived -> {
+                        appendPreview(event.data)
+                        add(frameText(event), false)
+                    }
+
                     is SseEvent.Comment -> add(event.line, true)
                     is SseEvent.Reconnecting -> add(
                         L10n.t(R.string.sse_log_reconnecting, event.delaySec),
@@ -79,10 +101,15 @@ class SseViewModel : ViewModel() {
         SseSnapshot.serializer(),
         SseSnapshot(
             url = url,
+            method = method.name,
+            params = params.map { KeyValueEntry(it.key, it.value, it.enabled) },
             headers = headers.map { KeyValueEntry(it.key, it.value, it.enabled) },
+            bodyType = bodyType.name,
+            bodyText = bodyText,
             eventFilter = eventFilter,
             autoReconnect = autoReconnect,
-            reconnectDelaySec = reconnectDelaySec.toIntOrNull() ?: 3
+            reconnectDelaySec = reconnectDelaySec.toIntOrNull() ?: 3,
+            previewPath = previewPath
         )
     )
 
@@ -93,10 +120,15 @@ class SseViewModel : ViewModel() {
             return
         }
         url = snap.url
+        method = HttpMethod.entries.firstOrNull { it.name == snap.method } ?: HttpMethod.POST
+        params = snap.params.map { KeyValue(it.key, it.value, it.enabled) }.ifEmpty { listOf(KeyValue()) }
         headers = snap.headers.map { KeyValue(it.key, it.value, it.enabled) }.ifEmpty { listOf(KeyValue()) }
+        bodyType = BodyType.entries.firstOrNull { it.name == snap.bodyType } ?: BodyType.JSON
+        bodyText = snap.bodyText
         eventFilter = snap.eventFilter
         autoReconnect = snap.autoReconnect
         reconnectDelaySec = snap.reconnectDelaySec.toString()
+        previewPath = snap.previewPath
     }
 
     /** SSE 帧还原为协议原始文本：id / event / data 三行 */
@@ -106,9 +138,31 @@ class SseViewModel : ViewModel() {
         append("data: ").append(event.data)
     }
 
+    /** 帧的 data 若是 JSON，按 previewPath 提取并拼接；非 JSON 或表达式为空时跳过 */
+    private fun appendPreview(data: String) {
+        val path = previewPath.trim()
+        if (path.isEmpty()) return
+        val hits = JsonPath.eval(data, path) ?: return
+        if (hits.isEmpty()) return
+        previewText += hits.joinToString("") { it.extractString() }
+    }
+
     private fun add(text: String, isSystem: Boolean) {
         lines.add(UiEventLine(text, isSystem, System.currentTimeMillis()))
         if (lines.size > 1000) lines.removeAt(0)
+    }
+
+    fun updateParams(index: Int, value: KeyValue) {
+        params = params.mapIndexed { i, kv -> if (i == index) value else kv }
+    }
+
+    fun addParam() {
+        params = params + KeyValue()
+    }
+
+    fun removeParam(index: Int) {
+        params = params.filterIndexed { i, _ -> i != index }
+        if (params.isEmpty()) params = listOf(KeyValue())
     }
 
     fun updateHeaders(index: Int, value: KeyValue) {
@@ -146,12 +200,19 @@ class SseViewModel : ViewModel() {
                 return@launch
             }
 
+            previewText = ""
             engine.connect(
                 SseConfig(
                     url = res(url),
+                    method = method,
                     headers = headers
                         .filter { it.enabled && it.key.isNotBlank() }
                         .map { it.copy(value = res(it.value)) },
+                    queryParams = params
+                        .filter { it.enabled && it.key.isNotBlank() }
+                        .map { it.copy(value = res(it.value)) },
+                    bodyType = bodyType,
+                    body = res(bodyText),
                     proxy = proxy,
                     eventFilter = eventFilter.trim(),
                     autoReconnect = autoReconnect,
@@ -165,9 +226,32 @@ class SseViewModel : ViewModel() {
         viewModelScope.launch { engine.close() }
     }
 
-    fun clearLog() = lines.clear()
+    fun clearLog() {
+        lines.clear()
+    }
+
+    /** 只清拼接预览，不清事件流 */
+    fun clearPreview() {
+        previewText = ""
+    }
 
     fun dismissMissing() {
         missingVars = null
+    }
+
+    /** 供输入框下方提示：把文本里的 {{var}} 逐项解析成“名字 → 解析值”，缺失的 value 为 null */
+    fun placeholderHints(text: String): List<Pair<String, String?>> {
+        if (text.isBlank()) return emptyList()
+        val pid = ServiceLocator.projectStore.currentProjectId.value
+        val vars = envStore.environments.value
+            .firstOrNull { it.projectId == pid && it.isActive }
+            ?.variables?.toMap()
+            ?: emptyMap()
+        val seen = LinkedHashMap<String, String?>()
+        for (m in PlaceholderResolver.PLACEHOLDER_REGEX.findAll(text)) {
+            val key = m.groupValues[1]
+            seen.putIfAbsent(key, vars[key])
+        }
+        return seen.map { (k, v) -> k to v }
     }
 }

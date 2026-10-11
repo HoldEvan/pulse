@@ -1,5 +1,7 @@
 package com.evan.pulse.domain.net
 
+import com.evan.pulse.domain.model.BodyType
+import com.evan.pulse.domain.model.HttpMethod
 import com.evan.pulse.domain.model.ProxyConfig
 import com.evan.pulse.domain.model.ProxyType
 import com.evan.pulse.domain.model.SseConfig
@@ -7,10 +9,15 @@ import com.evan.pulse.domain.model.SseConnectionState
 import com.evan.pulse.domain.model.SseEvent
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.request.request
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsChannel
+import io.ktor.http.ContentType
+import io.ktor.http.HttpMethod as KtorHttpMethod
+import io.ktor.http.content.TextContent
 import io.ktor.http.isSuccess
+import io.ktor.http.takeFrom
 import io.ktor.utils.io.readUTF8Line
 import java.io.IOException
 import java.net.InetSocketAddress
@@ -75,11 +82,19 @@ class KtorSseEngine : SseEngine {
     private suspend fun runStream(config: SseConfig) {
         while (true) {
             try {
-                val response = clientFor(config.proxy).get(config.url) {
+                val response = clientFor(config.proxy).request(config.url) {
+                    method = when (config.method) {
+                        HttpMethod.POST -> KtorHttpMethod.Post
+                        else -> KtorHttpMethod.Get
+                    }
                     header("Accept", "text/event-stream")
+                    config.queryParams
+                        .filter { it.enabled && it.key.isNotBlank() }
+                        .forEach { url.parameters.append(it.key, it.value) }
                     config.headers
                         .filter { it.enabled && it.key.isNotBlank() }
                         .forEach { header(it.key, it.value) }
+                    requestBody(config)?.let { setBody(it) }
                 }
                 if (!response.status.isSuccess()) {
                     throw IOException("HTTP ${response.status.value} ${response.status.description}")
@@ -106,6 +121,15 @@ class KtorSseEngine : SseEngine {
                 delay(config.reconnectDelaySec * 1000L)
             }
         }
+    }
+
+    /** 只有 POST 才携带请求体；JSON/Raw 都以文本发送，Content-Type 默认按类型推断 */
+    private fun requestBody(config: SseConfig): TextContent? = when {
+        config.method != HttpMethod.POST -> null
+        config.body.isBlank() -> null
+        config.bodyType == BodyType.JSON ->
+            TextContent(config.body, ContentType.Application.Json)
+        else -> TextContent(config.body, ContentType.Text.Plain)
     }
 
     /** 读取响应体直到 EOF，按 SSE 帧语法解析出事件与注释 */
