@@ -127,11 +127,12 @@ fun ProjectBar(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                            .clickable {
-                                viewModel.switch(project.id)
-                                viewModel.closeDialog()
-                            }
+                            .padding(vertical = 4.dp),
+                        onClick = {
+                            viewModel.switch(project.id)
+                            viewModel.closeDialog()
+                        },
+                        showIndication = true
                     ) {
                         Row(
                             modifier = Modifier

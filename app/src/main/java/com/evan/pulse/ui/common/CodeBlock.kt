@@ -3,10 +3,8 @@ package com.evan.pulse.ui.common
 import android.graphics.Typeface
 import android.util.TypedValue
 import android.widget.TextView
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,6 +16,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.squircle.squircleBackground
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 import java.io.StringWriter
@@ -43,10 +42,7 @@ fun MonospaceBlock(text: String, modifier: Modifier = Modifier, selectable: Bool
     val blockModifier = modifier
         .fillMaxWidth()
         .padding(top = 6.dp)
-        .background(
-            MiuixTheme.colorScheme.surfaceVariant,
-            RoundedCornerShape(8.dp)
-        )
+        .squircleBackground(MiuixTheme.colorScheme.surfaceVariant, 8.dp)
         .padding(10.dp)
     val textColor = MiuixTheme.colorScheme.onSurface.toArgb()
     if (selectable) {
@@ -83,7 +79,7 @@ fun StatusBadge(statusCode: Int, modifier: Modifier = Modifier) {
         text = statusCode.toString(),
         color = Color.White,
         modifier = modifier
-            .background(statusColor(statusCode), RoundedCornerShape(6.dp))
+            .squircleBackground(statusColor(statusCode), 6.dp)
             .padding(horizontal = 8.dp, vertical = 2.dp),
         fontSize = 12.sp
     )
@@ -104,7 +100,7 @@ fun MethodBadge(method: String, modifier: Modifier = Modifier) {
         text = method,
         color = Color.White,
         modifier = modifier
-            .background(methodColor(method), RoundedCornerShape(6.dp))
+            .squircleBackground(methodColor(method), 6.dp)
             .padding(horizontal = 8.dp, vertical = 2.dp),
         fontSize = 12.sp
     )

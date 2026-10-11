@@ -20,7 +20,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.evan.pulse.R
 import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.CardSectionTitle
-import com.evan.pulse.ui.common.roundedPressable
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
@@ -141,8 +140,9 @@ private fun ToolEntryCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 6.dp)
-            .roundedPressable(cornerRadius = 16.dp, onClick = onClick)
+            .padding(top = 6.dp),
+        onClick = onClick,
+        showIndication = true
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),

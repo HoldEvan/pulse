@@ -2,7 +2,6 @@ package com.evan.pulse.ui.http
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,7 +13,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Code
@@ -29,7 +27,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -77,6 +74,7 @@ import top.yukonga.miuix.kmp.icon.extended.Close
 import top.yukonga.miuix.kmp.icon.extended.Send
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference
+import top.yukonga.miuix.kmp.squircle.squircleSurface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private val httpMethods = HttpMethod.entries.toList()
@@ -200,15 +198,15 @@ fun HttpScreen(
 @Composable
 private fun RequestEditorCard(viewModel: HttpViewModel) {
     Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+        OverlayDropdownPreference(
+            items = httpMethods.map { it.name },
+            selectedIndex = httpMethods.indexOf(viewModel.method),
+            title = stringResource(R.string.http_method_label),
+            modifier = Modifier.fillMaxWidth(),
+            showValue = true,
+            onSelectedIndexChange = { viewModel.method = httpMethods[it] }
+        )
         Column(modifier = Modifier.padding(12.dp)) {
-            OverlayDropdownPreference(
-                items = httpMethods.map { it.name },
-                selectedIndex = httpMethods.indexOf(viewModel.method),
-                title = stringResource(R.string.http_method_label),
-                modifier = Modifier.fillMaxWidth(),
-                showValue = true,
-                onSelectedIndexChange = { viewModel.method = httpMethods[it] }
-            )
             TextField(
                 value = viewModel.url,
                 onValueChange = { viewModel.url = it },
@@ -393,8 +391,7 @@ private fun ScriptPreview(script: String, placeholder: String, onClick: () -> Un
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 96.dp, max = 160.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(MiuixTheme.colorScheme.surfaceVariant)
+            .squircleSurface(MiuixTheme.colorScheme.surfaceVariant, 8.dp)
             .clickable(onClick = onClick)
             .verticalScroll(rememberScrollState())
             .padding(10.dp)

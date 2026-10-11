@@ -3,12 +3,10 @@ package com.evan.pulse.ui.common
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -23,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.squircle.squircleBackground
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /** Toast 显示时长，与复制图标的变绿时长配合使用 */
@@ -88,9 +87,9 @@ fun ToastHost(modifier: Modifier = Modifier) {
 private fun ToastPill(item: ToastItem, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
-            .background(
+            .squircleBackground(
                 MiuixTheme.colorScheme.onSurface.copy(alpha = 0.92f),
-                RoundedCornerShape(20.dp)
+                20.dp
             )
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically

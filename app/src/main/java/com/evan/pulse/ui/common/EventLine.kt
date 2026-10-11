@@ -1,10 +1,8 @@
 package com.evan.pulse.ui.common
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -15,6 +13,7 @@ import com.evan.pulse.ui.history.UiEventLine
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.squircle.squircleBackground
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private val prettyJson = Json { prettyPrint = true }
@@ -35,9 +34,9 @@ fun EventLine(line: UiEventLine, systemLabel: String, recvLabel: String) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .background(
+            .squircleBackground(
                 if (line.isSystem) MiuixTheme.colorScheme.surfaceVariant else MiuixTheme.colorScheme.primaryContainer,
-                RoundedCornerShape(8.dp)
+                8.dp
             )
             .padding(8.dp)
     ) {

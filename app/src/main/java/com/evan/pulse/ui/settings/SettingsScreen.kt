@@ -6,7 +6,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -217,54 +216,48 @@ fun SettingsScreen(
         ) {
 
         Card(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(CardContentPadding)) {
-                OverlayDropdownPreference(
-                    title = stringResource(R.string.settings_language),
-                    items = LanguageLabels.localizedLabels(),
-                    selectedIndex = settings.languageIndex,
-                    onSelectedIndexChange = { viewModel.setLanguage(it) },
-                    insideMargin = PaddingValues(0.dp)
-                )
+            OverlayDropdownPreference(
+                title = stringResource(R.string.settings_language),
+                items = LanguageLabels.localizedLabels(),
+                selectedIndex = settings.languageIndex,
+                onSelectedIndexChange = { viewModel.setLanguage(it) }
+            )
 
-                ArrowPreference(
-                    title = stringResource(R.string.settings_appearance),
-                    summary = stringResource(R.string.appearance_summary),
-                    onClick = onOpenAppearance,
-                    insideMargin = PaddingValues(0.dp)
-                )
+            ArrowPreference(
+                title = stringResource(R.string.settings_appearance),
+                summary = stringResource(R.string.appearance_summary),
+                onClick = onOpenAppearance
+            )
 
-                OverlayDropdownPreference(
-                    title = stringResource(R.string.back_gesture),
-                    summary = stringResource(
-                        BackGestureModeSummaries[settings.backGestureModeIndex]
-                            ?: R.string.back_mode_miuix_summary
-                    ),
-                    items = BackGestureModeLabels.localizedLabels(),
-                    selectedIndex = settings.backGestureModeIndex,
-                    onSelectedIndexChange = { viewModel.setBackGestureMode(it) },
-                    insideMargin = PaddingValues(0.dp)
-                )
+            OverlayDropdownPreference(
+                title = stringResource(R.string.back_gesture),
+                summary = stringResource(
+                    BackGestureModeSummaries[settings.backGestureModeIndex]
+                        ?: R.string.back_mode_miuix_summary
+                ),
+                items = BackGestureModeLabels.localizedLabels(),
+                selectedIndex = settings.backGestureModeIndex,
+                onSelectedIndexChange = { viewModel.setBackGestureMode(it) }
+            )
 
-                SwitchPreference(
-                    checked = settings.monitorNotify,
-                    onCheckedChange = { value ->
-                        if (value &&
-                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                            !ServiceLocator.monitorNotifier.isGranted()
-                        ) {
-                            requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-                        }
-                        viewModel.setMonitorNotify(value)
-                    },
-                    title = stringResource(R.string.settings_monitor_notify),
-                    summary = if (settings.monitorNotify && !notifyPermissionGranted) {
-                        permissionDeniedText
-                    } else {
-                        null
-                    },
-                    insideMargin = PaddingValues(0.dp)
-                )
-            }
+            SwitchPreference(
+                checked = settings.monitorNotify,
+                onCheckedChange = { value ->
+                    if (value &&
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                        !ServiceLocator.monitorNotifier.isGranted()
+                    ) {
+                        requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                    viewModel.setMonitorNotify(value)
+                },
+                title = stringResource(R.string.settings_monitor_notify),
+                summary = if (settings.monitorNotify && !notifyPermissionGranted) {
+                    permissionDeniedText
+                } else {
+                    null
+                }
+            )
         }
 
         SmallTitle(
@@ -273,28 +266,27 @@ fun SettingsScreen(
         )
 
         Card(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(CardContentPadding)) {
-                OverlayDropdownPreference(
-                    title = stringResource(R.string.settings_proxy),
-                    summary = stringResource(
-                        ProxyTypeLabels.getOrElse(settings.proxyTypeIndex) { R.string.proxy_summary_none }
-                    ),
-                    items = ProxyTypeLabels.localizedLabels(),
-                    selectedIndex = settings.proxyTypeIndex,
-                    onSelectedIndexChange = { viewModel.setProxyType(it) },
-                    insideMargin = PaddingValues(0.dp)
-                )
+            OverlayDropdownPreference(
+                title = stringResource(R.string.settings_proxy),
+                summary = stringResource(
+                    ProxyTypeLabels.getOrElse(settings.proxyTypeIndex) { R.string.proxy_summary_none }
+                ),
+                items = ProxyTypeLabels.localizedLabels(),
+                selectedIndex = settings.proxyTypeIndex,
+                onSelectedIndexChange = { viewModel.setProxyType(it) }
+            )
 
-                if (settings.proxyTypeIndex > 0) {
-                    var proxyAddress by remember {
-                        mutableStateOf(
-                            if (settings.proxyPort.isBlank()) {
-                                settings.proxyHost
-                            } else {
-                                "${settings.proxyHost}:${settings.proxyPort}"
-                            }
-                        )
-                    }
+            if (settings.proxyTypeIndex > 0) {
+                var proxyAddress by remember {
+                    mutableStateOf(
+                        if (settings.proxyPort.isBlank()) {
+                            settings.proxyHost
+                        } else {
+                            "${settings.proxyHost}:${settings.proxyPort}"
+                        }
+                    )
+                }
+                Column(modifier = Modifier.padding(CardContentPadding)) {
                     TextField(
                         value = proxyAddress,
                         onValueChange = { text ->
@@ -541,32 +533,27 @@ fun SettingsScreen(
         )
 
         Card(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(CardContentPadding)) {
-                BasicComponent(
-                    title = stringResource(R.string.version_label),
-                    summary = stringResource(
-                        R.string.version_value,
-                        BuildConfig.VERSION_NAME,
-                        BuildConfig.VERSION_CODE
-                    ),
-                    insideMargin = PaddingValues(0.dp)
+            BasicComponent(
+                title = stringResource(R.string.version_label),
+                summary = stringResource(
+                    R.string.version_value,
+                    BuildConfig.VERSION_NAME,
+                    BuildConfig.VERSION_CODE
                 )
-                BasicComponent(
-                    title = stringResource(R.string.build_time_label),
-                    summary = buildTimeFormat.format(Date(BuildConfig.BUILD_TIME_MS)),
-                    insideMargin = PaddingValues(0.dp)
-                )
-                BasicComponent(
-                    title = stringResource(R.string.cache_clear_label),
-                    summary = stringResource(
-                        R.string.cache_size_value,
-                        CacheCleaner.formatBytes(cacheStats.bytes)
-                    ),
-                    enabled = !cacheBusy,
-                    onClick = { showCacheConfirm = !cacheBusy },
-                    insideMargin = PaddingValues(0.dp)
-                )
-            }
+            )
+            BasicComponent(
+                title = stringResource(R.string.build_time_label),
+                summary = buildTimeFormat.format(Date(BuildConfig.BUILD_TIME_MS))
+            )
+            BasicComponent(
+                title = stringResource(R.string.cache_clear_label),
+                summary = stringResource(
+                    R.string.cache_size_value,
+                    CacheCleaner.formatBytes(cacheStats.bytes)
+                ),
+                enabled = !cacheBusy,
+                onClick = { showCacheConfirm = !cacheBusy }
+            )
         }
 
         BottomBarClearance()

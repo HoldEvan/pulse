@@ -1,12 +1,10 @@
 package com.evan.pulse.ui.common
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -29,6 +27,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.squircle.squircleBackground
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private val jsonTreeJson = Json { ignoreUnknownKeys = true }
@@ -54,7 +53,7 @@ fun JsonTreeView(
     val blockModifier = modifier
         .fillMaxWidth()
         .padding(top = 6.dp)
-        .background(MiuixTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
+        .squircleBackground(MiuixTheme.colorScheme.surfaceVariant, 8.dp)
         .padding(10.dp)
 
     val element = remember(jsonText) {

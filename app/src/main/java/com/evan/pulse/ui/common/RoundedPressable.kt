@@ -10,12 +10,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import top.yukonga.miuix.kmp.squircle.addSquircleRect
+import top.yukonga.miuix.kmp.squircle.isSquircleEnabled
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /** 空指示器：不用 clickable 默认的矩形涟漪时传它 */
@@ -33,7 +35,8 @@ private object NoIndication : IndicationNodeFactory {
  * 带圆角按压反馈的可点击修饰符。
  *
  * 本仓库 Compose 版本的 clickable 没有 shape 参数，默认涟漪是矩形的；这里关掉系统涟漪，
- * 改成按压时画一块 [cornerRadius] 圆角的半透明矩形。
+ * 改成按压时画一块 [cornerRadius] 圆角的半透明矩形，轮廓用 miuix-squircle 的
+ * [addSquircleRect] 生成（运行时 shader 不可用时退化为普通圆角矩形）。
  *
  * 圆角高亮用 drawWithContent 画，而不是放进 IndicationNodeFactory：clickable 会把指示器节点插到
  * 链条最内侧，只包住内容本身，外层的 padding 不在它里面，高亮就会紧贴文字。
@@ -53,14 +56,20 @@ fun Modifier.roundedPressable(
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
     val highlight = MiuixTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+    val squircleEnabled = isSquircleEnabled()
     return this
         .clickable(interactionSource = interactionSource, indication = NoIndication, onClick = onClick)
         .drawWithContent {
             if (pressed) {
-                drawRoundRect(
-                    color = highlight,
-                    cornerRadius = CornerRadius(cornerRadius.toPx(), cornerRadius.toPx())
-                )
+                val path = Path().apply {
+                    addSquircleRect(
+                        width = size.width,
+                        height = size.height,
+                        cornerRadius = cornerRadius.toPx(),
+                        squircleEnabled = squircleEnabled
+                    )
+                }
+                drawPath(path, highlight)
             }
             drawContent()
         }

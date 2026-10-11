@@ -223,7 +223,11 @@ private fun HistoryItem(
     modifier: Modifier = Modifier,
     onOpen: () -> Unit
 ) {
-    Card(modifier = modifier.fillMaxWidth().roundedPressable(onClick = onOpen)) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        onClick = onOpen,
+        showIndication = true
+    ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 MethodBadge(entry.method)
@@ -270,8 +274,9 @@ private fun ProjectFilterChip(label: String, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp)
-            .roundedPressable(onClick = onClick)
+            .padding(vertical = 6.dp),
+        onClick = onClick,
+        showIndication = true
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),

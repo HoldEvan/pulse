@@ -125,15 +125,15 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
         ) {
             // 顶部表单区随标题固定，下面内容整体滚动；事件流卡片再在内部滚动
             Card(modifier = Modifier.fillMaxWidth()) {
+                OverlayDropdownPreference(
+                    items = sseMethods.map { it.name },
+                    selectedIndex = sseMethods.indexOf(viewModel.method),
+                    title = stringResource(R.string.sse_method_label),
+                    modifier = Modifier.fillMaxWidth(),
+                    showValue = true,
+                    onSelectedIndexChange = { viewModel.method = sseMethods[it] }
+                )
                 Column(modifier = Modifier.padding(12.dp)) {
-                    OverlayDropdownPreference(
-                        items = sseMethods.map { it.name },
-                        selectedIndex = sseMethods.indexOf(viewModel.method),
-                        title = stringResource(R.string.sse_method_label),
-                        modifier = Modifier.fillMaxWidth(),
-                        showValue = true,
-                        onSelectedIndexChange = { viewModel.method = sseMethods[it] }
-                    )
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
