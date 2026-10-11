@@ -8,14 +8,12 @@
     <string name="tab_mqtt">MQTT</string>
     <string name="tab_sse">SSE</string>
     <string name="tab_env">環境</string>
-    <string name="tab_history">歷史</string>
     <string name="tab_home">首頁</string>
     <string name="tab_test">測試</string>
     <string name="tab_settings">設定</string>
     <string name="tab_collection">集合</string>
     <string name="tab_resources">資源</string>
     <string name="tab_monitor">撥測</string>
-    <string name="title_settings">設定</string>
     <string name="theme_page_title">外觀與主題</string>
     <string name="cd_back">返回</string>
 
@@ -45,6 +43,7 @@
     <string name="json_tool_pretty">格式化</string>
     <string name="json_tool_minify">壓縮</string>
     <string name="json_tool_invalid">無效的 JSON 輸入</string>
+    <string name="json_tree_items">%1$d 項</string>
 
     <!-- 時間戳轉換工具 -->
     <string name="tool_timestamp">時間戳轉換</string>
@@ -73,8 +72,6 @@
     <string name="action_publish">發佈</string>
     <string name="action_send">傳送</string>
     <string name="action_sending">傳送中…</string>
-    <string name="none_option">不使用</string>
-    <string name="field_type_label">類型</string>
 
     <!-- 格式化文案 -->
     <string name="duration_value">%1$dms</string>
@@ -82,15 +79,14 @@
     <string name="version_value">%1$s (%2$d)</string>
 
     <!-- 連線狀態 -->
-    <string name="state_idle">閒置</string>
     <string name="state_connected">已連線，耗時 %1$dms</string>
     <string name="state_disconnected">已斷開</string>
     <string name="state_closed_message">已斷開：%1$s</string>
-    <string name="state_failed_message">連線錯誤：%1$s</string>
     <string name="proxy_in_use">代理：%1$s</string>
 
     <!-- 專案欄 -->
     <string name="project_none">未選擇專案</string>
+    <string name="project_default_name">預設專案</string>
     <string name="cd_switch_project">切換專案</string>
     <string name="project_manage_title">專案管理</string>
     <string name="project_selected_mark">" ✓"</string>
@@ -102,7 +98,6 @@
     <string name="project_name_label">專案名稱</string>
 
     <!-- HTTP 頁 -->
-    <string name="http_action_button">HTTP 呼叫</string>
     <string name="http_url_label">URL，支援 {{var}}</string>
     <string name="tab_params">參數</string>
     <string name="tab_headers">請求標頭</string>
@@ -130,13 +125,9 @@
     <string name="kv_param_key">參數名</string>
     <string name="kv_header_key">Header 名</string>
     <string name="kv_value_label">值</string>
-    <string name="cd_add_param">新增參數</string>
-    <string name="cd_add_header">新增請求標頭</string>
     <string name="body_json">JSON</string>
     <string name="body_raw">Raw</string>
-    <string name="body_form">表單</string>
     <string name="form_field_name">欄位</string>
-    <string name="form_field_value">欄位值</string>
     <string name="form_file_selected">已選檔案</string>
     <string name="form_add_text_field">新增文字欄位</string>
     <string name="form_add_file_field">新增檔案欄位</string>
@@ -146,9 +137,7 @@
     <string name="bearer_token_label">Token，支援 {{var}}</string>
     <string name="username_label">使用者名稱</string>
     <string name="password_label">密碼</string>
-    <string name="env_label">環境變數</string>
     <string name="env_empty">目前專案尚無環境</string>
-    <string name="env_none_used">未使用任何環境</string>
     <string name="http_no_response">尚未傳送請求</string>
     <string name="http_failure">請求失敗（%1$s）</string>
     <string name="http_request_label">請求</string>
@@ -165,14 +154,10 @@
     <string name="resp_truncated">已截斷顯示（完整 %1$s）</string>
 
     <!-- WebSocket 頁 -->
-    <string name="ws_action_button">WebSocket 呼叫</string>
     <string name="ws_url_label">ws:// 或 wss:// 位址，支援 {{var}}</string>
-    <string name="ws_title_events">事件</string>
     <string name="ws_input_label">要傳送的訊息</string>
 
     <!-- MQTT 頁 -->
-    <string name="mqtt_action_button">MQTT 呼叫</string>
-    <string name="mqtt_title_broker">Broker</string>
     <string name="mqtt_broker_url_label">tcp:// 或 ssl:// 位址</string>
     <string name="mqtt_client_id_label">Client ID</string>
     <string name="mqtt_keepalive_label">KeepAlive(s)</string>
@@ -181,10 +166,6 @@
     <string name="mqtt_topic_label">Topic，支援 + 與 # 萬用字元</string>
     <string name="sub_item">%1$s · QoS %2$d</string>
     <string name="mqtt_title_pub">發佈</string>
-    <string name="mqtt_pub_payload">負載</string>
-    <string name="mqtt_title_log">日誌</string>
-    <string name="mqtt_clear_log">清空日誌</string>
-    <string name="mqtt_state_opened">已連線</string>
     <string name="mqtt_state_error">錯誤：%1$s</string>
     <string name="message_line">[%1$s] QoS %2$d %3$s</string>
     <string name="qos_0">QoS 0</string>
@@ -220,7 +201,6 @@
     <string name="webdav_probe_unreachable">無法連線到伺服器，請檢查位址與代理設定</string>
     <string name="webdav_probe_auth_failed">認證失敗，請檢查使用者名稱與密碼</string>
     <string name="webdav_probe_forbidden">無權存取該目錄</string>
-    <string name="webdav_probe_not_found">目錄不存在</string>
     <string name="webdav_probe_unsupported">伺服器不支援 PROPFIND</string>
     <string name="webdav_probe_status">伺服器回傳異常狀態 %1$d</string>
     <string name="webdav_write_ok">目錄可寫入</string>
@@ -241,18 +221,13 @@
     <string name="back_mode_miuix_summary">基於 Compose 的自訂實作</string>
     <string name="back_mode_aosp_summary">啟用系統的預測性返回能力</string>
     <string name="settings_proxy">請求代理</string>
-    <string name="proxy_http">HTTP</string>
-    <string name="proxy_socks5">SOCKS5</string>
-    <string name="proxy_summary">HTTP、WebSocket 與 MQTT 通用</string>
     <string name="proxy_host_label">位址（主機:埠號）</string>
-    <string name="proxy_port_label">埠號</string>
     <string name="version_label">版本</string>
     <string name="build_time_label">建置時間</string>
     <string name="cache_clear_label">清除快取</string>
     <string name="cache_size_value">大小 %1$s</string>
     <string name="cache_cleared">已清除 %1$s 快取</string>
     <string name="cache_clear_confirm">確定清除 %1$s 本機快取？</string>
-    <string name="about_footer">目前版本僅提供 Release 套件，後續版本逐步補齊功能。</string>
 
     <!-- 語言 -->
     <string name="lang_system">跟隨系統</string>
@@ -370,6 +345,7 @@
     <string name="state_closed">未連線</string>
     <string name="state_failed">失敗</string>
     <string name="proxy_summary_none">未使用代理</string>
+    <string name="proxy_summary_direct">直連，請求不經過代理</string>
     <string name="proxy_summary_http">HTTP 代理</string>
     <string name="proxy_summary_socks5">SOCKS5 代理</string>
     <string name="auth_apikey">API Key</string>
@@ -382,9 +358,7 @@
     <string name="collection_name_label">集合名稱</string>
     <string name="collection_default_name">預設集合</string>
     <string name="collection_empty">目前專案尚無集合</string>
-    <string name="collection_card_empty">尚無已儲存的請求</string>
     <string name="collection_delete">刪除集合</string>
-    <string name="collection_delete_request">刪除</string>
     <string name="collection_new_child">新增子資料夾</string>
     <string name="collection_rename">重新命名</string>
     <string name="collection_delete_confirm">將刪除 %1$d 個集合和 %2$d 個接口</string>
@@ -401,7 +375,6 @@
     <string name="sse_event_filter_label">事件名稱過濾（留空接收全部）</string>
     <string name="sse_reconnect_delay_label">重連延遲（秒）</string>
     <string name="sse_auto_reconnect_label">斷線自動重連</string>
-    <string name="sse_headers_title">請求標頭</string>
     <string name="sse_direction_recv">收</string>
     <string name="sse_log_reconnecting">%1$d 秒後重連</string>
     <string name="sse_log_closed">連接已斷開：%1$s</string>
@@ -409,13 +382,10 @@
     <string name="sse_method_label">請求方法</string>
     <string name="sse_connect_button">連接</string>
     <string name="sse_disconnect_button">斷開</string>
-    <string name="sse_preview_title">拼接預覽</string>
     <string name="sse_preview_path_label">提取欄位（JSONPath，留空關閉）</string>
-    <string name="sse_preview_path_hint">例如 $.choices[0].delta.content</string>
     <string name="sse_preview_tab_raw">原始</string>
     <string name="sse_preview_tab_markdown">Markdown</string>
     <string name="sse_preview_empty">逐幀按表達式提取並拼接的結果會顯示在這裡</string>
-    <string name="sse_preview_nonjson">目前幀 data 不是合法 JSON，已跳過</string>
     <string name="cd_copy_preview">複製拼接結果</string>
     <string name="cd_clear_preview">清除拼接結果</string>
 
@@ -442,11 +412,6 @@
     <string name="cd_copy_response">複製回應體</string>
     <string name="cd_copy_stream">複製訊息流</string>
     <string name="export_format_title">複製為</string>
-    <string name="export_format_curl_bash">cURL (bash)</string>
-    <string name="export_format_curl_powershell">cURL (PowerShell)</string>
-    <string name="export_format_http_raw">HTTP 原始報文</string>
-    <string name="export_format_python">Python requests</string>
-    <string name="export_format_js_fetch">JavaScript fetch</string>
     <string name="export_tab_curl_bash">cURL</string>
     <string name="export_tab_curl_powershell">cURL.exe</string>
     <string name="export_tab_http_raw">HTTP</string>
@@ -457,7 +422,6 @@
     <string name="monitor_add">新增撥測</string>
     <string name="monitor_empty">還沒有撥測目標，點右上角新增</string>
     <string name="monitor_notify">未通時發送通知</string>
-    <string name="monitor_notify_summary">目標由通轉為不通時會收到一條系統通知</string>
     <string name="monitor_permission_denied">通知權限未授予，未通時不會彈出系統通知</string>
     <string name="monitor_create_title">新增撥測</string>
     <string name="monitor_edit_title">編輯撥測</string>
@@ -485,7 +449,6 @@
     <string name="monitor_interval_minutes">%1$d 分鐘</string>
     <string name="monitor_interval_hours">%1$d 小時</string>
     <string name="monitor_enabled_label">啟用自動檢查</string>
-    <string name="monitor_run_now">立即檢查一次</string>
     <string name="monitor_start">啟動</string>
     <string name="monitor_pause">暫停</string>
     <string name="monitor_state_ok">通</string>

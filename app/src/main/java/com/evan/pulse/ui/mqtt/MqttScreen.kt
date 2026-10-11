@@ -37,6 +37,7 @@ import com.evan.pulse.domain.model.MqttConnectionState
 import com.evan.pulse.ui.collection.SaveRequestDialog
 import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.ConnectionStateIndicator
+import com.evan.pulse.ui.common.connectionStateColor
 import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.eventLogText
 import com.evan.pulse.ui.common.roundedPressable
@@ -110,7 +111,7 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                             .padding(end = 10.dp)
                     )
                     ConnectionStateIndicator(
-                        color = stateColor(state),
+                        color = connectionStateColor(state),
                         label = stateLabel(state)
                     )
                 }
@@ -334,15 +335,6 @@ private fun stateLabel(state: MqttConnectionState): String = when (state) {
     MqttConnectionState.CONNECTED -> stringResource(R.string.state_opened)
     MqttConnectionState.DISCONNECTED -> stringResource(R.string.state_disconnected)
     MqttConnectionState.FAILED -> stringResource(R.string.state_failed)
-}
-
-@Composable
-private fun stateColor(state: MqttConnectionState): Color = when (state) {
-    MqttConnectionState.IDLE -> Color.Gray
-    MqttConnectionState.CONNECTING -> Color(0xFF1565C0)
-    MqttConnectionState.CONNECTED -> Color(0xFF2E7D32)
-    MqttConnectionState.DISCONNECTED -> Color.Gray
-    MqttConnectionState.FAILED -> Color(0xFFC62828)
 }
 
 @Composable

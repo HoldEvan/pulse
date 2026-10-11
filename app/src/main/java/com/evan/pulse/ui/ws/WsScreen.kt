@@ -32,6 +32,7 @@ import com.evan.pulse.domain.pathOnly
 import com.evan.pulse.ui.collection.SaveRequestDialog
 import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.ConnectionStateIndicator
+import com.evan.pulse.ui.common.connectionStateColor
 import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.EventLine
 import com.evan.pulse.ui.common.eventLogText
@@ -96,7 +97,7 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
                             .padding(end = 10.dp)
                     )
                     ConnectionStateIndicator(
-                        color = stateColor(state),
+                        color = connectionStateColor(state),
                         label = stateLabel(state)
                     )
                 }
@@ -235,11 +236,3 @@ private fun stateLabel(state: WsConnectionState): String = when (state) {
     WsConnectionState.FAILED -> stringResource(R.string.state_failed)
 }
 
-@Composable
-private fun stateColor(state: WsConnectionState): Color = when (state) {
-    WsConnectionState.IDLE -> Color.Gray
-    WsConnectionState.CONNECTING -> Color(0xFF1565C0)
-    WsConnectionState.CONNECTED -> Color(0xFF2E7D32)
-    WsConnectionState.CLOSED -> Color.Gray
-    WsConnectionState.FAILED -> Color(0xFFC62828)
-}

@@ -1,5 +1,6 @@
 package com.evan.pulse.di
 
+import com.evan.pulse.R
 import com.evan.pulse.data.model.CollectionInfo
 import com.evan.pulse.data.model.CollectionTree
 import com.evan.pulse.data.model.EnvironmentInfo
@@ -28,6 +29,7 @@ import com.evan.pulse.domain.net.MqttEngine
 import com.evan.pulse.domain.net.OkHttpEngine
 import com.evan.pulse.domain.net.PahoMqttEngine
 import com.evan.pulse.domain.net.SseEngine
+import com.evan.pulse.ui.l10n.L10n
 import com.evan.pulse.domain.net.WsEngine
 import com.evan.pulse.domain.script.RhinoScriptExecutor
 import com.evan.pulse.domain.script.ScriptEnvWriter
@@ -100,7 +102,7 @@ class ActiveEnvWriter : ScriptEnvWriter {
 
 class ProjectStore(private val persist: PersistenceHandle) {
     private val _projects = MutableStateFlow(
-        listOf(ProjectInfo(1, "默认项目"))
+        listOf(ProjectInfo(1, L10n.t(R.string.project_default_name)))
     )
     val projects: StateFlow<List<ProjectInfo>> = _projects.asStateFlow()
     private val _currentProjectId = MutableStateFlow(1L)
@@ -274,7 +276,7 @@ class EnvStoreSnapshot(
 /** 集合存储：内存态，保存接口快照并提供跨页面加载通道 */
 class CollectionStore(private val persist: PersistenceHandle) {
     private val _collections = MutableStateFlow(
-        listOf(CollectionInfo(1, 1, null, "默认集合"))
+        listOf(CollectionInfo(1, 1, null, L10n.t(R.string.collection_default_name)))
     )
     val collections: StateFlow<List<CollectionInfo>> = _collections.asStateFlow()
 

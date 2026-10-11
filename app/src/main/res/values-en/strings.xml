@@ -8,14 +8,12 @@
     <string name="tab_mqtt">MQTT</string>
     <string name="tab_sse">SSE</string>
     <string name="tab_env">Env</string>
-    <string name="tab_history">History</string>
     <string name="tab_home">Home</string>
     <string name="tab_test">Test</string>
     <string name="tab_settings">Settings</string>
     <string name="tab_collection">Collections</string>
     <string name="tab_resources">Resources</string>
     <string name="tab_monitor">Monitor</string>
-    <string name="title_settings">Settings</string>
     <string name="theme_page_title">Appearance and Theme</string>
     <string name="cd_back">Back</string>
 
@@ -45,6 +43,7 @@
     <string name="json_tool_pretty">Format</string>
     <string name="json_tool_minify">Minify</string>
     <string name="json_tool_invalid">Invalid JSON input</string>
+    <string name="json_tree_items">%1$d items</string>
 
     <!-- Timestamp converter tool -->
     <string name="tool_timestamp">Timestamp Converter</string>
@@ -73,8 +72,6 @@
     <string name="action_publish">Publish</string>
     <string name="action_send">Send</string>
     <string name="action_sending">Sending…</string>
-    <string name="none_option">None</string>
-    <string name="field_type_label">Type</string>
 
     <!-- Formatted strings -->
     <string name="duration_value">%1$d ms</string>
@@ -82,15 +79,14 @@
     <string name="version_value">%1$s (%2$d)</string>
 
     <!-- Connection states -->
-    <string name="state_idle">Idle</string>
     <string name="state_connected">Connected, %1$d ms</string>
     <string name="state_disconnected">Disconnected</string>
     <string name="state_closed_message">Closed: %1$s</string>
-    <string name="state_failed_message">Connection error: %1$s</string>
     <string name="proxy_in_use">Proxy: %1$s</string>
 
     <!-- Project bar -->
     <string name="project_none">No project selected</string>
+    <string name="project_default_name">Default project</string>
     <string name="cd_switch_project">Switch project</string>
     <string name="project_manage_title">Projects</string>
     <string name="project_selected_mark">" ✓"</string>
@@ -102,7 +98,6 @@
     <string name="project_name_label">Project name</string>
 
     <!-- HTTP screen -->
-    <string name="http_action_button">HTTP call</string>
     <string name="http_url_label">URL (supports {{var}})</string>
     <string name="tab_params">Params</string>
     <string name="tab_headers">Headers</string>
@@ -130,13 +125,9 @@
     <string name="kv_param_key">Param name</string>
     <string name="kv_header_key">Header</string>
     <string name="kv_value_label">Value</string>
-    <string name="cd_add_param">Add param</string>
-    <string name="cd_add_header">Add header</string>
     <string name="body_json">JSON</string>
     <string name="body_raw">Raw</string>
-    <string name="body_form">Form</string>
     <string name="form_field_name">Field</string>
-    <string name="form_field_value">Field value</string>
     <string name="form_file_selected">File selected</string>
     <string name="form_add_text_field">Add text field</string>
     <string name="form_add_file_field">Add file field</string>
@@ -146,9 +137,7 @@
     <string name="bearer_token_label">Token (supports {{var}})</string>
     <string name="username_label">Username</string>
     <string name="password_label">Password</string>
-    <string name="env_label">Environment variables</string>
     <string name="env_empty">No environments in this project</string>
-    <string name="env_none_used">No environment applied</string>
     <string name="http_no_response">No request sent yet</string>
     <string name="http_failure">Request failed (%1$s)</string>
     <string name="http_request_label">Request</string>
@@ -165,14 +154,10 @@
     <string name="resp_truncated">Truncated (full body %1$s)</string>
 
     <!-- WebSocket screen -->
-    <string name="ws_action_button">WebSocket call</string>
     <string name="ws_url_label">ws:// or wss:// URL (supports {{var}})</string>
-    <string name="ws_title_events">Events</string>
     <string name="ws_input_label">Message to send</string>
 
     <!-- MQTT screen -->
-    <string name="mqtt_action_button">MQTT call</string>
-    <string name="mqtt_title_broker">Broker</string>
     <string name="mqtt_broker_url_label">tcp:// or ssl:// URL</string>
     <string name="mqtt_client_id_label">Client ID</string>
     <string name="mqtt_keepalive_label">KeepAlive(s)</string>
@@ -181,10 +166,6 @@
     <string name="mqtt_topic_label">Topic, supports + and # wildcards</string>
     <string name="sub_item">%1$s · QoS %2$d</string>
     <string name="mqtt_title_pub">Publish</string>
-    <string name="mqtt_pub_payload">Payload</string>
-    <string name="mqtt_title_log">Log</string>
-    <string name="mqtt_clear_log">Clear log</string>
-    <string name="mqtt_state_opened">Connected</string>
     <string name="mqtt_state_error">Error: %1$s</string>
     <string name="message_line">[%1$s] QoS %2$d %3$s</string>
     <string name="qos_0">QoS 0</string>
@@ -220,7 +201,6 @@
     <string name="webdav_probe_unreachable">Cannot reach the server. Check the URL and proxy settings</string>
     <string name="webdav_probe_auth_failed">Authentication failed. Check the username and password</string>
     <string name="webdav_probe_forbidden">Access to the directory is forbidden</string>
-    <string name="webdav_probe_not_found">The directory does not exist</string>
     <string name="webdav_probe_unsupported">The server does not support PROPFIND</string>
     <string name="webdav_probe_status">The server returned an unexpected status %1$d</string>
     <string name="webdav_write_ok">Directory is writable</string>
@@ -241,18 +221,13 @@
     <string name="back_mode_miuix_summary">Custom implementation on Compose</string>
     <string name="back_mode_aosp_summary">Uses the system predictive back</string>
     <string name="settings_proxy">Request proxy</string>
-    <string name="proxy_http">HTTP</string>
-    <string name="proxy_socks5">SOCKS5</string>
-    <string name="proxy_summary">Shared by HTTP, WebSocket and MQTT</string>
     <string name="proxy_host_label">Address (host:port)</string>
-    <string name="proxy_port_label">Port</string>
     <string name="version_label">Version</string>
     <string name="build_time_label">Build time</string>
     <string name="cache_clear_label">Clear cache</string>
     <string name="cache_size_value">Size %1$s</string>
     <string name="cache_cleared">Cleared %1$s of cache</string>
     <string name="cache_clear_confirm">Clear %1$s of local cache?</string>
-    <string name="about_footer">This release ships only a Release build. More features are on the way.</string>
 
     <!-- Languages -->
     <string name="lang_system">Follow system</string>
@@ -370,6 +345,7 @@
     <string name="state_closed">Not connected</string>
     <string name="state_failed">Failed</string>
     <string name="proxy_summary_none">No proxy in use</string>
+    <string name="proxy_summary_direct">Direct, requests bypass the proxy</string>
     <string name="proxy_summary_http">HTTP proxy</string>
     <string name="proxy_summary_socks5">SOCKS5 proxy</string>
     <string name="auth_apikey">API Key</string>
@@ -382,9 +358,7 @@
     <string name="collection_name_label">Collection name</string>
     <string name="collection_default_name">Default collection</string>
     <string name="collection_empty">No collections in this project</string>
-    <string name="collection_card_empty">No saved requests</string>
     <string name="collection_delete">Delete collection</string>
-    <string name="collection_delete_request">Delete</string>
     <string name="collection_new_child">New subfolder</string>
     <string name="collection_rename">Rename</string>
     <string name="collection_delete_confirm">Delete %1$d folders and %2$d requests</string>
@@ -401,7 +375,6 @@
     <string name="sse_event_filter_label">Event name filter (empty = all)</string>
     <string name="sse_reconnect_delay_label">Reconnect delay (sec)</string>
     <string name="sse_auto_reconnect_label">Auto reconnect on drop</string>
-    <string name="sse_headers_title">Headers</string>
     <string name="sse_direction_recv">recv</string>
     <string name="sse_log_reconnecting">Reconnecting in %1$d sec</string>
     <string name="sse_log_closed">Connection closed: %1$s</string>
@@ -409,13 +382,10 @@
     <string name="sse_method_label">Method</string>
     <string name="sse_connect_button">Connect</string>
     <string name="sse_disconnect_button">Disconnect</string>
-    <string name="sse_preview_title">Assembled Preview</string>
     <string name="sse_preview_path_label">Extract field (JSONPath, blank to disable)</string>
-    <string name="sse_preview_path_hint">e.g. $.choices[0].delta.content</string>
     <string name="sse_preview_tab_raw">Raw</string>
     <string name="sse_preview_tab_markdown">Markdown</string>
     <string name="sse_preview_empty">Extracted, assembled per-frame output appears here</string>
-    <string name="sse_preview_nonjson">Current frame data is not valid JSON, skipped</string>
     <string name="cd_copy_preview">Copy assembled output</string>
     <string name="cd_clear_preview">Clear assembled output</string>
 
@@ -442,11 +412,6 @@
     <string name="cd_copy_response">Copy response body</string>
     <string name="cd_copy_stream">Copy event stream</string>
     <string name="export_format_title">Copy as</string>
-    <string name="export_format_curl_bash">cURL (bash)</string>
-    <string name="export_format_curl_powershell">cURL (PowerShell)</string>
-    <string name="export_format_http_raw">Raw HTTP request</string>
-    <string name="export_format_python">Python requests</string>
-    <string name="export_format_js_fetch">JavaScript fetch</string>
     <string name="export_tab_curl_bash">cURL</string>
     <string name="export_tab_curl_powershell">cURL.exe</string>
     <string name="export_tab_http_raw">HTTP</string>
@@ -457,7 +422,6 @@
     <string name="monitor_add">Add monitor</string>
     <string name="monitor_empty">No monitor targets yet. Add one from the top right.</string>
     <string name="monitor_notify">Notify when a target goes down</string>
-    <string name="monitor_notify_summary">A system notification is sent when a target goes from up to down</string>
     <string name="monitor_permission_denied">Notification permission was not granted, so no system notification will appear when a target goes down</string>
     <string name="monitor_create_title">Add monitor</string>
     <string name="monitor_edit_title">Edit monitor</string>
@@ -485,7 +449,6 @@
     <string name="monitor_interval_minutes">%1$d min</string>
     <string name="monitor_interval_hours">%1$d h</string>
     <string name="monitor_enabled_label">Run automatic checks</string>
-    <string name="monitor_run_now">Check now</string>
     <string name="monitor_start">Start</string>
     <string name="monitor_pause">Pause</string>
     <string name="monitor_state_ok">Up</string>

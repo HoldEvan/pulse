@@ -23,10 +23,13 @@ data class ProxyConfig(
     val enabled: Boolean
         get() = type != ProxyType.NONE && host.isNotBlank() && port in 1..65535
 
-    /** 展示用的简短描述，供设置页摘要和调试输出使用 */
+    /**
+     * 展示用的简短描述，供设置页摘要和调试输出使用。
+     * 未生效（直连）时返回空串，由 UI 层用 [proxy_summary_direct] 文案本地化。
+     */
     val summary: String
         get() = when {
-            !enabled -> "直连，请求不经过代理"
+            !enabled -> ""
             type == ProxyType.SOCKS5 -> "SOCKS5 ${host.trim()}:$port"
             else -> "HTTP ${host.trim()}:$port"
         }

@@ -93,7 +93,7 @@ class WsViewModel : ViewModel() {
         viewModelScope.launch {
             lastError = null
             val proxy = settingsStore.settings.value.toProxyConfig()
-            add(L10n.t(R.string.proxy_in_use, proxy.summary), true)
+            add(L10n.t(R.string.proxy_in_use, proxy.summary.ifEmpty { L10n.t(R.string.proxy_summary_direct) }), true)
             val vars = ServiceLocator.envStore.activeVars()
             when (val r = resolver.resolve(url, vars)) {
                 is PlaceholderResolver.ResolveResult.Ok -> engine.connect(

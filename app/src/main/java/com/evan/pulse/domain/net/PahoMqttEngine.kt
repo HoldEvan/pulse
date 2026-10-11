@@ -354,5 +354,5 @@ private class ProxySocket(
     }
 
     override fun toString(): String =
-        "ProxySocket{proxy=${proxy.summary}, target=$targetHost:$targetPort, tunneled=$tunneled}"
+        "ProxySocket{proxy=${proxy.summary.ifEmpty { "direct" }}, target=$targetHost:$targetPort, tunneled=$tunneled}"
 }

@@ -124,7 +124,7 @@ class MqttViewModel : ViewModel() {
             val proxy = settingsStore.settings.value.toProxyConfig()
             resolve(brokerUrl) { resolvedUrl ->
                 viewModelScope.launch {
-                    add(L10n.t(R.string.proxy_in_use, proxy.summary), true)
+                    add(L10n.t(R.string.proxy_in_use, proxy.summary.ifEmpty { L10n.t(R.string.proxy_summary_direct) }), true)
                     engine.connect(
                         com.evan.pulse.domain.model.MqttConfig(
                             brokerUrl = resolvedUrl,

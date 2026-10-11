@@ -108,9 +108,11 @@ fun TimestampToolScreen(modifier: Modifier = Modifier) {
                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary
             )
         } else {
+            val utcLabel = stringResource(R.string.timestamp_tool_utc)
+            val localLabel = stringResource(R.string.timestamp_tool_local)
             MonospaceBlock(
-                text = "UTC:    ${formatMillis(millis!!, ZoneId.of("UTC"))}\n" +
-                    "本地:    ${formatMillis(millis)}",
+                text = "$utcLabel:    ${formatMillis(millis!!, ZoneId.of("UTC"))}\n" +
+                    "$localLabel:    ${formatMillis(millis)}",
                 modifier = Modifier.padding(top = 6.dp)
             )
         }

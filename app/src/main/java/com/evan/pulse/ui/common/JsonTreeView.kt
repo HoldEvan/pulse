@@ -16,9 +16,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.evan.pulse.R
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -152,11 +154,12 @@ private fun JsonName(name: String?) {
     )
 }
 
+@Composable
 private fun preview(element: JsonElement, isCollapsed: Boolean): String {
     if (!isCollapsed) return ""
     return when (element) {
-        is JsonObject -> "{…} ${element.size} 项"
-        is JsonArray -> "[…] ${element.size} 项"
+        is JsonObject -> "{…} ${stringResource(R.string.json_tree_items, element.size)}"
+        is JsonArray -> "[…] ${stringResource(R.string.json_tree_items, element.size)}"
         else -> scalarText(element)
     }
 }

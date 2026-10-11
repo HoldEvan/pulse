@@ -17,9 +17,9 @@ class PulseApp : Application() {
     override fun onCreate() {
         super.onCreate()
         settingsStore = SettingsStore(applicationContext)
+        L10n.bind(applicationContext)
         ServiceLocator.bindSettingsStore(settingsStore)
         ServiceLocator.init(applicationContext)
-        L10n.bind(applicationContext)
         ServiceLocator.initMonitor(applicationContext)
 
         // App 切到后台时兜底落盘，避免进程被回收时丢失最后一次变更

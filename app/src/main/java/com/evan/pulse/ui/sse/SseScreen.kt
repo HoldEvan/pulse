@@ -41,6 +41,7 @@ import com.evan.pulse.ui.collection.SaveRequestDialog
 import com.evan.pulse.ui.common.CardSectionTitle
 import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.ConnectionStateIndicator
+import com.evan.pulse.ui.common.connectionStateColor
 import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.EventLine
 import com.evan.pulse.ui.common.KeyValueEditor
@@ -149,7 +150,7 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                                 .padding(end = 10.dp)
                         )
                         ConnectionStateIndicator(
-                            color = stateColor(state),
+                            color = connectionStateColor(state),
                             label = stateLabel(state)
                         )
                     }
@@ -405,13 +406,4 @@ private fun stateLabel(state: SseConnectionState): String = when (state) {
     SseConnectionState.CONNECTED -> stringResource(R.string.state_opened)
     SseConnectionState.CLOSED -> stringResource(R.string.state_disconnected)
     SseConnectionState.FAILED -> stringResource(R.string.state_failed)
-}
-
-@Composable
-private fun stateColor(state: SseConnectionState): Color = when (state) {
-    SseConnectionState.IDLE -> Color.Gray
-    SseConnectionState.CONNECTING -> Color(0xFF1565C0)
-    SseConnectionState.CONNECTED -> Color(0xFF2E7D32)
-    SseConnectionState.CLOSED -> Color.Gray
-    SseConnectionState.FAILED -> Color(0xFFC62828)
 }
