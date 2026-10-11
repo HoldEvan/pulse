@@ -142,7 +142,7 @@ private fun ToolEntryCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 6.dp)
-            .roundedPressable(onClick = onClick)
+            .roundedPressable(cornerRadius = 16.dp, onClick = onClick)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),

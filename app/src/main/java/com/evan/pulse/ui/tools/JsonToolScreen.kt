@@ -78,7 +78,8 @@ fun JsonToolScreen(modifier: Modifier = Modifier) {
             value = input,
             onValueChange = { input = it },
             label = stringResource(R.string.json_tool_input_label),
-            modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
+            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+            minLines = 4
         )
 
         Row(
