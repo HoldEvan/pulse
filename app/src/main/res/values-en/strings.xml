@@ -215,11 +215,11 @@
     <string name="backup_done_import_webdav">Restored from %1$s</string>
     <string name="backup_failed">Failed</string>
     <string name="backup_failed_with_error">Failed: %1$s</string>
-    <string name="back_gesture">Predictive back gesture</string>
-    <string name="back_mode_miuix">Miuix predictive back</string>
-    <string name="back_mode_aosp">AOSP predictive back</string>
-    <string name="back_mode_miuix_summary">Custom implementation on Compose</string>
-    <string name="back_mode_aosp_summary">Uses the system predictive back</string>
+    <string name="back_gesture">Page transition style</string>
+    <string name="back_mode_miuix">Miuix slide</string>
+    <string name="back_mode_aosp">Crossfade</string>
+    <string name="back_mode_miuix_summary">Slide transitions with gesture-driven predictive back</string>
+    <string name="back_mode_aosp_summary">Crossfade transitions</string>
     <string name="settings_proxy">Request proxy</string>
     <string name="proxy_host_label">Address (host:port)</string>
     <string name="version_label">Version</string>

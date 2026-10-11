@@ -1,54 +1,53 @@
 package com.evan.pulse.ui
 
-/** 主标签页层级：首页 / 测试 / 资源 / 拨测 / 设置 */
-const val LEVEL_TABS = 0
-
-/** 设置二级页：外观与主题 */
-const val LEVEL_APPEARANCE = 2
-
-/** 历史二级页：单条记录的详情 */
-const val LEVEL_HISTORY_DETAIL = 3
-
-/** 拨测二级页：当前项目的全部未通记录 */
-const val LEVEL_MONITOR_RECORDS = 4
-
-/** HTTP 三级页：脚本代码编辑器 */
-const val LEVEL_SCRIPT_EDITOR = 5
-
-/** HTTP 三级页：脚本内置 API 文档 */
-const val LEVEL_SCRIPT_DOCS = 6
-
-/** 历史列表二级页：从 HTTP 页顶部历史图标进入 */
-const val LEVEL_HISTORY = 7
-
-/** 工具二级页：Base64 转换器 */
-const val LEVEL_BASE64_TOOL = 8
-
-/** 工具二级页：JSON 格式化/压缩 */
-const val LEVEL_JSON_TOOL = 9
-
-/** 工具二级页：时间戳转换 */
-const val LEVEL_TIMESTAMP_TOOL = 10
+import kotlinx.serialization.Serializable
+import top.yukonga.miuix.kmp.nav.core.NavKey
+import top.yukonga.miuix.kmp.nav.core.NavController
 
 /**
- * 页面栈状态。
+ * 应用导航路由：单一扁平栈，栈底恒为 [Tabs]。
  *
- * 栈底固定为标签页层级，向栈顶推入的层级按顺序打开，返回时逐个弹出。
- * [historyEntryId] 只在栈顶是 [LEVEL_HISTORY_DETAIL] 时有效，随 push 写入、随 goBack 清空；
- * [scriptTarget] 只在栈顶是 [LEVEL_SCRIPT_EDITOR] 或 [LEVEL_SCRIPT_DOCS] 时有效，0 表示前置脚本、1 表示后置脚本。
+ * 全部标注 @Serializable，返回栈经 rememberNavBackStack 持久化，
+ * 配置变更与进程死亡后均可恢复。
  */
-data class NavState(
-    val stack: List<Int> = listOf(LEVEL_TABS),
-    val selectedTab: Int = 0,
-    /** 首页内的协议子页：0=HTTP、1=SSE、2=WS、3=MQTT，随主 tab 一起保存 */
-    val homeProtocolTab: Int = 0,
-    val historyEntryId: Long? = null,
-    val scriptTarget: Int? = null,
-) {
+@Serializable
+sealed interface PulseRoute : NavKey {
+    /** 主标签页：首页 / 测试 / 资源 / 拨测 / 设置 */
+    @Serializable data object Tabs : PulseRoute
 
-    val current: Int get() = stack.last()
+    /** 设置二级页：外观与主题 */
+    @Serializable data object Appearance : PulseRoute
 
-    val previous: Int? get() = stack.getOrNull(stack.lastIndex - 1)
+    /** 历史二级页：单条记录的详情 */
+    @Serializable data class HistoryDetail(val entryId: Long) : PulseRoute
 
-    val canGoBack: Boolean get() = stack.size > 1
+    /** 拨测二级页：当前项目的全部未通记录 */
+    @Serializable data object MonitorRecords : PulseRoute
+
+    /** HTTP 三级页：脚本代码编辑器，target 0 为前置脚本、1 为后置脚本 */
+    @Serializable data class ScriptEditor(val target: Int) : PulseRoute
+
+    /** HTTP 三级页：脚本内置 API 文档，与编辑器共用 target 语义 */
+    @Serializable data class ScriptDocs(val target: Int) : PulseRoute
+
+    /** 历史列表二级页：从 HTTP 页顶部历史图标进入 */
+    @Serializable data object History : PulseRoute
+
+    /** 工具二级页：Base64 转换器 */
+    @Serializable data object Base64Tool : PulseRoute
+
+    /** 工具二级页：JSON 格式化/压缩 */
+    @Serializable data object JsonTool : PulseRoute
+
+    /** 工具二级页：时间戳转换 */
+    @Serializable data object TimestampTool : PulseRoute
+}
+
+/**
+ * push 前检查栈顶是否已是同一路由：miuix-nav 拒绝重复的 contentKey 入栈，
+ * 快速连点导航按钮会被 IllegalArgumentException 中断，这里做应用层幂等。
+ */
+fun NavController.pushRoute(key: PulseRoute) {
+    if (backStack.lastOrNull() == key) return
+    push(key)
 }

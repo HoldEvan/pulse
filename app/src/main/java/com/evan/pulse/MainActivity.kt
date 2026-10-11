@@ -2,7 +2,6 @@ package com.evan.pulse
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.getValue
@@ -43,18 +42,8 @@ class MainActivity : ComponentActivity() {
             onImport = { openBackupFile.launch(arrayOf("application/json", "*/*")) },
         )
 
-        // 设置页有内容时拦截系统返回事件走页面栈，只在栈底时才放行退出
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                if (settingsViewModel.nav.value.canGoBack) {
-                    settingsViewModel.goBack()
-                } else {
-                    isEnabled = false
-                    onBackPressedDispatcher.onBackPressed()
-                }
-            }
-        })
-
+        // 返回事件由 miuix-nav 的返回驱动接管：栈上有页面时预测性返回逐层弹出，
+        // 栈底时无启用的回调，系统默认行为（退出应用）自然生效
         setContent {
             val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
             PulseTheme(settings) {

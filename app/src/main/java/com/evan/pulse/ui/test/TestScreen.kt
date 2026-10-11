@@ -22,7 +22,7 @@ private val testTabLabels = listOf(
     R.string.tab_mqtt
 )
 
-/** 测试页：HTTP / WS / MQTT / SSE 四个协议页通过顶部 TabRow 切换，协议选择由外层 NavState 持有 */
+/** 测试页：HTTP / WS / MQTT / SSE 四个协议页通过顶部 TabRow 切换，协议选择由外层 TabState 持有 */
 @Composable
 fun TestScreen(
     modifier: Modifier = Modifier,

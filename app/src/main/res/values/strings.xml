@@ -215,11 +215,11 @@
     <string name="backup_done_import_webdav">已从 %1$s 恢复</string>
     <string name="backup_failed">操作失败</string>
     <string name="backup_failed_with_error">操作失败：%1$s</string>
-    <string name="back_gesture">预测性返回手势</string>
-    <string name="back_mode_miuix">Miuix 预测性返回</string>
-    <string name="back_mode_aosp">AOSP 预测性返回</string>
-    <string name="back_mode_miuix_summary">基于 Compose 的自定义实现</string>
-    <string name="back_mode_aosp_summary">启用系统的预测性返回能力</string>
+    <string name="back_gesture">页面转场风格</string>
+    <string name="back_mode_miuix">Miuix 滑动</string>
+    <string name="back_mode_aosp">淡入淡出</string>
+    <string name="back_mode_miuix_summary">滑动转场，跟手预测性返回</string>
+    <string name="back_mode_aosp_summary">交叉淡入淡出转场</string>
     <string name="settings_proxy">请求代理</string>
     <string name="proxy_host_label">地址（主机:端口）</string>
     <string name="version_label">版本</string>

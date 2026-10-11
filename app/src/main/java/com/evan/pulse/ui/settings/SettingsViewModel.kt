@@ -13,10 +13,6 @@ import com.evan.pulse.data.cache.CacheStats
 import com.evan.pulse.data.settings.AppSettings
 import com.evan.pulse.data.settings.SettingsStore
 import com.evan.pulse.R
-import com.evan.pulse.ui.LEVEL_HISTORY_DETAIL
-import com.evan.pulse.ui.LEVEL_SCRIPT_DOCS
-import com.evan.pulse.ui.LEVEL_SCRIPT_EDITOR
-import com.evan.pulse.ui.NavState
 import com.evan.pulse.ui.common.AppToast
 import com.evan.pulse.ui.l10n.L10n
 import kotlinx.coroutines.Dispatchers
@@ -48,6 +44,13 @@ data class WebDavTestState(
     val result: WebDavTestResult? = null,
 )
 
+/** 主标签页与首页协议子页的选择状态 */
+data class TabState(
+    val selectedTab: Int = 0,
+    /** 首页内的协议子页：0=HTTP、1=SSE、2=WS、3=MQTT */
+    val homeProtocolTab: Int = 0,
+)
+
 class SettingsViewModel(
     private val store: SettingsStore,
     private val backupService: BackupService,
@@ -56,10 +59,10 @@ class SettingsViewModel(
 
     val settings: StateFlow<AppSettings> = store.settings
 
-    private val _nav = MutableStateFlow(NavState())
+    private val _tabState = MutableStateFlow(TabState())
 
-    /** 页面栈，由界面层驱动，不持久化 */
-    val nav: StateFlow<NavState> = _nav.asStateFlow()
+    /** 主标签页与首页协议子页的选择状态；页面栈由 miuix-nav 的返回栈承担 */
+    val tabState: StateFlow<TabState> = _tabState.asStateFlow()
 
     private val _backupStatus = MutableStateFlow(BackupStatus())
 
@@ -99,61 +102,18 @@ class SettingsViewModel(
         onImportRequested = onImport
     }
 
-    fun push(level: Int) {
-        _nav.value = _nav.value.copy(stack = _nav.value.stack + level, historyEntryId = null, scriptTarget = null)
-    }
-
-    /** 打开某条历史记录的详情页，记录 id 随栈帧一起保存 */
-    fun pushHistoryDetail(entryId: Long) {
-        _nav.value = _nav.value.copy(
-            stack = _nav.value.stack + LEVEL_HISTORY_DETAIL,
-            historyEntryId = entryId,
-            scriptTarget = null
-        )
-    }
-
-    /** 打开脚本代码编辑器，target 0 为前置脚本、1 为后置脚本 */
-    fun pushScriptEditor(target: Int) {
-        _nav.value = _nav.value.copy(
-            stack = _nav.value.stack + LEVEL_SCRIPT_EDITOR,
-            historyEntryId = null,
-            scriptTarget = target
-        )
-    }
-
-    /** 打开脚本内置 API 文档页，与编辑器共用 target 语义 */
-    fun pushScriptDocs(target: Int) {
-        _nav.value = _nav.value.copy(
-            stack = _nav.value.stack + LEVEL_SCRIPT_DOCS,
-            historyEntryId = null,
-            scriptTarget = target
-        )
-    }
-
-    fun goBack() {
-        if (!_nav.value.canGoBack) return
-        val newStack = _nav.value.stack.dropLast(1)
-        val newTop = newStack.last()
-        val keepScriptTarget = newTop == LEVEL_SCRIPT_EDITOR || newTop == LEVEL_SCRIPT_DOCS
-        _nav.value = _nav.value.copy(
-            stack = newStack,
-            historyEntryId = null,
-            scriptTarget = if (keepScriptTarget) _nav.value.scriptTarget else null
-        )
-    }
-
     fun selectTab(index: Int) {
-        _nav.value = _nav.value.copy(selectedTab = index)
+        _tabState.value = _tabState.value.copy(selectedTab = index)
     }
 
     /** 首页协议子页切换，跟随主 tab 一起保存 */
     fun selectHomeProtocol(index: Int) {
-        _nav.value = _nav.value.copy(homeProtocolTab = index)
+        _tabState.value = _tabState.value.copy(homeProtocolTab = index)
     }
 
-    /** 从集合跳回测试页并切到对应协议页，返回时回到主 tab 层级 */
+    /** 从集合跳回测试页并切到对应协议页 */
     fun openHomeProtocol(index: Int) {
-        _nav.value = _nav.value.copy(selectedTab = 1, homeProtocolTab = index)
+        _tabState.value = _tabState.value.copy(selectedTab = 1, homeProtocolTab = index)
     }
 
     fun setThemeMode(index: Int) {

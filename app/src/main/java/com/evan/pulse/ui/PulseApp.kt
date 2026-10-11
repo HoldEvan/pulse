@@ -1,12 +1,9 @@
 package com.evan.pulse.ui
 
-import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
@@ -18,12 +15,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.evan.pulse.R
-import com.evan.pulse.ui.back.MiuixPredictiveBack
 import com.evan.pulse.ui.common.ToastHost
 import com.evan.pulse.ui.dashboard.DashboardScreen
 import com.evan.pulse.ui.glass.LiquidGlassNavigationBar
@@ -64,8 +59,15 @@ import top.yukonga.miuix.kmp.icon.extended.ChevronBackward
 import top.yukonga.miuix.kmp.icon.extended.Folder
 import top.yukonga.miuix.kmp.icon.extended.Home
 import top.yukonga.miuix.kmp.icon.extended.Settings
+import top.yukonga.miuix.kmp.nav.core.NavController
+import top.yukonga.miuix.kmp.nav.core.NavDisplay
+import top.yukonga.miuix.kmp.nav.core.rememberNavController
+import top.yukonga.miuix.kmp.nav.core.rememberNavSystemCornerRadius
+import top.yukonga.miuix.kmp.nav.core.NavDisplayEffects
+import top.yukonga.miuix.kmp.nav.transition.NavTransition
+import top.yukonga.miuix.kmp.nav.transition.NavTransitions
+import top.yukonga.miuix.kmp.nav.transition.navGraphicsTransition
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import top.yukonga.miuix.kmp.utils.platform
 
 private data class PulseTab(
     @StringRes val label: Int,
@@ -88,6 +90,12 @@ private fun PageTransition(
     }
 }
 
+/** 淡入淡出转场：返回手势模式选 AOSP 风格时使用，深度驱动的交叉渐变 */
+private val fadeTransition: NavTransition = navGraphicsTransition { scope ->
+    val d = scope.relativeDepth
+    alpha = if (d <= 0f) (1f + d).coerceIn(0f, 1f) else 1f - d.coerceIn(0f, 1f)
+}
+
 @Composable
 fun PulseApp(settingsViewModel: SettingsViewModel) {
     val tabs = remember {
@@ -101,7 +109,7 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
     }
 
     val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
-    val nav by settingsViewModel.nav.collectAsStateWithLifecycle()
+    val tabState by settingsViewModel.tabState.collectAsStateWithLifecycle()
 
     /** 与历史页共用同一个 ViewModel，列表与详情看到的记录一致 */
     val historyViewModel: HistoryViewModel = viewModel()
@@ -109,18 +117,22 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
     /** 与拨测二级页共用同一个 ViewModel，列表与记录页看到的数据一致 */
     val monitorViewModel: MonitorViewModel = viewModel()
 
-    val previous = nav.previous
-    val useMiuixBack = settings.backGestureModeIndex == 0
+    val navController = rememberNavController<PulseRoute>(PulseRoute.Tabs)
 
-    /** 液态玻璃悬浮底栏开关：悬浮栏与玻璃效果同时开启时才生效 */
+    /** 返回手势模式同时决定页面转场：0 = Miuix 滑动，1 = 淡入淡出；
+     *  预测性返回由 miuix-nav 内置驱动，两种模式都支持跟手 */
+    val transition = if (settings.backGestureModeIndex == 0) {
+        NavTransitions.MiuixDefault
+    } else {
+        fadeTransition
+    }
+
+    /** 液态玻璃悬浮底栏开关：悬浮栏与玻璃效果同时开启时才生效，只在标签页显示 */
     val glassBottomBar = settings.floatingBottomBar && settings.liquidGlassBottomBar
-
-    /** 只在一级标签页显示悬浮玻璃底栏 */
-    val showGlassBar = glassBottomBar && nav.current == LEVEL_TABS
 
     /** 玻璃底栏的背景采样层：捕获页面内容供胶囊内的模糊与折射取样；
      *  运行时不支持 RuntimeShader 时返回 null，底栏退化为纯色胶囊 */
-    val backdrop: LayerBackdrop? = if (showGlassBar && isRuntimeShaderSupported()) {
+    val backdrop: LayerBackdrop? = if (glassBottomBar && isRuntimeShaderSupported()) {
         val surfaceColor = MiuixTheme.colorScheme.surface
         rememberLayerBackdrop(
             onDraw = {
@@ -137,309 +149,222 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
         NavigationItem(icon = tab.icon, label = stringResource(tab.label))
     }
 
-    /** 只把当前显示的页面写入采样层，避免预测返回的上一屏重复写入同一层 */
-    fun backdropModifier(page: Int): Modifier =
-        if (page == nav.current && backdrop != null) Modifier.layerBackdrop(backdrop) else Modifier
-
-    val pageContent: @Composable (Int) -> Unit = { page ->
-        when (page) {
-            LEVEL_APPEARANCE -> ThemeSettingsScreen(
-                modifier = Modifier.fillMaxSize(),
-                viewModel = settingsViewModel
-            )
-
-            LEVEL_HISTORY_DETAIL -> HistoryDetailScreen(
-                modifier = Modifier.fillMaxSize(),
-                viewModel = historyViewModel,
-                entryId = nav.historyEntryId ?: 0L
-            )
-
-            LEVEL_MONITOR_RECORDS -> MonitorRecordsScreen(
-                modifier = Modifier.fillMaxSize(),
-                viewModel = monitorViewModel
-            )
-
-            LEVEL_SCRIPT_EDITOR -> ScriptEditorScreen(
-                target = nav.scriptTarget ?: 0,
-                modifier = Modifier.fillMaxSize(),
-                onOpenScriptDocs = { settingsViewModel.pushScriptDocs(nav.scriptTarget ?: 0) }
-            )
-
-            LEVEL_SCRIPT_DOCS -> ScriptDocsScreen(
-                target = nav.scriptTarget ?: 0,
-                modifier = Modifier.fillMaxSize()
-            )
-
-            LEVEL_HISTORY -> HistoryScreen(
-                modifier = Modifier.fillMaxSize(),
-                onOpenDetail = { settingsViewModel.pushHistoryDetail(it) },
-                viewModel = historyViewModel
-            )
-
-            LEVEL_BASE64_TOOL -> Base64ToolScreen(
-                modifier = Modifier.fillMaxSize()
-            )
-
-            LEVEL_JSON_TOOL -> JsonToolScreen(
-                modifier = Modifier.fillMaxSize()
-            )
-
-            LEVEL_TIMESTAMP_TOOL -> TimestampToolScreen(
-                modifier = Modifier.fillMaxSize()
-            )
-
-            else -> when (nav.selectedTab) {
-                0 -> DashboardScreen(
-                    modifier = Modifier.fillMaxSize(),
-                    onOpenBase64 = { settingsViewModel.push(LEVEL_BASE64_TOOL) },
-                    onOpenJson = { settingsViewModel.push(LEVEL_JSON_TOOL) },
-                    onOpenTimestamp = { settingsViewModel.push(LEVEL_TIMESTAMP_TOOL) }
-                )
-                1 -> TestScreen(
-                    modifier = Modifier.fillMaxSize(),
-                    protocolTab = nav.homeProtocolTab,
-                    onProtocolTabChange = { settingsViewModel.selectHomeProtocol(it) },
-                    onOpenScriptEditor = { settingsViewModel.pushScriptEditor(it) },
-                    onOpenHistory = { settingsViewModel.push(LEVEL_HISTORY) }
-                )
-                2 -> ResourcesScreen(
-                    modifier = Modifier.fillMaxSize(),
-                    onSwitchTab = { settingsViewModel.openHomeProtocol(it) }
-                )
-                3 -> MonitorScreen(
-                    modifier = Modifier.fillMaxSize(),
-                    viewModel = monitorViewModel,
-                    onOpenRecordsList = { settingsViewModel.push(LEVEL_MONITOR_RECORDS) }
-                )
-                else -> SettingsScreen(
-                    modifier = Modifier.fillMaxSize(),
-                    viewModel = settingsViewModel,
-                    onOpenAppearance = { settingsViewModel.push(LEVEL_APPEARANCE) }
-                )
-            }
-        }
-    }
-
-    val screenTopBar: @Composable (Int) -> Unit = { page ->
-        when (page) {
-            LEVEL_APPEARANCE -> TopAppBar(
-                title = stringResource(R.string.theme_page_title),
-                navigationIcon = {
-                    IconButton(onClick = { settingsViewModel.goBack() }) {
-                        Icon(
-                            imageVector = MiuixIcons.Light.ChevronBackward,
-                            contentDescription = stringResource(R.string.cd_back)
-                        )
-                    }
-                }
-            )
-
-            LEVEL_HISTORY_DETAIL -> TopAppBar(
-                title = stringResource(R.string.history_detail_title),
-                navigationIcon = {
-                    IconButton(onClick = { settingsViewModel.goBack() }) {
-                        Icon(
-                            imageVector = MiuixIcons.Light.ChevronBackward,
-                            contentDescription = stringResource(R.string.cd_back)
-                        )
-                    }
-                }
-            )
-
-            LEVEL_MONITOR_RECORDS -> TopAppBar(
-                title = stringResource(R.string.monitor_records_title),
-                navigationIcon = {
-                    IconButton(onClick = { settingsViewModel.goBack() }) {
-                        Icon(
-                            imageVector = MiuixIcons.Light.ChevronBackward,
-                            contentDescription = stringResource(R.string.cd_back)
-                        )
-                    }
-                }
-            )
-
-            LEVEL_SCRIPT_EDITOR -> TopAppBar(
-                title = stringResource(
-                    if (nav.scriptTarget == 0) R.string.script_tab_pre else R.string.script_tab_post
-                ),
-                navigationIcon = {
-                    IconButton(onClick = { settingsViewModel.goBack() }) {
-                        Icon(
-                            imageVector = MiuixIcons.Light.ChevronBackward,
-                            contentDescription = stringResource(R.string.cd_back)
-                        )
-                    }
-                }
-            )
-
-            LEVEL_SCRIPT_DOCS -> TopAppBar(
-                title = stringResource(R.string.script_docs_title),
-                navigationIcon = {
-                    IconButton(onClick = { settingsViewModel.goBack() }) {
-                        Icon(
-                            imageVector = MiuixIcons.Light.ChevronBackward,
-                            contentDescription = stringResource(R.string.cd_back)
-                        )
-                    }
-                }
-            )
-
-            LEVEL_HISTORY -> TopAppBar(
-                title = stringResource(R.string.history_title),
-                navigationIcon = {
-                    IconButton(onClick = { settingsViewModel.goBack() }) {
-                        Icon(
-                            imageVector = MiuixIcons.Light.ChevronBackward,
-                            contentDescription = stringResource(R.string.cd_back)
-                        )
-                    }
-                }
-            )
-
-            LEVEL_BASE64_TOOL -> TopAppBar(
-                title = stringResource(R.string.base64_title),
-                navigationIcon = {
-                    IconButton(onClick = { settingsViewModel.goBack() }) {
-                        Icon(
-                            imageVector = MiuixIcons.Light.ChevronBackward,
-                            contentDescription = stringResource(R.string.cd_back)
-                        )
-                    }
-                }
-            )
-
-            LEVEL_JSON_TOOL -> TopAppBar(
-                title = stringResource(R.string.json_tool_title),
-                navigationIcon = {
-                    IconButton(onClick = { settingsViewModel.goBack() }) {
-                        Icon(
-                            imageVector = MiuixIcons.Light.ChevronBackward,
-                            contentDescription = stringResource(R.string.cd_back)
-                        )
-                    }
-                }
-            )
-
-            LEVEL_TIMESTAMP_TOOL -> TopAppBar(
-                title = stringResource(R.string.timestamp_tool_title),
-                navigationIcon = {
-                    IconButton(onClick = { settingsViewModel.goBack() }) {
-                        Icon(
-                            imageVector = MiuixIcons.Light.ChevronBackward,
-                            contentDescription = stringResource(R.string.cd_back)
-                        )
-                    }
-                }
-            )
-
-            else -> ProjectBar(
-                title = stringResource(tabs[nav.selectedTab].label),
-                showProjectSelector = nav.selectedTab in 1..2,
-                showEnvSelector = nav.selectedTab == 1,
-                onAddMonitor = if (nav.selectedTab == 3) {
-                    { monitorViewModel.openCreate() }
-                } else {
-                    null
-                }
-            )
-        }
-    }
-
-    val screenBottomBar: @Composable () -> Unit = {
-        if (settings.floatingBottomBar) {
-            FloatingNavigationBar(color = MiuixTheme.colorScheme.surfaceContainer) {
-                tabs.forEachIndexed { index, tab ->
-                    FloatingNavigationBarItem(
-                        selected = nav.selectedTab == index,
-                        onClick = { settingsViewModel.selectTab(index) },
-                        icon = tab.icon,
-                        label = stringResource(tab.label)
-                    )
-                }
-            }
-        } else {
-            NavigationBar {
-                tabs.forEachIndexed { index, tab ->
-                    NavigationBarItem(
-                        selected = nav.selectedTab == index,
-                        onClick = { settingsViewModel.selectTab(index) },
-                        icon = tab.icon,
-                        label = stringResource(tab.label)
-                    )
-                }
-            }
-        }
-    }
-
-    /** 完整的一屏：顶栏、底栏与内容区。采样层挂在覆盖整块 Scaffold 的外层，
-     *  胶囊才能模糊到页面内容；[inner] 决定内容区如何渲染 */
-    val screenFor: @Composable (Int, @Composable (Int) -> Unit) -> Unit = { page, inner ->
+    /** 标签页的一屏：顶栏、底栏与五个 tab 内容。转场中间态由 NavDisplay 统一裁剪，
+     *  采样层挂在覆盖整块 Scaffold 的外层，胶囊才能模糊到页面内容 */
+    @Composable
+    fun TabsScreen() {
         Scaffold(
-            topBar = { screenTopBar(page) },
-            bottomBar = {
-                if (page == LEVEL_TABS) {
-                    if (glassBottomBar) {
-                        LiquidGlassNavigationBar(
-                            items = navigationItems,
-                            selectedIndex = nav.selectedTab,
-                            onItemClick = { settingsViewModel.selectTab(it) },
-                            backdrop = backdrop,
-                            isBlurActive = backdrop != null
-                        )
+            topBar = {
+                ProjectBar(
+                    title = stringResource(tabs[tabState.selectedTab].label),
+                    showProjectSelector = tabState.selectedTab in 1..2,
+                    showEnvSelector = tabState.selectedTab == 1,
+                    onAddMonitor = if (tabState.selectedTab == 3) {
+                        { monitorViewModel.openCreate() }
                     } else {
-                        screenBottomBar()
+                        null
+                    }
+                )
+            },
+            bottomBar = {
+                if (glassBottomBar) {
+                    LiquidGlassNavigationBar(
+                        items = navigationItems,
+                        selectedIndex = tabState.selectedTab,
+                        onItemClick = { settingsViewModel.selectTab(it) },
+                        backdrop = backdrop,
+                        isBlurActive = backdrop != null
+                    )
+                } else if (settings.floatingBottomBar) {
+                    FloatingNavigationBar(color = MiuixTheme.colorScheme.surfaceContainer) {
+                        tabs.forEachIndexed { index, tab ->
+                            FloatingNavigationBarItem(
+                                selected = tabState.selectedTab == index,
+                                onClick = { settingsViewModel.selectTab(index) },
+                                icon = tab.icon,
+                                label = stringResource(tab.label)
+                            )
+                        }
+                    }
+                } else {
+                    NavigationBar {
+                        tabs.forEachIndexed { index, tab ->
+                            NavigationBarItem(
+                                selected = tabState.selectedTab == index,
+                                onClick = { settingsViewModel.selectTab(index) },
+                                icon = tab.icon,
+                                label = stringResource(tab.label)
+                            )
+                        }
                     }
                 }
             }
         ) { paddingValues ->
-            Box(modifier = Modifier.fillMaxSize().then(backdropModifier(page))) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(
-                            top = paddingValues.calculateTopPadding(),
-                            bottom = contentBottomPadding(paddingValues, page)
-                        )
-                ) {
-                    inner(page)
-                }
-            }
-        }
-    }
-
-    LocalizedRoot(language = fromIndex(settings.languageIndex)) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            if (useMiuixBack) {
-                MiuixPredictiveBack(
-                    modifier = Modifier.fillMaxSize(),
-                    enabled = previous != null,
-                    onBack = { settingsViewModel.goBack() },
-                    previous = { screenFor(previous ?: nav.current) { pageContent(it) } }
-                ) {
-                    screenFor(nav.current) { pageContent(it) }
-                }
-            } else {
-                BackHandler(enabled = previous != null) {
-                    settingsViewModel.goBack()
-                }
-                screenFor(nav.current) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(if (backdrop != null) Modifier.layerBackdrop(backdrop) else Modifier)
+            ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = paddingValues.calculateTopPadding())
+            ) {
                     PageTransition(
                         modifier = Modifier.fillMaxSize(),
-                        current = nav.current
-                    ) { pageContent(it) }
+                        current = tabState.selectedTab
+                    ) { tab ->
+                        when (tab) {
+                            0 -> DashboardScreen(
+                                modifier = Modifier.fillMaxSize(),
+                                onOpenBase64 = { navController.pushRoute(PulseRoute.Base64Tool) },
+                                onOpenJson = { navController.pushRoute(PulseRoute.JsonTool) },
+                                onOpenTimestamp = { navController.pushRoute(PulseRoute.TimestampTool) }
+                            )
+                            1 -> TestScreen(
+                                modifier = Modifier.fillMaxSize(),
+                                protocolTab = tabState.homeProtocolTab,
+                                onProtocolTabChange = { settingsViewModel.selectHomeProtocol(it) },
+                                onOpenScriptEditor = { navController.pushRoute(PulseRoute.ScriptEditor(it)) },
+                                onOpenHistory = { navController.pushRoute(PulseRoute.History) }
+                            )
+                            2 -> ResourcesScreen(
+                                modifier = Modifier.fillMaxSize(),
+                                onSwitchTab = { settingsViewModel.openHomeProtocol(it) }
+                            )
+                            3 -> MonitorScreen(
+                                modifier = Modifier.fillMaxSize(),
+                                viewModel = monitorViewModel,
+                                onOpenRecordsList = { navController.pushRoute(PulseRoute.MonitorRecords) }
+                            )
+                            else -> SettingsScreen(
+                                modifier = Modifier.fillMaxSize(),
+                                viewModel = settingsViewModel,
+                                onOpenAppearance = { navController.pushRoute(PulseRoute.Appearance) }
+                            )
+                        }
+                    }
                 }
             }
-
-            ToastHost()
         }
     }
-}
 
-/** 悬浮底栏浮在内容之上，内容区底部不再预留底栏高度，改为在每页滚动内容末尾放一个
- *  空白 box（见 BottomBarClearance），这样内容能滚到底栏下面、最后一条也不会被压住。
- *  非标签页（无底栏）仍保留 Scaffold 底部留白。 */
-@Composable
-private fun contentBottomPadding(paddingValues: PaddingValues, page: Int): Dp {
-    val scaffold = paddingValues.calculateBottomPadding()
-    return if (page == LEVEL_TABS) 0.dp else scaffold
+    /** 二级/三级页的一屏：标题 + 返回键 + 内容 */
+    @Composable
+    fun SubPageScreen(title: String, content: @Composable () -> Unit) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = title,
+                    navigationIcon = {
+                        IconButton(onClick = { navController.pop() }) {
+                            Icon(
+                                imageVector = MiuixIcons.Light.ChevronBackward,
+                                contentDescription = stringResource(R.string.cd_back)
+                            )
+                        }
+                    }
+                )
+            }
+        ) { paddingValues ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+                content()
+            }
+        }
+    }
+
+    NavDisplay(
+        navController = navController,
+        transition = transition,
+        effects = NavDisplayEffects(cornerClipRadius = rememberNavSystemCornerRadius())
+    ) {
+        entry<PulseRoute.Tabs> {
+            TabsScreen()
+        }
+
+        entry<PulseRoute.Appearance> {
+            SubPageScreen(title = stringResource(R.string.theme_page_title)) {
+                ThemeSettingsScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    viewModel = settingsViewModel
+                )
+            }
+        }
+
+        entry<PulseRoute.HistoryDetail> { route ->
+            SubPageScreen(title = stringResource(R.string.history_detail_title)) {
+                HistoryDetailScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    viewModel = historyViewModel,
+                    entryId = route.entryId
+                )
+            }
+        }
+
+        entry<PulseRoute.MonitorRecords> {
+            SubPageScreen(title = stringResource(R.string.monitor_records_title)) {
+                MonitorRecordsScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    viewModel = monitorViewModel
+                )
+            }
+        }
+
+        entry<PulseRoute.ScriptEditor> { route ->
+            SubPageScreen(
+                title = stringResource(
+                    if (route.target == 0) R.string.script_tab_pre else R.string.script_tab_post
+                )
+            ) {
+                ScriptEditorScreen(
+                    target = route.target,
+                    modifier = Modifier.fillMaxSize(),
+                    onOpenScriptDocs = { navController.pushRoute(PulseRoute.ScriptDocs(route.target)) }
+                )
+            }
+        }
+
+        entry<PulseRoute.ScriptDocs> { route ->
+            SubPageScreen(title = stringResource(R.string.script_docs_title)) {
+                ScriptDocsScreen(
+                    target = route.target,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+
+        entry<PulseRoute.History> {
+            SubPageScreen(title = stringResource(R.string.history_title)) {
+                HistoryScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    onOpenDetail = { navController.pushRoute(PulseRoute.HistoryDetail(it)) },
+                    viewModel = historyViewModel
+                )
+            }
+        }
+
+        entry<PulseRoute.Base64Tool> {
+            SubPageScreen(title = stringResource(R.string.base64_title)) {
+                Base64ToolScreen(modifier = Modifier.fillMaxSize())
+            }
+        }
+
+        entry<PulseRoute.JsonTool> {
+            SubPageScreen(title = stringResource(R.string.json_tool_title)) {
+                JsonToolScreen(modifier = Modifier.fillMaxSize())
+            }
+        }
+
+        entry<PulseRoute.TimestampTool> {
+            SubPageScreen(title = stringResource(R.string.timestamp_tool_title)) {
+                TimestampToolScreen(modifier = Modifier.fillMaxSize())
+            }
+        }
+    }
+
+    ToastHost()
 }
