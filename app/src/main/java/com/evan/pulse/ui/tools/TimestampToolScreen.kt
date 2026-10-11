@@ -1,6 +1,5 @@
 package com.evan.pulse.ui.tools
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,11 +21,10 @@ import com.evan.pulse.R
 import com.evan.pulse.ui.common.CardSectionTitle
 import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.MonospaceBlock
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.basic.TabRowWithContour
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import java.time.Instant
 import java.time.ZoneId
@@ -52,23 +50,16 @@ fun TimestampToolScreen(modifier: Modifier = Modifier) {
             .padding(horizontal = 12.dp)
             .padding(bottom = 12.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            ModeToggle(
-                label = stringResource(R.string.timestamp_tool_seconds),
-                selected = unit == TimestampUnit.SECONDS,
-                onClick = { unit = TimestampUnit.SECONDS },
-                modifier = Modifier.weight(1f)
-            )
-            ModeToggle(
-                label = stringResource(R.string.timestamp_tool_millis),
-                selected = unit == TimestampUnit.MILLIS,
-                onClick = { unit = TimestampUnit.MILLIS },
-                modifier = Modifier.weight(1f)
-            )
-        }
+        val modeLabels = listOf(
+            stringResource(R.string.timestamp_tool_seconds),
+            stringResource(R.string.timestamp_tool_millis)
+        )
+        TabRowWithContour(
+            tabs = modeLabels,
+            selectedTabIndex = unit.ordinal,
+            onTabSelected = { unit = TimestampUnit.entries[it] },
+            modifier = Modifier.fillMaxWidth()
+        )
 
         TextField(
             value = input,
@@ -137,24 +128,3 @@ private fun parseMillis(input: String, unit: TimestampUnit): Long? {
 
 private fun formatMillis(millis: Long, zone: ZoneId = ZoneId.systemDefault()): String =
     displayFormatter.format(Instant.ofEpochMilli(millis).atZone(zone))
-
-@Composable
-private fun ModeToggle(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.defaultColors(
-            color = if (selected) MiuixTheme.colorScheme.primaryContainer else MiuixTheme.colorScheme.surface
-        )
-    ) {
-        TextButton(
-            text = label,
-            onClick = onClick,
-            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)
-        )
-    }
-}

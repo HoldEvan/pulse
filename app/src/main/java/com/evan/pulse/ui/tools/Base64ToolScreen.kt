@@ -1,7 +1,6 @@
 package com.evan.pulse.ui.tools
 
 import android.util.Base64
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,10 +23,9 @@ import com.evan.pulse.ui.common.CardSectionTitle
 import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.MonospaceBlock
 import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.basic.TabRowWithContour
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /** 转换模式：从文本编码为 Base64，或从 Base64 解码回文本 */
@@ -70,23 +68,16 @@ fun Base64ToolScreen(modifier: Modifier = Modifier) {
             .padding(horizontal = 12.dp)
             .padding(bottom = 12.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            ModeToggle(
-                label = stringResource(R.string.base64_encode),
-                selected = mode == Base64Mode.ENCODE,
-                onClick = { mode = Base64Mode.ENCODE },
-                modifier = Modifier.weight(1f)
-            )
-            ModeToggle(
-                label = stringResource(R.string.base64_decode),
-                selected = mode == Base64Mode.DECODE,
-                onClick = { mode = Base64Mode.DECODE },
-                modifier = Modifier.weight(1f)
-            )
-        }
+        val modeLabels = listOf(
+            stringResource(R.string.base64_encode),
+            stringResource(R.string.base64_decode)
+        )
+        TabRowWithContour(
+            tabs = modeLabels,
+            selectedTabIndex = mode.ordinal,
+            onTabSelected = { mode = Base64Mode.entries[it] },
+            modifier = Modifier.fillMaxWidth()
+        )
 
         TextField(
             value = input,
@@ -124,26 +115,5 @@ fun Base64ToolScreen(modifier: Modifier = Modifier) {
                 MonospaceBlock(text = result.text, modifier = Modifier.padding(8.dp))
             }
         }
-    }
-}
-
-@Composable
-private fun ModeToggle(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.defaultColors(
-            color = if (selected) MiuixTheme.colorScheme.primaryContainer else MiuixTheme.colorScheme.surface
-        )
-    ) {
-        TextButton(
-            text = label,
-            onClick = onClick,
-            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)
-        )
     }
 }

@@ -1,6 +1,5 @@
 package com.evan.pulse.ui.tools
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,11 +23,9 @@ import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.MonospaceBlock
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.basic.TabRowWithContour
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private val formatJson = Json { prettyPrint = true }
@@ -66,23 +63,16 @@ fun JsonToolScreen(modifier: Modifier = Modifier) {
             .padding(horizontal = 12.dp)
             .padding(bottom = 12.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            ModeToggle(
-                label = stringResource(R.string.json_tool_pretty),
-                selected = mode == JsonMode.PRETTY,
-                onClick = { mode = JsonMode.PRETTY },
-                modifier = Modifier.weight(1f)
-            )
-            ModeToggle(
-                label = stringResource(R.string.json_tool_minify),
-                selected = mode == JsonMode.MINIFY,
-                onClick = { mode = JsonMode.MINIFY },
-                modifier = Modifier.weight(1f)
-            )
-        }
+        val modeLabels = listOf(
+            stringResource(R.string.json_tool_pretty),
+            stringResource(R.string.json_tool_minify)
+        )
+        TabRowWithContour(
+            tabs = modeLabels,
+            selectedTabIndex = mode.ordinal,
+            onTabSelected = { mode = JsonMode.entries[it] },
+            modifier = Modifier.fillMaxWidth()
+        )
 
         TextField(
             value = input,
@@ -118,26 +108,5 @@ fun JsonToolScreen(modifier: Modifier = Modifier) {
         } else {
             MonospaceBlock(text = result.text, modifier = Modifier.padding(top = 6.dp))
         }
-    }
-}
-
-@Composable
-private fun ModeToggle(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.defaultColors(
-            color = if (selected) MiuixTheme.colorScheme.primaryContainer else MiuixTheme.colorScheme.surface
-        )
-    ) {
-        TextButton(
-            text = label,
-            onClick = onClick,
-            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)
-        )
     }
 }
