@@ -264,3 +264,14 @@ Entries discovered by the Agent during task execution should follow this format:
 - Category: Troubleshooting & Debugging
 - Instructions:
   - 后台终端里跑 gradle 时管道会吞退出码：`./gradlew assembleRelease 2>&1 | tail -5; echo "EXIT=$?"` 打印的是 tail 的退出码，构建失败也显示 EXIT=0。要用 `./gradlew ... 2>&1; echo "GRADLE_EXIT=$?"`（无管道）或开头加 `set -o pipefail`，并以日志末尾出现 `BUILD SUCCESSFUL` 为准
+
+[Project Knowledge Summary]
+- Date: 2026-10-11
+- Context: Discovered by Agent while migrating navigation to miuix-nav 0.9.4
+- Category: Build Methods
+- Instructions:
+  - miuix-nav 的 `rememberNavController`/`rememberNavBackStack`/`entry<T>` 都是 inline reified，其字节码按 JVM 21 编译，app 的 Kotlin jvmTarget 必须 ≥21 才能内联（JVM 17 报 "Cannot inline bytecode built with JVM target 21"）。app/build.gradle.kts 已升到 Java 21 + jvmTarget 21，环境 JDK 17 跑不动 javac，Temurin 21 装在 /opt/jdk-21，/root/.gradle/gradle.properties 里 `org.gradle.java.home=/opt/jdk-21` 指定，系统 java 保持 17 不动
+  - JDK 21 冷启动后 Gradle daemon(-Xmx3g) + Kotlin daemon 两个 JVM 叠加，release 构建 memory_percent 给 55(4.3GB) 会 OOM（daemon "disappeared unexpectedly"），给 68(5.3GB) 稳定通过。但 68% 只够**单独跑 release**：`compileDebugKotlin + testDebugUnitTest + assembleRelease` 三连跑会在 `compileReleaseKotlin` 阶段被 OOM 杀（debug/release 两套 Kotlin 编译缓存叠加），要拆成两段：先 debug+test，再 release，各自 68%
+  - background terminal 的 shell 是 sh（dash），`${PIPESTATUS[0]}` 报 Bad substitution；bash 数组语法在管道里不可用，退出码捕获直接 `命令 2>&1; echo EXIT=$?` 不加管道，或显式 `bash -c`
+  - miuix-nav push 相同 contentKey 会 IllegalArgumentException 拒绝（防连点靠应用层），本项目在 Nav.kt 用 `NavController.pushRoute()` 先查栈顶再 push
+  - miuix-nav 的预测性返回内置于 NavDisplay（androidx.navigationevent 驱动，enableOnBackInvokedCallback=true 已开），Activity 层不能再叠自定义 OnBackPressedCallback 抢事件；dispatcher 只在 backStack.size > 1 时 enabled，栈底返回自然走系统退出
