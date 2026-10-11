@@ -257,3 +257,10 @@ Entries discovered by the Agent during task execution should follow this format:
   - miuix `Scaffold` 的 `contentPadding` 里已经包含 `bottomBarPlaceable.height`（Scaffold.kt 实测），所以 `paddingValues.calculateBottomPadding()` 与底栏实测高度一致；内容底部再手动加 `liquidGlassBottomInset()` 是重复计算但无害。真正会遮挡的是胶囊 `dropShadow` 半径 10dp 溢出到内容区，底栏内容留位要额外 +10dp
   - 当前 BOM（2026.09.00 / compose ui 1.12.1）的 `BasicTextField` **已经没有 `contentPadding` 参数**了，写了直接报 `No parameter with name 'contentPadding' found`。想让文本框不带任何内边距/垂直居中（行号列、提示文字、光标要严格对齐基线的前提），传一个极简的 `decorationBox = { inner -> Box { inner() } }` 即可，不要用默认的 `BasicTextFieldDefaults.DecorationBox`（它会加内边距 + `Alignment.CenterStart` 垂直居中，文本会被推下 2dp）
   - 编辑器提示文字（placeholder）要和内容基线严格对齐时，别在 `decorationBox` 里放一个兄弟 `Text`：那既可能在默认装饰框下被 padding/居中推偏，又会跟着 `horizontalScroll` 一起横向跑。正确做法是和行号一起画在**同一个 `drawBehind`** 里，用 `measurer.measure(...)` 量出提示文字的 `firstBaseline`，`drawText(hint, Offset(gutterWidth.toPx(), layout.getLineBaseline(0) - hint.firstBaseline))` —— 同一个坐标系 + 同一基线，对齐是恒等式
+
+[Project Knowledge Summary]
+- Date: 2026-10-11
+- Context: Discovered by Agent while building v0.1.34 release and seeing a masked build failure
+- Category: Troubleshooting & Debugging
+- Instructions:
+  - 后台终端里跑 gradle 时管道会吞退出码：`./gradlew assembleRelease 2>&1 | tail -5; echo "EXIT=$?"` 打印的是 tail 的退出码，构建失败也显示 EXIT=0。要用 `./gradlew ... 2>&1; echo "GRADLE_EXIT=$?"`（无管道）或开头加 `set -o pipefail`，并以日志末尾出现 `BUILD SUCCESSFUL` 为准
