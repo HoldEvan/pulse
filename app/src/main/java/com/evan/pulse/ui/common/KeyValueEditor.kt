@@ -51,7 +51,8 @@ fun KeyValueEditor(
                         value = kv.key,
                         onValueChange = { onChange(index, kv.copy(key = it)) },
                         label = keyLabel,
-                        modifier = Modifier.weight(0.4f)
+                        modifier = Modifier.weight(0.4f),
+                        maxLines = 1
                     )
                     TextField(
                         value = kv.value,
@@ -59,7 +60,8 @@ fun KeyValueEditor(
                         label = valueLabel,
                         modifier = Modifier
                             .weight(0.5f)
-                            .padding(start = 6.dp)
+                            .padding(start = 6.dp),
+                        maxLines = 1
                     )
                     Icon(
                         imageVector = MiuixIcons.Light.Close,
