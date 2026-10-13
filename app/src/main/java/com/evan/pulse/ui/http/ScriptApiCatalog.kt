@@ -1,18 +1,30 @@
 package com.evan.pulse.ui.http
 
+import androidx.annotation.StringRes
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.evan.pulse.R
+
 /**
  * 脚本编辑器的一条内置补全项。
  *
  * [path] 是可被前缀匹配的完整成员路径；[detail] 展示调用签名或简短说明；
+ * [detailRes] 是可选的多语言说明资源（优先于 [detail] 展示）；
  * [insert] 是选中后真正写入文本的内容；[cursorBack] 表示插入后光标回退的字符数，
  * 用于把光标停在一对圆括号中间。
  */
 data class ScriptApiToken(
     val path: String,
     val detail: String = "",
+    @StringRes val detailRes: Int = 0,
     val insert: String = path,
     val cursorBack: Int = 0,
 )
+
+/** 补全项的展示说明：多语言资源优先，其次静态签名文本 */
+@Composable
+fun ScriptApiToken.detailText(): String =
+    if (detailRes != 0) stringResource(detailRes) else detail
 
 /**
  * pm 脚本运行时暴露的内置变量与函数清单，供代码编辑器做补全提示。
@@ -25,7 +37,7 @@ object ScriptApiCatalog {
     private const val MAX_SUGGESTIONS = 40
 
     val tokens: List<ScriptApiToken> = buildList {
-        add(prop("pm", "Postman 风格脚本 API 根对象"))
+        add(prop("pm", detailRes = R.string.script_api_pm_root))
 
         add(prop("pm.request"))
         add(prop("pm.request.method"))
@@ -77,10 +89,10 @@ object ScriptApiCatalog {
         add(fn("pm.variables.unshift", "unshift(key, value, persist)"))
         add(fn("pm.variables.all", "all()"))
 
-        add(prop("pm.environment", "变量作用域别名"))
+        add(prop("pm.environment", detailRes = R.string.script_api_scope_alias))
         add(fn("pm.environment.get", "get(key)"))
         add(fn("pm.environment.set", "set(key, value)"))
-        add(prop("pm.globals", "变量作用域别名"))
+        add(prop("pm.globals", detailRes = R.string.script_api_scope_alias))
         add(fn("pm.globals.get", "get(key)"))
         add(fn("pm.globals.set", "set(key, value)"))
 
@@ -93,7 +105,7 @@ object ScriptApiCatalog {
         add(prop("pm.iteration"))
         add(prop("pm.iterationCount"))
 
-        add(prop("pm.response", "仅后置脚本可用"))
+        add(prop("pm.response", detailRes = R.string.script_api_response_post_only))
         add(prop("pm.response.statusCode"))
         add(prop("pm.response.status"))
         add(prop("pm.response.headers"))
@@ -138,8 +150,12 @@ object ScriptApiCatalog {
             .toList()
     }
 
-    private fun prop(path: String, detail: String = "", insert: String = path): ScriptApiToken =
-        ScriptApiToken(path = path, detail = detail, insert = insert)
+    private fun prop(
+        path: String,
+        detail: String = "",
+        @StringRes detailRes: Int = 0,
+        insert: String = path,
+    ): ScriptApiToken = ScriptApiToken(path = path, detail = detail, detailRes = detailRes, insert = insert)
 
     private fun fn(path: String, signature: String): ScriptApiToken =
         ScriptApiToken(path = path, detail = signature, insert = "$path()", cursorBack = 1)

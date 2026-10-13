@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -40,6 +41,8 @@ import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.MethodBadge
 import com.evan.pulse.ui.common.roundedPressable
 import com.evan.pulse.ui.common.statusColor
+import com.evan.pulse.ui.common.subPageLazyListState
+import com.evan.pulse.ui.common.subPageOverScroll
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
@@ -78,7 +81,12 @@ fun HistoryScreen(
         viewModel.entries(viewModel.projectFilter, viewModel.keyword)
     }
 
-    Column(modifier = modifier.fillMaxSize().padding(horizontal = 12.dp)) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 12.dp)
+            .padding(bottom = 12.dp)
+    ) {
         TextField(
             value = viewModel.keyword,
             onValueChange = { viewModel.keyword = it },
@@ -94,13 +102,14 @@ fun HistoryScreen(
             )
         }
 
-        TextButton(
-            text = stringResource(R.string.history_clear),
-            onClick = { viewModel.confirmClear = true },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)
-        )
+        Spacer(modifier = Modifier.height(12.dp))
 
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .subPageOverScroll(),
+            state = subPageLazyListState()
+        ) {
             items(entries, key = { entry -> entry.id }) { entry ->
                 SwipeToDeleteRow(
                     modifier = Modifier.padding(vertical = 4.dp),

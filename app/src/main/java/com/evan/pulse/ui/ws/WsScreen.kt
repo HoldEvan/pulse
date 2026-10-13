@@ -1,6 +1,7 @@
 package com.evan.pulse.ui.ws
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -37,6 +38,8 @@ import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.EventLine
 import com.evan.pulse.ui.common.eventLogText
 import com.evan.pulse.ui.common.roundedPressable
+import com.evan.pulse.ui.common.subPageLazyListState
+import com.evan.pulse.ui.common.subPageOverScroll
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
@@ -52,12 +55,13 @@ import top.yukonga.miuix.kmp.icon.extended.Send
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 
 @Composable
-private fun SectionTitleRow(label: String, onSaveClick: () -> Unit) {
+private fun SectionTitleRow(status: @Composable () -> Unit, onSaveClick: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        SmallTitle(text = label, modifier = Modifier.weight(1f))
+        // 沿用 SmallTitle 的内边距节奏，保持与原分组标题一致的间距
+        Box(modifier = Modifier.weight(1f).padding(start = 16.dp, top = 8.dp, bottom = 8.dp)) { status() }
         IconButton(onClick = onSaveClick, modifier = Modifier.size(36.dp)) {
             Icon(
                 imageVector = Icons.Filled.Save,
@@ -79,28 +83,22 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
 
     Column(modifier = modifier.fillMaxSize().padding(horizontal = 12.dp)) {
         SectionTitleRow(
-            label = stringResource(R.string.action_connect),
+            status = {
+                ConnectionStateIndicator(
+                    color = connectionStateColor(state),
+                    label = stateLabel(state)
+                )
+            },
             onSaveClick = { showSave = true }
         )
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(12.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    TextField(
-                        value = viewModel.url,
-                        onValueChange = { viewModel.url = it },
-                        label = stringResource(R.string.ws_url_label),
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(end = 10.dp)
-                    )
-                    ConnectionStateIndicator(
-                        color = connectionStateColor(state),
-                        label = stateLabel(state)
-                    )
-                }
+                TextField(
+                    value = viewModel.url,
+                    onValueChange = { viewModel.url = it },
+                    label = stringResource(R.string.ws_url_label),
+                    modifier = Modifier.fillMaxWidth()
+                )
                 Row(modifier = Modifier.padding(top = 8.dp)) {
                     TextField(
                         value = viewModel.pingIntervalSec,
@@ -170,7 +168,13 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
             )
         }
         Card(modifier = Modifier.fillMaxWidth().weight(1f)) {
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .subPageOverScroll(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                state = subPageLazyListState()
+            ) {
                 items(lines) { line ->
                     EventLine(line, systemLabel, recvLabel)
                 }

@@ -58,7 +58,9 @@ import com.evan.pulse.ui.common.isJson
 import com.evan.pulse.ui.common.renderBody
 import com.evan.pulse.ui.common.rememberCopyToClipboard
 import com.evan.pulse.ui.common.roundedPressable
+import com.evan.pulse.ui.common.subPageScrollState
 import com.evan.pulse.ui.l10n.localizedLabels
+import com.evan.pulse.ui.common.subPageOverScroll
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
@@ -110,13 +112,17 @@ fun HttpScreen(
     onOpenHistory: () -> Unit = {},
     viewModel: HttpViewModel = viewModel(),
 ) {
-    val scroll = rememberScrollState()
+    val scroll = subPageScrollState()
     val missingVars = viewModel.missingVars
     var showSave by remember { mutableStateOf(false) }
     var showExport by remember { mutableStateOf(false) }
 
     Column(
-        modifier = modifier.fillMaxSize().padding(horizontal = 12.dp)
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 12.dp)
+            .subPageOverScroll()
+            .verticalScroll(scroll)
     ) {
         SectionTitleRow(
             label = stringResource(R.string.http_request_label),
@@ -141,36 +147,29 @@ fun HttpScreen(
                 }
             }
         )
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .verticalScroll(scroll)
-        ) {
-            RequestEditorCard(viewModel)
-            SaveRequestDialog(
-                show = showSave,
-                type = RequestType.HTTP,
-                defaultName = viewModel.url.pathOnly().ifEmpty { viewModel.url },
-                snapshotProvider = { viewModel.snapshot() },
-                onDismiss = { showSave = false }
-            )
-            ExportFormatDialog(show = showExport, viewModel = viewModel, onDismiss = { showExport = false })
-            SectionTitleRow(label = stringResource(R.string.tab_script))
-            ScriptEditorCard(viewModel, onOpenScriptEditor)
-            SectionTitleRow(
-                label = stringResource(R.string.http_response_label),
-                actions = {
-                    CopyIconButton(
-                        text = ((viewModel.outcome as? HttpCallOutcome.Success)?.body),
-                        label = stringResource(R.string.cd_copy_response)
-                    )
-                }
-            )
-            ResponseCard(viewModel)
-            BottomBarClearance()
-        }
+        RequestEditorCard(viewModel)
+        SectionTitleRow(label = stringResource(R.string.tab_script))
+        ScriptEditorCard(viewModel, onOpenScriptEditor)
+        SectionTitleRow(
+            label = stringResource(R.string.http_response_label),
+            actions = {
+                CopyIconButton(
+                    text = ((viewModel.outcome as? HttpCallOutcome.Success)?.body),
+                    label = stringResource(R.string.cd_copy_response)
+                )
+            }
+        )
+        ResponseCard(viewModel)
+        BottomBarClearance()
     }
+    SaveRequestDialog(
+        show = showSave,
+        type = RequestType.HTTP,
+        defaultName = viewModel.url.pathOnly().ifEmpty { viewModel.url },
+        snapshotProvider = { viewModel.snapshot() },
+        onDismiss = { showSave = false }
+    )
+    ExportFormatDialog(show = showExport, viewModel = viewModel, onDismiss = { showExport = false })
 
     missingVars?.let { missing ->
         OverlayDialog(
@@ -211,9 +210,7 @@ private fun RequestEditorCard(viewModel: HttpViewModel) {
                 value = viewModel.url,
                 onValueChange = { viewModel.url = it },
                 label = stringResource(R.string.http_url_label),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp)
+                modifier = Modifier.fillMaxWidth()
             )
             ValueHints(hints = viewModel.placeholderHints(viewModel.url))
             Button(
@@ -237,10 +234,11 @@ private fun RequestEditorCard(viewModel: HttpViewModel) {
                 onTabSelected = { viewModel.activeTab = it },
                 modifier = Modifier.padding(top = 12.dp)
             )
-
-            Column(modifier = Modifier.padding(top = 12.dp)) {
-                TabContent(vm = viewModel)
-            }
+        }
+        // Tab 内容区贴卡片边缘：类型下拉行与“请求方法”行对齐，具体内容再自行内缩；
+        // 上方内缩列的 12dp 底部内边距恰好等于原来的 Tab 行间距
+        Column(modifier = Modifier.fillMaxWidth()) {
+            TabContent(vm = viewModel)
         }
     }
 }
@@ -280,7 +278,8 @@ private fun ExportFormatDialog(show: Boolean, viewModel: HttpViewModel, onDismis
                 onTabSelected = { picked = it },
                 modifier = Modifier.fillMaxWidth()
             )
-            // 预览区限制高度并内部滚动，避免长报文把复制按钮挤出屏幕
+            // 预览区限制高度并内部滚动，避免长报文把复制按钮挤出屏幕；
+            // 可选中文本，长按拖选即可复制任意片段
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -288,7 +287,7 @@ private fun ExportFormatDialog(show: Boolean, viewModel: HttpViewModel, onDismis
                     .heightIn(max = 300.dp)
                     .verticalScroll(rememberScrollState())
             ) {
-                MonospaceBlock(preview)
+                MonospaceBlock(preview, selectable = true)
             }
             TextButton(
                 text = stringResource(R.string.action_copy),
@@ -302,24 +301,28 @@ private fun ExportFormatDialog(show: Boolean, viewModel: HttpViewModel, onDismis
 @Composable
 private fun TabContent(vm: HttpViewModel) {
     when (vm.activeTab) {
-        0 -> KeyValueEditor(
-            items = vm.params,
-            keyLabel = stringResource(R.string.kv_param_key),
-            valueLabel = stringResource(R.string.kv_param_value),
-            onChange = vm::updateParams,
-            onAdd = vm::addParam,
-            onRemove = vm::removeParam
-        )
+        0 -> Column(modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp)) {
+            KeyValueEditor(
+                items = vm.params,
+                keyLabel = stringResource(R.string.kv_param_key),
+                valueLabel = stringResource(R.string.kv_param_value),
+                onChange = vm::updateParams,
+                onAdd = vm::addParam,
+                onRemove = vm::removeParam
+            )
+        }
 
-        1 -> KeyValueEditor(
-            items = vm.headers,
-            keyLabel = stringResource(R.string.kv_header_key),
-            valueLabel = stringResource(R.string.kv_header_value),
-            onChange = vm::updateHeaders,
-            onAdd = vm::addHeader,
-            onRemove = vm::removeHeader,
-            valueHintProvider = vm::placeholderHints
-        )
+        1 -> Column(modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp)) {
+            KeyValueEditor(
+                items = vm.headers,
+                keyLabel = stringResource(R.string.kv_header_key),
+                valueLabel = stringResource(R.string.kv_header_value),
+                onChange = vm::updateHeaders,
+                onAdd = vm::addHeader,
+                onRemove = vm::removeHeader,
+                valueHintProvider = vm::placeholderHints
+            )
+        }
 
         2 -> BodyEditor(vm)
         3 -> AuthEditor(vm)
@@ -411,10 +414,7 @@ private fun ScriptPreview(script: String, placeholder: String, onClick: () -> Un
 
 @Composable
 private fun BodyEditor(viewModel: HttpViewModel) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        horizontalAlignment = Alignment.Start
-    ) {
+    Column(horizontalAlignment = Alignment.Start) {
         OverlayDropdownPreference(
             items = bodyTypeLabels.localizedLabels(),
             selectedIndex = bodyTypes.indexOf(viewModel.bodyType),
@@ -423,7 +423,13 @@ private fun BodyEditor(viewModel: HttpViewModel) {
             showValue = true,
             onSelectedIndexChange = { viewModel.bodyType = bodyTypes[it] }
         )
-        when (viewModel.bodyType) {
+        // 内容列仅在类型有内容时渲染：NONE 时空列的内边距会在卡片底部留白
+        if (viewModel.bodyType != BodyType.NONE) {
+            Column(
+                modifier = Modifier.padding(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+            when (viewModel.bodyType) {
             BodyType.NONE -> {}
             BodyType.JSON, BodyType.RAW -> {
                 TextField(
@@ -514,6 +520,8 @@ private fun BodyEditor(viewModel: HttpViewModel) {
                 }
             }
         }
+        }
+        }
     }
 }
 
@@ -535,7 +543,7 @@ private fun AddFieldButton(label: String, onClick: () -> Unit) {
 
 @Composable
 private fun AuthEditor(viewModel: HttpViewModel) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column {
         OverlayDropdownPreference(
             items = authTypeLabels.localizedLabels(),
             selectedIndex = viewModel.authType.ordinal,
@@ -544,7 +552,13 @@ private fun AuthEditor(viewModel: HttpViewModel) {
             showValue = true,
             onSelectedIndexChange = { viewModel.authType = AuthType.entries[it] }
         )
-        when (viewModel.authType) {
+        // 内容列仅在类型有内容时渲染：NONE 时空列的内边距会在卡片底部留白
+        if (viewModel.authType != com.evan.pulse.domain.model.AuthType.NONE) {
+            Column(
+                modifier = Modifier.padding(start = 12.dp, top = 8.dp, end = 12.dp, bottom = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+            when (viewModel.authType) {
             com.evan.pulse.domain.model.AuthType.NONE -> {}
             com.evan.pulse.domain.model.AuthType.BEARER -> {
                 TextField(
@@ -584,6 +598,8 @@ private fun AuthEditor(viewModel: HttpViewModel) {
                     modifier = Modifier.fillMaxWidth()
                 )
             }
+        }
+        }
         }
     }
 }

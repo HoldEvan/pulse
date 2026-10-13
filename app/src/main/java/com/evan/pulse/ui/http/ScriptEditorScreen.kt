@@ -42,6 +42,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.evan.pulse.R
+import com.evan.pulse.ui.common.subPageOverScroll
+import androidx.compose.foundation.layout.Spacer
+import com.evan.pulse.ui.common.subPageScrollState
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
@@ -174,7 +177,8 @@ private fun ScriptCodeArea(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .subPageOverScroll()
+            .verticalScroll(subPageScrollState())
             .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 8.dp)
     ) {
         Box(
@@ -264,9 +268,9 @@ private fun SuggestionPanel(
                         fontFamily = FontFamily.Monospace,
                         fontSize = editorFontSize
                     )
-                    if (token.detail.isNotEmpty()) {
+                    if (token.detailText().isNotEmpty()) {
                         Text(
-                            text = token.detail,
+                            text = token.detailText(),
                             color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                             fontSize = 12.sp,
                             modifier = Modifier.padding(start = 8.dp)

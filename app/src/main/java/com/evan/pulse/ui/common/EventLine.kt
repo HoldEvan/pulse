@@ -33,10 +33,13 @@ fun EventLine(line: UiEventLine, systemLabel: String, recvLabel: String) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
             .squircleBackground(
-                if (line.isSystem) MiuixTheme.colorScheme.surfaceVariant else MiuixTheme.colorScheme.primaryContainer,
-                8.dp
+                if (line.isSystem) {
+                    MiuixTheme.colorScheme.surfaceVariant
+                } else {
+                    MiuixTheme.colorScheme.primary.copy(alpha = 0.15f)
+                },
+                16.dp
             )
             .padding(8.dp)
     ) {

@@ -2,6 +2,7 @@ package com.evan.pulse.ui.sse
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -48,7 +49,9 @@ import com.evan.pulse.ui.common.KeyValueEditor
 import com.evan.pulse.ui.common.MarkdownBlock
 import com.evan.pulse.ui.common.ValueHints
 import com.evan.pulse.ui.common.eventLogText
+import com.evan.pulse.ui.common.subPageScrollState
 import com.evan.pulse.ui.l10n.localizedLabels
+import com.evan.pulse.ui.common.subPageOverScroll
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
@@ -83,12 +86,13 @@ private val previewTabLabels = listOf(
 )
 
 @Composable
-private fun SectionTitleRow(label: String, onSaveClick: () -> Unit) {
+private fun SectionTitleRow(status: @Composable () -> Unit, onSaveClick: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        SmallTitle(text = label, modifier = Modifier.weight(1f))
+        // 沿用 SmallTitle 的内边距节奏，保持与原分组标题一致的间距
+        Box(modifier = Modifier.weight(1f).padding(start = 16.dp, top = 8.dp, bottom = 8.dp)) { status() }
         IconButton(onClick = onSaveClick, modifier = Modifier.size(36.dp)) {
             Icon(
                 imageVector = Icons.Filled.Save,
@@ -112,18 +116,19 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
         modifier = modifier
             .fillMaxSize()
             .padding(horizontal = 12.dp)
+            .subPageOverScroll()
+            .verticalScroll(subPageScrollState())
     ) {
         SectionTitleRow(
-            label = stringResource(R.string.action_connect),
+            status = {
+                ConnectionStateIndicator(
+                    color = connectionStateColor(state),
+                    label = stateLabel(state)
+                )
+            },
             onSaveClick = { showSave = true }
         )
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-        ) {
-            // 顶部表单区随标题固定，下面内容整体滚动；事件流卡片再在内部滚动
+        Column(modifier = Modifier.fillMaxWidth()) {
             Card(modifier = Modifier.fillMaxWidth()) {
                 OverlayDropdownPreference(
                     items = sseMethods.map { it.name },
@@ -134,26 +139,13 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                     onSelectedIndexChange = { viewModel.method = sseMethods[it] }
                 )
                 Column(modifier = Modifier.padding(12.dp)) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        TextField(
-                            value = viewModel.url,
-                            onValueChange = { viewModel.url = it },
-                            label = stringResource(R.string.sse_url_label),
-                            useLabelAsPlaceholder = true,
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(end = 10.dp)
-                        )
-                        ConnectionStateIndicator(
-                            color = connectionStateColor(state),
-                            label = stateLabel(state)
-                        )
-                    }
+                    TextField(
+                        value = viewModel.url,
+                        onValueChange = { viewModel.url = it },
+                        label = stringResource(R.string.sse_url_label),
+                        useLabelAsPlaceholder = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                     ValueHints(hints = viewModel.placeholderHints(viewModel.url))
                     TextField(
                         value = viewModel.eventFilter,
@@ -331,9 +323,8 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
             }
             Card(modifier = Modifier.fillMaxWidth().height(300.dp)) {
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(8.dp)
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(lines) { line ->
                         EventLine(line, systemLabel, recvLabel)

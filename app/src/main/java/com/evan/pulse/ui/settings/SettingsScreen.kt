@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -35,11 +37,13 @@ import com.evan.pulse.di.ServiceLocator
 import com.evan.pulse.ui.common.AppToast
 import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.CardSectionTitle
+import com.evan.pulse.ui.common.SectionTitle
+import com.evan.pulse.ui.common.subPageLazyListState
 import com.evan.pulse.ui.l10n.localizedLabels
+import com.evan.pulse.ui.common.subPageOverScroll
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.basic.TextButton
@@ -69,9 +73,6 @@ private val BackGestureModeSummaries: Map<Int, Int> = mapOf(
 )
 
 private val backupDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
-
-/** 构建时间在打包时只存毫秒值，这里按设备本地时区渲染 */
-private val buildTimeFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
 
 // 页面内间距统一走这三个值，避免各区块之间的间距和卡片内容内边距不一致
 private val SectionTopGap = 12.dp
@@ -185,6 +186,7 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel,
     onOpenAppearance: () -> Unit,
+    onOpenAbout: () -> Unit
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val status by viewModel.backupStatus.collectAsStateWithLifecycle()
@@ -203,21 +205,22 @@ fun SettingsScreen(
         if (!granted) AppToast.show(permissionDeniedText)
     }
 
-    Column(
+    LazyColumn(
         modifier = modifier
             .fillMaxSize()
             .padding(horizontal = 12.dp)
+            .subPageOverScroll(),
+        state = subPageLazyListState()
     ) {
-        SmallTitle(text = stringResource(R.string.settings_general))
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-        ) {
+        item(key = "general_title") {
+            SectionTitle(text = stringResource(R.string.settings_general))
+        }
 
+        item(key = "general_card") {
         Card(modifier = Modifier.fillMaxWidth()) {
             OverlayDropdownPreference(
                 title = stringResource(R.string.settings_language),
+                summary = stringResource(R.string.settings_language_summary),
                 items = LanguageLabels.localizedLabels(),
                 selectedIndex = settings.languageIndex,
                 onSelectedIndexChange = { viewModel.setLanguage(it) }
@@ -255,16 +258,20 @@ fun SettingsScreen(
                 summary = if (settings.monitorNotify && !notifyPermissionGranted) {
                     permissionDeniedText
                 } else {
-                    null
+                    stringResource(R.string.settings_monitor_notify_summary)
                 }
             )
         }
+        }
 
-        SmallTitle(
-            text = stringResource(R.string.settings_network),
-            modifier = Modifier.padding(top = SectionTopGap)
-        )
+        item(key = "network_title") {
+            SectionTitle(
+                text = stringResource(R.string.settings_network),
+                topPadding = SectionTopGap
+            )
+        }
 
+        item(key = "network_card") {
         Card(modifier = Modifier.fillMaxWidth()) {
             OverlayDropdownPreference(
                 title = stringResource(R.string.settings_proxy),
@@ -331,14 +338,18 @@ fun SettingsScreen(
                 }
             }
         }
+        }
 
-        SmallTitle(
-            text = stringResource(R.string.settings_backup),
-            modifier = Modifier.padding(top = SectionTopGap)
-        )
+        item(key = "backup_title") {
+            SectionTitle(
+                text = stringResource(R.string.settings_backup),
+                topPadding = SectionTopGap
+            )
+        }
 
         val webdavConfigured = viewModel.isWebdavConfigured(settings)
 
+        item(key = "backup_local_card") {
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(CardContentPadding)) {
                 CardSectionTitle(
@@ -368,7 +379,9 @@ fun SettingsScreen(
                 }
             }
         }
+        }
 
+        item(key = "backup_webdav_card") {
         Card(modifier = Modifier.fillMaxWidth().padding(top = CardGap)) {
             Column(modifier = Modifier.padding(CardContentPadding)) {
                 Row(
@@ -526,25 +539,17 @@ fun SettingsScreen(
                 }
             }
         }
+        }
 
-        SmallTitle(
-            text = stringResource(R.string.settings_about),
-            modifier = Modifier.padding(top = SectionTopGap)
-        )
+        item(key = "about_title") {
+            SectionTitle(
+                text = stringResource(R.string.settings_about),
+                topPadding = SectionTopGap
+            )
+        }
 
+        item(key = "about_card") {
         Card(modifier = Modifier.fillMaxWidth()) {
-            BasicComponent(
-                title = stringResource(R.string.version_label),
-                summary = stringResource(
-                    R.string.version_value,
-                    BuildConfig.VERSION_NAME,
-                    BuildConfig.VERSION_CODE
-                )
-            )
-            BasicComponent(
-                title = stringResource(R.string.build_time_label),
-                summary = buildTimeFormat.format(Date(BuildConfig.BUILD_TIME_MS))
-            )
             BasicComponent(
                 title = stringResource(R.string.cache_clear_label),
                 summary = stringResource(
@@ -554,10 +559,21 @@ fun SettingsScreen(
                 enabled = !cacheBusy,
                 onClick = { showCacheConfirm = !cacheBusy }
             )
+            ArrowPreference(
+                title = stringResource(R.string.settings_about),
+                summary = stringResource(
+                    R.string.version_value,
+                    BuildConfig.VERSION_NAME,
+                    BuildConfig.VERSION_CODE
+                ),
+                onClick = onOpenAbout
+            )
+        }
         }
 
-        BottomBarClearance()
-    }
+        item(key = "clearance") {
+            BottomBarClearance()
+        }
     }
 
     if (showCacheConfirm) {

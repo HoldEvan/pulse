@@ -18,6 +18,15 @@ sealed interface PulseRoute : NavKey {
     /** 设置二级页：外观与主题 */
     @Serializable data object Appearance : PulseRoute
 
+    /** 设置三级页：关于应用，展示版本与开源信息 */
+    @Serializable data object About : PulseRoute
+
+    /** 关于三级页：用户协议全文 */
+    @Serializable data object Agreement : PulseRoute
+
+    /** 关于三级页：隐私政策全文 */
+    @Serializable data object Privacy : PulseRoute
+
     /** 历史二级页：单条记录的详情 */
     @Serializable data class HistoryDetail(val entryId: Long) : PulseRoute
 
@@ -29,6 +38,8 @@ sealed interface PulseRoute : NavKey {
 
     /** HTTP 三级页：脚本内置 API 文档，与编辑器共用 target 语义 */
     @Serializable data class ScriptDocs(val target: Int) : PulseRoute
+
+    @Serializable data class EnvVars(val envId: Long) : PulseRoute
 
     /** 历史列表二级页：从 HTTP 页顶部历史图标进入 */
     @Serializable data object History : PulseRoute

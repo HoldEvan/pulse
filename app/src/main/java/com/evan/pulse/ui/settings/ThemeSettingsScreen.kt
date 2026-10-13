@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -15,6 +14,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.evan.pulse.R
 import com.evan.pulse.data.settings.AppSettings
+import com.evan.pulse.ui.common.subPageOverScroll
+import androidx.compose.foundation.layout.Spacer
+import com.evan.pulse.ui.common.subPageScrollState
 import com.evan.pulse.ui.l10n.localizedLabels
 import com.evan.pulse.ui.theme.ColorSpecLabels
 import com.evan.pulse.ui.theme.PaletteStyleLabels
@@ -55,7 +57,8 @@ private fun ThemeSettingsContent(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .subPageOverScroll()
+            .verticalScroll(subPageScrollState())
             .padding(horizontal = 12.dp)
     ) {
         SmallTitle(text = stringResource(R.string.settings_appearance))

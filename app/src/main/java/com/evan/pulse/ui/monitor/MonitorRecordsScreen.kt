@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -25,14 +24,12 @@ import com.evan.pulse.R
 import com.evan.pulse.data.model.MonitorRecord
 import com.evan.pulse.data.model.MonitorTarget
 import com.evan.pulse.data.model.addressText
+import com.evan.pulse.ui.common.subPageScrollState
+import com.evan.pulse.ui.common.subPageOverScroll
 import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import java.util.Locale
@@ -59,28 +56,12 @@ fun MonitorRecordsScreen(
             .padding(horizontal = 12.dp)
             .padding(bottom = 12.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            TextField(
-                value = viewModel.recordQuery,
-                onValueChange = { viewModel.recordQuery = it },
-                label = stringResource(R.string.monitor_records_search_hint),
-                modifier = Modifier.weight(1f)
-            )
-            IconButton(
-                onClick = { viewModel.requestClearRecords() },
-                modifier = Modifier
-                    .padding(start = 4.dp)
-                    .size(36.dp)
-            ) {
-                Icon(
-                    imageVector = MiuixIcons.Light.Delete,
-                    contentDescription = stringResource(R.string.monitor_records_clear)
-                )
-            }
-        }
+        TextField(
+            value = viewModel.recordQuery,
+            onValueChange = { viewModel.recordQuery = it },
+            label = stringResource(R.string.monitor_records_search_hint),
+            modifier = Modifier.fillMaxWidth()
+        )
         Spacer(modifier = Modifier.height(12.dp))
         if (records.isEmpty() || filtered.isEmpty()) {
             Box(
@@ -102,7 +83,8 @@ fun MonitorRecordsScreen(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .verticalScroll(rememberScrollState())
+                    .subPageOverScroll()
+                    .verticalScroll(subPageScrollState())
             ) {
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp)) {

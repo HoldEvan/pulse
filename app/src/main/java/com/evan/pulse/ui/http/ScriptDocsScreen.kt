@@ -5,8 +5,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -15,6 +15,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.evan.pulse.R
 import com.evan.pulse.ui.common.MonospaceBlock
+import com.evan.pulse.ui.common.subPageOverScroll
+import androidx.compose.foundation.layout.Spacer
+import com.evan.pulse.ui.common.subPageScrollState
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 /**
@@ -33,7 +36,8 @@ fun ScriptDocsScreen(
         modifier = modifier
             .fillMaxSize()
             .padding(horizontal = 12.dp)
-            .verticalScroll(rememberScrollState())
+            .subPageOverScroll()
+            .verticalScroll(subPageScrollState())
     ) {
         Text(text = stringResource(R.string.script_docs_intro))
         Text(
@@ -98,22 +102,25 @@ private fun DocSection(title: String, entries: List<ScriptApiToken>) {
         fontSize = 14.sp
     )
     entries.forEach { token ->
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = token.path,
-                fontFamily = FontFamily.Monospace,
-                fontSize = 12.sp
-            )
-            if (token.detail.isNotEmpty()) {
+        // 长按可选择 API 签名与说明，便于直接复制到脚本里
+        SelectionContainer {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 Text(
-                    text = token.detail,
+                    text = token.path,
                     fontFamily = FontFamily.Monospace,
-                    fontSize = 11.sp,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                    fontSize = 12.sp
                 )
+                if (token.detailText().isNotEmpty()) {
+                    Text(
+                        text = token.detailText(),
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 11.sp,
+                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                    )
+                }
             }
         }
     }

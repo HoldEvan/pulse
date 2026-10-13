@@ -49,6 +49,8 @@ data class TabState(
     val selectedTab: Int = 0,
     /** 首页内的协议子页：0=HTTP、1=SSE、2=WS、3=MQTT */
     val homeProtocolTab: Int = 0,
+    /** 资源页内的子页：0=项目、1=集合、2=环境 */
+    val resourceTab: Int = 0,
 )
 
 class SettingsViewModel(
@@ -114,6 +116,16 @@ class SettingsViewModel(
     /** 从集合跳回测试页并切到对应协议页 */
     fun openHomeProtocol(index: Int) {
         _tabState.value = _tabState.value.copy(selectedTab = 1, homeProtocolTab = index)
+    }
+
+    /** 资源页子页切换：0=项目、1=集合、2=环境 */
+    fun selectResourceTab(index: Int) {
+        _tabState.value = _tabState.value.copy(resourceTab = index)
+    }
+
+    /** 跳到资源页并切到指定子页（首页统计卡入口用） */
+    fun openResourceTab(index: Int) {
+        _tabState.value = _tabState.value.copy(selectedTab = 2, resourceTab = index)
     }
 
     fun setThemeMode(index: Int) {

@@ -1,12 +1,13 @@
 package com.evan.pulse.ui.project
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.runtime.Composable
@@ -22,21 +23,26 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.evan.pulse.R
 import com.evan.pulse.data.model.ProjectInfo
+import com.evan.pulse.ui.common.BlurredBar
 import com.evan.pulse.ui.common.DialogActions
+import com.evan.pulse.ui.common.blurredBarColor
 import com.evan.pulse.ui.common.roundedPressable
-import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
+import top.yukonga.miuix.kmp.basic.ScrollBehavior
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.basic.TopAppBar
+import top.yukonga.miuix.kmp.blur.LayerBackdrop
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Add
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Edit
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.preference.CheckboxPreference
+import top.yukonga.miuix.kmp.preference.RadioButtonLocation
+import top.yukonga.miuix.kmp.preference.RadioButtonPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -45,6 +51,10 @@ fun ProjectBar(
     showProjectSelector: Boolean = false,
     showEnvSelector: Boolean = false,
     onAddMonitor: (() -> Unit)? = null,
+    onAddProject: (() -> Unit)? = null,
+    scrollBehavior: ScrollBehavior? = null,
+    backdrop: LayerBackdrop? = null,
+    isBlurActive: Boolean = false,
     viewModel: ProjectViewModel = viewModel()
 ) {
     val projects by viewModel.projects.collectAsState()
@@ -61,9 +71,12 @@ fun ProjectBar(
     val activeEnvNames = projectEnvs.filter { it.isActive }.map { it.name }
     var showEnvDialog by remember { mutableStateOf(false) }
 
-    TopAppBar(
-        title = title,
-        actions = {
+    BlurredBar(backdrop, isBlurActive, scrollBehavior) {
+        TopAppBar(
+            title = title,
+            color = blurredBarColor(isBlurActive),
+            scrollBehavior = scrollBehavior,
+            actions = {
             if (showProjectSelector) {
                 Row(
                     modifier = Modifier
@@ -113,8 +126,17 @@ fun ProjectBar(
                     )
                 }
             }
+            if (onAddProject != null) {
+                IconButton(onClick = onAddProject) {
+                    Icon(
+                        imageVector = MiuixIcons.Light.Add,
+                        contentDescription = stringResource(R.string.project_new_title)
+                    )
+                }
+            }
         }
-    )
+        )
+    }
 
     if (showDialog) {
         OverlayDialog(
@@ -124,49 +146,45 @@ fun ProjectBar(
         ) {
             Column {
                 projects.forEach { project ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
+                    RadioButtonPreference(
+                        title = project.name,
+                        selected = project.id == currentId,
                         onClick = {
                             viewModel.switch(project.id)
                             viewModel.closeDialog()
                         },
-                        showIndication = true
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = project.name + if (project.id == currentId) {
-                                    stringResource(R.string.project_selected_mark)
-                                } else {
-                                    ""
+                        radioButtonLocation = RadioButtonLocation.Start,
+                        modifier = Modifier.fillMaxWidth(),
+                        endActions = {
+                            IconButton(
+                                onClick = {
+                                    editing = project
+                                    nameInput = project.name
                                 },
-                                modifier = Modifier.weight(1f)
-                            )
-                            Icon(
-                                imageVector = MiuixIcons.Light.Edit,
-                                contentDescription = stringResource(R.string.cd_rename),
                                 modifier = Modifier
-                                    .clickable {
-                                        editing = project
-                                        nameInput = project.name
-                                    }
-                                    .padding(6.dp)
-                            )
-                            Icon(
-                                imageVector = MiuixIcons.Light.Delete,
-                                contentDescription = stringResource(R.string.action_delete),
-                                modifier = Modifier
-                                    .clickable { deleting = project }
-                                    .padding(6.dp)
-                            )
+                                    .size(32.dp)
+                                    .offset(x = 4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = MiuixIcons.Light.Edit,
+                                    contentDescription = stringResource(R.string.cd_rename)
+                                )
+                            }
+                            if (projects.size > 1) {
+                                IconButton(
+                                    onClick = { deleting = project },
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .offset(x = 4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = MiuixIcons.Light.Delete,
+                                        contentDescription = stringResource(R.string.action_delete)
+                                    )
+                                }
+                            }
                         }
-                    }
+                    )
                 }
                 TextButton(
                     text = stringResource(R.string.project_new_title),

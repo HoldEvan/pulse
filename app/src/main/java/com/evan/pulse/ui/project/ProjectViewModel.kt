@@ -16,8 +16,16 @@ class ProjectViewModel : ViewModel() {
     val currentProjectId: StateFlow<Long> = store.currentProjectId
     val environments: StateFlow<List<EnvironmentInfo>> = envStore.environments
 
+    /** 集合与请求，用于项目列表副标题的统计（HTTP/SSE/WS/MQTT 数量） */
+    val collections = ServiceLocator.collectionStore.collections
+    val requests = ServiceLocator.collectionStore.requests
+
     private val _showDialog = mutableStateOf(false)
     val showDialog: State<Boolean> = _showDialog
+
+    /** 资源页-项目 tab 的新建对话框：由顶栏"添加项目"按钮触发 */
+    private val _showCreateDialog = mutableStateOf(false)
+    val showCreateDialog: State<Boolean> = _showCreateDialog
 
     fun openDialog() {
         _showDialog.value = true
@@ -25,6 +33,14 @@ class ProjectViewModel : ViewModel() {
 
     fun closeDialog() {
         _showDialog.value = false
+    }
+
+    fun openCreate() {
+        _showCreateDialog.value = true
+    }
+
+    fun closeCreate() {
+        _showCreateDialog.value = false
     }
 
     fun switch(id: Long) = store.switch(id)

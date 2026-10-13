@@ -12,6 +12,8 @@ import com.evan.pulse.data.backup.BackupService
 import com.evan.pulse.data.cache.CacheCleaner
 import com.evan.pulse.data.settings.SettingsStore
 import com.evan.pulse.ui.PulseApp
+import com.evan.pulse.ui.l10n.LocalizedRoot
+import com.evan.pulse.ui.l10n.fromIndex
 import com.evan.pulse.ui.settings.SettingsViewModel
 import com.evan.pulse.ui.theme.PulseTheme
 
@@ -46,8 +48,10 @@ class MainActivity : ComponentActivity() {
         // 栈底时无启用的回调，系统默认行为（退出应用）自然生效
         setContent {
             val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
-            PulseTheme(settings) {
-                PulseApp(settingsViewModel = settingsViewModel)
+            LocalizedRoot(language = fromIndex(settings.languageIndex)) {
+                PulseTheme(settings) {
+                    PulseApp(settingsViewModel = settingsViewModel)
+                }
             }
         }
     }

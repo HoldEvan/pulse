@@ -7,14 +7,18 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,11 +41,15 @@ import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.CardSectionTitle
 import com.evan.pulse.ui.common.ConnectionStateIndicator
 import com.evan.pulse.ui.common.SectionTitleRow
+import com.evan.pulse.ui.common.subPageLazyListState
 import com.evan.pulse.ui.l10n.localizedLabels
+import com.evan.pulse.ui.common.subPageOverScroll
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.DropdownEntry
+import top.yukonga.miuix.kmp.basic.DropdownItem
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.Text
@@ -56,6 +64,7 @@ import top.yukonga.miuix.kmp.icon.extended.Edit
 import top.yukonga.miuix.kmp.icon.extended.More
 import top.yukonga.miuix.kmp.icon.extended.Pause
 import top.yukonga.miuix.kmp.icon.extended.Play
+import top.yukonga.miuix.kmp.menu.OverlayIconDropdownMenu
 import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -87,24 +96,28 @@ fun MonitorScreen(
     val records by viewModel.records.collectAsState()
     val runs by viewModel.runs.collectAsState()
 
-    Column(
+    LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
             .padding(horizontal = 12.dp)
-            .padding(bottom = 12.dp)
+            .subPageOverScroll(),
+        contentPadding = PaddingValues(bottom = 12.dp),
+        state = subPageLazyListState()
     ) {
-        SectionTitleRow(
-            label = stringResource(R.string.monitor_records_title),
-            actions = {
-                IconButton(onClick = onOpenRecordsList) {
-                    Icon(
-                        imageVector = MiuixIcons.Light.More,
-                        contentDescription = stringResource(R.string.monitor_records_more)
-                    )
+        item(key = "records_title") {
+            SectionTitleRow(
+                label = stringResource(R.string.monitor_records_title),
+                actions = {
+                    IconButton(onClick = onOpenRecordsList) {
+                        Icon(
+                            imageVector = MiuixIcons.Light.More,
+                            contentDescription = stringResource(R.string.monitor_records_more)
+                        )
+                    }
                 }
-            }
-        )
+            )
+        }
+        item(key = "records_card") {
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp)) {
                 if (records.isEmpty()) {
@@ -128,7 +141,9 @@ fun MonitorScreen(
                 }
             }
         }
+        }
 
+        item(key = "targets_card") {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -191,7 +206,11 @@ fun MonitorScreen(
                 }
             }
         }
-        BottomBarClearance()
+        }
+
+        item(key = "clearance") {
+            BottomBarClearance()
+        }
     }
 
     if (viewModel.showEditor) {
@@ -358,7 +377,6 @@ fun MonitorScreen(
             }
         }
     }
-
 }
 
 /** 单个拨测目标：启停按钮控制启停，右侧提供编辑与删除 */
@@ -422,7 +440,7 @@ private fun MonitorTargetRow(
                 onClick = onToggleEnabled,
                 modifier = Modifier
                     .padding(end = 2.dp)
-                    .size(32.dp)
+                    .size(28.dp)
             ) {
                 Icon(
                     imageVector = if (target.enabled) MiuixIcons.Light.Pause else MiuixIcons.Light.Play,
@@ -430,29 +448,49 @@ private fun MonitorTargetRow(
                         stringResource(R.string.monitor_pause)
                     } else {
                         stringResource(R.string.monitor_start)
-                    }
+                    },
+                    modifier = Modifier.size(20.dp)
                 )
             }
-            IconButton(
-                onClick = onEdit,
+            OverlayIconDropdownMenu(
+                entries = listOf(
+                    DropdownEntry(
+                        items = listOf(
+                            DropdownItem(
+                                text = stringResource(R.string.cd_edit),
+                                icon = { m ->
+                                    Icon(
+                                        imageVector = MiuixIcons.Light.Edit,
+                                        contentDescription = null,
+                                        modifier = m
+                                    )
+                                },
+                                onClick = onEdit
+                            ),
+                            DropdownItem(
+                                text = stringResource(R.string.action_delete),
+                                icon = { m ->
+                                    Icon(
+                                        imageVector = MiuixIcons.Light.Delete,
+                                        contentDescription = null,
+                                        modifier = m
+                                    )
+                                },
+                                onClick = onDelete
+                            )
+                        )
+                    )
+                ),
+                minWidth = 28.dp,
+                minHeight = 28.dp,
                 modifier = Modifier
-                    .padding(end = 2.dp)
-                    .size(32.dp)
+                    .size(28.dp)
+                    .offset(x = 4.dp)
             ) {
                 Icon(
-                    imageVector = MiuixIcons.Light.Edit,
-                    contentDescription = stringResource(R.string.cd_edit)
-                )
-            }
-            IconButton(
-                onClick = onDelete,
-                modifier = Modifier
-                    .padding(end = 2.dp)
-                    .size(32.dp)
-            ) {
-                Icon(
-                    imageVector = MiuixIcons.Light.Delete,
-                    contentDescription = stringResource(R.string.action_delete)
+                    imageVector = MiuixIcons.Light.More,
+                    contentDescription = stringResource(R.string.cd_more),
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }

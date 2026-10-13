@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -30,6 +29,8 @@ import com.evan.pulse.ui.common.MethodBadge
 import com.evan.pulse.ui.common.SectionTitleRow
 import com.evan.pulse.ui.common.StatusBadge
 import com.evan.pulse.ui.common.prettyBody
+import com.evan.pulse.ui.common.subPageScrollState
+import com.evan.pulse.ui.common.subPageOverScroll
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
@@ -68,7 +69,8 @@ fun HistoryDetailScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .subPageOverScroll()
+            .verticalScroll(subPageScrollState())
             .padding(horizontal = 12.dp)
     ) {
         HistorySummary(entry, nameById[entry.projectId].orEmpty())

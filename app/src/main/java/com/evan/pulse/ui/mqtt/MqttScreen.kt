@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,8 +40,10 @@ import com.evan.pulse.ui.common.connectionStateColor
 import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.eventLogText
 import com.evan.pulse.ui.common.roundedPressable
+import com.evan.pulse.ui.common.subPageScrollState
 import com.evan.pulse.ui.history.UiEventLine
 import com.evan.pulse.ui.l10n.localizedLabels
+import com.evan.pulse.ui.common.subPageOverScroll
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
@@ -62,12 +65,13 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 private val qosLabels = listOf(R.string.qos_0, R.string.qos_1, R.string.qos_2)
 
 @Composable
-private fun SectionTitleRow(label: String, onSaveClick: () -> Unit) {
+private fun SectionTitleRow(status: @Composable () -> Unit, onSaveClick: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        SmallTitle(text = label, modifier = Modifier.weight(1f))
+        // 沿用 SmallTitle 的内边距节奏，保持与原分组标题一致的间距
+        Box(modifier = Modifier.weight(1f).padding(start = 16.dp, top = 8.dp, bottom = 8.dp)) { status() }
         IconButton(onClick = onSaveClick, modifier = Modifier.size(36.dp)) {
             Icon(
                 imageVector = Icons.Filled.Save,
@@ -84,36 +88,31 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
     val missingVars = viewModel.missingVars
     var showSave by remember { mutableStateOf(false) }
 
-    Column(modifier = modifier.fillMaxSize().padding(horizontal = 12.dp)) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 12.dp)
+            .subPageOverScroll()
+            .verticalScroll(subPageScrollState())
+    ) {
         SectionTitleRow(
-            label = stringResource(R.string.mqtt_section_broker),
+            status = {
+                ConnectionStateIndicator(
+                    color = connectionStateColor(state),
+                    label = stateLabel(state)
+                )
+            },
             onSaveClick = { showSave = true }
         )
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-        ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(12.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    TextField(
-                        value = viewModel.brokerUrl,
-                        onValueChange = { viewModel.brokerUrl = it },
-                        label = stringResource(R.string.mqtt_broker_url_label),
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(end = 10.dp)
-                    )
-                    ConnectionStateIndicator(
-                        color = connectionStateColor(state),
-                        label = stateLabel(state)
-                    )
-                }
+                TextField(
+                    value = viewModel.brokerUrl,
+                    onValueChange = { viewModel.brokerUrl = it },
+                    label = stringResource(R.string.mqtt_broker_url_label),
+                    modifier = Modifier.fillMaxWidth()
+                )
                 Row(modifier = Modifier.padding(top = 8.dp)) {
                     TextField(
                         value = viewModel.clientId,
@@ -287,9 +286,8 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
         }
         Card(modifier = Modifier.fillMaxWidth().height(360.dp).padding(bottom = 0.dp)) {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(8.dp)
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(lines) { line ->
                     EventLine(line)
@@ -343,10 +341,13 @@ private fun EventLine(line: UiEventLine) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
             .squircleBackground(
-                if (line.isSystem) MiuixTheme.colorScheme.surfaceVariant else MiuixTheme.colorScheme.primaryContainer,
-                8.dp
+                if (line.isSystem) {
+                    MiuixTheme.colorScheme.surfaceVariant
+                } else {
+                    MiuixTheme.colorScheme.primary.copy(alpha = 0.15f)
+                },
+                16.dp
             )
             .padding(8.dp)
     ) {

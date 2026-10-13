@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -43,11 +45,16 @@ import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.DialogActions
 import com.evan.pulse.ui.common.MethodBadge
 import com.evan.pulse.ui.common.roundedPressable
+import com.evan.pulse.ui.common.subPageScrollState
 import com.evan.pulse.ui.spec.SpecImportScreen
+import com.evan.pulse.ui.common.subPageOverScroll
 import top.yukonga.miuix.kmp.basic.BreadcrumbBar
 import top.yukonga.miuix.kmp.basic.BreadcrumbItem
 import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.DropdownEntry
+import top.yukonga.miuix.kmp.basic.DropdownItem
 import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
@@ -56,6 +63,9 @@ import top.yukonga.miuix.kmp.icon.extended.ChevronForward
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Edit
 import top.yukonga.miuix.kmp.icon.extended.Folder
+import top.yukonga.miuix.kmp.icon.extended.More
+import top.yukonga.miuix.kmp.menu.OverlayIconDropdownMenu
+import top.yukonga.miuix.kmp.icon.extended.More
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 
 /**
@@ -126,7 +136,8 @@ fun CollectionScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .subPageOverScroll()
+            .verticalScroll(subPageScrollState())
             .padding(horizontal = 12.dp)
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
@@ -140,6 +151,15 @@ fun CollectionScreen(
                     highlightIndex = stack.size
                 )
                 current?.let { folder ->
+                    RowAction(
+                        label = stringResource(R.string.collection_move_to),
+                        icon = Icons.Filled.DragIndicator,
+                        onClick = {
+                            moveFolderId = folder.id
+                            moveSelected = null
+                            moveFailed = false
+                        }
+                    )
                     RowAction(
                         label = stringResource(R.string.cd_rename),
 icon = MiuixIcons.Light.Edit,
@@ -487,7 +507,7 @@ private fun MoveTargetRow(
     }
 }
 
-/** 同级集合行：点整行进入下一级，长按或拖拽把手打开移动弹窗 */
+/** 同级集合行：点整行进入下一级，长按打开移动弹窗 */
 @Composable
 private fun FolderRow(
     folder: CollectionInfo,
@@ -498,11 +518,6 @@ private fun FolderRow(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        RowAction(
-            label = stringResource(R.string.collection_move_to),
-            icon = Icons.Filled.DragIndicator,
-            onClick = onMoveClick
-        )
         Icon(
             imageVector = MiuixIcons.Light.Folder,
             contentDescription = null,
@@ -578,21 +593,56 @@ private fun RequestRow(
                 )
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-            RowAction(
-                label = stringResource(R.string.cd_rename),
-                icon = MiuixIcons.Light.Edit,
-                onClick = onRename
-            )
-            RowAction(
-                label = stringResource(R.string.cd_move_request),
-                icon = Icons.Filled.DragIndicator,
-                onClick = onMove
-            )
-            RowAction(
-                label = stringResource(R.string.cd_delete),
-                icon = MiuixIcons.Light.Delete,
-                onClick = onDelete
+        OverlayIconDropdownMenu(
+            entries = listOf(
+                DropdownEntry(
+                    items = listOf(
+                        DropdownItem(
+                            text = stringResource(R.string.cd_rename),
+                            icon = { m ->
+                                Icon(
+                                    imageVector = MiuixIcons.Light.Edit,
+                                    contentDescription = null,
+                                    modifier = m
+                                )
+                            },
+                            onClick = onRename
+                        ),
+                        DropdownItem(
+                            text = stringResource(R.string.cd_move_request),
+                            icon = { m ->
+                                Icon(
+                                    imageVector = Icons.Filled.DragIndicator,
+                                    contentDescription = null,
+                                    modifier = m
+                                )
+                            },
+                            onClick = onMove
+                        ),
+                        DropdownItem(
+                            text = stringResource(R.string.action_delete),
+                            icon = { m ->
+                                Icon(
+                                    imageVector = MiuixIcons.Light.Delete,
+                                    contentDescription = null,
+                                    modifier = m
+                                )
+                            },
+                            onClick = onDelete
+                        )
+                    )
+                )
+            ),
+            minWidth = 28.dp,
+            minHeight = 28.dp,
+            modifier = Modifier
+                .size(28.dp)
+                .offset(x = 4.dp)
+        ) {
+            Icon(
+                imageVector = MiuixIcons.Light.More,
+                contentDescription = stringResource(R.string.cd_more),
+                modifier = Modifier.size(20.dp)
             )
         }
     }

@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.evan.pulse.R
 import com.evan.pulse.ui.http.HttpScreen
+import com.evan.pulse.ui.http.HttpViewModel
 import com.evan.pulse.ui.l10n.localizedLabels
 import com.evan.pulse.ui.mqtt.MqttScreen
 import com.evan.pulse.ui.sse.SseScreen
@@ -29,7 +30,10 @@ fun TestScreen(
     onOpenScriptEditor: (Int) -> Unit = {},
     onOpenHistory: () -> Unit = {},
     protocolTab: Int = 0,
-    onProtocolTabChange: (Int) -> Unit = {}
+    onProtocolTabChange: (Int) -> Unit = {},
+    // 必须显式传入：脚本编辑页是独立 route entry，与这里默认 viewModel() 的实例不同，
+    // 共用同一实例才能让脚本编辑内容回显并保存
+    httpViewModel: HttpViewModel
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         TabRowWithContour(
@@ -42,7 +46,8 @@ fun TestScreen(
             0 -> HttpScreen(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
                 onOpenScriptEditor = onOpenScriptEditor,
-                onOpenHistory = onOpenHistory
+                onOpenHistory = onOpenHistory,
+                viewModel = httpViewModel
             )
 
             1 -> SseScreen(modifier = Modifier.weight(1f).fillMaxWidth())

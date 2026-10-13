@@ -1,46 +1,60 @@
 package com.evan.pulse.ui.env
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.evan.pulse.R
+import com.evan.pulse.data.model.EnvironmentInfo
 import com.evan.pulse.ui.common.BottomBarClearance
+import com.evan.pulse.ui.common.subPageScrollState
+import com.evan.pulse.ui.common.subPageOverScroll
+import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.DropdownEntry
+import top.yukonga.miuix.kmp.basic.DropdownItem
 import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Add
-import top.yukonga.miuix.kmp.icon.extended.Close
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Edit
+import top.yukonga.miuix.kmp.icon.extended.More
 import top.yukonga.miuix.kmp.icon.extended.Settings
+import top.yukonga.miuix.kmp.menu.OverlayIconDropdownMenu
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
-import top.yukonga.miuix.kmp.preference.RadioButtonPreference
-import top.yukonga.miuix.kmp.preference.RadioButtonLocation
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
-fun EnvironmentScreen(modifier: Modifier = Modifier, viewModel: EnvViewModel = viewModel()) {
+fun EnvironmentScreen(
+    modifier: Modifier = Modifier,
+    onOpenVars: (Long) -> Unit = {},
+    viewModel: EnvViewModel = viewModel()
+) {
     val projectId by viewModel.currentProjectId.collectAsState()
     val environments by viewModel.environments.collectAsState()
     val projectEnvironments = environments.filter { it.projectId == projectId }
@@ -50,47 +64,69 @@ fun EnvironmentScreen(modifier: Modifier = Modifier, viewModel: EnvViewModel = v
     Column(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .subPageOverScroll()
+            .verticalScroll(subPageScrollState())
             .padding(horizontal = 12.dp)
             .padding(bottom = 12.dp)
     ) {
         Card(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(vertical = 8.dp)) {
+            Column(modifier = Modifier) {
                 projectEnvironments.forEach { env ->
                     val varsText = stringResource(R.string.vars_count, env.variables.size)
-                    RadioButtonPreference(
+                    BasicComponent(
                         title = env.name,
-                        selected = env.isActive,
-                        onClick = { viewModel.activate(env.id) },
-                        modifier = Modifier.fillMaxWidth(),
-                        summary = if (env.isActive) {
-                            listOf(stringResource(R.string.env_active_mark), varsText)
-                                .joinToString(" · ")
-                        } else {
-                            varsText
-                        },
-                        radioButtonLocation = RadioButtonLocation.Start,
+                        summary = varsText,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                color = if (env.isActive) {
+                    MiuixTheme.colorScheme.primary.copy(alpha = 0.15f)
+                } else {
+                    Color.Transparent
+                },
+                                shape = RoundedCornerShape(16.dp)
+                            ),
+                        onClick = { onOpenVars(env.id) },
                         endActions = {
-                            IconButton(
-                                onClick = { viewModel.openRename(env) },
+                            OverlayIconDropdownMenu(
+                                entries = listOf(
+                                    DropdownEntry(
+                                        items = listOf(
+                                            DropdownItem(
+                                                text = stringResource(R.string.cd_rename),
+                                                icon = { m ->
+                                                    Icon(
+                                                        imageVector = MiuixIcons.Light.Edit,
+                                                        contentDescription = null,
+                                                        modifier = m
+                                                    )
+                                                },
+                                                onClick = { viewModel.openRename(env) }
+                                            ),
+                                            DropdownItem(
+                                                text = stringResource(R.string.action_delete),
+                                                icon = { m ->
+                                                    Icon(
+                                                        imageVector = MiuixIcons.Light.Delete,
+                                                        contentDescription = null,
+                                                        modifier = m
+                                                    )
+                                                },
+                                                onClick = { viewModel.requestDelete(env) }
+                                            )
+                                        )
+                                    )
+                                ),
+                                minWidth = 28.dp,
+                                minHeight = 28.dp,
                                 modifier = Modifier
-                                    .padding(end = 2.dp)
-                                    .size(32.dp)
+                                    .size(28.dp)
+                                    .offset(x = 4.dp)
                             ) {
                                 Icon(
-                                    imageVector = MiuixIcons.Light.Edit,
-                                    contentDescription = stringResource(R.string.cd_edit)
-                                )
-                            }
-                            IconButton(
-                                onClick = { viewModel.requestDelete(env) },
-                                modifier = Modifier
-                                    .padding(end = 2.dp)
-                                    .size(32.dp)
-                            ) {
-                                Icon(
-                                    imageVector = MiuixIcons.Light.Delete,
-                                    contentDescription = stringResource(R.string.action_delete)
+                                    imageVector = MiuixIcons.Light.More,
+                                    contentDescription = stringResource(R.string.cd_more),
+                                    modifier = Modifier.size(20.dp)
                                 )
                             }
                         }
@@ -149,44 +185,6 @@ imageVector = MiuixIcons.Light.Add,
                     onValueChange = { viewModel.nameInput = it },
                     label = stringResource(R.string.env_name_label)
                 )
-                Row(modifier = Modifier.padding(top = 8.dp)) {
-                    Text(stringResource(R.string.env_vars_title), modifier = Modifier.weight(1f))
-                    Icon(
-                        imageVector = MiuixIcons.Light.Add,
-                        contentDescription = stringResource(R.string.cd_add_var),
-                        modifier = Modifier.clickable { viewModel.addVar() }
-                    )
-                }
-                viewModel.editingVars.forEachIndexed { index, pair ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        TextField(
-                            value = pair.first,
-                            onValueChange = { viewModel.updateVar(index, it to pair.second) },
-                            label = stringResource(R.string.var_name_label),
-                            modifier = Modifier.weight(0.4f)
-                        )
-                        TextField(
-                            value = pair.second,
-                            onValueChange = { viewModel.updateVar(index, pair.first to it) },
-                            label = stringResource(R.string.kv_value_label),
-                            modifier = Modifier
-                                .weight(0.5f)
-                                .padding(start = 6.dp)
-                        )
-                        Icon(
-                            imageVector = MiuixIcons.Light.Close,
-                            contentDescription = stringResource(R.string.cd_remove_var),
-                            modifier = Modifier
-                                .clickable { viewModel.removeVar(index) }
-                                .padding(6.dp)
-                        )
-                    }
-                }
                 Row(
                     modifier = Modifier
                         .padding(top = 12.dp),

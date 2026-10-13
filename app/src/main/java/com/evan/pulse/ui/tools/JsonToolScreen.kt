@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -21,6 +20,9 @@ import com.evan.pulse.R
 import com.evan.pulse.ui.common.CardSectionTitle
 import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.MonospaceBlock
+import com.evan.pulse.ui.common.subPageOverScroll
+import androidx.compose.foundation.layout.Spacer
+import com.evan.pulse.ui.common.subPageScrollState
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import top.yukonga.miuix.kmp.basic.Text
@@ -59,7 +61,8 @@ fun JsonToolScreen(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .subPageOverScroll()
+            .verticalScroll(subPageScrollState())
             .padding(horizontal = 12.dp)
             .padding(bottom = 12.dp)
     ) {
