@@ -12,6 +12,7 @@ import com.evan.pulse.data.model.snapshotJson
 import com.evan.pulse.di.ServiceLocator
 import com.evan.pulse.R
 import com.evan.pulse.domain.PlaceholderResolver
+import com.evan.pulse.domain.model.ProxyConfig
 import com.evan.pulse.domain.model.WsConnectionState
 import com.evan.pulse.domain.model.WsEvent
 import com.evan.pulse.ui.history.UiEventLine
@@ -28,6 +29,9 @@ class WsViewModel : ViewModel() {
     var input by mutableStateOf("")
     var pingIntervalSec by mutableStateOf("0")
     var pingPayload by mutableStateOf("ping")
+
+    /** 是否套用设置页里的全局代理；关闭则本次连接强制直连 */
+    var useProxy by mutableStateOf(true)
 
     val state = engine.state
     val events = engine.events
@@ -69,7 +73,8 @@ class WsViewModel : ViewModel() {
         WsSnapshot(
             url = url,
             pingIntervalSec = pingIntervalSec.toIntOrNull() ?: 0,
-            pingPayload = pingPayload.ifBlank { "ping" }
+            pingPayload = pingPayload.ifBlank { "ping" },
+            useProxy = useProxy
         )
     )
 
@@ -82,6 +87,7 @@ class WsViewModel : ViewModel() {
         url = snap.url
         pingIntervalSec = snap.pingIntervalSec.toString()
         pingPayload = snap.pingPayload
+        useProxy = snap.useProxy
     }
 
     private fun add(text: String, isSystem: Boolean) {
@@ -92,7 +98,7 @@ class WsViewModel : ViewModel() {
     fun connect() {
         viewModelScope.launch {
             lastError = null
-            val proxy = settingsStore.settings.value.toProxyConfig()
+            val proxy = if (useProxy) settingsStore.settings.value.toProxyConfig() else ProxyConfig()
             add(L10n.t(R.string.proxy_in_use, proxy.summary.ifEmpty { L10n.t(R.string.proxy_summary_direct) }), true)
             val vars = ServiceLocator.envStore.activeVars()
             when (val r = resolver.resolve(url, vars)) {

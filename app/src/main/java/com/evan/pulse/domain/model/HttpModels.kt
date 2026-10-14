@@ -1,11 +1,15 @@
 package com.evan.pulse.domain.model
 
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+
 enum class HttpMethod {
     GET, POST, PUT, DELETE, PATCH, HEAD
 }
 
 enum class BodyType {
-    NONE, JSON, RAW, FORM_URLENCODED, FORM_DATA
+    NONE, JSON, RAW, FORM_URLENCODED, FORM_DATA, GRAPHQL
 }
 
 enum class AuthType {
@@ -47,6 +51,8 @@ data class HttpCallConfig(
     val queryParams: List<KeyValue> = emptyList(),
     val bodyType: BodyType = BodyType.NONE,
     val body: String = "",
+    /** GraphQL 时的 variables JSON 文本；body 存查询语句 */
+    val graphqlVariables: String = "",
     val formFields: List<FormField> = emptyList(),
     val auth: AuthConfig = AuthConfig(),
     val timeoutMs: Long = 30_000L,
@@ -67,4 +73,22 @@ sealed interface HttpCallOutcome {
         val errorType: HttpErrorType,
         val message: String
     ) : HttpCallOutcome
+}
+
+/**
+ * 把 GraphQL 查询与变量包装成标准请求体 {"query": "...", "variables": {...}}。
+ * variables 不是合法 JSON 时按省略处理，由服务端返回的 GraphQL 错误暴露问题。
+ */
+fun buildGraphqlRequestBody(query: String, variablesJson: String): String {
+    if (query.isBlank()) return ""
+    val trimmed = variablesJson.trim()
+    val variables = if (trimmed.isEmpty()) {
+        null
+    } else {
+        runCatching { Json.parseToJsonElement(trimmed) }.getOrNull()
+    }
+    return buildJsonObject {
+        put("query", query)
+        variables?.let { put("variables", it) }
+    }.toString()
 }

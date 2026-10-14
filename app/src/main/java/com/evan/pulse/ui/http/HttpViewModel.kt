@@ -24,7 +24,9 @@ import com.evan.pulse.domain.model.FormField
 import com.evan.pulse.domain.model.HttpCallConfig
 import com.evan.pulse.domain.model.HttpCallOutcome
 import com.evan.pulse.domain.model.HttpMethod
+import com.evan.pulse.domain.model.buildGraphqlRequestBody
 import com.evan.pulse.domain.model.KeyValue
+import com.evan.pulse.domain.model.ProxyConfig
 import com.evan.pulse.domain.script.MutableRequest
 import com.evan.pulse.domain.script.ScriptExecutor
 import com.evan.pulse.domain.script.ScriptRunResult
@@ -57,6 +59,7 @@ class HttpViewModel : ViewModel() {
     var headers by mutableStateOf(listOf(KeyValue()))
     var bodyType by mutableStateOf(BodyType.NONE)
     var bodyText by mutableStateOf("")
+    var graphqlVariables by mutableStateOf("{}")
     var formFields by mutableStateOf(listOf(FormField()))
     var authType by mutableStateOf(AuthType.NONE)
     var bearerToken by mutableStateOf("")
@@ -66,6 +69,12 @@ class HttpViewModel : ViewModel() {
     var apiKeyValue by mutableStateOf("")
     var preScript by mutableStateOf("")
     var postScript by mutableStateOf("")
+
+    /** 请求超时（秒），输入框直接绑文本，非法输入回落到默认 30s */
+    var timeoutSec by mutableStateOf("30")
+
+    /** 是否套用设置页里的全局代理；关闭则本次请求强制直连 */
+    var useProxy by mutableStateOf(true)
 
     var activeTab by mutableIntStateOf(0)
     var scriptTab by mutableIntStateOf(0)
@@ -101,6 +110,7 @@ class HttpViewModel : ViewModel() {
             headers = headers.map { KeyValueEntry(it.key, it.value, it.enabled) },
             bodyType = bodyType.name,
             bodyText = bodyText,
+            graphqlVariables = graphqlVariables,
             formFields = formFields.map { FormFieldEntry(it.name, it.value, it.isFile, it.fileName) },
             authType = authType.name,
             bearerToken = bearerToken,
@@ -109,7 +119,9 @@ class HttpViewModel : ViewModel() {
             apiKeyName = apiKeyName,
             apiKeyValue = apiKeyValue,
             preScript = preScript,
-            postScript = postScript
+            postScript = postScript,
+            timeoutSec = timeoutSec,
+            useProxy = useProxy
         )
     )
 
@@ -125,6 +137,7 @@ class HttpViewModel : ViewModel() {
         headers = snap.headers.map { KeyValue(it.key, it.value, it.enabled) }.ifEmpty { listOf(KeyValue()) }
         bodyType = BodyType.entries.firstOrNull { it.name == snap.bodyType } ?: BodyType.NONE
         bodyText = snap.bodyText
+        graphqlVariables = snap.graphqlVariables
         formFields = snap.formFields
             .map { FormField(name = it.name, value = it.value, isFile = it.isFile, fileName = it.fileName) }
             .ifEmpty { listOf(FormField()) }
@@ -136,6 +149,8 @@ class HttpViewModel : ViewModel() {
         apiKeyValue = snap.apiKeyValue
         preScript = snap.preScript
         postScript = snap.postScript
+        timeoutSec = snap.timeoutSec.takeIf { it.isNotBlank() } ?: "30"
+        useProxy = snap.useProxy
     }
 
     fun activeEnvVars(): Map<String, String> {
@@ -236,8 +251,10 @@ class HttpViewModel : ViewModel() {
             queryParams = params.filter { it.enabled && it.key.isNotBlank() },
             bodyType = bodyType,
             body = bodyText,
+            graphqlVariables = graphqlVariables,
             formFields = formFields.filter { it.name.isNotBlank() && !it.isFile },
-            proxy = settingsStore.settings.value.toProxyConfig()
+            timeoutMs = (timeoutSec.toLongOrNull()?.coerceAtLeast(1) ?: 30L) * 1000L,
+            proxy = if (useProxy) settingsStore.settings.value.toProxyConfig() else ProxyConfig()
         )
     }
 
@@ -258,11 +275,12 @@ class HttpViewModel : ViewModel() {
             url = res(config.url),
             headers = config.headers.map { it.copy(value = res(it.value)) },
             queryParams = config.queryParams.map { it.copy(value = res(it.value)) },
-            body = if (config.bodyType == BodyType.JSON || config.bodyType == BodyType.RAW) {
+            body = if (config.bodyType in listOf(BodyType.JSON, BodyType.RAW, BodyType.GRAPHQL)) {
                 res(config.body)
             } else {
                 config.body
             },
+            graphqlVariables = if (config.bodyType == BodyType.GRAPHQL) res(config.graphqlVariables) else config.graphqlVariables,
             formFields = config.formFields.map { it.copy(value = res(it.value)) }
         )
     }
@@ -334,7 +352,7 @@ class HttpViewModel : ViewModel() {
                             id = 0,
                             projectId = currentProjectId.value,
                             method = built.config.method.name,
-                            url = built.config.url,
+                            url = historyUrl(built.config),
                             statusCode = result.statusCode,
                             statusText = result.statusText,
                             durationMs = result.durationMs,
@@ -378,8 +396,20 @@ class HttpViewModel : ViewModel() {
     private fun renderedBody(config: HttpCallConfig): String = when (config.bodyType) {
         BodyType.NONE -> ""
         BodyType.JSON, BodyType.RAW -> config.body
+        BodyType.GRAPHQL -> buildGraphqlRequestBody(config.body, config.graphqlVariables)
         BodyType.FORM_URLENCODED, BodyType.FORM_DATA -> config.formFields
             .joinToString("&") { field -> "${field.name}=${field.value}" }
+    }
+
+    /**
+     * 历史里保存完整请求 URL：引擎发送时会把查询参数追加到 URL 后，
+     * 历史记录需与实际请求一致，因此这里按同样的方式拼回参数。
+     */
+    private fun historyUrl(config: HttpCallConfig): String {
+        val qs = config.queryParams.filter { it.enabled && it.key.isNotBlank() }
+        if (qs.isEmpty()) return config.url
+        val separator = if ('?' in config.url) '&' else '?'
+        return config.url + separator + qs.joinToString("&") { "${it.key}=${it.value}" }
     }
 
     private fun clipBody(text: String): ClippedBody =

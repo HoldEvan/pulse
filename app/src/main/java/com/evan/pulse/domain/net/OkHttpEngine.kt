@@ -4,6 +4,7 @@ import com.evan.pulse.domain.model.BodyType
 import com.evan.pulse.domain.model.FormField
 import com.evan.pulse.domain.model.HttpCallConfig
 import com.evan.pulse.domain.model.HttpCallOutcome
+import com.evan.pulse.domain.model.buildGraphqlRequestBody
 import com.evan.pulse.domain.model.HttpErrorType
 import com.evan.pulse.domain.model.HttpMethod
 import com.evan.pulse.domain.model.KeyValue
@@ -136,6 +137,10 @@ class OkHttpEngine : HttpEngine {
 
         BodyType.RAW -> config.body.takeIf { it.isNotBlank() }
             ?.let { TextContent(it, declaredContentType(config, ContentType.Text.Plain)) }
+
+        BodyType.GRAPHQL -> buildGraphqlRequestBody(config.body, config.graphqlVariables)
+            .takeIf { it.isNotBlank() }
+            ?.let { TextContent(it, declaredContentType(config, ContentType.Application.Json)) }
 
         BodyType.FORM_URLENCODED -> config.textFormFields().takeIf { it.isNotEmpty() }
             ?.let { fields ->

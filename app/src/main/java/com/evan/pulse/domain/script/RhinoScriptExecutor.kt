@@ -809,6 +809,7 @@ private fun bodyModeName(type: BodyType): String = when (type) {
     BodyType.JSON, BodyType.RAW -> "raw"
     BodyType.FORM_URLENCODED -> "urlencoded"
     BodyType.FORM_DATA -> "form-data"
+    BodyType.GRAPHQL -> "graphql"
 }
 
 private fun bodyTypeOf(name: String): BodyType = when (name.trim().lowercase()) {

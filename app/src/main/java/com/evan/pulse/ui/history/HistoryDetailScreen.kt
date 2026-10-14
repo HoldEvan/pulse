@@ -10,9 +10,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -24,11 +22,11 @@ import com.evan.pulse.R
 import com.evan.pulse.data.model.HistoryEntry
 import com.evan.pulse.ui.common.CardSectionTitle
 import com.evan.pulse.ui.common.CopyIconButton
-import com.evan.pulse.ui.common.MonospaceBlock
 import com.evan.pulse.ui.common.MethodBadge
+import com.evan.pulse.ui.common.MonospaceBlock
 import com.evan.pulse.ui.common.SectionTitleRow
 import com.evan.pulse.ui.common.StatusBadge
-import com.evan.pulse.ui.common.prettyBody
+import com.evan.pulse.ui.common.ResponseBodyView
 import com.evan.pulse.ui.common.subPageScrollState
 import com.evan.pulse.ui.common.subPageOverScroll
 import top.yukonga.miuix.kmp.basic.Card
@@ -185,11 +183,9 @@ private fun HistorySummary(entry: HistoryEntry, projectName: String) {
     }
 }
 
-/** 响应体：可格式化 JSON，也可整块复制 */
+/** 响应体：五种格式查看，可整块复制 */
 @Composable
 private fun ResponseBody(body: String) {
-    var pretty by remember { mutableStateOf(true) }
-
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
@@ -197,11 +193,5 @@ private fun ResponseBody(body: String) {
         CardSectionTitle(stringResource(R.string.http_response_body), Modifier.weight(1f))
         CopyIconButton(text = body, label = stringResource(R.string.cd_copy_response))
     }
-    MonospaceBlock(prettyBody(body, pretty))
-    TextButton(
-        text = if (pretty) stringResource(R.string.http_view_raw)
-        else stringResource(R.string.http_format_json),
-        onClick = { pretty = !pretty },
-        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-    )
+    ResponseBodyView(body)
 }

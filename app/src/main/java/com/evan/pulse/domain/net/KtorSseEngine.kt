@@ -30,6 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -82,19 +83,19 @@ class KtorSseEngine : SseEngine {
     private suspend fun runStream(config: SseConfig) {
         while (true) {
             try {
-                val response = clientFor(config.proxy).request(config.url) {
-                    method = when (config.method) {
-                        HttpMethod.POST -> KtorHttpMethod.Post
-                        else -> KtorHttpMethod.Get
+                // 超时只约束到响应头到达为止；流建立后 parseStream 不再受影响
+                val response = withTimeout(config.timeoutMs) {
+                    clientFor(config.proxy).request(config.url) {
+                        method = ktorMethod(config.method)
+                        header("Accept", "text/event-stream")
+                        config.queryParams
+                            .filter { it.enabled && it.key.isNotBlank() }
+                            .forEach { url.parameters.append(it.key, it.value) }
+                        config.headers
+                            .filter { it.enabled && it.key.isNotBlank() }
+                            .forEach { header(it.key, it.value) }
+                        requestBody(config)?.let { setBody(it) }
                     }
-                    header("Accept", "text/event-stream")
-                    config.queryParams
-                        .filter { it.enabled && it.key.isNotBlank() }
-                        .forEach { url.parameters.append(it.key, it.value) }
-                    config.headers
-                        .filter { it.enabled && it.key.isNotBlank() }
-                        .forEach { header(it.key, it.value) }
-                    requestBody(config)?.let { setBody(it) }
                 }
                 if (!response.status.isSuccess()) {
                     throw IOException("HTTP ${response.status.value} ${response.status.description}")
@@ -123,9 +124,8 @@ class KtorSseEngine : SseEngine {
         }
     }
 
-    /** 只有 POST 才携带请求体；JSON/Raw 都以文本发送，Content-Type 默认按类型推断 */
+    /** 与 HTTP 引擎一致：只要有 body 内容就随请求发送，Content-Type 按类型推断 */
     private fun requestBody(config: SseConfig): TextContent? = when {
-        config.method != HttpMethod.POST -> null
         config.body.isBlank() -> null
         config.bodyType == BodyType.JSON ->
             TextContent(config.body, ContentType.Application.Json)
@@ -216,4 +216,13 @@ class KtorSseEngine : SseEngine {
     private companion object {
         const val MAX_CACHED_CLIENTS = 8
     }
+}
+
+private fun ktorMethod(method: HttpMethod): KtorHttpMethod = when (method) {
+    HttpMethod.GET -> KtorHttpMethod.Get
+    HttpMethod.POST -> KtorHttpMethod.Post
+    HttpMethod.PUT -> KtorHttpMethod.Put
+    HttpMethod.DELETE -> KtorHttpMethod.Delete
+    HttpMethod.PATCH -> KtorHttpMethod.Patch
+    HttpMethod.HEAD -> KtorHttpMethod.Head
 }

@@ -14,6 +14,7 @@ import com.evan.pulse.R
 import com.evan.pulse.domain.PlaceholderResolver
 import com.evan.pulse.domain.model.MqttConnectionState
 import com.evan.pulse.domain.model.MqttEvent
+import com.evan.pulse.domain.model.ProxyConfig
 import com.evan.pulse.ui.history.UiEventLine
 import com.evan.pulse.ui.l10n.L10n
 import kotlinx.coroutines.launch
@@ -40,6 +41,9 @@ class MqttViewModel : ViewModel() {
     var pubTopic by mutableStateOf("demo/device")
     var pubPayload by mutableStateOf("")
     var pubQos by mutableStateOf(0)
+
+    /** 是否套用设置页里的全局代理；关闭则本次连接强制直连 */
+    var useProxy by mutableStateOf(true)
 
     val subscriptions = mutableStateListOf<MqttSubscription>()
     val state = engine.state
@@ -84,7 +88,8 @@ class MqttViewModel : ViewModel() {
             subTopic = subTopic,
             subQos = subQos,
             pubTopic = pubTopic,
-            pubQos = pubQos
+            pubQos = pubQos,
+            useProxy = useProxy
         )
     )
 
@@ -103,6 +108,7 @@ class MqttViewModel : ViewModel() {
         subQos = snap.subQos
         pubTopic = snap.pubTopic
         pubQos = snap.pubQos
+        useProxy = snap.useProxy
     }
 
     private fun add(text: String, isSystem: Boolean) {
@@ -121,7 +127,7 @@ class MqttViewModel : ViewModel() {
     fun connect() {
         viewModelScope.launch {
             lastError = null
-            val proxy = settingsStore.settings.value.toProxyConfig()
+            val proxy = if (useProxy) settingsStore.settings.value.toProxyConfig() else ProxyConfig()
             resolve(brokerUrl) { resolvedUrl ->
                 viewModelScope.launch {
                     add(L10n.t(R.string.proxy_in_use, proxy.summary.ifEmpty { L10n.t(R.string.proxy_summary_direct) }), true)

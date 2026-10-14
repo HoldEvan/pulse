@@ -106,6 +106,7 @@
     <string name="tab_headers">请求头</string>
     <string name="tab_body">请求体</string>
     <string name="tab_auth">认证</string>
+    <string name="tab_network">网络</string>
     <string name="tab_script">脚本</string>
     <string name="script_tab_pre">前置</string>
     <string name="script_tab_post">后置</string>
@@ -150,8 +151,6 @@
     <string name="http_response_label">响应</string>
     <string name="http_response_headers">响应头</string>
     <string name="http_response_body">响应体</string>
-    <string name="http_format_json">格式化 JSON</string>
-    <string name="http_view_raw">查看原文</string>
     <string name="resp_view_raw">RAW</string>
     <string name="resp_view_json">JSON</string>
     <string name="resp_view_xml">XML</string>
@@ -332,6 +331,11 @@
     <string name="body_raw_label">纯文本内容</string>
     <string name="body_form_urlencoded">URL 编码表单</string>
     <string name="body_form_data">multipart 表单</string>
+    <string name="body_graphql">GraphQL</string>
+    <string name="graphql_query_label">GraphQL 查询</string>
+    <string name="graphql_variables_label">Variables（JSON）</string>
+    <string name="timeout_sec_label">超时（秒）</string>
+    <string name="use_proxy_label">使用代理</string>
     <string name="auth_type_label">认证类型</string>
     <string name="kv_param_value">参数值</string>
     <string name="kv_header_value">Header 值</string>
@@ -462,8 +466,8 @@
     <string name="monitor_enabled_label">启用自动检查</string>
     <string name="monitor_start">启动</string>
     <string name="monitor_pause">暂停</string>
-    <string name="monitor_state_ok">通</string>
-    <string name="monitor_state_down">不通</string>
+    <string name="monitor_state_ok">正常</string>
+    <string name="monitor_state_down">异常</string>
     <string name="monitor_state_idle">未检查</string>
     <string name="monitor_state_disabled">已停用</string>
     <string name="monitor_row_meta">%1$s · %2$s</string>

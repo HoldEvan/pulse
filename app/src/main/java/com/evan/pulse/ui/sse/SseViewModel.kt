@@ -19,6 +19,7 @@ import com.evan.pulse.domain.extractString
 import com.evan.pulse.domain.model.BodyType
 import com.evan.pulse.domain.model.HttpMethod
 import com.evan.pulse.domain.model.KeyValue
+import com.evan.pulse.domain.model.ProxyConfig
 import com.evan.pulse.domain.model.SseConfig
 import com.evan.pulse.domain.model.SseEvent
 import com.evan.pulse.ui.history.UiEventLine
@@ -47,6 +48,12 @@ class SseViewModel : ViewModel() {
     var eventFilter by mutableStateOf("")
     var autoReconnect by mutableStateOf(false)
     var reconnectDelaySec by mutableStateOf("3")
+
+    /** 连接建立超时（秒）：只约束握手与响应头到达，流建立后不受影响 */
+    var timeoutSec by mutableStateOf("15")
+
+    /** 是否套用设置页里的全局代理；关闭则本次连接强制直连 */
+    var useProxy by mutableStateOf(true)
 
     var activeTab by mutableIntStateOf(0)
 
@@ -109,7 +116,9 @@ class SseViewModel : ViewModel() {
             eventFilter = eventFilter,
             autoReconnect = autoReconnect,
             reconnectDelaySec = reconnectDelaySec.toIntOrNull() ?: 3,
-            previewPath = previewPath
+            previewPath = previewPath,
+            timeoutSec = timeoutSec.toIntOrNull() ?: 15,
+            useProxy = useProxy
         )
     )
 
@@ -128,6 +137,8 @@ class SseViewModel : ViewModel() {
         eventFilter = snap.eventFilter
         autoReconnect = snap.autoReconnect
         reconnectDelaySec = snap.reconnectDelaySec.toString()
+        timeoutSec = snap.timeoutSec.toString()
+        useProxy = snap.useProxy
         previewPath = snap.previewPath
     }
 
@@ -182,7 +193,7 @@ class SseViewModel : ViewModel() {
         if (url.isBlank()) return
         viewModelScope.launch {
             lastError = null
-            val proxy = settingsStore.settings.value.toProxyConfig()
+            val proxy = if (useProxy) settingsStore.settings.value.toProxyConfig() else ProxyConfig()
             add(L10n.t(R.string.proxy_in_use, proxy.summary.ifEmpty { L10n.t(R.string.proxy_summary_direct) }), true)
             val vars = envStore.activeVars()
 
@@ -213,6 +224,7 @@ class SseViewModel : ViewModel() {
                         .map { it.copy(value = res(it.value)) },
                     bodyType = bodyType,
                     body = res(bodyText),
+                    timeoutMs = (timeoutSec.toIntOrNull()?.coerceAtLeast(1) ?: 15) * 1000L,
                     proxy = proxy,
                     eventFilter = eventFilter.trim(),
                     autoReconnect = autoReconnect,

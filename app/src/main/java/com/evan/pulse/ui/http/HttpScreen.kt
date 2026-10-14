@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Code
@@ -29,12 +30,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.evan.pulse.R
-import com.evan.pulse.data.cache.CacheCleaner
 import com.evan.pulse.data.model.RequestType
 import com.evan.pulse.domain.http.HttpExportFormat
 import com.evan.pulse.domain.model.AuthType
@@ -45,17 +46,14 @@ import com.evan.pulse.domain.model.HttpMethod
 import com.evan.pulse.domain.model.KeyValue
 import com.evan.pulse.domain.pathOnly
 import com.evan.pulse.ui.collection.SaveRequestDialog
-import com.evan.pulse.ui.common.BodyViewMode
 import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.KeyValueEditor
 import com.evan.pulse.ui.common.MonospaceBlock
 import com.evan.pulse.ui.common.SectionTitleRow
 import com.evan.pulse.ui.common.StatusBadge
-import com.evan.pulse.ui.common.JsonTreeView
 import com.evan.pulse.ui.common.ValueHints
-import com.evan.pulse.ui.common.isJson
-import com.evan.pulse.ui.common.renderBody
+import com.evan.pulse.ui.common.ResponseBodyView
 import com.evan.pulse.ui.common.rememberCopyToClipboard
 import com.evan.pulse.ui.common.roundedPressable
 import com.evan.pulse.ui.common.subPageScrollState
@@ -65,6 +63,7 @@ import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
+import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.TabRow
 import top.yukonga.miuix.kmp.basic.TabRowWithContour
 import top.yukonga.miuix.kmp.basic.Text
@@ -80,13 +79,14 @@ import top.yukonga.miuix.kmp.squircle.squircleSurface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private val httpMethods = HttpMethod.entries.toList()
-private val bodyTypes = listOf(BodyType.NONE, BodyType.JSON, BodyType.RAW, BodyType.FORM_URLENCODED, BodyType.FORM_DATA)
+private val bodyTypes = listOf(BodyType.NONE, BodyType.JSON, BodyType.RAW, BodyType.FORM_URLENCODED, BodyType.FORM_DATA, BodyType.GRAPHQL)
 private val bodyTypeLabels = listOf(
     R.string.body_none,
     R.string.body_json,
     R.string.body_raw,
     R.string.body_form_urlencoded,
-    R.string.body_form_data
+    R.string.body_form_data,
+    R.string.body_graphql
 )
 private val authTypeLabels = listOf(
     R.string.auth_none,
@@ -98,7 +98,8 @@ private val httpTabLabels = listOf(
     R.string.tab_params,
     R.string.tab_headers,
     R.string.tab_body,
-    R.string.tab_auth
+    R.string.tab_auth,
+    R.string.tab_network
 )
 private val scriptTabLabels = listOf(
     R.string.script_tab_pre,
@@ -326,6 +327,36 @@ private fun TabContent(vm: HttpViewModel) {
 
         2 -> BodyEditor(vm)
         3 -> AuthEditor(vm)
+        4 -> NetworkEditor(vm)
+    }
+}
+
+/** 网络选项：请求超时与是否套用全局代理，代理详情在设置页配置 */
+@Composable
+private fun NetworkEditor(viewModel: HttpViewModel) {
+    Column(modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp)) {
+        TextField(
+            value = viewModel.timeoutSec,
+            onValueChange = { viewModel.timeoutSec = it.filter(Char::isDigit) },
+            label = stringResource(R.string.timeout_sec_label),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth()
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(R.string.use_proxy_label),
+                modifier = Modifier.weight(1f)
+            )
+            Switch(
+                checked = viewModel.useProxy,
+                onCheckedChange = { viewModel.useProxy = it }
+            )
+        }
     }
 }
 
@@ -436,7 +467,25 @@ private fun BodyEditor(viewModel: HttpViewModel) {
                     value = viewModel.bodyText,
                     onValueChange = { viewModel.bodyText = it },
                     label = if (viewModel.bodyType == BodyType.JSON) stringResource(R.string.body_json_label) else stringResource(R.string.body_raw_label),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 8
+                )
+            }
+
+            BodyType.GRAPHQL -> {
+                TextField(
+                    value = viewModel.bodyText,
+                    onValueChange = { viewModel.bodyText = it },
+                    label = stringResource(R.string.graphql_query_label),
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 8
+                )
+                TextField(
+                    value = viewModel.graphqlVariables,
+                    onValueChange = { viewModel.graphqlVariables = it },
+                    label = stringResource(R.string.graphql_variables_label),
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 4
                 )
             }
 
@@ -607,14 +656,6 @@ private fun AuthEditor(viewModel: HttpViewModel) {
 @Composable
 private fun ResponseCard(viewModel: HttpViewModel) {
     val outcome = viewModel.outcome
-    var mode by remember { mutableStateOf(BodyViewMode.RAW) }
-    val modeLabels = listOf(
-        stringResource(R.string.resp_view_raw),
-        stringResource(R.string.resp_view_json),
-        stringResource(R.string.resp_view_xml),
-        stringResource(R.string.resp_view_hex),
-        stringResource(R.string.resp_view_b64)
-    )
 
     Card(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
         when (outcome) {
@@ -665,33 +706,7 @@ private fun ResponseCard(viewModel: HttpViewModel) {
                     modifier = Modifier.padding(top = 14.dp, bottom = 8.dp),
                     fontSize = 13.sp
                 )
-                TabRowWithContour(
-                    tabs = modeLabels,
-                    selectedTabIndex = mode.ordinal,
-                    onTabSelected = { mode = BodyViewMode.entries[it] },
-                    minWidth = 44.dp,
-                    maxWidth = 120.dp,
-                    height = 40.dp,
-                    itemSpacing = 4.dp,
-                    cornerRadius = 10.dp
-                )
-                val rendered = remember(outcome.body, mode) { renderBody(outcome.body, mode) }
-                if (mode == BodyViewMode.JSON && isJson(outcome.body)) {
-                    JsonTreeView(outcome.body)
-                } else {
-                    MonospaceBlock(rendered.text, selectable = true)
-                }
-                if (rendered.truncated) {
-                    Text(
-                        text = stringResource(
-                            R.string.resp_truncated,
-                            CacheCleaner.formatBytes(rendered.totalBytes.toLong())
-                        ),
-                        modifier = Modifier.padding(top = 6.dp),
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                        fontSize = 12.sp
-                    )
-                }
+                ResponseBodyView(outcome.body)
             }
         }
     }

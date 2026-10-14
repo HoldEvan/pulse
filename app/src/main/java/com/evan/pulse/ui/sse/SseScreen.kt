@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.items
@@ -57,8 +58,10 @@ import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.SmallTitle
+import androidx.compose.ui.text.input.KeyboardType
 import top.yukonga.miuix.kmp.basic.TabRowWithContour
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
@@ -68,7 +71,7 @@ import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Link
 
-private val sseMethods = listOf(HttpMethod.GET, HttpMethod.POST)
+private val sseMethods = HttpMethod.entries.toList()
 private val sseBodyTypes = listOf(BodyType.NONE, BodyType.JSON, BodyType.RAW)
 private val sseBodyTypeLabels = listOf(
     R.string.body_none,
@@ -78,7 +81,8 @@ private val sseBodyTypeLabels = listOf(
 private val sseTabLabels = listOf(
     R.string.tab_params,
     R.string.tab_headers,
-    R.string.tab_body
+    R.string.tab_body,
+    R.string.tab_network
 )
 private val previewTabLabels = listOf(
     R.string.sse_preview_tab_raw,
@@ -176,9 +180,13 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                         onTabSelected = { viewModel.activeTab = it },
                         modifier = Modifier.padding(top = 10.dp)
                     )
-                    Column(modifier = Modifier.padding(top = 10.dp)) {
-                        when (viewModel.activeTab) {
-                            0 -> KeyValueEditor(
+                }
+                // Tab 内容区贴卡片边缘（与 HTTP 请求卡一致）：类型下拉行贴左右卡边，
+                // 具体内容分支再自行内缩；上方内缩列的 12dp 底边距充当 Tab 行间距
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    when (viewModel.activeTab) {
+                        0 -> Column(modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp)) {
+                            KeyValueEditor(
                                 items = viewModel.params,
                                 keyLabel = stringResource(R.string.kv_param_key),
                                 valueLabel = stringResource(R.string.kv_value_label),
@@ -187,8 +195,10 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                                 onRemove = viewModel::removeParam,
                                 valueHintProvider = viewModel::placeholderHints
                             )
+                        }
 
-                            1 -> KeyValueEditor(
+                        1 -> Column(modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp)) {
+                            KeyValueEditor(
                                 items = viewModel.headers,
                                 keyLabel = stringResource(R.string.kv_header_key),
                                 valueLabel = stringResource(R.string.kv_value_label),
@@ -197,14 +207,40 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                                 onRemove = viewModel::removeHeader,
                                 valueHintProvider = viewModel::placeholderHints
                             )
+                        }
 
-                            2 -> BodyEditor(viewModel)
+                        2 -> BodyEditor(viewModel)
+
+                        3 -> Column(modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp)) {
+                            TextField(
+                                value = viewModel.timeoutSec,
+                                onValueChange = { viewModel.timeoutSec = it.filter(Char::isDigit) },
+                                label = stringResource(R.string.timeout_sec_label),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.use_proxy_label),
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Switch(
+                                    checked = viewModel.useProxy,
+                                    onCheckedChange = { viewModel.useProxy = it }
+                                )
+                            }
                         }
                     }
+                }
+                // 2dp 顶边距与 Tab 内容分支的 12dp 底边距合成原来的 14dp 行距
+                Column(modifier = Modifier.padding(start = 12.dp, top = 2.dp, end = 12.dp, bottom = 12.dp)) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 14.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Button(
@@ -364,7 +400,7 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
 
 @Composable
 private fun BodyEditor(viewModel: SseViewModel) {
-    Column {
+    Column(horizontalAlignment = Alignment.Start) {
         OverlayDropdownPreference(
             items = sseBodyTypeLabels.localizedLabels(),
             selectedIndex = sseBodyTypes.indexOf(viewModel.bodyType),
@@ -373,19 +409,23 @@ private fun BodyEditor(viewModel: SseViewModel) {
             showValue = true,
             onSelectedIndexChange = { viewModel.bodyType = sseBodyTypes[it] }
         )
+        // 内容列仅在类型有内容时渲染：NONE 时空列的内边距会在卡片底部留白
         if (viewModel.bodyType != BodyType.NONE) {
-            TextField(
-                value = viewModel.bodyText,
-                onValueChange = { viewModel.bodyText = it },
-                label = if (viewModel.bodyType == BodyType.JSON) {
-                    stringResource(R.string.body_json_label)
-                } else {
-                    stringResource(R.string.body_raw_label)
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp)
-            )
+            Column(
+                modifier = Modifier.padding(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 12.dp)
+            ) {
+                TextField(
+                    value = viewModel.bodyText,
+                    onValueChange = { viewModel.bodyText = it },
+                    label = if (viewModel.bodyType == BodyType.JSON) {
+                        stringResource(R.string.body_json_label)
+                    } else {
+                        stringResource(R.string.body_raw_label)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 8
+                )
+            }
         }
     }
 }

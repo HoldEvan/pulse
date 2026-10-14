@@ -58,6 +58,8 @@ data class HttpSnapshot(
     val headers: List<KeyValueEntry> = emptyList(),
     val bodyType: String = "NONE",
     val bodyText: String = "",
+    /** GraphQL 的 variables JSON 文本 */
+    val graphqlVariables: String = "{}",
     val formFields: List<FormFieldEntry> = emptyList(),
     val authType: String = "NONE",
     val bearerToken: String = "",
@@ -68,14 +70,20 @@ data class HttpSnapshot(
     /** 发送前执行的脚本 */
     val preScript: String = "",
     /** 拿到响应后执行的脚本 */
-    val postScript: String = ""
+    val postScript: String = "",
+    /** 请求超时秒数 */
+    val timeoutSec: String = "30",
+    /** 是否使用设置页的全局代理 */
+    val useProxy: Boolean = true
 )
 
 @Serializable
 data class WsSnapshot(
     val url: String = "",
     val pingIntervalSec: Int = 0,
-    val pingPayload: String = "ping"
+    val pingPayload: String = "ping",
+    /** 是否使用设置页的全局代理 */
+    val useProxy: Boolean = true
 )
 
 @Serializable
@@ -88,7 +96,9 @@ data class MqttSnapshot(
     val subTopic: String = "",
     val subQos: Int = 0,
     val pubTopic: String = "",
-    val pubQos: Int = 0
+    val pubQos: Int = 0,
+    /** 是否使用设置页的全局代理 */
+    val useProxy: Boolean = true
 )
 
 @Serializable
@@ -103,7 +113,11 @@ data class SseSnapshot(
     val autoReconnect: Boolean = false,
     val reconnectDelaySec: Int = 3,
     /** 拼接预览的 JSONPath 表达式，空表示不提取 */
-    val previewPath: String = ""
+    val previewPath: String = "",
+    /** 连接建立超时秒数 */
+    val timeoutSec: Int = 15,
+    /** 是否使用设置页的全局代理 */
+    val useProxy: Boolean = true
 )
 
 /** 快照统一序列化配置：字段只增不减，旧快照缺字段时用默认值兜底 */

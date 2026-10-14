@@ -106,6 +106,7 @@
     <string name="tab_headers">Headers</string>
     <string name="tab_body">Body</string>
     <string name="tab_auth">Auth</string>
+    <string name="tab_network">Network</string>
     <string name="tab_script">Scripts</string>
     <string name="script_tab_pre">Pre-request</string>
     <string name="script_tab_post">Post-response</string>
@@ -150,8 +151,6 @@
     <string name="http_response_label">Response</string>
     <string name="http_response_headers">Response headers</string>
     <string name="http_response_body">Response body</string>
-    <string name="http_format_json">Format JSON</string>
-    <string name="http_view_raw">View raw</string>
     <string name="resp_view_raw">RAW</string>
     <string name="resp_view_json">JSON</string>
     <string name="resp_view_xml">XML</string>
@@ -332,6 +331,11 @@
     <string name="body_raw_label">Plain text</string>
     <string name="body_form_urlencoded">URL-encoded form</string>
     <string name="body_form_data">multipart form</string>
+    <string name="body_graphql">GraphQL</string>
+    <string name="graphql_query_label">GraphQL query</string>
+    <string name="graphql_variables_label">Variables (JSON)</string>
+    <string name="timeout_sec_label">Timeout (s)</string>
+    <string name="use_proxy_label">Use proxy</string>
     <string name="auth_type_label">Auth type</string>
     <string name="kv_param_value">Param value</string>
     <string name="kv_header_value">Header value</string>

@@ -4,6 +4,7 @@ import com.evan.pulse.domain.model.BodyType
 import com.evan.pulse.domain.model.FormField
 import com.evan.pulse.domain.model.HttpCallConfig
 import com.evan.pulse.domain.model.KeyValue
+import com.evan.pulse.domain.model.buildGraphqlRequestBody
 import java.net.URI
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -98,7 +99,7 @@ private fun HttpCallConfig.exportHeaders(): List<KeyValue> {
 /** body 是否真有内容；与发送引擎一致，空 body 不追加 content-type */
 private fun HttpCallConfig.hasBodyContent(): Boolean = when (bodyType) {
     BodyType.NONE -> false
-    BodyType.JSON, BodyType.RAW -> body.isNotBlank()
+    BodyType.JSON, BodyType.RAW, BodyType.GRAPHQL -> body.isNotBlank()
     BodyType.FORM_URLENCODED, BodyType.FORM_DATA -> formFieldsToSend().isNotEmpty()
 }
 
@@ -107,7 +108,7 @@ private fun HttpCallConfig.inferredContentType(): String? {
     if (!hasBodyContent()) return null
     return when (bodyType) {
         BodyType.NONE -> null
-        BodyType.JSON -> "application/json"
+        BodyType.JSON, BodyType.GRAPHQL -> "application/json"
         BodyType.RAW -> "text/plain"
         BodyType.FORM_URLENCODED -> "application/x-www-form-urlencoded"
         BodyType.FORM_DATA -> null
@@ -124,6 +125,9 @@ private fun HttpCallConfig.buildCurl(program: String, quote: (String) -> String)
         when (bodyType) {
             BodyType.NONE -> Unit
             BodyType.JSON, BodyType.RAW -> if (body.isNotBlank()) add("--data-binary ${quote(body)}")
+            BodyType.GRAPHQL -> buildGraphqlRequestBody(body, graphqlVariables)
+                .takeIf { it.isNotBlank() }
+                ?.let { add("--data-binary ${quote(it)}") }
             BodyType.FORM_URLENCODED -> fields.forEach {
                 add("--data-urlencode ${quote("${it.name}=${it.value}")}")
             }
@@ -153,6 +157,9 @@ private fun HttpCallConfig.buildRawHttp(): String {
         sb.append("\n")
         when (bodyType) {
             BodyType.JSON, BodyType.RAW -> if (body.isNotBlank()) sb.append(body)
+            BodyType.GRAPHQL -> buildGraphqlRequestBody(body, graphqlVariables)
+                .takeIf { it.isNotBlank() }
+                ?.let { sb.append(it) }
             BodyType.FORM_URLENCODED -> sb.append(fields.joinToString("&") {
                 "${percentEncode(it.name)}=${percentEncode(it.value)}"
             })
@@ -189,6 +196,9 @@ private fun HttpCallConfig.buildPythonRequests(): String {
     when (bodyType) {
         BodyType.NONE -> Unit
         BodyType.JSON, BodyType.RAW -> if (body.isNotBlank()) sb.append("    data=${codeString(body)},\n")
+        BodyType.GRAPHQL -> buildGraphqlRequestBody(body, graphqlVariables)
+            .takeIf { it.isNotBlank() }
+            ?.let { sb.append("    data=${codeString(it)},\n") }
         BodyType.FORM_URLENCODED -> if (fields.isNotEmpty()) {
             sb.append("    data={${fields.joinToString(", ") {
                 "${codeString(it.name)}: ${codeString(it.value)}"
@@ -226,6 +236,9 @@ private fun HttpCallConfig.buildJsFetch(): String {
     when (bodyType) {
         BodyType.NONE -> Unit
         BodyType.JSON, BodyType.RAW -> if (body.isNotBlank()) sb.append("  body: ${jsString(body)}\n")
+        BodyType.GRAPHQL -> buildGraphqlRequestBody(body, graphqlVariables)
+            .takeIf { it.isNotBlank() }
+            ?.let { sb.append("  body: ${jsString(it)}\n") }
         BodyType.FORM_URLENCODED -> if (fields.isNotEmpty()) {
             sb.append("  body: new URLSearchParams({\n")
             fields.forEach { sb.append("    ${jsString(it.name)}: ${jsString(it.value)},\n") }

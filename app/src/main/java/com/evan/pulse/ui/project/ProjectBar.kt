@@ -40,7 +40,6 @@ import top.yukonga.miuix.kmp.icon.extended.Add
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Edit
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
-import top.yukonga.miuix.kmp.preference.CheckboxPreference
 import top.yukonga.miuix.kmp.preference.RadioButtonLocation
 import top.yukonga.miuix.kmp.preference.RadioButtonPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -283,18 +282,16 @@ fun ProjectBar(
                     )
                 } else {
                     projectEnvs.forEach { env ->
-                        CheckboxPreference(
+                        RadioButtonPreference(
                             title = env.name,
-                            checked = env.isActive,
-                            onCheckedChange = {
-                                if (it) {
-                                    viewModel.activateEnv(env.id)
-                                    showEnvDialog = false
-                                }
+                            summary = stringResource(R.string.vars_count, env.variables.size),
+                            selected = env.isActive,
+                            onClick = {
+                                viewModel.activateEnv(env.id)
+                                showEnvDialog = false
                             },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp)
+                            radioButtonLocation = RadioButtonLocation.Start,
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
                 }

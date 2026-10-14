@@ -49,6 +49,7 @@ import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.SmallTitle
+import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
@@ -143,6 +144,22 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                         modifier = Modifier
                             .weight(1f)
                             .padding(start = 8.dp)
+                    )
+                }
+                // 是否套用设置页的全局代理
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.use_proxy_label),
+                        modifier = Modifier.weight(1f)
+                    )
+                    Switch(
+                        checked = viewModel.useProxy,
+                        onCheckedChange = { viewModel.useProxy = it }
                     )
                 }
                 Row(
