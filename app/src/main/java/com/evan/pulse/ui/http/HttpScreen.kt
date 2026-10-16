@@ -34,6 +34,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
+import com.evan.pulse.domain.net.NetworkPreset
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.evan.pulse.R
 import com.evan.pulse.data.model.RequestType
@@ -88,6 +89,15 @@ private val bodyTypeLabels = listOf(
     R.string.body_form_data,
     R.string.body_graphql
 )
+private val throttleLabels = listOf(
+    R.string.net_throttle_off,
+    R.string.net_throttle_5g,
+    R.string.net_throttle_4g,
+    R.string.net_throttle_3g,
+    R.string.net_throttle_2g,
+    R.string.net_throttle_force
+)
+
 private val authTypeLabels = listOf(
     R.string.auth_none,
     R.string.auth_bearer,
@@ -334,28 +344,58 @@ private fun TabContent(vm: HttpViewModel) {
 /** 网络选项：请求超时与是否套用全局代理，代理详情在设置页配置 */
 @Composable
 private fun NetworkEditor(viewModel: HttpViewModel) {
-    Column(modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp)) {
-        TextField(
-            value = viewModel.timeoutSec,
-            onValueChange = { viewModel.timeoutSec = it.filter(Char::isDigit) },
-            label = stringResource(R.string.timeout_sec_label),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth()
+    Column(horizontalAlignment = Alignment.Start) {
+        // 档位即开关：关闭 / 各弱网档 / 强制超时，与请求体类型下拉一样贴卡边
+        OverlayDropdownPreference(
+            items = throttleLabels.localizedLabels(),
+            selectedIndex = viewModel.throttlePreset.ordinal,
+            title = stringResource(R.string.net_throttle_label),
+            modifier = Modifier.fillMaxWidth(),
+            showValue = true,
+            onSelectedIndexChange = { viewModel.throttlePreset = NetworkPreset.entries[it] }
         )
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
+        // 超时与代理为常规网络配置，始终显示；强制超时输入框仅在选中该档时出现
+        Column(
+            modifier = Modifier.padding(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = stringResource(R.string.use_proxy_label),
-                modifier = Modifier.weight(1f)
+            TextField(
+                value = viewModel.timeoutSec,
+                onValueChange = { viewModel.timeoutSec = it.filter(Char::isDigit) },
+                label = stringResource(R.string.timeout_sec_label),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth()
             )
-            Switch(
-                checked = viewModel.useProxy,
-                onCheckedChange = { viewModel.useProxy = it }
-            )
+            if (viewModel.throttlePreset == NetworkPreset.FORCE_TIMEOUT) {
+                Column {
+                    TextField(
+                        value = viewModel.forceTimeoutSec,
+                        onValueChange = { viewModel.forceTimeoutSec = it.filter(Char::isDigit) },
+                        label = stringResource(R.string.net_force_timeout_label),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        text = stringResource(R.string.net_force_timeout_hint),
+                        modifier = Modifier.padding(top = 6.dp),
+                        fontSize = 12.sp,
+                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.use_proxy_label),
+                    modifier = Modifier.weight(1f)
+                )
+                Switch(
+                    checked = viewModel.useProxy,
+                    onCheckedChange = { viewModel.useProxy = it }
+                )
+            }
         }
     }
 }

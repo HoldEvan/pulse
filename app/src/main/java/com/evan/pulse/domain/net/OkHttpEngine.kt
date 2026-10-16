@@ -4,6 +4,7 @@ import com.evan.pulse.domain.model.BodyType
 import com.evan.pulse.domain.model.FormField
 import com.evan.pulse.domain.model.HttpCallConfig
 import com.evan.pulse.domain.model.HttpCallOutcome
+import com.evan.pulse.domain.net.NetworkPreset
 import com.evan.pulse.domain.model.buildGraphqlRequestBody
 import com.evan.pulse.domain.model.HttpErrorType
 import com.evan.pulse.domain.model.HttpMethod
@@ -24,6 +25,7 @@ import io.ktor.client.request.url
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsBytes
 import io.ktor.http.ContentType
+import io.ktor.http.content.OutgoingContent
 import io.ktor.http.HttpMethod as KtorHttpMethod
 import io.ktor.http.Parameters
 import io.ktor.http.content.ByteArrayContent
@@ -34,6 +36,7 @@ import java.io.ByteArrayOutputStream
 import java.net.InetSocketAddress
 import java.net.Proxy
 import java.net.SocketTimeoutException
+import kotlin.random.Random
 import java.net.UnknownHostException
 import java.nio.charset.Charset
 import java.util.UUID
@@ -41,6 +44,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import javax.net.ssl.SSLException
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import okhttp3.Credentials
 
 /**
@@ -56,6 +60,7 @@ import okhttp3.Credentials
 class OkHttpEngine : HttpEngine {
 
     private val clients = ConcurrentHashMap<ProxyConfig, HttpClient>()
+    private val throttleRandom = Random.Default
 
     override suspend fun execute(config: HttpCallConfig): HttpCallOutcome {
         if (!config.url.startsWith("http://", ignoreCase = true) &&
@@ -68,7 +73,21 @@ class OkHttpEngine : HttpEngine {
         }
 
         val body = requestBody(config)
+        // 网络模拟：强制超时档阻塞指定秒数后按超时失败返回；弱网档位分两段——
+        // 请求前随机 RTT + 请求体上行耗时，响应后按响应体大小估算下行耗时
+        val throttle = config.throttle
         val start = System.currentTimeMillis()
+        if (throttle.isActive) {
+            if (throttle.preset == NetworkPreset.FORCE_TIMEOUT) {
+                delay(throttle.forceTimeoutSec * 1000L)
+                return HttpCallOutcome.Failure(
+                    HttpErrorType.TIMEOUT,
+                    "网络配置强制超时（${throttle.forceTimeoutSec}s）"
+                )
+            }
+            val uploadSize = (body as? OutgoingContent)?.contentLength ?: 0
+            delay(NetworkThrottle.uploadDelayMs(uploadSize, throttle, throttleRandom))
+        }
         return try {
             val response = clientFor(config.proxy).request {
                 method = ktorMethod(config.method)
@@ -87,6 +106,10 @@ class OkHttpEngine : HttpEngine {
                 if (body != null) setBody(body)
             }
             val bytes = response.bodyAsBytes()
+            // 下行模拟在读完响应后补延迟，总耗时与真实慢速下载一致
+            NetworkThrottle.downloadDelayMs(bytes.size.toLong(), throttle)
+                .takeIf { it > 0 }
+                ?.let { delay(it) }
             HttpCallOutcome.Success(
                 statusCode = response.status.value,
                 statusText = response.status.description,

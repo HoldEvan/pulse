@@ -27,6 +27,8 @@ import com.evan.pulse.domain.model.HttpMethod
 import com.evan.pulse.domain.model.buildGraphqlRequestBody
 import com.evan.pulse.domain.model.KeyValue
 import com.evan.pulse.domain.model.ProxyConfig
+import com.evan.pulse.domain.net.NetworkPreset
+import com.evan.pulse.domain.net.NetworkThrottleConfig
 import com.evan.pulse.domain.script.MutableRequest
 import com.evan.pulse.domain.script.ScriptExecutor
 import com.evan.pulse.domain.script.ScriptRunResult
@@ -76,6 +78,12 @@ class HttpViewModel : ViewModel() {
     /** 是否套用设置页里的全局代理；关闭则本次请求强制直连 */
     var useProxy by mutableStateOf(true)
 
+    /** 弱网模拟档位；NONE 即关闭，FORCE_TIMEOUT 配合秒数生效 */
+    var throttlePreset by mutableStateOf(NetworkPreset.NONE)
+
+    /** 强制超时秒数，输入框直接绑文本，空或 0 视为不启用 */
+    var forceTimeoutSec by mutableStateOf("")
+
     var activeTab by mutableIntStateOf(0)
     var scriptTab by mutableIntStateOf(0)
     var sending by mutableStateOf(false)
@@ -121,7 +129,9 @@ class HttpViewModel : ViewModel() {
             preScript = preScript,
             postScript = postScript,
             timeoutSec = timeoutSec,
-            useProxy = useProxy
+            useProxy = useProxy,
+            throttlePreset = throttlePreset.name,
+            forceTimeoutSec = forceTimeoutSec
         )
     )
 
@@ -151,6 +161,8 @@ class HttpViewModel : ViewModel() {
         postScript = snap.postScript
         timeoutSec = snap.timeoutSec.takeIf { it.isNotBlank() } ?: "30"
         useProxy = snap.useProxy
+        throttlePreset = NetworkPreset.entries.firstOrNull { it.name == snap.throttlePreset } ?: NetworkPreset.NONE
+        forceTimeoutSec = snap.forceTimeoutSec
     }
 
     fun activeEnvVars(): Map<String, String> {
@@ -254,7 +266,11 @@ class HttpViewModel : ViewModel() {
             graphqlVariables = graphqlVariables,
             formFields = formFields.filter { it.name.isNotBlank() && !it.isFile },
             timeoutMs = (timeoutSec.toLongOrNull()?.coerceAtLeast(1) ?: 30L) * 1000L,
-            proxy = if (useProxy) settingsStore.settings.value.toProxyConfig() else ProxyConfig()
+            proxy = if (useProxy) settingsStore.settings.value.toProxyConfig() else ProxyConfig(),
+            throttle = NetworkThrottleConfig(
+                preset = throttlePreset,
+                forceTimeoutSec = forceTimeoutSec.toIntOrNull()?.coerceIn(0, 300) ?: 0
+            )
         )
     }
 

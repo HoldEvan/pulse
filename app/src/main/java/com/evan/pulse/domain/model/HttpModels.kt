@@ -1,5 +1,6 @@
 package com.evan.pulse.domain.model
 
+import com.evan.pulse.domain.net.NetworkThrottleConfig
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -56,7 +57,9 @@ data class HttpCallConfig(
     val formFields: List<FormField> = emptyList(),
     val auth: AuthConfig = AuthConfig(),
     val timeoutMs: Long = 30_000L,
-    val proxy: ProxyConfig = ProxyConfig()
+    val proxy: ProxyConfig = ProxyConfig(),
+    /** 弱网模拟：默认关闭，零开销直发 */
+    val throttle: NetworkThrottleConfig = NetworkThrottleConfig()
 )
 
 sealed interface HttpCallOutcome {

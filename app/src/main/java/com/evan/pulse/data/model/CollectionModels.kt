@@ -74,7 +74,11 @@ data class HttpSnapshot(
     /** 请求超时秒数 */
     val timeoutSec: String = "30",
     /** 是否使用设置页的全局代理 */
-    val useProxy: Boolean = true
+    val useProxy: Boolean = true,
+    /** 弱网模拟档位名（FIVE_G/FOUR_G/THREE_G/TWO_G/FORCE_TIMEOUT），NONE 表示关闭 */
+    val throttlePreset: String = "NONE",
+    /** 强制超时秒数，0 表示不启用 */
+    val forceTimeoutSec: String = ""
 )
 
 @Serializable
