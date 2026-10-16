@@ -1,10 +1,12 @@
 package com.evan.pulse.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.NetworkCheck
@@ -15,6 +17,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -28,7 +32,9 @@ import com.evan.pulse.ui.about.AboutScreen
 import com.evan.pulse.ui.about.LegalScreen
 import com.evan.pulse.ui.common.BlurredBar
 import com.evan.pulse.ui.common.LocalSubPageCanScroll
+import com.evan.pulse.ui.common.TabPageScaffold
 import com.evan.pulse.ui.common.ToastHost
+import com.evan.pulse.ui.common.rememberBlurBackdrop
 import com.evan.pulse.ui.common.topBarPadding
 import com.evan.pulse.ui.dashboard.DashboardScreen
 import com.evan.pulse.ui.env.EnvViewModel
@@ -42,6 +48,8 @@ import com.evan.pulse.ui.http.ScriptDocsScreen
 import com.evan.pulse.ui.http.ScriptEditorScreen
 import com.evan.pulse.ui.l10n.LocalizedRoot
 import com.evan.pulse.ui.l10n.fromIndex
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import com.evan.pulse.ui.monitor.MonitorRecordsScreen
 import com.evan.pulse.ui.monitor.MonitorScreen
 import com.evan.pulse.ui.monitor.MonitorViewModel
@@ -52,7 +60,7 @@ import com.evan.pulse.ui.settings.SettingsScreen
 import com.evan.pulse.ui.settings.SettingsViewModel
 import com.evan.pulse.ui.settings.ThemeSettingsScreen
 import com.evan.pulse.ui.test.TestScreen
-import com.evan.pulse.ui.tools.Base64ToolScreen
+import com.evan.pulse.ui.tools.EncodingToolScreen
 import com.evan.pulse.ui.tools.JsonToolScreen
 import com.evan.pulse.ui.tools.TimestampToolScreen
 import top.yukonga.miuix.kmp.basic.FloatingNavigationBar
@@ -92,27 +100,14 @@ private data class PulseTab(
     val icon: ImageVector
 )
 
-/** 页面切换：使用 AnimatedContent 默认的交叉淡入淡出过渡 */
-@Composable
-private fun PageTransition(
-    modifier: Modifier,
-    current: Int,
-    content: @Composable (Int) -> Unit,
-) {
-    AnimatedContent(
-        targetState = current,
-        modifier = modifier,
-        label = "页面切换"
-    ) { page ->
-        content(page)
-    }
-}
-
 /** 淡入淡出转场：返回手势模式选 AOSP 风格时使用，深度驱动的交叉渐变 */
 private val fadeTransition: NavTransition = navGraphicsTransition { scope ->
     val d = scope.relativeDepth
     alpha = if (d <= 0f) (1f + d).coerceIn(0f, 1f) else 1f - d.coerceIn(0f, 1f)
 }
+
+/** 拖动翻页时，拖过多大比例（相对一页宽）就提前高亮相邻标签 */
+private const val TAB_DRAG_TRIGGER = 0.3f
 
 @Composable
 fun PulseApp(settingsViewModel: SettingsViewModel) {
@@ -183,42 +178,65 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
         MiuixScrollBehavior(state = state, canScroll = canScrollCheck)
     }
     val topAppBarScrollBehavior = tabScrollBehaviors[tabState.selectedTab]
-    val isBlurActive = backdrop != null
 
     /** 供玻璃底栏使用的标签项 */
     val navigationItems = tabs.map { tab ->
         NavigationItem(icon = tab.icon, label = stringResource(tab.label))
     }
 
-    /** 标签页的一屏：顶栏、底栏与五个 tab 内容。转场中间态由 NavDisplay 统一裁剪，
-     *  采样层挂在覆盖整块 Scaffold 的外层，顶栏磨砂与玻璃底栏胶囊才能模糊到页面内容 */
+    /** 标签页的一屏：底栏与五个 tab 内容（顶栏随各页滑动，见 pager 内的逐页 Scaffold）。
+     *  采样层挂在覆盖整块区域的 Box 外层，玻璃底栏胶囊才能模糊到页面内容 */
     @Composable
     fun TabsScreen() {
+        /** 横向滑动切换标签页；底栏点击与手势滑动经此双向同步到 tabState */
+        val pagerState = rememberPagerState(initialPage = tabState.selectedTab) { tabs.size }
+
+        /** 程序化翻页进行中（底栏点击等）：期间中间位置不再写回选中态 */
+        var programmaticScrolling by remember { mutableStateOf(false) }
+
+        // 底栏点击（或恢复上次选中）时动画翻到目标页
+        LaunchedEffect(tabState.selectedTab) {
+            if (pagerState.targetPage != tabState.selectedTab) {
+                programmaticScrolling = true
+                try {
+                    pagerState.animateScrollToPage(tabState.selectedTab)
+                } finally {
+                    programmaticScrolling = false
+                }
+            }
+        }
+
+        // 拖动超过阈值（0.3 页宽）即把目标页写回全局选中状态，标题与底栏高亮跟手；
+        // 松手后的回弹与甩动落点也由位置变化继续驱动，最终与停稳页一致。
+        // 程序化翻页期间跳过，避免中途经过的页面被误写回选中态
+        LaunchedEffect(pagerState) {
+            snapshotFlow {
+                pagerState.currentPage + pagerState.currentPageOffsetFraction
+            }.map { position ->
+                (position + (1f - TAB_DRAG_TRIGGER)).toInt().coerceIn(0, tabs.size - 1)
+            }.distinctUntilChanged().collect { page ->
+                if (!programmaticScrolling) {
+                    settingsViewModel.selectTab(page)
+                }
+            }
+        }
+
+        // 兜底：任何滚动停稳后强制对齐选中态，保证标题与底栏永不卡在旧页
+        LaunchedEffect(pagerState) {
+            snapshotFlow { pagerState.settledPage }
+                .collect { settingsViewModel.selectTab(it) }
+        }
+
+        // 侧滑返回：非首页 tab 先回首页，再按一次才退出应用
+        BackHandler(enabled = tabState.selectedTab != 0) {
+            settingsViewModel.selectTab(0)
+        }
+
+        /** 各页独立的内容采样层：供本页顶栏磨砂取样。只采本页内容 Box，
+         *  避免顶栏把模糊背景中的自己再采进去；全局 backdrop 仍供玻璃底栏采样 */
+        val pageBackdrops = List(5) { rememberBlurBackdrop() }
+
         Scaffold(
-            topBar = {
-                ProjectBar(
-                    title = stringResource(tabs[tabState.selectedTab].label),
-                    // 拨测页显示项目选择；资源页仅在集合/环境子页显示（项目子页自带管理）
-                    showProjectSelector = tabState.selectedTab == 1 ||
-                        (tabState.selectedTab == 2 && tabState.resourceTab != 0),
-                    showEnvSelector = tabState.selectedTab == 1,
-                    onAddMonitor = if (tabState.selectedTab == 3) {
-                        { monitorViewModel.openCreate() }
-                    } else {
-                        null
-                    },
-                    // 资源页-项目 tab 时顶栏显示"新建项目"
-                    onAddProject = if (tabState.selectedTab == 2 && tabState.resourceTab == 0) {
-                        { projectViewModel.openCreate() }
-                    } else {
-                        null
-                    },
-                    viewModel = projectViewModel,
-                    scrollBehavior = topAppBarScrollBehavior,
-                    backdrop = backdrop,
-                    isBlurActive = isBlurActive
-                )
-            },
             bottomBar = {
                 if (glassBottomBar) {
                     LiquidGlassNavigationBar(
@@ -252,60 +270,122 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                     }
                 }
             }
-        ) { paddingValues ->
+        ) { _ ->
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .topBarPadding(paddingValues)
-                    .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
                     .then(if (backdrop != null) Modifier.layerBackdrop(backdrop) else Modifier)
             ) {
-                PageTransition(
+                HorizontalPager(
+                    state = pagerState,
                     modifier = Modifier.fillMaxSize(),
-                    current = tabState.selectedTab
+                    // 预组合相邻页，滑动更顺滑；越界一页即弃
+                    beyondViewportPageCount = 1
                 ) { tab ->
-                    CompositionLocalProvider(
-                        LocalSubPageCanScroll provides tabCanScroll[tab]
-                    ) {
-                        when (tab) {
-                                0 -> DashboardScreen(
-                                    modifier = Modifier.fillMaxSize(),
-                                    onOpenBase64 = { navController.pushRoute(PulseRoute.Base64Tool) },
-                                    onOpenJson = { navController.pushRoute(PulseRoute.JsonTool) },
-                                    onOpenTimestamp = { navController.pushRoute(PulseRoute.TimestampTool) },
-                                    onOpenProjects = { settingsViewModel.openResourceTab(0) },
-                                    onOpenHistory = { navController.pushRoute(PulseRoute.History) },
-                                    onOpenRequests = { settingsViewModel.openResourceTab(1) },
-                                    onOpenMonitors = { settingsViewModel.selectTab(3) }
+                    // 每页自带整条顶栏，随 pager 一起横向滑动，标题自然跟页
+                    val pageBackdrop = pageBackdrops[tab]
+                    val pageBehavior = tabScrollBehaviors[tab]
+                    TabPageScaffold(
+                        topBar = {
+                            when (tab) {
+                                1 -> ProjectBar(
+                                    title = stringResource(tabs[1].label),
+                                    showProjectSelector = true,
+                                    showEnvSelector = true,
+                                    viewModel = projectViewModel,
+                                    scrollBehavior = pageBehavior,
+                                    backdrop = pageBackdrop,
+                                    isBlurActive = pageBackdrop != null
                                 )
-                            1 -> TestScreen(
-                                modifier = Modifier.fillMaxSize(),
-                                protocolTab = tabState.homeProtocolTab,
-                                onProtocolTabChange = { settingsViewModel.selectHomeProtocol(it) },
-                                onOpenScriptEditor = { navController.pushRoute(PulseRoute.ScriptEditor(it)) },
-                                onOpenHistory = { navController.pushRoute(PulseRoute.History) },
-                                httpViewModel = httpViewModel
-                            )
-                                2 -> ResourcesScreen(
-                                    modifier = Modifier.fillMaxSize(),
-                                    resourceTab = tabState.resourceTab,
-                                    onTabChange = { settingsViewModel.selectResourceTab(it) },
-                                    onSwitchTab = { settingsViewModel.openHomeProtocol(it) },
-                                    projectViewModel = projectViewModel,
-                                    onOpenEnvVars = { navController.pushRoute(PulseRoute.EnvVars(it)) }
+                                2 -> ProjectBar(
+                                    title = stringResource(tabs[2].label),
+                                    // 资源页仅在集合/环境子页显示项目选择（项目子页自带管理）
+                                    showProjectSelector = tabState.resourceTab != 0,
+                                    // 资源页-项目 tab 时顶栏显示"新建项目"
+                                    onAddProject = if (tabState.resourceTab == 0) {
+                                        { projectViewModel.openCreate() }
+                                    } else {
+                                        null
+                                    },
+                                    viewModel = projectViewModel,
+                                    scrollBehavior = pageBehavior,
+                                    backdrop = pageBackdrop,
+                                    isBlurActive = pageBackdrop != null
                                 )
-
-                                3 -> MonitorScreen(
-                                    modifier = Modifier.fillMaxSize(),
-                                    viewModel = monitorViewModel,
-                                    onOpenRecordsList = { navController.pushRoute(PulseRoute.MonitorRecords) }
+                                3 -> ProjectBar(
+                                    title = stringResource(tabs[3].label),
+                                    onAddMonitor = { monitorViewModel.openCreate() },
+                                    viewModel = projectViewModel,
+                                    scrollBehavior = pageBehavior,
+                                    backdrop = pageBackdrop,
+                                    isBlurActive = pageBackdrop != null
                                 )
-                                else -> SettingsScreen(
-                                    modifier = Modifier.fillMaxSize(),
-                                    viewModel = settingsViewModel,
-                                    onOpenAppearance = { navController.pushRoute(PulseRoute.Appearance) },
-                                    onOpenAbout = { navController.pushRoute(PulseRoute.About) }
+                                else -> ProjectBar(
+                                    title = stringResource(tabs[tab].label),
+                                    viewModel = projectViewModel,
+                                    scrollBehavior = pageBehavior,
+                                    backdrop = pageBackdrop,
+                                    isBlurActive = pageBackdrop != null
                                 )
+                            }
+                        }
+                    ) { padding ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .topBarPadding(padding)
+                                .nestedScroll(pageBehavior.nestedScrollConnection)
+                                .then(
+                                    if (pageBackdrop != null) {
+                                        Modifier.layerBackdrop(pageBackdrop)
+                                    } else {
+                                        Modifier
+                                    }
+                                )
+                        ) {
+                            CompositionLocalProvider(
+                                LocalSubPageCanScroll provides tabCanScroll[tab]
+                            ) {
+                                when (tab) {
+                                    0 -> DashboardScreen(
+                                        modifier = Modifier.fillMaxSize(),
+                                        onOpenEncoding = { navController.pushRoute(PulseRoute.EncodingTool) },
+                                        onOpenJson = { navController.pushRoute(PulseRoute.JsonTool) },
+                                        onOpenTimestamp = { navController.pushRoute(PulseRoute.TimestampTool) },
+                                        onOpenProjects = { settingsViewModel.openResourceTab(0) },
+                                        onOpenHistory = { navController.pushRoute(PulseRoute.History) },
+                                        onOpenRequests = { settingsViewModel.openResourceTab(1) },
+                                        onOpenMonitors = { settingsViewModel.selectTab(3) }
+                                    )
+                                    1 -> TestScreen(
+                                        modifier = Modifier.fillMaxSize(),
+                                        protocolTab = tabState.homeProtocolTab,
+                                        onProtocolTabChange = { settingsViewModel.selectHomeProtocol(it) },
+                                        onOpenScriptEditor = { navController.pushRoute(PulseRoute.ScriptEditor(it)) },
+                                        onOpenHistory = { navController.pushRoute(PulseRoute.History) },
+                                        httpViewModel = httpViewModel
+                                    )
+                                    2 -> ResourcesScreen(
+                                        modifier = Modifier.fillMaxSize(),
+                                        resourceTab = tabState.resourceTab,
+                                        onTabChange = { settingsViewModel.selectResourceTab(it) },
+                                        onSwitchTab = { settingsViewModel.openHomeProtocol(it) },
+                                        projectViewModel = projectViewModel,
+                                        onOpenEnvVars = { navController.pushRoute(PulseRoute.EnvVars(it)) }
+                                    )
+                                    3 -> MonitorScreen(
+                                        modifier = Modifier.fillMaxSize(),
+                                        viewModel = monitorViewModel,
+                                        onOpenRecordsList = { navController.pushRoute(PulseRoute.MonitorRecords) }
+                                    )
+                                    else -> SettingsScreen(
+                                        modifier = Modifier.fillMaxSize(),
+                                        viewModel = settingsViewModel,
+                                        onOpenAppearance = { navController.pushRoute(PulseRoute.Appearance) },
+                                        onOpenAbout = { navController.pushRoute(PulseRoute.About) }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -514,9 +594,9 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
             }
         }
 
-        entry<PulseRoute.Base64Tool> {
-            SubPageScreen(title = stringResource(R.string.base64_title)) {
-                Base64ToolScreen(modifier = Modifier.fillMaxSize())
+        entry<PulseRoute.EncodingTool> {
+            SubPageScreen(title = stringResource(R.string.encoding_title)) {
+                EncodingToolScreen(modifier = Modifier.fillMaxSize())
             }
         }
 

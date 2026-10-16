@@ -26,15 +26,29 @@
     <string name="dashboard_stat_requests">Saved Requests</string>
     <string name="dashboard_stat_monitors">Monitor Targets</string>
 
-    <!-- Base64 tool -->
-    <string name="tool_base64">Base64 Converter</string>
-    <string name="base64_title">Base64 Converter</string>
+    <!-- Encoding tools -->
+    <string name="tool_encoding">Encoding Tools</string>
+    <string name="encoding_title">Encoding Tools</string>
+    <string name="encoding_tab_base64">Base64</string>
+    <string name="encoding_tab_radix">Radix</string>
+    <string name="encoding_tab_url">URL</string>
+    <string name="encoding_tab_unicode">Unicode</string>
+    <string name="encoding_tab_ascii">ASCII</string>
     <string name="base64_input_label">Input</string>
     <string name="base64_output_label">Result</string>
     <string name="base64_encode">Encode</string>
     <string name="base64_decode">Decode</string>
     <string name="base64_empty_hint">No content</string>
     <string name="base64_invalid">Invalid Base64 input</string>
+    <string name="radix_input_base">Input base</string>
+    <string name="radix_input_label">Enter a number</string>
+    <string name="radix_binary">Binary</string>
+    <string name="radix_octal">Octal</string>
+    <string name="radix_decimal">Decimal</string>
+    <string name="radix_hex">Hex</string>
+    <string name="radix_invalid">Invalid number</string>
+    <string name="url_invalid">Invalid URL encoding</string>
+    <string name="ascii_invalid">Invalid character codes</string>
 
     <!-- JSON formatting tool -->
     <string name="tool_json">JSON Formatter</string>
@@ -57,6 +71,13 @@
     <string name="timestamp_tool_invalid">Invalid timestamp</string>
     <string name="timestamp_tool_now">Now</string>
     <string name="timestamp_tool_now_tip">Tap to fill current timestamp</string>
+    <string name="timestamp_tool_dir_ts_date">Timestamp → Date</string>
+    <string name="timestamp_tool_dir_date_ts">Date → Timestamp</string>
+    <string name="timestamp_tool_date_input_label">Date &amp; time (yyyy-MM-dd HH:mm:ss)</string>
+    <string name="timestamp_tool_date_hint">Supports yyyy-MM-dd HH:mm:ss; time part optional</string>
+    <string name="timestamp_tool_out_sec">Timestamp (s)</string>
+    <string name="timestamp_tool_out_millis">Timestamp (ms)</string>
+    <string name="timestamp_tool_long_press_tip">Long-press an item to copy it</string>
 
     <!-- Env variable hints -->
     <string name="env_hint_missing">%1$s undefined</string>
@@ -106,6 +127,15 @@
     <string name="tab_headers">Headers</string>
     <string name="tab_body">Body</string>
     <string name="tab_auth">Auth</string>
+    <string name="net_throttle_label">Simulate network</string>
+    <string name="net_throttle_off">Off</string>
+    <string name="net_throttle_5g">5G (50Mbps / 30ms)</string>
+    <string name="net_throttle_4g">4G (20Mbps / 75ms)</string>
+    <string name="net_throttle_3g">3G (2Mbps / 300ms)</string>
+    <string name="net_throttle_2g">2G (100Kbps / 900ms)</string>
+    <string name="net_throttle_force">Force timeout</string>
+    <string name="net_force_timeout_label">Force timeout (s)</string>
+    <string name="net_force_timeout_hint">Blocks for the given seconds then fails as timeout, useful for verifying timeout handling</string>
     <string name="tab_network">Network</string>
     <string name="tab_script">Scripts</string>
     <string name="script_tab_pre">Pre-request</string>
@@ -502,7 +532,7 @@
     <string name="agreement_body">User Agreement\n\nLast updated: October 11, 2026\n\nWelcome to Pulse (the \"App\"). Please read this agreement carefully before use. By using the App, you acknowledge that you have read and agreed to all of its terms.\n\n1. Nature of the App\nThe App is an open-source network probing tool whose source code is hosted on GitHub (HoldEvan/pulse) and released under the Apache-2.0 license. You may freely use, modify and distribute the App in compliance with the license terms.\n\n2. Service Disclaimer\nThe App is provided \"as is\", without warranty of any kind, express or implied. The developer shall not be liable for malfunctions caused by network conditions, target service states or device differences.\n\n3. Acceptable Use\nYou shall use the App in compliance with the laws and regulations of your country or region, and shall not use it to probe or interfere with any target without authorization. Probing targets, proxy servers and WebDAV settings are provided by you, and you are responsible for ensuring lawful rights to those resources.\n\n4. Data and Backup\nAll your configurations and records are stored locally on your device only. To prevent data loss caused by a lost device, a system reset or misoperation, please use the backup feature.\n\n5. Updates and Termination\nThe developer may update the features and content of the App at any time and does not promise continuous maintenance. If you disagree with the updated agreement, you may stop using and uninstall the App.\n\n6. Contact\nIf you have any questions about this agreement, feel free to submit an issue in the GitHub repository.</string>
     <string name="privacy_body">Privacy Policy\n\nLast updated: October 11, 2026\n\nWe take your privacy seriously. The App is designed on the principle that data never leaves your device. Please read this policy carefully before use.\n\n1. Information We Do Not Collect\nThe App does not collect or upload any personal data, contains no analytics, advertising or tracking components, and requests no system permissions beyond what probing requires.\n\n2. Local Data\nProject configurations, probing records and app settings are stored only in your device\'s local storage. You may clear the cache at any time in Settings, or uninstall the App to permanently delete all data.\n\n3. Network Access\nThe App accesses the network only for the following purposes: 1. Probing target addresses configured by you; 2. Connecting to a WebDAV service configured by you for backup and restore; 3. Opening external links you actively tap, such as the GitHub project page. Beyond these scenarios, the App will not connect to any server on its own.\n\n4. Third-Party Components\nThe App integrates open-source components including Miuix, Ktor, Eclipse Paho MQTT and Mozilla Rhino, whose behavior is governed by their respective licenses.\n\n5. Policy Updates\nThis policy may be adjusted with app version updates, and the updated content will be shown in the App. Continued use of the updated App constitutes acceptance of the revised policy.\n\n6. Contact\nIf you have any questions about this policy, feel free to submit an issue in the GitHub repository.</string>
     <string name="settings_language_summary">Change the app language</string>
-    <string name="tool_base64_summary">Encode and decode Base64 text</string>
+    <string name="tool_encoding_summary">Base64, radix, URL, Unicode, ASCII</string>
     <string name="tool_json_summary">Format and minify JSON</string>
     <string name="tool_timestamp_summary">Convert timestamps and dates</string>
 </resources>

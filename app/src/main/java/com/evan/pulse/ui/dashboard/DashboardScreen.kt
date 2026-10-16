@@ -37,7 +37,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @Composable
 fun DashboardScreen(
     modifier: Modifier = Modifier,
-    onOpenBase64: () -> Unit = {},
+    onOpenEncoding: () -> Unit = {},
     onOpenJson: () -> Unit = {},
     onOpenTimestamp: () -> Unit = {},
     onOpenProjects: () -> Unit = {},
@@ -105,15 +105,15 @@ fun DashboardScreen(
                 .padding(top = 12.dp)
         ) {
             ArrowPreference(
-                title = stringResource(R.string.tool_base64),
-                summary = stringResource(R.string.tool_base64_summary),
+                title = stringResource(R.string.tool_encoding),
+                summary = stringResource(R.string.tool_encoding_summary),
                 startAction = {
                     Icon(
                         imageVector = MiuixIcons.Light.ConvertFile,
                         contentDescription = null
                     )
                 },
-                onClick = onOpenBase64
+                onClick = onOpenEncoding
             )
             ArrowPreference(
                 title = stringResource(R.string.tool_json),

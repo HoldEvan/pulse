@@ -44,8 +44,8 @@ sealed interface PulseRoute : NavKey {
     /** 历史列表二级页：从 HTTP 页顶部历史图标进入 */
     @Serializable data object History : PulseRoute
 
-    /** 工具二级页：Base64 转换器 */
-    @Serializable data object Base64Tool : PulseRoute
+    /** 工具二级页：信息码转换（Base64/进制/URL/Unicode/ASCII） */
+    @Serializable data object EncodingTool : PulseRoute
 
     /** 工具二级页：JSON 格式化/压缩 */
     @Serializable data object JsonTool : PulseRoute
