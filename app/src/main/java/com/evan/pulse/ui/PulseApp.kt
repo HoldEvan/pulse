@@ -61,6 +61,7 @@ import com.evan.pulse.ui.settings.SettingsViewModel
 import com.evan.pulse.ui.settings.ThemeSettingsScreen
 import com.evan.pulse.ui.test.TestScreen
 import com.evan.pulse.ui.tools.EncodingToolScreen
+import com.evan.pulse.ui.tools.ImageBase64Screen
 import com.evan.pulse.ui.tools.JsonToolScreen
 import com.evan.pulse.ui.tools.TimestampToolScreen
 import top.yukonga.miuix.kmp.basic.FloatingNavigationBar
@@ -350,6 +351,7 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                                     0 -> DashboardScreen(
                                         modifier = Modifier.fillMaxSize(),
                                         onOpenEncoding = { navController.pushRoute(PulseRoute.EncodingTool) },
+                                        onOpenImageBase64 = { navController.pushRoute(PulseRoute.ImageBase64Tool) },
                                         onOpenJson = { navController.pushRoute(PulseRoute.JsonTool) },
                                         onOpenTimestamp = { navController.pushRoute(PulseRoute.TimestampTool) },
                                         onOpenProjects = { settingsViewModel.openResourceTab(0) },
@@ -597,6 +599,12 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
         entry<PulseRoute.EncodingTool> {
             SubPageScreen(title = stringResource(R.string.encoding_title)) {
                 EncodingToolScreen(modifier = Modifier.fillMaxSize())
+            }
+        }
+
+        entry<PulseRoute.ImageBase64Tool> {
+            SubPageScreen(title = stringResource(R.string.image_base64_title)) {
+                ImageBase64Screen(modifier = Modifier.fillMaxSize())
             }
         }
 

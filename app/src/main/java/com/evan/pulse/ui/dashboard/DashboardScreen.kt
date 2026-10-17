@@ -27,6 +27,7 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.ConvertFile
 import top.yukonga.miuix.kmp.icon.extended.Folder
+import top.yukonga.miuix.kmp.icon.extended.Image
 import top.yukonga.miuix.kmp.icon.extended.Notes
 import top.yukonga.miuix.kmp.icon.extended.Recent
 import top.yukonga.miuix.kmp.icon.extended.Stopwatch
@@ -38,6 +39,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 fun DashboardScreen(
     modifier: Modifier = Modifier,
     onOpenEncoding: () -> Unit = {},
+    onOpenImageBase64: () -> Unit = {},
     onOpenJson: () -> Unit = {},
     onOpenTimestamp: () -> Unit = {},
     onOpenProjects: () -> Unit = {},
@@ -114,6 +116,17 @@ fun DashboardScreen(
                     )
                 },
                 onClick = onOpenEncoding
+            )
+            ArrowPreference(
+                title = stringResource(R.string.tool_image_base64),
+                summary = stringResource(R.string.tool_image_base64_summary),
+                startAction = {
+                    Icon(
+                        imageVector = MiuixIcons.Light.Image,
+                        contentDescription = null
+                    )
+                },
+                onClick = onOpenImageBase64
             )
             ArrowPreference(
                 title = stringResource(R.string.tool_json),

@@ -23,6 +23,30 @@ fun base64Decode(text: String): String? = try {
     null
 }
 
+/** Base64 编码二进制数据（如图片字节） */
+fun base64EncodeBytes(data: ByteArray): String =
+    Base64.getEncoder().encodeToString(data)
+
+/**
+ * Base64 解码为原始字节（如图片字节）；容忍换行等空白，
+ * 自动剥离 data URI 前缀（data:image/...;base64,），非法输入返回 null
+ */
+fun base64DecodeBytes(text: String): ByteArray? {
+    val raw = text.trim()
+    val payload = if (raw.startsWith("data:", ignoreCase = true)) {
+        val marker = ";base64,"
+        val markerIndex = raw.indexOf(marker, ignoreCase = true)
+        if (markerIndex >= 0) raw.substring(markerIndex + marker.length) else raw
+    } else {
+        raw
+    }
+    return try {
+        Base64.getMimeDecoder().decode(payload)
+    } catch (_: IllegalArgumentException) {
+        null
+    }
+}
+
 /** 按 [base] 进制解析整数；含非法字符或超出 Long 范围返回 null */
 fun parseRadix(text: String, base: Int): Long? = text.trim().toLongOrNull(base)
 

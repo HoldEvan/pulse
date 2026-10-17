@@ -31,6 +31,27 @@ class EncodingConversionsTest {
     }
 
     @Test
+    fun base64EncodeBytesMatchesTextEncodingAndRoundTripsBinary() {
+        assertEquals(base64Encode("hello"), base64EncodeBytes("hello".toByteArray(Charsets.UTF_8)))
+        val binary = ByteArray(256) { it.toByte() }
+        assertEquals(binary.toList(), base64DecodeBytes(base64EncodeBytes(binary))!!.toList())
+    }
+
+    @Test
+    fun base64DecodeBytesStripsDataUriPrefixAndToleratesWhitespace() {
+        val bytes = byteArrayOf(0x89.toByte(), 0x50)
+        assertEquals(bytes.toList(), base64DecodeBytes("data:image/png;base64,iVA=")!!.toList())
+        assertEquals(bytes.toList(), base64DecodeBytes("data:image/png;Base64,\niVA=")!!.toList())
+        assertEquals(bytes.toList(), base64DecodeBytes("iVA=")!!.toList())
+    }
+
+    @Test
+    fun base64DecodeBytesReturnsNullOnInvalidInput() {
+        assertNull(base64DecodeBytes("a=b"))
+        assertNull(base64DecodeBytes("hello!!!"))
+    }
+
+    @Test
     fun parseRadixAcceptsValidDigitsPerBase() {
         assertEquals(255L, parseRadix("ff", 16))
         assertEquals(255L, parseRadix("FF", 16))

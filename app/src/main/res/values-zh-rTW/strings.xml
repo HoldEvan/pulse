@@ -17,6 +17,7 @@
     <string name="tab_monitor">撥測</string>
     <string name="theme_page_title">外觀與主題</string>
     <string name="cd_back">返回</string>
+    <string name="cd_close">關閉</string>
 
     <!-- 首頁面板 -->
     <string name="dashboard_stats_title">統計</string>
@@ -49,6 +50,14 @@
     <string name="radix_invalid">無效的數值</string>
     <string name="url_invalid">無效的 URL 編碼</string>
     <string name="ascii_invalid">無效的字元碼</string>
+    <string name="image_pick">選擇圖片</string>
+    <string name="image_invalid">無效的圖片 Base64</string>
+    <string name="tool_image_base64">圖片 Base64</string>
+    <string name="tool_image_base64_summary">圖片與 Base64 互轉</string>
+    <string name="image_base64_title">圖片 Base64</string>
+    <string name="image_save">儲存圖片</string>
+    <string name="image_saved">已儲存到相簿</string>
+    <string name="image_save_failed">儲存失敗</string>
 
     <!-- JSON 格式化/壓縮工具 -->
     <string name="tool_json">JSON 格式化</string>
@@ -350,6 +359,7 @@
     <string name="history_size_value">%1$d B</string>
     <string name="history_body_truncated">內容過長，已截斷顯示</string>
     <string name="toast_copied">已複製</string>
+    <string name="copy_too_large">內容過大，無法複製</string>
     <string name="cd_add">新增</string>
     <string name="cd_delete">刪除</string>
     <string name="action_got_it">知道了</string>

@@ -47,12 +47,17 @@ private val COPIED_TINT = Color(0xFF2E7D32)
 fun rememberCopyToClipboard(scope: CoroutineScope = rememberCoroutineScope()): (String) -> Unit {
     val clipboard: Clipboard = LocalClipboard.current
     val copiedText = stringResource(R.string.toast_copied)
-    return remember(clipboard, scope, copiedText) {
+    val tooLargeText = stringResource(R.string.copy_too_large)
+    return remember(clipboard, scope, copiedText, tooLargeText) {
         { text ->
             if (text.isNotEmpty()) {
                 scope.launch {
-                    clipboard.setClipEntry(ClipEntry(ClipData.newPlainText(CLIPBOARD_LABEL, text)))
-                    AppToast.show(copiedText)
+                    // 超大文本（如图片 Base64）经 Binder 传给系统剪贴板会抛
+                    // TransactionTooLargeException，直接崩溃，这里兜底为失败提示
+                    val ok = runCatching {
+                        clipboard.setClipEntry(ClipEntry(ClipData.newPlainText(CLIPBOARD_LABEL, text)))
+                    }.isSuccess
+                    AppToast.show(if (ok) copiedText else tooLargeText)
                 }
             }
         }

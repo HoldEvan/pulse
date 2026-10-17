@@ -44,6 +44,7 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.basic.TabRowWithContour
 import top.yukonga.miuix.kmp.squircle.squircleBackground
+import top.yukonga.miuix.kmp.squircle.squircleClip
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /** 信息码工具页顶层的转换项 */
@@ -461,6 +462,7 @@ private fun ResultFieldRow(label: String, value: String, copy: (String) -> Unit)
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .squircleClip(8.dp)
             .combinedClickable(onClick = {}, onLongClick = { copy(value) })
             .squircleBackground(MiuixTheme.colorScheme.surfaceVariant, 8.dp)
             .padding(horizontal = 10.dp, vertical = 8.dp),

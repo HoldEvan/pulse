@@ -17,6 +17,7 @@
     <string name="tab_monitor">Monitor</string>
     <string name="theme_page_title">Appearance and Theme</string>
     <string name="cd_back">Back</string>
+    <string name="cd_close">Close</string>
 
     <!-- Home dashboard -->
     <string name="dashboard_stats_title">Statistics</string>
@@ -49,6 +50,14 @@
     <string name="radix_invalid">Invalid number</string>
     <string name="url_invalid">Invalid URL encoding</string>
     <string name="ascii_invalid">Invalid character codes</string>
+    <string name="image_pick">Choose image</string>
+    <string name="image_invalid">Invalid image Base64</string>
+    <string name="tool_image_base64">Image Base64</string>
+    <string name="tool_image_base64_summary">Convert between images and Base64</string>
+    <string name="image_base64_title">Image Base64</string>
+    <string name="image_save">Save image</string>
+    <string name="image_saved">Saved to gallery</string>
+    <string name="image_save_failed">Save failed</string>
 
     <!-- JSON formatting tool -->
     <string name="tool_json">JSON Formatter</string>
@@ -350,6 +359,7 @@
     <string name="history_size_value">%1$d B</string>
     <string name="history_body_truncated">Body too long, shown truncated</string>
     <string name="toast_copied">Copied</string>
+    <string name="copy_too_large">Content too large to copy</string>
     <string name="cd_add">Add</string>
     <string name="cd_delete">Delete</string>
     <string name="action_got_it">Got it</string>
