@@ -33,6 +33,16 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 private val KeyColorLabels: List<Int> =
     listOf(R.string.theme_follow_system_color) + ThemeKeyColors.map { it.first }
 
+private val BackGestureModeLabels: List<Int> = listOf(
+    R.string.back_mode_miuix,
+    R.string.back_mode_aosp
+)
+
+private val BackGestureModeSummaries: Map<Int, Int> = mapOf(
+    0 to R.string.back_mode_miuix_summary,
+    1 to R.string.back_mode_aosp_summary
+)
+
 @Composable
 fun ThemeSettingsScreen(
     modifier: Modifier = Modifier,
@@ -70,6 +80,17 @@ private fun ThemeSettingsContent(
                 items = ThemeModeLabels.localizedLabels(),
                 selectedIndex = settings.themeModeIndex,
                 onSelectedIndexChange = { viewModel.setThemeMode(it) }
+            )
+
+            OverlayDropdownPreference(
+                title = stringResource(R.string.back_gesture),
+                summary = stringResource(
+                    BackGestureModeSummaries[settings.backGestureModeIndex]
+                        ?: R.string.back_mode_miuix_summary
+                ),
+                items = BackGestureModeLabels.localizedLabels(),
+                selectedIndex = settings.backGestureModeIndex,
+                onSelectedIndexChange = { viewModel.setBackGestureMode(it) }
             )
         }
 

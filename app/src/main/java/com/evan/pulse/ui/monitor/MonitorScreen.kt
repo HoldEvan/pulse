@@ -55,6 +55,7 @@ import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.squircle.squircleClip
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.preference.CheckboxLocation
 import top.yukonga.miuix.kmp.preference.CheckboxPreference
@@ -243,7 +244,7 @@ fun MonitorScreen(
                     items = monitorTypeLabels.localizedLabels(),
                     selectedIndex = viewModel.type.ordinal,
                     showValue = true,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().squircleClip(12.dp),
                     onSelectedIndexChange = { viewModel.type = MonitorType.entries[it] }
                 )
                 if (viewModel.type != MonitorType.HTTP) {
@@ -303,7 +304,7 @@ fun MonitorScreen(
                     selectedIndex = timeoutOptions.indexOf(viewModel.timeoutMs)
                         .coerceAtLeast(0),
                     showValue = true,
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp).squircleClip(12.dp),
                     onSelectedIndexChange = { viewModel.timeoutMs = timeoutOptions[it] }
                 )
                 OverlayDropdownPreference(
@@ -312,7 +313,7 @@ fun MonitorScreen(
                     selectedIndex = MONITOR_INTERVAL_PRESETS.indexOf(viewModel.intervalSec)
                         .coerceAtLeast(0),
                     showValue = true,
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp).squircleClip(12.dp),
                     onSelectedIndexChange = { viewModel.intervalSec = MONITOR_INTERVAL_PRESETS[it] }
                 )
                 CheckboxPreference(

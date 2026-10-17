@@ -31,6 +31,7 @@ import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.basic.TabRowWithContour
 import top.yukonga.miuix.kmp.squircle.squircleBackground
+import top.yukonga.miuix.kmp.squircle.squircleClip
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import java.time.Instant
 import java.time.LocalDateTime
@@ -279,6 +280,7 @@ private fun TimestampFieldRow(label: String, value: String, copy: (String) -> Un
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .squircleClip(8.dp)
             .combinedClickable(onClick = {}, onLongClick = { copy(value) })
             .squircleBackground(MiuixTheme.colorScheme.surfaceVariant, 8.dp)
             .padding(horizontal = 10.dp, vertical = 8.dp),

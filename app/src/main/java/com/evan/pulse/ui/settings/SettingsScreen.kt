@@ -62,16 +62,6 @@ private val LanguageLabels: List<Int> = listOf(
     R.string.lang_en
 )
 
-private val BackGestureModeLabels: List<Int> = listOf(
-    R.string.back_mode_miuix,
-    R.string.back_mode_aosp
-)
-
-private val BackGestureModeSummaries: Map<Int, Int> = mapOf(
-    0 to R.string.back_mode_miuix_summary,
-    1 to R.string.back_mode_aosp_summary
-)
-
 private val backupDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
 
 // 页面内间距统一走这三个值，避免各区块之间的间距和卡片内容内边距不一致
@@ -230,17 +220,6 @@ fun SettingsScreen(
                 title = stringResource(R.string.settings_appearance),
                 summary = stringResource(R.string.appearance_summary),
                 onClick = onOpenAppearance
-            )
-
-            OverlayDropdownPreference(
-                title = stringResource(R.string.back_gesture),
-                summary = stringResource(
-                    BackGestureModeSummaries[settings.backGestureModeIndex]
-                        ?: R.string.back_mode_miuix_summary
-                ),
-                items = BackGestureModeLabels.localizedLabels(),
-                selectedIndex = settings.backGestureModeIndex,
-                onSelectedIndexChange = { viewModel.setBackGestureMode(it) }
             )
 
             SwitchPreference(
