@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.Spacer
 import com.evan.pulse.ui.common.subPageScrollState
 import com.evan.pulse.ui.common.subPageOverScroll
+import com.evan.pulse.ui.common.LocalTopBarInset
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -35,7 +36,8 @@ fun LegalScreen(
             .fillMaxSize()
             .subPageOverScroll()
             .verticalScroll(subPageScrollState())
-            .padding(horizontal = 20.dp, vertical = 16.dp)
+            .padding(horizontal = 20.dp)
+            .padding(top = LocalTopBarInset.current + 16.dp, bottom = 16.dp)
     ) {
         text.split("\n\n").forEachIndexed { index, paragraph ->
             val trimmed = paragraph.trim()

@@ -19,6 +19,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.evan.pulse.R
 import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.CardSectionTitle
+import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.subPageScrollState
 import com.evan.pulse.ui.common.subPageOverScroll
 import top.yukonga.miuix.kmp.basic.Card
@@ -55,7 +56,7 @@ fun DashboardScreen(
             .fillMaxSize()
             .subPageOverScroll()
             .verticalScroll(subPageScrollState())
-            .padding(horizontal = 12.dp)
+            .padding(start = 12.dp, top = LocalTopBarInset.current, end = 12.dp)
     ) {
         CardSectionTitle(text = stringResource(R.string.dashboard_stats_title))
         Row(

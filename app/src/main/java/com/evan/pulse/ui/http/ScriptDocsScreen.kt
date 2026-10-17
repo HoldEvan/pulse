@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.evan.pulse.R
 import com.evan.pulse.ui.common.MonospaceBlock
+import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.subPageOverScroll
 import androidx.compose.foundation.layout.Spacer
 import com.evan.pulse.ui.common.subPageScrollState
@@ -38,6 +39,7 @@ fun ScriptDocsScreen(
             .padding(horizontal = 12.dp)
             .subPageOverScroll()
             .verticalScroll(subPageScrollState())
+            .padding(top = LocalTopBarInset.current)
     ) {
         Text(text = stringResource(R.string.script_docs_intro))
         Text(

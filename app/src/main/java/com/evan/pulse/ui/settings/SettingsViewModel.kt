@@ -160,6 +160,28 @@ class SettingsViewModel(
         viewModelScope.launch { store.update { it.copy(liquidGlassBottomBar = enabled) } }
     }
 
+    fun setBottomBarLabelVisible(visible: Boolean) {
+        viewModelScope.launch { store.update { it.copy(bottomBarLabelVisible = visible) } }
+    }
+
+    fun setBlurEnabled(enabled: Boolean) {
+        viewModelScope.launch { store.update { it.copy(blurEnabled = enabled) } }
+    }
+
+    fun setBarBlurStyle(index: Int) {
+        viewModelScope.launch { store.update { it.copy(barBlurStyleIndex = index) } }
+    }
+
+    fun setPureBlackInDark(enabled: Boolean) {
+        viewModelScope.launch { store.update { it.copy(pureBlackInDark = enabled) } }
+    }
+
+    fun setUiScalePercent(percent: Int) {
+        viewModelScope.launch {
+            store.update { it.copy(uiScalePercent = percent.coerceIn(80, 120)) }
+        }
+    }
+
     fun setLanguage(index: Int) {
         viewModelScope.launch { store.update { it.copy(languageIndex = index) } }
     }

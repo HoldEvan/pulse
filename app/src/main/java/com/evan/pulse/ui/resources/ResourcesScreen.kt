@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.evan.pulse.R
 import com.evan.pulse.ui.collection.CollectionScreen
+import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.env.EnvironmentScreen
 import com.evan.pulse.ui.l10n.localizedLabels
 import com.evan.pulse.ui.project.ProjectViewModel
@@ -33,7 +34,7 @@ fun ResourcesScreen(
     projectViewModel: ProjectViewModel,
     onOpenEnvVars: (Long) -> Unit = {}
 ) {
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(modifier = modifier.fillMaxSize().padding(top = LocalTopBarInset.current)) {
         TabRowWithContour(
             tabs = resourceTabLabels.localizedLabels(),
             selectedTabIndex = resourceTab.coerceIn(0, resourceTabLabels.lastIndex),

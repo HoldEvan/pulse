@@ -35,6 +35,7 @@ import com.evan.pulse.domain.unicodeEscape
 import com.evan.pulse.domain.unicodeUnescape
 import com.evan.pulse.ui.common.CardSectionTitle
 import com.evan.pulse.ui.common.CopyIconButton
+import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.MonospaceBlock
 import com.evan.pulse.ui.common.rememberCopyToClipboard
 import com.evan.pulse.ui.common.subPageOverScroll
@@ -77,7 +78,7 @@ fun EncodingToolScreen(modifier: Modifier = Modifier) {
             .fillMaxSize()
             .subPageOverScroll()
             .verticalScroll(subPageScrollState())
-            .padding(horizontal = 12.dp)
+            .padding(start = 12.dp, top = LocalTopBarInset.current, end = 12.dp)
             .padding(bottom = 12.dp)
     ) {
         val toolLabels = listOf(

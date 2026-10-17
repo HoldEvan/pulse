@@ -6,6 +6,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -38,6 +39,7 @@ import com.evan.pulse.R
 import com.evan.pulse.data.model.HistoryEntry
 import com.evan.pulse.data.model.ProjectInfo
 import com.evan.pulse.ui.common.BottomBarClearance
+import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.MethodBadge
 import com.evan.pulse.ui.common.roundedPressable
 import com.evan.pulse.ui.common.statusColor
@@ -81,50 +83,51 @@ fun HistoryScreen(
         viewModel.entries(viewModel.projectFilter, viewModel.keyword)
     }
 
-    Column(
+    LazyColumn(
         modifier = modifier
             .fillMaxSize()
             .padding(horizontal = 12.dp)
-            .padding(bottom = 12.dp)
+            .subPageOverScroll(),
+        contentPadding = PaddingValues(top = LocalTopBarInset.current, bottom = 12.dp),
+        state = subPageLazyListState()
     ) {
-        TextField(
-            value = viewModel.keyword,
-            onValueChange = { viewModel.keyword = it },
-            label = stringResource(R.string.history_search_label),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        if (projectsInHistory.size >= 2) {
-            ProjectFilterChip(
-                label = viewModel.projectFilter?.let { nameById[it].orEmpty() }
-                    ?: stringResource(R.string.history_filter_all),
-                onClick = { showFilter = true }
+        item(key = "search") {
+            TextField(
+                value = viewModel.keyword,
+                onValueChange = { viewModel.keyword = it },
+                label = stringResource(R.string.history_search_label),
+                modifier = Modifier.fillMaxWidth()
             )
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .subPageOverScroll(),
-            state = subPageLazyListState()
-        ) {
-            items(entries, key = { entry -> entry.id }) { entry ->
-                SwipeToDeleteRow(
-                    modifier = Modifier.padding(vertical = 4.dp),
-                    deleteLabel = stringResource(R.string.history_delete),
-                    onDelete = { viewModel.delete(entry.id) }
-                ) {
-                    HistoryItem(
-                        entry = entry,
-                        projectName = nameById[entry.projectId].orEmpty(),
-                        onOpen = { onOpenDetail(entry.id) }
-                    )
-                }
+        if (projectsInHistory.size >= 2) {
+            item(key = "filter") {
+                ProjectFilterChip(
+                    label = viewModel.projectFilter?.let { nameById[it].orEmpty() }
+                        ?: stringResource(R.string.history_filter_all),
+                    onClick = { showFilter = true }
+                )
             }
-            item { BottomBarClearance() }
         }
+
+        item(key = "spacer") {
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
+        items(entries, key = { entry -> entry.id }) { entry ->
+            SwipeToDeleteRow(
+                modifier = Modifier.padding(vertical = 4.dp),
+                deleteLabel = stringResource(R.string.history_delete),
+                onDelete = { viewModel.delete(entry.id) }
+            ) {
+                HistoryItem(
+                    entry = entry,
+                    projectName = nameById[entry.projectId].orEmpty(),
+                    onOpen = { onOpenDetail(entry.id) }
+                )
+            }
+        }
+        item { BottomBarClearance() }
     }
 
     if (showFilter) {

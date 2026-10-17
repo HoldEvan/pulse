@@ -3,6 +3,7 @@ package com.evan.pulse.ui.monitor
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,7 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -24,7 +25,8 @@ import com.evan.pulse.R
 import com.evan.pulse.data.model.MonitorRecord
 import com.evan.pulse.data.model.MonitorTarget
 import com.evan.pulse.data.model.addressText
-import com.evan.pulse.ui.common.subPageScrollState
+import com.evan.pulse.ui.common.LocalTopBarInset
+import com.evan.pulse.ui.common.subPageLazyListState
 import com.evan.pulse.ui.common.subPageOverScroll
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Text
@@ -50,42 +52,45 @@ fun MonitorRecordsScreen(
         records.filter { record -> searchText(record, targetsById).contains(query) }
     }
 
-    Column(
+    LazyColumn(
         modifier = modifier
             .fillMaxSize()
             .padding(horizontal = 12.dp)
-            .padding(bottom = 12.dp)
+            .subPageOverScroll(),
+        contentPadding = PaddingValues(top = LocalTopBarInset.current, bottom = 12.dp),
+        state = subPageLazyListState()
     ) {
-        TextField(
-            value = viewModel.recordQuery,
-            onValueChange = { viewModel.recordQuery = it },
-            label = stringResource(R.string.monitor_records_search_hint),
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(modifier = Modifier.height(12.dp))
+        item(key = "search") {
+            TextField(
+                value = viewModel.recordQuery,
+                onValueChange = { viewModel.recordQuery = it },
+                label = stringResource(R.string.monitor_records_search_hint),
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+        item(key = "spacer") {
+            Spacer(modifier = Modifier.height(12.dp))
+        }
         if (records.isEmpty() || filtered.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = stringResource(
-                        if (records.isEmpty()) R.string.monitor_records_empty
-                        else R.string.monitor_records_no_match
-                    ),
-                    fontSize = 13.sp,
-                    color = MiuixTheme.colorScheme.outline
-                )
+            item(key = "empty") {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillParentMaxHeight(0.75f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stringResource(
+                            if (records.isEmpty()) R.string.monitor_records_empty
+                            else R.string.monitor_records_no_match
+                        ),
+                        fontSize = 13.sp,
+                        color = MiuixTheme.colorScheme.outline
+                    )
+                }
             }
         } else {
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .subPageOverScroll()
-                    .verticalScroll(subPageScrollState())
-            ) {
+            item(key = "records") {
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp)) {
                         filtered.forEach { record ->

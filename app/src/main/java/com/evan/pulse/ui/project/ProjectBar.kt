@@ -70,7 +70,7 @@ fun ProjectBar(
     val activeEnvNames = projectEnvs.filter { it.isActive }.map { it.name }
     var showEnvDialog by remember { mutableStateOf(false) }
 
-    BlurredBar(backdrop, isBlurActive, scrollBehavior) {
+    BlurredBar(backdrop, isBlurActive) {
         TopAppBar(
             title = title,
             color = blurredBarColor(isBlurActive),

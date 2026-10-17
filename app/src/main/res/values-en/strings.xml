@@ -318,11 +318,30 @@
     <string name="spec_material_2021">Material 2021</string>
     <string name="spec_expressive_2025">Expressive 2025</string>
     <string name="theme_footer">Changes apply and save immediately</string>
+    <string name="settings_blur_section">Blur</string>
+    <string name="blur_effect_label">Blur effect</string>
+    <string name="blur_effect_summary">Frosted blur for top and bottom bars</string>
+    <string name="blur_style_label">Top bar blur style</string>
+    <string name="blur_style_summary">Choose how the top bar is blurred</string>
+    <string name="blur_style_gaussian">Gaussian</string>
+    <string name="blur_style_progressive">Progressive</string>
+    <string name="pure_black_label">Pure black background in dark mode</string>
+    <string name="pure_black_summary">Use pure black as the background in dark mode</string>
+    <string name="settings_ui_scale_section">UI scale</string>
+    <string name="ui_scale_label">UI scale</string>
+    <string name="ui_scale_summary">Adjust the overall UI size</string>
+    <string name="ui_scale_input_label">Scale percent (80-120)</string>
+    <string name="ui_scale_invalid">Enter a number between 80 and 120</string>
+    <string name="ui_scale_value">%1$d%%</string>
     <string name="settings_bottom_bar">Bottom bar</string>
     <string name="floating_bottom_bar_label">Floating bottom bar</string>
     <string name="floating_bottom_bar_summary">Show the bottom bar as a floating pill</string>
     <string name="liquid_glass_label">Liquid glass</string>
     <string name="liquid_glass_summary">Enable a translucent glass look for the floating bar</string>
+    <string name="bottom_bar_style_label">Bottom bar style</string>
+    <string name="bottom_bar_style_summary">Choose icons only or icons with text</string>
+    <string name="bottom_bar_style_icon_only">Icons only</string>
+    <string name="bottom_bar_style_icon_text">Icons and text</string>
 
     <!-- Environment screen -->
     <string name="env_title">Environments (current project)</string>

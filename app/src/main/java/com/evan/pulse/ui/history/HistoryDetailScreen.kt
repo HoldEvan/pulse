@@ -22,6 +22,7 @@ import com.evan.pulse.R
 import com.evan.pulse.data.model.HistoryEntry
 import com.evan.pulse.ui.common.CardSectionTitle
 import com.evan.pulse.ui.common.CopyIconButton
+import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.MethodBadge
 import com.evan.pulse.ui.common.MonospaceBlock
 import com.evan.pulse.ui.common.SectionTitleRow
@@ -69,7 +70,7 @@ fun HistoryDetailScreen(
             .fillMaxSize()
             .subPageOverScroll()
             .verticalScroll(subPageScrollState())
-            .padding(horizontal = 12.dp)
+            .padding(start = 12.dp, top = LocalTopBarInset.current, end = 12.dp)
     ) {
         HistorySummary(entry, nameById[entry.projectId].orEmpty())
 

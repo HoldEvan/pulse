@@ -118,7 +118,7 @@ fun AboutScreen(
 
     Scaffold(
         topBar = {
-            BlurredBar(backdrop, blurActive, topAppBarScrollBehavior) {
+            BlurredBar(backdrop, blurActive) {
                 SmallTopAppBar(
                     title = stringResource(R.string.about_title),
                     scrollBehavior = topAppBarScrollBehavior,

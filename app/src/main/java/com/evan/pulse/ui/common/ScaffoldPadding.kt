@@ -1,37 +1,13 @@
 package com.evan.pulse.ui.common
 
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.layout
-import androidx.compose.ui.unit.Constraints
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.ui.unit.dp
 
 /**
- * Scaffold 的 PaddingValues 顶栏高度在收缩动画期间每帧变化，两者都在 layout 阶段
- * 读取该值：顶栏动画只触发重排与重绘，内容组合保持稳定。
- *
- * [topBarPadding] 供非滚动容器与页面外层使用：顶部内边距随收缩实时变化，视口变高、
- * 内容保持完整，大标题收缩成小标题吸顶。
+ * 顶栏高度在收缩动画期间每帧变化，内容在组合阶段读取该值作为滚动容器的顶部让位：
+ * 内容铺满顶栏下方、首项以顶部内边距让位，滚动时内容从顶栏下方穿过，
+ * 磨砂顶栏得以取样到内容。
  */
 
-/** 非滚动容器顶部内边距：视口高度随顶栏收缩实时变化 */
-fun Modifier.topBarPadding(paddingValues: PaddingValues): Modifier = layout { measurable, constraints ->
-    val top = paddingValues.calculateTopPadding().roundToPx()
-    val placeable = if (top <= 0) {
-        measurable.measure(constraints)
-    } else {
-        val childMaxHeight = if (constraints.hasBoundedHeight) {
-            (constraints.maxHeight - top).coerceAtLeast(0)
-        } else {
-            Constraints.Infinity
-        }
-        measurable.measure(
-            constraints.copy(
-                minHeight = constraints.minHeight.coerceAtMost(childMaxHeight),
-                maxHeight = childMaxHeight
-            )
-        )
-    }
-    layout(placeable.width, placeable.height + top) {
-        placeable.placeRelative(0, top)
-    }
-}
+/** 标签页/二级页内容滚动容器顶部让位：由承载顶栏的 Scaffold 提供其当前高度 */
+val LocalTopBarInset = compositionLocalOf { 0.dp }

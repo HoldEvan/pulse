@@ -4,13 +4,21 @@ import android.content.Context
 import android.graphics.Color as AndroidColor
 import android.os.Build
 import android.provider.Settings
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import com.evan.pulse.R
 import com.evan.pulse.data.settings.AppSettings
+import com.evan.pulse.ui.common.BarBlurStyle
+import com.evan.pulse.ui.common.LocalBarBlurStyle
+import com.evan.pulse.ui.common.LocalBlurEnabled
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
+import top.yukonga.miuix.kmp.theme.LocalContentColor as MiuixLocalContentColor
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.ThemeColorSpec
 import top.yukonga.miuix.kmp.theme.ThemeController
@@ -71,6 +79,14 @@ val ColorSpecEntries: List<Pair<Int, ThemeColorSpec>> = listOf(
 )
 
 val ColorSpecLabels: List<Int> = ColorSpecEntries.map { it.first }
+
+/** 顶栏模糊样式：高斯为整条均匀模糊，渐进为顶边最强向下渐弱 */
+val BarBlurStyleEntries: List<Pair<Int, BarBlurStyle>> = listOf(
+    R.string.blur_style_gaussian to BarBlurStyle.GAUSSIAN,
+    R.string.blur_style_progressive to BarBlurStyle.PROGRESSIVE
+)
+
+val BarBlurStyleLabels: List<Int> = BarBlurStyleEntries.map { it.first }
 
 /**
  * 读取系统的莫奈种子色，用于「跟随系统取色」。
@@ -141,5 +157,50 @@ fun PulseTheme(settings: AppSettings, content: @Composable () -> Unit) {
         )
     }
 
-    MiuixTheme(controller = controller, content = content)
+    // 纯黑背景仅在深色模式下生效，动态取色模式的深色状态也覆盖
+    val systemDark = isSystemInDarkTheme()
+    val darkActive = when (mode) {
+        ColorSchemeMode.System, ColorSchemeMode.MonetSystem -> controller.isDark ?: systemDark
+        ColorSchemeMode.Dark, ColorSchemeMode.MonetDark -> true
+        else -> false
+    }
+    val baseColors = controller.currentColors()
+    val colors = if (settings.pureBlackInDark && darkActive) {
+        // 纯黑模式：背景、surface 以及卡片/容器类表面一并压成纯黑，
+        // 卡片与页面融为一体（与其他 App 的纯黑观感一致）；
+        // 分隔线/描边保持原色，仍能看出卡片边界与层次
+        baseColors.copy(
+            background = Color.Black,
+            surface = Color.Black,
+            surfaceVariant = Color.Black,
+            surfaceContainer = Color.Black,
+            surfaceContainerHigh = Color.Black,
+            surfaceContainerHighest = Color.Black,
+        )
+    } else {
+        baseColors
+    }
+
+    // 界面缩放：整体按比例放大或缩小 dp 与 sp，范围 80%..120%
+    val baseDensity = LocalDensity.current
+    val scale = settings.uiScalePercent.coerceIn(80, 120) / 100f
+    val scaledDensity = remember(baseDensity, scale) {
+        Density(
+            density = baseDensity.density * scale,
+            fontScale = baseDensity.fontScale * scale
+        )
+    }
+
+    val blurStyle = BarBlurStyleEntries.getOrElse(settings.barBlurStyleIndex) {
+        BarBlurStyleEntries[0]
+    }.second
+
+    CompositionLocalProvider(
+        LocalDensity provides scaledDensity,
+        LocalBlurEnabled provides settings.blurEnabled,
+        LocalBarBlurStyle provides blurStyle,
+        MiuixLocalContentColor provides colors.onBackground
+    ) {
+        MiuixTheme(colors = colors, content = content)
+    }
 }

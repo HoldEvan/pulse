@@ -31,11 +31,13 @@ import com.evan.pulse.R
 import com.evan.pulse.ui.about.AboutScreen
 import com.evan.pulse.ui.about.LegalScreen
 import com.evan.pulse.ui.common.BlurredBar
+import com.evan.pulse.ui.common.FloatingNavItemWithLabel
 import com.evan.pulse.ui.common.LocalSubPageCanScroll
+import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.TabPageScaffold
 import com.evan.pulse.ui.common.ToastHost
+import com.evan.pulse.ui.common.blurredBarColor
 import com.evan.pulse.ui.common.rememberBlurBackdrop
-import com.evan.pulse.ui.common.topBarPadding
 import com.evan.pulse.ui.dashboard.DashboardScreen
 import com.evan.pulse.ui.env.EnvViewModel
 import com.evan.pulse.ui.env.EnvVarsScreen
@@ -70,6 +72,7 @@ import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.NavigationBar
+import top.yukonga.miuix.kmp.basic.NavigationBarDisplayMode
 import top.yukonga.miuix.kmp.basic.NavigationBarItem
 import top.yukonga.miuix.kmp.basic.NavigationItem
 import top.yukonga.miuix.kmp.basic.Scaffold
@@ -154,8 +157,8 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
     val glassBottomBar = settings.floatingBottomBar && settings.liquidGlassBottomBar
 
     /** 顶栏磨砂与底栏玻璃共用的内容采样层：捕获页面内容供实时模糊取样；
-     *  运行时不支持 RuntimeShader 时返回 null，顶栏退化为纯色、底栏退化为纯色胶囊 */
-    val backdrop: LayerBackdrop? = if (isRuntimeShaderSupported()) {
+     *  关闭模糊或运行时不支持 RuntimeShader 时返回 null，顶栏退化为纯色、底栏退化为纯色胶囊 */
+    val backdrop: LayerBackdrop? = if (settings.blurEnabled && isRuntimeShaderSupported()) {
         val surfaceColor = MiuixTheme.colorScheme.surface
         rememberLayerBackdrop(
             onDraw = {
@@ -233,10 +236,6 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
             settingsViewModel.selectTab(0)
         }
 
-        /** 各页独立的内容采样层：供本页顶栏磨砂取样。只采本页内容 Box，
-         *  避免顶栏把模糊背景中的自己再采进去；全局 backdrop 仍供玻璃底栏采样 */
-        val pageBackdrops = List(5) { rememberBlurBackdrop() }
-
         Scaffold(
             bottomBar = {
                 if (glassBottomBar) {
@@ -245,21 +244,37 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                         selectedIndex = tabState.selectedTab,
                         onItemClick = { settingsViewModel.selectTab(it) },
                         backdrop = backdrop,
-                        isBlurActive = backdrop != null
+                        isBlurActive = backdrop != null,
+                        showLabels = settings.bottomBarLabelVisible
                     )
                 } else if (settings.floatingBottomBar) {
                     FloatingNavigationBar(color = MiuixTheme.colorScheme.surfaceContainer) {
                         tabs.forEachIndexed { index, tab ->
-                            FloatingNavigationBarItem(
-                                selected = tabState.selectedTab == index,
-                                onClick = { settingsViewModel.selectTab(index) },
-                                icon = tab.icon,
-                                label = stringResource(tab.label)
-                            )
+                            if (settings.bottomBarLabelVisible) {
+                                FloatingNavItemWithLabel(
+                                    selected = tabState.selectedTab == index,
+                                    onClick = { settingsViewModel.selectTab(index) },
+                                    icon = tab.icon,
+                                    label = stringResource(tab.label)
+                                )
+                            } else {
+                                FloatingNavigationBarItem(
+                                    selected = tabState.selectedTab == index,
+                                    onClick = { settingsViewModel.selectTab(index) },
+                                    icon = tab.icon,
+                                    label = stringResource(tab.label)
+                                )
+                            }
                         }
                     }
                 } else {
-                    NavigationBar {
+                    NavigationBar(
+                        mode = if (settings.bottomBarLabelVisible) {
+                            NavigationBarDisplayMode.IconAndText
+                        } else {
+                            NavigationBarDisplayMode.IconOnly
+                        }
+                    ) {
                         tabs.forEachIndexed { index, tab ->
                             NavigationBarItem(
                                 selected = tabState.selectedTab == index,
@@ -275,7 +290,15 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .then(if (backdrop != null) Modifier.layerBackdrop(backdrop) else Modifier)
+                    // 仅玻璃底栏开启时才在整块区域外层录制全局采样层；否则不录制，
+                    // 避免与各页顶栏自己的采样层嵌套录制，顶栏磨砂取样更干净
+                    .then(
+                        if (backdrop != null && glassBottomBar) {
+                            Modifier.layerBackdrop(backdrop)
+                        } else {
+                            Modifier
+                        }
+                    )
             ) {
                 HorizontalPager(
                     state = pagerState,
@@ -284,7 +307,9 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                     beyondViewportPageCount = 1
                 ) { tab ->
                     // 每页自带整条顶栏，随 pager 一起横向滑动，标题自然跟页
-                    val pageBackdrop = pageBackdrops[tab]
+                    // 每页独立的内容采样层：只采本页内容 Box，避免顶栏把模糊背景中的自己再采进去；
+                    // 与本页顶栏在同一页作用域内创建，和 miuix example 的用法保持一致
+                    val pageBackdrop = rememberBlurBackdrop()
                     val pageBehavior = tabScrollBehaviors[tab]
                     TabPageScaffold(
                         topBar = {
@@ -334,7 +359,6 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .topBarPadding(padding)
                                 .nestedScroll(pageBehavior.nestedScrollConnection)
                                 .then(
                                     if (pageBackdrop != null) {
@@ -345,6 +369,7 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                                 )
                         ) {
                             CompositionLocalProvider(
+                                LocalTopBarInset provides padding.calculateTopPadding(),
                                 LocalSubPageCanScroll provides tabCanScroll[tab]
                             ) {
                                 when (tab) {
@@ -419,33 +444,40 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
         // 导致 maxValue 归零、canScroll 翻转、强制复位展开的抖动循环
         val canScrollCheck = remember { { canScroll.value || topAppBarState.heightOffset < -1f } }
         val topAppBarScrollBehavior = MiuixScrollBehavior(state = topAppBarState, canScroll = canScrollCheck)
-        // 与 example 常规二级页一致：顶栏恒为 surface 实体栏，不做实时磨砂——
-        // 磨砂采样会让滑动中穿过顶栏下沿的内容显出模糊暗带
+        // 二级页顶栏同样做实时磨砂：内容铺满整屏并从顶栏下方穿过，
+        // 顶栏取样本页内容做模糊；顶部让位经 LocalTopBarInset 交给各页的滚动容器
+        val backdrop = rememberBlurBackdrop()
+        val blurActive = backdrop != null
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = title,
-                    color = MiuixTheme.colorScheme.surface,
-                    scrollBehavior = topAppBarScrollBehavior,
-                    actions = actions,
-                    navigationIcon = {
-                        IconButton(onClick = { navController.pop() }) {
-                            Icon(
-                                imageVector = MiuixIcons.Light.ChevronBackward,
-                                contentDescription = stringResource(R.string.cd_back)
-                            )
+                BlurredBar(backdrop, blurActive) {
+                    TopAppBar(
+                        title = title,
+                        color = blurredBarColor(blurActive),
+                        scrollBehavior = topAppBarScrollBehavior,
+                        actions = actions,
+                        navigationIcon = {
+                            IconButton(onClick = { navController.pop() }) {
+                                Icon(
+                                    imageVector = MiuixIcons.Light.ChevronBackward,
+                                    contentDescription = stringResource(R.string.cd_back)
+                                )
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         ) { paddingValues ->
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .topBarPadding(paddingValues)
+                    .then(
+                        if (backdrop != null) Modifier.layerBackdrop(backdrop) else Modifier
+                    )
                     .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
             ) {
                 CompositionLocalProvider(
+                    LocalTopBarInset provides paddingValues.calculateTopPadding(),
                     LocalSubPageCanScroll provides canScroll
                 ) {
                     content()

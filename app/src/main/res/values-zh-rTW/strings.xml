@@ -318,11 +318,30 @@
     <string name="spec_material_2021">Material 2021</string>
     <string name="spec_expressive_2025">Expressive 2025</string>
     <string name="theme_footer">修改後立即生效並自動儲存</string>
+    <string name="settings_blur_section">模糊效果</string>
+    <string name="blur_effect_label">模糊效果</string>
+    <string name="blur_effect_summary">頂欄與底欄使用磨砂模糊</string>
+    <string name="blur_style_label">頂欄模糊樣式</string>
+    <string name="blur_style_summary">選擇頂欄磨砂的模糊方式</string>
+    <string name="blur_style_gaussian">高斯</string>
+    <string name="blur_style_progressive">漸進</string>
+    <string name="pure_black_label">深色使用純黑背景</string>
+    <string name="pure_black_summary">深色模式下背景使用純黑色</string>
+    <string name="settings_ui_scale_section">介面縮放</string>
+    <string name="ui_scale_label">介面縮放</string>
+    <string name="ui_scale_summary">調整整體介面大小</string>
+    <string name="ui_scale_input_label">縮放比例（80-120）</string>
+    <string name="ui_scale_invalid">請輸入 80 到 120 之間的數值</string>
+    <string name="ui_scale_value">%1$d%%</string>
     <string name="settings_bottom_bar">底欄</string>
     <string name="floating_bottom_bar_label">懸浮底欄</string>
     <string name="floating_bottom_bar_summary">底欄以懸浮膠囊樣式顯示</string>
     <string name="liquid_glass_label">液態玻璃</string>
     <string name="liquid_glass_summary">為懸浮底欄啟用半透明玻璃質感</string>
+    <string name="bottom_bar_style_label">底欄樣式</string>
+    <string name="bottom_bar_style_summary">選擇底欄顯示圖示或圖示加文字</string>
+    <string name="bottom_bar_style_icon_only">僅圖示</string>
+    <string name="bottom_bar_style_icon_text">圖示和文字</string>
 
     <!-- 環境頁 -->
     <string name="env_title">環境列表（目前專案）</string>

@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.evan.pulse.R
+import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.http.HttpScreen
 import com.evan.pulse.ui.http.HttpViewModel
 import com.evan.pulse.ui.l10n.localizedLabels
@@ -35,7 +36,7 @@ fun TestScreen(
     // 共用同一实例才能让脚本编辑内容回显并保存
     httpViewModel: HttpViewModel
 ) {
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(modifier = modifier.fillMaxSize().padding(top = LocalTopBarInset.current)) {
         TabRowWithContour(
             tabs = testTabLabels.localizedLabels(),
             selectedTabIndex = protocolTab,

@@ -42,8 +42,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.evan.pulse.R
-import com.evan.pulse.ui.common.subPageOverScroll
 import androidx.compose.foundation.layout.Spacer
+import com.evan.pulse.ui.common.LocalTopBarInset
+import com.evan.pulse.ui.common.subPageOverScroll
 import com.evan.pulse.ui.common.subPageScrollState
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
@@ -84,7 +85,11 @@ fun ScriptEditorScreen(
         .takeLastWhile { it.isLetterOrDigit() || it == '_' || it == '.' || it == '$' }
     val suggestions = remember(token) { ScriptApiCatalog.match(token) }
 
-    Column(modifier = modifier.fillMaxSize().padding(8.dp)) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(start = 8.dp, top = LocalTopBarInset.current + 8.dp, end = 8.dp, bottom = 8.dp)
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically

@@ -18,8 +18,7 @@ import androidx.compose.ui.unit.dp
  *
  * 仿 miuix Scaffold 的布局：bodyContent 铺满 (0,0) 全屏，topBar 叠加在其上方；
  * 顶栏高度在每次布局时经 SubcomposeLayout 测得，写入单个可变 PaddingValues，
- * 供内容用 [topBarPadding] 在 layout 阶段读取——顶栏收缩动画只触发重排，
- * 内容组合保持稳定。
+ * 供内容经 [LocalTopBarInset] 在组合阶段读取作为滚动容器顶部让位。
  */
 @Composable
 fun TabPageScaffold(

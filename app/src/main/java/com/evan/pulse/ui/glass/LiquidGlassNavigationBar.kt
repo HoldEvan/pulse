@@ -219,6 +219,7 @@ internal fun LiquidGlassNavigationBar(
     onItemClick: (Int) -> Unit,
     backdrop: LayerBackdrop?,
     isBlurActive: Boolean,
+    showLabels: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     val isDark = isSystemInDarkTheme()
@@ -393,16 +394,18 @@ internal fun LiquidGlassNavigationBar(
                     imageVector = item.icon,
                     tint = tabColor,
                     // 装饰性图标：相邻的标签已说明条目名称，避免 TalkBack 重复播报
-                    contentDescription = null,
+                    contentDescription = if (showLabels) null else item.label,
                 )
-                Text(
-                    text = item.label,
-                    color = tabColor,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Normal,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                if (showLabels) {
+                    Text(
+                        text = item.label,
+                        color = tabColor,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Normal,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
     }

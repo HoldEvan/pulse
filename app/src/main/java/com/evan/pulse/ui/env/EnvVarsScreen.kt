@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.sp
 import com.evan.pulse.R
 import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.DialogActions
+import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.subPageOverScroll
 import com.evan.pulse.ui.common.subPageScrollState
 import top.yukonga.miuix.kmp.basic.BasicComponent
@@ -56,7 +57,7 @@ fun EnvVarsScreen(
             .fillMaxSize()
             .subPageOverScroll()
             .verticalScroll(subPageScrollState())
-            .padding(horizontal = 12.dp)
+            .padding(start = 12.dp, top = LocalTopBarInset.current, end = 12.dp)
             .padding(bottom = 12.dp)
     ) {
         Card(modifier = Modifier.fillMaxWidth()) {

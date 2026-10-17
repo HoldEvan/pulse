@@ -40,6 +40,11 @@ private val KEY_WEBDAV_PASS = stringPreferencesKey("webdav_password")
 private val KEY_MONITOR_NOTIFY = booleanPreferencesKey("monitor_notify")
 private val KEY_FLOATING_BOTTOM_BAR = booleanPreferencesKey("floating_bottom_bar")
 private val KEY_LIQUID_GLASS_BOTTOM_BAR = booleanPreferencesKey("liquid_glass_bottom_bar")
+private val KEY_BOTTOM_BAR_LABEL_VISIBLE = booleanPreferencesKey("bottom_bar_label_visible")
+private val KEY_BLUR_ENABLED = booleanPreferencesKey("blur_enabled")
+private val KEY_BAR_BLUR_STYLE = intPreferencesKey("bar_blur_style_index")
+private val KEY_PURE_BLACK_IN_DARK = booleanPreferencesKey("pure_black_in_dark")
+private val KEY_UI_SCALE_PERCENT = intPreferencesKey("ui_scale_percent")
 
 private fun Preferences.toAppSettings(): AppSettings = AppSettings(
     themeModeIndex = (get(KEY_THEME_MODE) ?: 0).coerceAtLeast(0),
@@ -60,6 +65,11 @@ private fun Preferences.toAppSettings(): AppSettings = AppSettings(
     monitorNotify = get(KEY_MONITOR_NOTIFY) ?: true,
     floatingBottomBar = get(KEY_FLOATING_BOTTOM_BAR) ?: false,
     liquidGlassBottomBar = get(KEY_LIQUID_GLASS_BOTTOM_BAR) ?: false,
+    bottomBarLabelVisible = get(KEY_BOTTOM_BAR_LABEL_VISIBLE) ?: true,
+    blurEnabled = get(KEY_BLUR_ENABLED) ?: true,
+    barBlurStyleIndex = (get(KEY_BAR_BLUR_STYLE) ?: 0).coerceAtLeast(0),
+    pureBlackInDark = get(KEY_PURE_BLACK_IN_DARK) ?: false,
+    uiScalePercent = (get(KEY_UI_SCALE_PERCENT) ?: 100).coerceIn(80, 120),
 )
 
 class SettingsStore(context: Context) {
@@ -96,6 +106,11 @@ class SettingsStore(context: Context) {
             prefs[KEY_MONITOR_NOTIFY] = next.monitorNotify
             prefs[KEY_FLOATING_BOTTOM_BAR] = next.floatingBottomBar
             prefs[KEY_LIQUID_GLASS_BOTTOM_BAR] = next.liquidGlassBottomBar
+            prefs[KEY_BOTTOM_BAR_LABEL_VISIBLE] = next.bottomBarLabelVisible
+            prefs[KEY_BLUR_ENABLED] = next.blurEnabled
+            prefs[KEY_BAR_BLUR_STYLE] = next.barBlurStyleIndex
+            prefs[KEY_PURE_BLACK_IN_DARK] = next.pureBlackInDark
+            prefs[KEY_UI_SCALE_PERCENT] = next.uiScalePercent.coerceIn(80, 120)
         }
     }
 }

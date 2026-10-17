@@ -40,6 +40,7 @@ import com.evan.pulse.data.monitor.TargetValidation
 import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.CardSectionTitle
 import com.evan.pulse.ui.common.ConnectionStateIndicator
+import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.SectionTitleRow
 import com.evan.pulse.ui.common.subPageLazyListState
 import com.evan.pulse.ui.l10n.localizedLabels
@@ -102,7 +103,7 @@ fun MonitorScreen(
             .fillMaxSize()
             .padding(horizontal = 12.dp)
             .subPageOverScroll(),
-        contentPadding = PaddingValues(bottom = 12.dp),
+        contentPadding = PaddingValues(top = LocalTopBarInset.current, bottom = 12.dp),
         state = subPageLazyListState()
     ) {
         item(key = "records_title") {

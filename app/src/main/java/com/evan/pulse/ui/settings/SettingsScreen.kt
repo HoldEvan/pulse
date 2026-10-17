@@ -6,6 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,6 +38,7 @@ import com.evan.pulse.di.ServiceLocator
 import com.evan.pulse.ui.common.AppToast
 import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.CardSectionTitle
+import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.SectionTitle
 import com.evan.pulse.ui.common.subPageLazyListState
 import com.evan.pulse.ui.l10n.localizedLabels
@@ -200,6 +202,7 @@ fun SettingsScreen(
             .fillMaxSize()
             .padding(horizontal = 12.dp)
             .subPageOverScroll(),
+        contentPadding = PaddingValues(top = LocalTopBarInset.current),
         state = subPageLazyListState()
     ) {
         item(key = "general_title") {

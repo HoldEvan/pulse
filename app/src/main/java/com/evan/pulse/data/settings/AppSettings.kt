@@ -41,6 +41,16 @@ data class AppSettings(
     val floatingBottomBar: Boolean = false,
     /** 悬浮底栏是否启用半透明玻璃质感 */
     val liquidGlassBottomBar: Boolean = false,
+    /** 底栏是否在图标下方显示文字（false 为仅图标） */
+    val bottomBarLabelVisible: Boolean = true,
+    /** 顶栏磨砂效果开关，关闭后顶栏退化为纯色 */
+    val blurEnabled: Boolean = true,
+    /** 顶栏模糊样式下标，对应 ui.theme.BarBlurStyleEntries，0 为高斯模糊 */
+    val barBlurStyleIndex: Int = 0,
+    /** 深色模式是否使用纯黑背景 */
+    val pureBlackInDark: Boolean = false,
+    /** 界面缩放百分比，80..120，100 为原始大小 */
+    val uiScalePercent: Int = 100,
 ) {
     /** 转换为引擎使用的代理配置，端口非法或地址为空时返回未生效配置 */
     fun toProxyConfig(): ProxyConfig = ProxyConfig(
