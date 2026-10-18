@@ -154,6 +154,7 @@
     <string name="script_pre_title">Pre-request script</string>
     <string name="script_post_title">Post-response script</string>
     <string name="cd_script_docs">Open script docs</string>
+    <string name="cd_clear_script">Clear script</string>
     <string name="script_docs_title">Script API Reference</string>
     <string name="script_api_pm_root">Postman-style script API root object</string>
     <string name="script_api_scope_alias">Alias of the variable scopes</string>
@@ -314,7 +315,7 @@
     <string name="palette_fidelity">Fidelity</string>
     <string name="palette_content">Content</string>
     <string name="spec_label">Color spec</string>
-    <string name="spec_summary">Expressive 2025 is supported by Classic, Neutral, Vibrant and Expressive only; other styles fall back</string>
+    <string name="spec_summary">Material 3 color specification version</string>
     <string name="spec_material_2021">Material 2021</string>
     <string name="spec_expressive_2025">Expressive 2025</string>
     <string name="theme_footer">Changes apply and save immediately</string>
@@ -485,7 +486,6 @@
     <string name="cd_export_request">Copy as another format</string>
     <string name="cd_copy_response">Copy response body</string>
     <string name="cd_copy_stream">Copy event stream</string>
-    <string name="export_format_title">Copy as</string>
     <string name="export_tab_curl_bash">cURL</string>
     <string name="export_tab_curl_powershell">cURL.exe</string>
     <string name="export_tab_http_raw">HTTP</string>

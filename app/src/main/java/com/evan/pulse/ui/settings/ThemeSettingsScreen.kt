@@ -23,6 +23,7 @@ import com.evan.pulse.R
 import com.evan.pulse.data.settings.AppSettings
 import com.evan.pulse.ui.common.DialogActions
 import com.evan.pulse.ui.common.LocalTopBarInset
+import com.evan.pulse.ui.common.SectionTitle
 import com.evan.pulse.ui.common.subPageOverScroll
 import androidx.compose.foundation.layout.Spacer
 import com.evan.pulse.ui.common.subPageScrollState
@@ -34,7 +35,6 @@ import com.evan.pulse.ui.theme.ThemeKeyColors
 import com.evan.pulse.ui.theme.ThemeModeLabels
 import com.evan.pulse.ui.theme.isMonetMode
 import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
@@ -85,7 +85,7 @@ private fun ThemeSettingsContent(
             .verticalScroll(subPageScrollState())
             .padding(start = 12.dp, top = LocalTopBarInset.current, end = 12.dp)
     ) {
-        SmallTitle(text = stringResource(R.string.settings_appearance))
+        SectionTitle(text = stringResource(R.string.settings_appearance))
 
         Card(modifier = Modifier.fillMaxWidth()) {
             OverlayDropdownPreference(
@@ -115,7 +115,7 @@ private fun ThemeSettingsContent(
             )
         }
 
-        SmallTitle(text = stringResource(R.string.settings_blur_section))
+        SectionTitle(text = stringResource(R.string.settings_blur_section))
 
         Card(modifier = Modifier.fillMaxWidth()) {
             SwitchPreference(
@@ -137,7 +137,7 @@ private fun ThemeSettingsContent(
         }
 
         if (monet) {
-            SmallTitle(text = stringResource(R.string.theme_key_color_section))
+            SectionTitle(text = stringResource(R.string.theme_key_color_section))
 
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column {
@@ -168,7 +168,7 @@ private fun ThemeSettingsContent(
             }
         }
 
-        SmallTitle(text = stringResource(R.string.settings_bottom_bar))
+        SectionTitle(text = stringResource(R.string.settings_bottom_bar))
 
         Card(modifier = Modifier.fillMaxWidth()) {
             SwitchPreference(
@@ -199,7 +199,7 @@ private fun ThemeSettingsContent(
             )
         }
 
-        SmallTitle(text = stringResource(R.string.settings_ui_scale_section))
+        SectionTitle(text = stringResource(R.string.settings_ui_scale_section))
 
         // 拖动时用本地草稿即时反馈，松手或手动输入后才持久化
         var scaleDraft by remember(settings.uiScalePercent) {

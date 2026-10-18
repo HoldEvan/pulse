@@ -14,8 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.automirrored.filled.Article
-import androidx.compose.material.icons.Icons
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +48,8 @@ import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 private val editorFontSize = 13.sp
 private val editorLineHeight = 20.sp
@@ -66,7 +66,6 @@ private val gutterGap = 12.dp
 fun ScriptEditorScreen(
     target: Int,
     modifier: Modifier = Modifier,
-    onOpenScriptDocs: () -> Unit,
     viewModel: HttpViewModel = viewModel(),
 ) {
     val isPre = target == 0
@@ -99,10 +98,13 @@ fun ScriptEditorScreen(
                 modifier = Modifier.weight(1f),
                 fontSize = 15.sp
             )
-            IconButton(onClick = onOpenScriptDocs, modifier = Modifier.size(36.dp)) {
+            IconButton(
+                onClick = { commit(TextFieldValue("")) },
+                modifier = Modifier.size(36.dp)
+            ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Article,
-                    contentDescription = stringResource(R.string.cd_script_docs)
+                    imageVector = MiuixIcons.Light.Delete,
+                    contentDescription = stringResource(R.string.cd_clear_script)
                 )
             }
         }

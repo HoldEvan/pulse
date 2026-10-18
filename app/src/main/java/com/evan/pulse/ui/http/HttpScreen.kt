@@ -279,7 +279,6 @@ private fun ExportFormatDialog(show: Boolean, viewModel: HttpViewModel, onDismis
 
     OverlayDialog(
         show = true,
-        title = stringResource(R.string.export_format_title),
         onDismissRequest = onDismiss
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {

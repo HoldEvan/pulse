@@ -154,6 +154,7 @@
     <string name="script_pre_title">前置腳本</string>
     <string name="script_post_title">後置腳本</string>
     <string name="cd_script_docs">檢視腳本文件</string>
+    <string name="cd_clear_script">清空腳本內容</string>
     <string name="script_docs_title">腳本 API 文件</string>
     <string name="script_api_pm_root">Postman 風格腳本 API 根物件</string>
     <string name="script_api_scope_alias">變數作用域別名</string>
@@ -314,7 +315,7 @@
     <string name="palette_fidelity">保真 Fidelity</string>
     <string name="palette_content">內容 Content</string>
     <string name="spec_label">色彩規範</string>
-    <string name="spec_summary">Expressive 2025 僅經典、中性、鮮豔、鮮明支援，其餘風格自動回退</string>
+    <string name="spec_summary">Material 3 色彩規範版本</string>
     <string name="spec_material_2021">Material 2021</string>
     <string name="spec_expressive_2025">Expressive 2025</string>
     <string name="theme_footer">修改後立即生效並自動儲存</string>
@@ -485,7 +486,6 @@
     <string name="cd_export_request">複製為其他格式</string>
     <string name="cd_copy_response">複製回應體</string>
     <string name="cd_copy_stream">複製訊息流</string>
-    <string name="export_format_title">複製為</string>
     <string name="export_tab_curl_bash">cURL</string>
     <string name="export_tab_curl_powershell">cURL.exe</string>
     <string name="export_tab_http_raw">HTTP</string>

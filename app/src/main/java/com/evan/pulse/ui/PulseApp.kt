@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.NetworkCheck
 import androidx.compose.material.icons.filled.Science
@@ -566,12 +567,19 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
             SubPageScreen(
                 title = stringResource(
                     if (route.target == 0) R.string.script_tab_pre else R.string.script_tab_post
-                )
+                ),
+                actions = {
+                    IconButton(onClick = { navController.pushRoute(PulseRoute.ScriptDocs(route.target)) }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Article,
+                            contentDescription = stringResource(R.string.cd_script_docs)
+                        )
+                    }
+                }
             ) {
                 ScriptEditorScreen(
                     target = route.target,
                     modifier = Modifier.fillMaxSize(),
-                    onOpenScriptDocs = { navController.pushRoute(PulseRoute.ScriptDocs(route.target)) },
                     viewModel = httpViewModel
                 )
             }
