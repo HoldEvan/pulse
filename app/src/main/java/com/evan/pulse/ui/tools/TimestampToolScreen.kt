@@ -27,13 +27,13 @@ import com.evan.pulse.ui.common.rememberCopyToClipboard
 import com.evan.pulse.ui.common.subPageOverScroll
 import androidx.compose.foundation.layout.Spacer
 import com.evan.pulse.ui.common.subPageScrollState
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.basic.TabRowWithContour
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppTabRow
+import com.evan.pulse.ui.design.AppText
+import com.evan.pulse.ui.design.AppTextButton
+import com.evan.pulse.ui.design.AppTextField
 import top.yukonga.miuix.kmp.squircle.squircleBackground
 import top.yukonga.miuix.kmp.squircle.squircleClip
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -71,7 +71,7 @@ fun TimestampToolScreen(modifier: Modifier = Modifier) {
             stringResource(R.string.timestamp_tool_dir_ts_date),
             stringResource(R.string.timestamp_tool_dir_date_ts)
         )
-        TabRowWithContour(
+        AppTabRow(
             tabs = directionLabels,
             selectedTabIndex = direction.ordinal,
             onTabSelected = {
@@ -114,27 +114,27 @@ private fun TimestampToDateSection(
         stringResource(R.string.timestamp_tool_seconds),
         stringResource(R.string.timestamp_tool_millis)
     )
-    TabRowWithContour(
+    AppTabRow(
         tabs = modeLabels,
         selectedTabIndex = unit.ordinal,
         onTabSelected = { onUnitChange(TimestampUnit.entries[it]) },
         modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
     )
 
-    TextField(
+    AppTextField(
         value = input,
         onValueChange = onInputChange,
         label = stringResource(R.string.timestamp_tool_input_label),
         modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
     )
 
-    Text(
+    AppText(
         text = stringResource(R.string.timestamp_tool_now_tip),
         modifier = Modifier.padding(top = 6.dp),
         fontSize = 12.sp,
-        color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+        color = AppTheme.colors.onSurfaceSummary
     )
-    TextButton(
+    AppTextButton(
         text = stringResource(R.string.timestamp_tool_now),
         onClick = {
             val now = System.currentTimeMillis()
@@ -156,18 +156,18 @@ private fun TimestampToDateSection(
         )
     }
     if (!valid) {
-        Text(
+        AppText(
             text = stringResource(R.string.timestamp_tool_invalid),
             modifier = Modifier.padding(vertical = 4.dp),
             fontSize = 13.sp,
-            color = MiuixTheme.colorScheme.error
+            color = AppTheme.colors.error
         )
     } else if (input.isBlank()) {
-        Text(
+        AppText(
             text = stringResource(R.string.base64_empty_hint),
             modifier = Modifier.padding(vertical = 4.dp),
             fontSize = 13.sp,
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+            color = AppTheme.colors.onSurfaceSummary
         )
     } else {
         val utcLabel = stringResource(R.string.timestamp_tool_utc)
@@ -187,11 +187,11 @@ private fun TimestampToDateSection(
                 copy = copy
             )
         }
-        Text(
+        AppText(
             text = stringResource(R.string.timestamp_tool_long_press_tip),
             modifier = Modifier.padding(top = 6.dp),
             fontSize = 12.sp,
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+            color = AppTheme.colors.onSurfaceSummary
         )
     }
 }
@@ -205,20 +205,20 @@ private fun DateToTimestampSection(
     val valid = input.isBlank() || millis != null
     val copy = rememberCopyToClipboard()
 
-    TextField(
+    AppTextField(
         value = input,
         onValueChange = onInputChange,
         label = stringResource(R.string.timestamp_tool_date_input_label),
         modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
     )
 
-    Text(
+    AppText(
         text = stringResource(R.string.timestamp_tool_date_hint),
         modifier = Modifier.padding(top = 6.dp),
         fontSize = 12.sp,
-        color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+        color = AppTheme.colors.onSurfaceSummary
     )
-    TextButton(
+    AppTextButton(
         text = stringResource(R.string.timestamp_tool_now),
         onClick = { onInputChange(formatMillis(System.currentTimeMillis())) },
         modifier = Modifier.padding(top = 2.dp)
@@ -235,18 +235,18 @@ private fun DateToTimestampSection(
         )
     }
     if (!valid) {
-        Text(
+        AppText(
             text = stringResource(R.string.timestamp_tool_invalid),
             modifier = Modifier.padding(vertical = 4.dp),
             fontSize = 13.sp,
-            color = MiuixTheme.colorScheme.error
+            color = AppTheme.colors.error
         )
     } else if (input.isBlank()) {
-        Text(
+        AppText(
             text = stringResource(R.string.base64_empty_hint),
             modifier = Modifier.padding(vertical = 4.dp),
             fontSize = 13.sp,
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+            color = AppTheme.colors.onSurfaceSummary
         )
     } else {
         val secLabel = stringResource(R.string.timestamp_tool_out_sec)
@@ -266,11 +266,11 @@ private fun DateToTimestampSection(
                 copy = copy
             )
         }
-        Text(
+        AppText(
             text = stringResource(R.string.timestamp_tool_long_press_tip),
             modifier = Modifier.padding(top = 6.dp),
             fontSize = 12.sp,
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+            color = AppTheme.colors.onSurfaceSummary
         )
     }
 }
@@ -283,20 +283,20 @@ private fun TimestampFieldRow(label: String, value: String, copy: (String) -> Un
             .fillMaxWidth()
             .squircleClip(8.dp)
             .combinedClickable(onClick = {}, onLongClick = { copy(value) })
-            .squircleBackground(MiuixTheme.colorScheme.surfaceVariant, 8.dp)
+            .squircleBackground(AppTheme.colors.surfaceVariant, 8.dp)
             .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        Text(
+        AppText(
             text = label,
             fontSize = 12.sp,
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+            color = AppTheme.colors.onSurfaceSummary
         )
-        Text(
+        AppText(
             text = value,
             fontFamily = FontFamily.Monospace,
             fontSize = 13.sp,
-            color = MiuixTheme.colorScheme.onSurface
+            color = AppTheme.colors.onSurface
         )
     }
 }

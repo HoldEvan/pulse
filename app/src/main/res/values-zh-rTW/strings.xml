@@ -284,8 +284,14 @@
     <string name="lang_en">English</string>
 
     <!-- 外觀設定 -->
+    <string name="ui_style_label">介面風格</string>
+    <string name="ui_style_summary">切換整體控制項設計語言</string>
+    <string name="ui_style_miuix">Miuix</string>
+    <string name="ui_style_material">Material</string>
     <string name="theme_mode_label">外觀模式</string>
-    <string name="theme_mode_summary">固定配色或莫奈取色</string>
+    <string name="theme_mode_summary">跟隨系統、深色或淺色</string>
+    <string name="monet_enabled_label">莫奈取色</string>
+    <string name="monet_enabled_summary">使用系統取色或自選主題色產生配色</string>
     <string name="appearance_system">跟隨系統</string>
     <string name="appearance_dark">深色</string>
     <string name="appearance_light">淺色</string>
@@ -492,6 +498,8 @@
     <string name="export_tab_python">Python</string>
     <string name="export_tab_js_fetch">fetch</string>
     <string name="action_copy">複製</string>
+    <string name="resp_view_html">HTML</string>
+    <string name="resp_view_html_source">查看原始碼</string>
     <!-- 撥測 -->
     <string name="monitor_add">新增撥測</string>
     <string name="monitor_empty">還沒有撥測目標，點右上角新增</string>

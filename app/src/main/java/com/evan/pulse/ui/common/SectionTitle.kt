@@ -17,12 +17,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import top.yukonga.miuix.kmp.basic.SmallTitle
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppSmallTitle
 
 /** 卡片内的区块小标题：去掉 SmallTitle 默认的全宽内边距，与卡片内容左对齐 */
 @Composable
 fun CardSectionTitle(text: String, modifier: Modifier = Modifier) {
-    SmallTitle(
+    AppSmallTitle(
         text = text,
         modifier = modifier,
         insideMargin = PaddingValues(0.dp)
@@ -36,10 +37,13 @@ fun SectionTitle(
     modifier: Modifier = Modifier,
     topPadding: Dp = 0.dp
 ) {
-    SmallTitle(
+    AppSmallTitle(
         text = text,
         modifier = modifier.padding(top = topPadding),
-        insideMargin = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+        insideMargin = PaddingValues(
+            horizontal = AppTheme.spacing.sectionTitle,
+            vertical = AppTheme.spacing.sectionTitleVertical
+        )
     )
 }
 
@@ -57,10 +61,13 @@ fun SectionTitleRow(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        SmallTitle(
+        AppSmallTitle(
             text = label,
             modifier = Modifier.weight(1f),
-            insideMargin = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+            insideMargin = PaddingValues(
+                horizontal = AppTheme.spacing.sectionTitle,
+                vertical = AppTheme.spacing.sectionTitleVertical
+            )
         )
         actions()
     }

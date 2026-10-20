@@ -2,7 +2,13 @@ package com.evan.pulse.ui.common
 
 import android.graphics.Typeface
 import android.util.TypedValue
+import android.view.View
 import android.widget.TextView
+import android.webkit.WebResourceRequest
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -15,9 +21,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
-import top.yukonga.miuix.kmp.basic.Text
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppText
 import top.yukonga.miuix.kmp.squircle.squircleBackground
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 import java.io.StringWriter
 import java.util.Base64
@@ -42,9 +48,9 @@ fun MonospaceBlock(text: String, modifier: Modifier = Modifier, selectable: Bool
     val blockModifier = modifier
         .fillMaxWidth()
         .padding(top = 6.dp)
-        .squircleBackground(MiuixTheme.colorScheme.surfaceVariant, 8.dp)
+        .squircleBackground(AppTheme.colors.surfaceVariant, 8.dp)
         .padding(10.dp)
-    val textColor = MiuixTheme.colorScheme.onSurface.toArgb()
+    val textColor = AppTheme.colors.onSurface.toArgb()
     if (selectable) {
         AndroidView(
             modifier = blockModifier,
@@ -63,7 +69,7 @@ fun MonospaceBlock(text: String, modifier: Modifier = Modifier, selectable: Bool
             }
         )
     } else {
-        Text(
+        AppText(
             text = text,
             modifier = blockModifier,
             fontFamily = FontFamily.Monospace,
@@ -72,10 +78,48 @@ fun MonospaceBlock(text: String, modifier: Modifier = Modifier, selectable: Bool
     }
 }
 
+/**
+ * Preview HTML as content with active capabilities kept to a minimum:
+ * JS、文件与内容访问一律关闭；CSS/图片等网络子资源放行，主框架导航（链接点击、
+ * meta refresh 等）一律拦截，保证是静态预览。[baseUrl] 为响应对应的请求 URL，
+ * 合法 http(s) 时作为基准解析相对路径资源。
+ */
+@Composable
+fun HtmlPreview(body: String, baseUrl: String? = null, modifier: Modifier = Modifier) {
+    AndroidView(
+        modifier = modifier.fillMaxWidth().heightIn(min = 160.dp, max = 420.dp),
+        factory = { context ->
+            WebView(context).apply {
+                // 部分机型（Android 16/HyperOS）WebView 的 Vulkan 绘制路径会在
+                // RenderThread 触发 SIGTRAP 原生崩溃，静态预览用软件渲染绕开。
+                setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+                settings.javaScriptEnabled = false
+                settings.allowFileAccess = false
+                settings.allowContentAccess = false
+                settings.blockNetworkLoads = false
+                settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+                settings.domStorageEnabled = false
+                webViewClient = object : WebViewClient() {
+                    // img/CSS 等子资源不经过此回调；拦截主框架导航防止跳转离开预览
+                    override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean = true
+                }
+            }
+        },
+        update = { view ->
+            val base = baseUrl?.trim()
+                ?.takeIf { it.startsWith("http://") || it.startsWith("https://") }
+            if (view.tag != base to body) {
+                view.tag = base to body
+                view.loadDataWithBaseURL(base, body, "text/html", "UTF-8", null)
+            }
+        }
+    )
+}
+
 /** 状态码徽章：按状态段着色，字号与内边距和 [MethodBadge] 一致，便于并排比较 */
 @Composable
 fun StatusBadge(statusCode: Int, modifier: Modifier = Modifier) {
-    Text(
+    AppText(
         text = statusCode.toString(),
         color = Color.White,
         modifier = modifier
@@ -96,7 +140,7 @@ fun statusColor(statusCode: Int): Color = when {
 /** 方法徽章：各方法一色，未知方法用紫色兜底 */
 @Composable
 fun MethodBadge(method: String, modifier: Modifier = Modifier) {
-    Text(
+    AppText(
         text = method,
         color = Color.White,
         modifier = modifier
@@ -137,7 +181,7 @@ fun isJson(body: String): Boolean = try {
 }
 
 /** 响应体的五种展示形态；顺序即界面标签顺序 */
-enum class BodyViewMode { RAW, JSON, XML, HEX, BASE64 }
+enum class BodyViewMode { RAW, JSON, XML, HTML, HEX, BASE64 }
 
 /** [text] 为渲染结果，[truncated] 表示大内容被截断，[totalBytes] 为原始响应体字节数 */
 data class RenderedBody(
@@ -227,6 +271,7 @@ fun renderBody(body: String, mode: BodyViewMode): RenderedBody {
         BodyViewMode.RAW -> clipText(body, totalBytes)
         BodyViewMode.JSON -> clipText(prettyBody(body, true), totalBytes)
         BodyViewMode.XML -> clipText(prettyXml(body), totalBytes)
+        BodyViewMode.HTML -> clipText(body, totalBytes)
         BodyViewMode.HEX -> hexDump(body.toByteArray(Charsets.UTF_8), MAX_HEX_BYTES)
         BodyViewMode.BASE64 -> clipText(base64Wrapped(body.toByteArray(Charsets.UTF_8)), totalBytes)
     }

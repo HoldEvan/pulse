@@ -27,21 +27,23 @@ import com.evan.pulse.ui.common.SectionTitle
 import com.evan.pulse.ui.common.subPageOverScroll
 import androidx.compose.foundation.layout.Spacer
 import com.evan.pulse.ui.common.subPageScrollState
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppSliderRow
+import com.evan.pulse.ui.design.AppSwitchRow
+import com.evan.pulse.ui.design.AppPreferenceGroup
+import com.evan.pulse.ui.design.AppDialog
+import com.evan.pulse.ui.design.AppDropdown
+import com.evan.pulse.ui.design.AppText
+import com.evan.pulse.ui.design.AppTextField
+import com.evan.pulse.ui.design.UiStyleLabels
+import com.evan.pulse.ui.design.LocalUiStyle
+import com.evan.pulse.ui.design.UiStyle
 import com.evan.pulse.ui.l10n.localizedLabels
 import com.evan.pulse.ui.theme.BarBlurStyleLabels
 import com.evan.pulse.ui.theme.ColorSpecLabels
 import com.evan.pulse.ui.theme.PaletteStyleLabels
 import com.evan.pulse.ui.theme.ThemeKeyColors
 import com.evan.pulse.ui.theme.ThemeModeLabels
-import com.evan.pulse.ui.theme.isMonetMode
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
-import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference
-import top.yukonga.miuix.kmp.preference.SliderPreference
-import top.yukonga.miuix.kmp.preference.SwitchPreference
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlin.math.roundToInt
 
 private val KeyColorLabels: List<Int> =
@@ -76,7 +78,8 @@ private fun ThemeSettingsContent(
     settings: AppSettings,
     viewModel: SettingsViewModel,
 ) {
-    val monet = isMonetMode(settings.themeModeIndex)
+    val miuix = LocalUiStyle.current == UiStyle.MIUIX
+    val showPalette = !miuix || settings.monetEnabled
 
     Column(
         modifier = modifier
@@ -87,77 +90,108 @@ private fun ThemeSettingsContent(
     ) {
         SectionTitle(text = stringResource(R.string.settings_appearance))
 
-        Card(modifier = Modifier.fillMaxWidth()) {
-            OverlayDropdownPreference(
-                title = stringResource(R.string.theme_mode_label),
-                summary = stringResource(R.string.theme_mode_summary),
-                items = ThemeModeLabels.localizedLabels(),
-                selectedIndex = settings.themeModeIndex,
-                onSelectedIndexChange = { viewModel.setThemeMode(it) }
-            )
-
-            OverlayDropdownPreference(
-                title = stringResource(R.string.back_gesture),
-                summary = stringResource(
-                    BackGestureModeSummaries[settings.backGestureModeIndex]
-                        ?: R.string.back_mode_miuix_summary
-                ),
-                items = BackGestureModeLabels.localizedLabels(),
-                selectedIndex = settings.backGestureModeIndex,
-                onSelectedIndexChange = { viewModel.setBackGestureMode(it) }
-            )
-
-            SwitchPreference(
-                title = stringResource(R.string.pure_black_label),
-                summary = stringResource(R.string.pure_black_summary),
-                checked = settings.pureBlackInDark,
-                onCheckedChange = { viewModel.setPureBlackInDark(it) }
-            )
-        }
-
-        SectionTitle(text = stringResource(R.string.settings_blur_section))
-
-        Card(modifier = Modifier.fillMaxWidth()) {
-            SwitchPreference(
-                title = stringResource(R.string.blur_effect_label),
-                summary = stringResource(R.string.blur_effect_summary),
-                checked = settings.blurEnabled,
-                onCheckedChange = { viewModel.setBlurEnabled(it) }
-            )
-
-            if (settings.blurEnabled) {
-                OverlayDropdownPreference(
-                    title = stringResource(R.string.blur_style_label),
-                    summary = stringResource(R.string.blur_style_summary),
-                    items = BarBlurStyleLabels.localizedLabels(),
-                    selectedIndex = settings.barBlurStyleIndex,
-                    onSelectedIndexChange = { viewModel.setBarBlurStyle(it) }
+        AppPreferenceGroup(modifier = Modifier.fillMaxWidth()) {
+            item {
+                AppDropdown(
+                    title = stringResource(R.string.ui_style_label),
+                    summary = stringResource(R.string.ui_style_summary),
+                    items = UiStyleLabels.localizedLabels(),
+                    selectedIndex = settings.uiStyleIndex,
+                    onSelectedIndexChange = { viewModel.setUiStyle(it) }
+                )
+            }
+            item {
+                AppDropdown(
+                    title = stringResource(R.string.theme_mode_label),
+                    summary = stringResource(R.string.theme_mode_summary),
+                    items = ThemeModeLabels.localizedLabels(),
+                    selectedIndex = settings.themeModeIndex,
+                    onSelectedIndexChange = { viewModel.setThemeMode(it) }
+                )
+            }
+            if (miuix) {
+                item {
+                    AppSwitchRow(
+                        title = stringResource(R.string.monet_enabled_label),
+                        summary = stringResource(R.string.monet_enabled_summary),
+                        checked = settings.monetEnabled,
+                        onCheckedChange = { viewModel.setMonetEnabled(it) }
+                    )
+                }
+            }
+            item {
+                AppDropdown(
+                    title = stringResource(R.string.back_gesture),
+                    summary = stringResource(
+                        BackGestureModeSummaries[settings.backGestureModeIndex]
+                            ?: R.string.back_mode_miuix_summary
+                    ),
+                    items = BackGestureModeLabels.localizedLabels(),
+                    selectedIndex = settings.backGestureModeIndex,
+                    onSelectedIndexChange = { viewModel.setBackGestureMode(it) }
+                )
+            }
+            item {
+                AppSwitchRow(
+                    title = stringResource(R.string.pure_black_label),
+                    summary = stringResource(R.string.pure_black_summary),
+                    checked = settings.pureBlackInDark,
+                    onCheckedChange = { viewModel.setPureBlackInDark(it) }
                 )
             }
         }
 
-        if (monet) {
+        if (miuix) {
+            SectionTitle(text = stringResource(R.string.settings_blur_section))
+
+            AppPreferenceGroup(modifier = Modifier.fillMaxWidth()) {
+                item {
+                    AppSwitchRow(
+                        title = stringResource(R.string.blur_effect_label),
+                        summary = stringResource(R.string.blur_effect_summary),
+                        checked = settings.blurEnabled,
+                        onCheckedChange = { viewModel.setBlurEnabled(it) }
+                    )
+                }
+
+                if (settings.blurEnabled) {
+                    item {
+                        AppDropdown(
+                            title = stringResource(R.string.blur_style_label),
+                            summary = stringResource(R.string.blur_style_summary),
+                            items = BarBlurStyleLabels.localizedLabels(),
+                            selectedIndex = settings.barBlurStyleIndex,
+                            onSelectedIndexChange = { viewModel.setBarBlurStyle(it) }
+                        )
+                    }
+                }
+            }
+        }
+
+        if (showPalette) {
             SectionTitle(text = stringResource(R.string.theme_key_color_section))
 
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column {
-                    OverlayDropdownPreference(
+            AppPreferenceGroup(modifier = Modifier.fillMaxWidth()) {
+                item {
+                    AppDropdown(
                         title = stringResource(R.string.theme_key_color_label),
                         summary = stringResource(R.string.theme_key_color_summary),
                         items = KeyColorLabels.localizedLabels(),
                         selectedIndex = settings.keyColorIndex,
                         onSelectedIndexChange = { viewModel.setKeyColor(it) }
                     )
-
-                    OverlayDropdownPreference(
+                }
+                item {
+                    AppDropdown(
                         title = stringResource(R.string.palette_label),
                         summary = stringResource(R.string.palette_summary),
                         items = PaletteStyleLabels.localizedLabels(),
                         selectedIndex = settings.paletteStyleIndex,
                         onSelectedIndexChange = { viewModel.setPaletteStyle(it) }
                     )
-
-                    OverlayDropdownPreference(
+                }
+                item {
+                    AppDropdown(
                         title = stringResource(R.string.spec_label),
                         summary = stringResource(R.string.spec_summary),
                         items = ColorSpecLabels.localizedLabels(),
@@ -170,33 +204,39 @@ private fun ThemeSettingsContent(
 
         SectionTitle(text = stringResource(R.string.settings_bottom_bar))
 
-        Card(modifier = Modifier.fillMaxWidth()) {
-            SwitchPreference(
-                title = stringResource(R.string.floating_bottom_bar_label),
-                summary = stringResource(R.string.floating_bottom_bar_summary),
-                checked = settings.floatingBottomBar,
-                onCheckedChange = { viewModel.setFloatingBottomBar(it) }
-            )
-
-            if (settings.floatingBottomBar) {
-                SwitchPreference(
-                    title = stringResource(R.string.liquid_glass_label),
-                    summary = stringResource(R.string.liquid_glass_summary),
-                    checked = settings.liquidGlassBottomBar,
-                    onCheckedChange = { viewModel.setLiquidGlassBottomBar(it) }
+        AppPreferenceGroup(modifier = Modifier.fillMaxWidth()) {
+            if (miuix) item {
+                AppSwitchRow(
+                    title = stringResource(R.string.floating_bottom_bar_label),
+                    summary = stringResource(R.string.floating_bottom_bar_summary),
+                    checked = settings.floatingBottomBar,
+                    onCheckedChange = { viewModel.setFloatingBottomBar(it) }
                 )
             }
 
-            OverlayDropdownPreference(
-                title = stringResource(R.string.bottom_bar_style_label),
-                summary = stringResource(R.string.bottom_bar_style_summary),
-                items = listOf(
-                    stringResource(R.string.bottom_bar_style_icon_only),
-                    stringResource(R.string.bottom_bar_style_icon_text)
-                ),
-                selectedIndex = if (settings.bottomBarLabelVisible) 1 else 0,
-                onSelectedIndexChange = { viewModel.setBottomBarLabelVisible(it == 1) }
-            )
+            if (miuix && settings.floatingBottomBar) {
+                item {
+                    AppSwitchRow(
+                        title = stringResource(R.string.liquid_glass_label),
+                        summary = stringResource(R.string.liquid_glass_summary),
+                        checked = settings.liquidGlassBottomBar,
+                        onCheckedChange = { viewModel.setLiquidGlassBottomBar(it) }
+                    )
+                }
+            }
+
+            item {
+                AppDropdown(
+                    title = stringResource(R.string.bottom_bar_style_label),
+                    summary = stringResource(R.string.bottom_bar_style_summary),
+                    items = listOf(
+                        stringResource(R.string.bottom_bar_style_icon_only),
+                        stringResource(R.string.bottom_bar_style_icon_text)
+                    ),
+                    selectedIndex = if (settings.bottomBarLabelVisible) 1 else 0,
+                    onSelectedIndexChange = { viewModel.setBottomBarLabelVisible(it == 1) }
+                )
+            }
         }
 
         SectionTitle(text = stringResource(R.string.settings_ui_scale_section))
@@ -211,36 +251,37 @@ private fun ThemeSettingsContent(
         }
         var scaleInvalid by remember { mutableStateOf(false) }
 
-        Card(modifier = Modifier.fillMaxWidth()) {
-            SliderPreference(
-                value = scaleDraft,
-                onValueChange = { scaleDraft = it },
-                title = stringResource(R.string.ui_scale_label),
-                summary = stringResource(R.string.ui_scale_summary),
-                // 右上角实时值：点按整行弹出输入框，可精确填写百分比
-                valueText = stringResource(R.string.ui_scale_value, scaleDraft.roundToInt()),
-                onClick = {
-                    scaleInput = scaleDraft.roundToInt().toString()
-                    scaleInvalid = false
-                    showScaleDialog = true
-                },
-                valueRange = 80f..120f,
-                steps = 3,
-                showKeyPoints = true,
-                onValueChangeFinished = {
-                    viewModel.setUiScalePercent(scaleDraft.roundToInt())
-                }
-            )
+        AppPreferenceGroup(modifier = Modifier.fillMaxWidth()) {
+            item {
+                AppSliderRow(
+                    value = scaleDraft,
+                    onValueChange = { scaleDraft = it },
+                    title = stringResource(R.string.ui_scale_label),
+                    summary = stringResource(R.string.ui_scale_summary),
+                    // 右上角实时值：点按整行弹出输入框，可精确填写百分比
+                    valueText = stringResource(R.string.ui_scale_value, scaleDraft.roundToInt()),
+                    onClick = {
+                        scaleInput = scaleDraft.roundToInt().toString()
+                        scaleInvalid = false
+                        showScaleDialog = true
+                    },
+                    valueRange = 80f..120f,
+                    steps = 3,
+                    onValueChangeFinished = {
+                        viewModel.setUiScalePercent(scaleDraft.roundToInt())
+                    }
+                )
+            }
         }
 
         if (showScaleDialog) {
-            OverlayDialog(
+            AppDialog(
                 show = true,
                 title = stringResource(R.string.settings_ui_scale_section),
                 onDismissRequest = { showScaleDialog = false }
             ) {
                 Column {
-                    TextField(
+                    AppTextField(
                         value = scaleInput,
                         onValueChange = {
                             scaleInput = it.filter { ch -> ch.isDigit() }.take(3)
@@ -250,11 +291,11 @@ private fun ThemeSettingsContent(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
                     if (scaleInvalid) {
-                        Text(
+                        AppText(
                             text = stringResource(R.string.ui_scale_invalid),
                             modifier = Modifier.padding(top = 4.dp),
                             fontSize = 12.sp,
-                            color = MiuixTheme.colorScheme.error
+                            color = AppTheme.colors.error
                         )
                     }
                     DialogActions(
@@ -275,13 +316,13 @@ private fun ThemeSettingsContent(
             }
         }
 
-        Text(
+        AppText(
             text = stringResource(R.string.theme_footer),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 12.dp, bottom = 24.dp),
-            style = MiuixTheme.textStyles.footnote2,
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+            style = AppTheme.typography.footnote2,
+            color = AppTheme.colors.onSurfaceSummary,
             textAlign = TextAlign.Center
         )
     }

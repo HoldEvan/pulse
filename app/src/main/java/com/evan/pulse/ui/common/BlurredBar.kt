@@ -16,7 +16,7 @@ import top.yukonga.miuix.kmp.blur.isRuntimeShaderSupported
 import top.yukonga.miuix.kmp.blur.progressiveTextureBlur
 import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.blur.textureBlur
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import com.evan.pulse.ui.design.AppTheme
 
 /** 顶栏磨砂的模糊样式 */
 enum class BarBlurStyle { GAUSSIAN, PROGRESSIVE }
@@ -37,7 +37,7 @@ fun rememberBlurBackdrop(): LayerBackdrop? {
     val shaderSupported = remember { isRuntimeShaderSupported() }
     if (!shaderSupported) return null
     // 铺 surface 底色与 miuix example 一致：未滚动时顶栏模糊结果与页面背景同色
-    val surfaceColor = MiuixTheme.colorScheme.surface
+    val surfaceColor = AppTheme.colors.surface
     return rememberLayerBackdrop {
         drawRect(surfaceColor)
         drawContent()
@@ -52,7 +52,7 @@ fun rememberBlurBackdrop(): LayerBackdrop? {
 private fun barBlurColors(progressive: Boolean = false): BlurColors = BlurDefaults.blurColors(
     blendColors = listOf(
         BlendColorEntry(
-            color = MiuixTheme.colorScheme.surface.copy(alpha = if (progressive) 0.3f else 0.15f)
+            color = AppTheme.colors.surface.copy(alpha = if (progressive) 0.3f else 0.15f)
         )
     )
 )
@@ -108,4 +108,4 @@ fun BlurredBar(
 /** 磨砂激活时顶栏自身透明，露出模糊背景；否则回退 surface 纯色 */
 @Composable
 fun blurredBarColor(isBlurActive: Boolean): Color =
-    if (isBlurActive) Color.Transparent else MiuixTheme.colorScheme.surface
+    if (isBlurActive) Color.Transparent else AppTheme.colors.surface

@@ -21,21 +21,21 @@ import com.evan.pulse.ui.common.DialogActions
 import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.subPageOverScroll
 import com.evan.pulse.ui.common.subPageScrollState
-import top.yukonga.miuix.kmp.basic.BasicComponent
-import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.DropdownEntry
 import top.yukonga.miuix.kmp.basic.DropdownItem
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextField
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppInfoRow
+import com.evan.pulse.ui.design.AppCard
+import com.evan.pulse.ui.design.AppDialog
+import com.evan.pulse.ui.design.AppIcon
+import com.evan.pulse.ui.design.AppText
+import com.evan.pulse.ui.design.AppTextField
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Edit
 import top.yukonga.miuix.kmp.icon.extended.More
 import top.yukonga.miuix.kmp.icon.extended.Settings
-import top.yukonga.miuix.kmp.menu.OverlayIconDropdownMenu
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import com.evan.pulse.ui.design.AppIconDropdownMenu
 
 /**
  * 环境变量二级页：列表展示每个变量的名称与值，修改/删除收在每项的更多菜单里，
@@ -60,23 +60,23 @@ fun EnvVarsScreen(
             .padding(start = 12.dp, top = LocalTopBarInset.current, end = 12.dp)
             .padding(bottom = 12.dp)
     ) {
-        Card(modifier = Modifier.fillMaxWidth()) {
+        AppCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(vertical = 8.dp)) {
                 val variables = env?.variables.orEmpty()
                 variables.forEachIndexed { index, pair ->
-                    BasicComponent(
+                    AppInfoRow(
                         title = pair.first,
                         summary = pair.second.ifEmpty { null },
                         modifier = Modifier.fillMaxWidth(),
                         endActions = {
-                            OverlayIconDropdownMenu(
+                            AppIconDropdownMenu(
                                 entries = listOf(
                                     DropdownEntry(
                                         items = listOf(
                                             DropdownItem(
                                                 text = stringResource(R.string.cd_edit),
                                                 icon = { m ->
-                                                    Icon(
+                                                    AppIcon(
                                                         imageVector = MiuixIcons.Light.Edit,
                                                         contentDescription = null,
                                                         modifier = m
@@ -87,7 +87,7 @@ fun EnvVarsScreen(
                                             DropdownItem(
                                                 text = stringResource(R.string.action_delete),
                                                 icon = { m ->
-                                                    Icon(
+                                                    AppIcon(
                                                         imageVector = MiuixIcons.Light.Delete,
                                                         contentDescription = null,
                                                         modifier = m
@@ -104,7 +104,7 @@ fun EnvVarsScreen(
                                     .size(28.dp)
                                     .offset(x = 4.dp)
                             ) {
-                                Icon(
+                                AppIcon(
                                     imageVector = MiuixIcons.Light.More,
                                     contentDescription = stringResource(R.string.cd_more),
                                     modifier = Modifier.size(20.dp)
@@ -120,17 +120,17 @@ fun EnvVarsScreen(
                             .padding(vertical = 20.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Icon(
+                        AppIcon(
                             imageVector = MiuixIcons.Light.Settings,
                             contentDescription = null,
                             modifier = Modifier.size(28.dp),
-                            tint = MiuixTheme.colorScheme.outline
+                            tint = AppTheme.colors.outline
                         )
-                        Text(
+                        AppText(
                             text = stringResource(R.string.env_vars_empty),
                             modifier = Modifier.padding(top = 8.dp),
                             fontSize = 13.sp,
-                            color = MiuixTheme.colorScheme.outline
+                            color = AppTheme.colors.outline
                         )
                     }
                 }
@@ -140,7 +140,7 @@ fun EnvVarsScreen(
     }
 
     if (showVarEditor) {
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = stringResource(
                 if (editingNew) R.string.var_new_title else R.string.var_edit_title
@@ -148,12 +148,12 @@ fun EnvVarsScreen(
             onDismissRequest = { viewModel.closeVarEditor() }
         ) {
             Column {
-                TextField(
+                AppTextField(
                     value = viewModel.varNameInput,
                     onValueChange = { viewModel.varNameInput = it },
                     label = stringResource(R.string.var_name_label)
                 )
-                TextField(
+                AppTextField(
                     value = viewModel.varValueInput,
                     onValueChange = { viewModel.varValueInput = it },
                     label = stringResource(R.string.kv_value_label),
@@ -169,13 +169,13 @@ fun EnvVarsScreen(
     }
 
     viewModel.varDeleteTarget?.let { target ->
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = stringResource(R.string.var_delete_title),
             onDismissRequest = { viewModel.cancelDeleteVar() }
         ) {
             Column {
-                Text(stringResource(R.string.var_delete_confirm, target.third))
+                AppText(stringResource(R.string.var_delete_confirm, target.third))
                 DialogActions(
                     onCancel = { viewModel.cancelDeleteVar() },
                     confirmText = stringResource(R.string.action_delete),

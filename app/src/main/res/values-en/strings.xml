@@ -284,8 +284,14 @@
     <string name="lang_en">English</string>
 
     <!-- Appearance settings -->
+    <string name="ui_style_label">Interface style</string>
+    <string name="ui_style_summary">Switch the overall component design language</string>
+    <string name="ui_style_miuix">Miuix</string>
+    <string name="ui_style_material">Material</string>
     <string name="theme_mode_label">Appearance mode</string>
-    <string name="theme_mode_summary">Fixed colors or Material You</string>
+    <string name="theme_mode_summary">Follow system, dark or light</string>
+    <string name="monet_enabled_label">Monet colors</string>
+    <string name="monet_enabled_summary">Generate a palette from system colors or a custom theme color</string>
     <string name="appearance_system">Follow system</string>
     <string name="appearance_dark">Dark</string>
     <string name="appearance_light">Light</string>
@@ -492,6 +498,8 @@
     <string name="export_tab_python">Python</string>
     <string name="export_tab_js_fetch">fetch</string>
     <string name="action_copy">Copy</string>
+    <string name="resp_view_html">HTML</string>
+    <string name="resp_view_html_source">View source</string>
     <!-- Monitor -->
     <string name="monitor_add">Add monitor</string>
     <string name="monitor_empty">No monitor targets yet. Add one from the top right.</string>

@@ -20,10 +20,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.evan.pulse.R
 import com.evan.pulse.data.model.CollectionTree
 import com.evan.pulse.data.model.RequestType
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
-import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference
+import com.evan.pulse.ui.design.AppDialog
+import com.evan.pulse.ui.design.AppDropdown
+import com.evan.pulse.ui.design.AppTextButton
+import com.evan.pulse.ui.design.AppTextField
 
 /**
  * 保存到集合对话框：三个协议页共用。
@@ -63,19 +63,19 @@ fun SaveRequestDialog(
         }
     }
 
-    OverlayDialog(
+    AppDialog(
         show = true,
         title = stringResource(R.string.save_request_title),
         onDismissRequest = onDismiss
     ) {
         Column {
-            TextField(
+            AppTextField(
                 value = nameInput,
                 onValueChange = { nameInput = it },
                 label = stringResource(R.string.request_name_label),
                 modifier = Modifier.fillMaxWidth()
             )
-            OverlayDropdownPreference(
+            AppDropdown(
                 items = items,
                 selectedIndex = selectedIndex.coerceIn(0, items.lastIndex),
                 title = stringResource(R.string.tab_collection),
@@ -89,12 +89,12 @@ fun SaveRequestDialog(
                     .padding(top = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                TextButton(
+                AppTextButton(
                     text = stringResource(R.string.action_cancel),
                     onClick = onDismiss,
                     modifier = Modifier.weight(1f)
                 )
-                TextButton(
+                AppTextButton(
                     text = stringResource(R.string.action_save),
                     onClick = {
                         viewModel.saveRequest(

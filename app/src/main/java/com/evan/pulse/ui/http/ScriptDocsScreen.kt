@@ -19,8 +19,8 @@ import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.subPageOverScroll
 import androidx.compose.foundation.layout.Spacer
 import com.evan.pulse.ui.common.subPageScrollState
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppText
 /**
  * HTTP 脚本内置 API 文档页。
  *
@@ -41,11 +41,11 @@ fun ScriptDocsScreen(
             .verticalScroll(subPageScrollState())
             .padding(top = LocalTopBarInset.current)
     ) {
-        Text(text = stringResource(R.string.script_docs_intro))
-        Text(
+        AppText(text = stringResource(R.string.script_docs_intro))
+        AppText(
             text = stringResource(R.string.script_docs_props_note),
             modifier = Modifier.padding(top = 8.dp),
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+            color = AppTheme.colors.onSurfaceSummary,
             fontSize = 12.sp
         )
 
@@ -77,10 +77,10 @@ fun ScriptDocsScreen(
             )
         }
 
-        Text(
+        AppText(
             text = stringResource(R.string.script_docs_examples_title),
             modifier = Modifier.padding(top = 16.dp),
-            color = MiuixTheme.colorScheme.primary,
+            color = AppTheme.colors.primary,
             fontSize = 14.sp
         )
         MonospaceBlock(
@@ -97,10 +97,10 @@ fun ScriptDocsScreen(
 @Composable
 private fun DocSection(title: String, entries: List<ScriptApiToken>) {
     if (entries.isEmpty()) return
-    Text(
+    AppText(
         text = title,
         modifier = Modifier.padding(top = 16.dp, bottom = 4.dp),
-        color = MiuixTheme.colorScheme.primary,
+        color = AppTheme.colors.primary,
         fontSize = 14.sp
     )
     entries.forEach { token ->
@@ -110,17 +110,17 @@ private fun DocSection(title: String, entries: List<ScriptApiToken>) {
                 modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
+                AppText(
                     text = token.path,
                     fontFamily = FontFamily.Monospace,
                     fontSize = 12.sp
                 )
                 if (token.detailText().isNotEmpty()) {
-                    Text(
+                    AppText(
                         text = token.detailText(),
                         fontFamily = FontFamily.Monospace,
                         fontSize = 11.sp,
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                        color = AppTheme.colors.onSurfaceSummary
                     )
                 }
             }

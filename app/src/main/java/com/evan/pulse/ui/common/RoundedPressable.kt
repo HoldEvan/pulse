@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import top.yukonga.miuix.kmp.squircle.addSquircleRect
 import top.yukonga.miuix.kmp.squircle.isSquircleEnabled
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import com.evan.pulse.ui.design.AppTheme
 
 /** 空指示器：不用 clickable 默认的矩形涟漪时传它 */
 private object NoIndication : IndicationNodeFactory {
@@ -55,7 +55,7 @@ fun Modifier.roundedPressable(
 ): Modifier {
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
-    val highlight = MiuixTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+    val highlight = AppTheme.colors.onSurface.copy(alpha = 0.12f)
     val squircleEnabled = isSquircleEnabled()
     return this
         .clickable(interactionSource = interactionSource, indication = NoIndication, onClick = onClick)

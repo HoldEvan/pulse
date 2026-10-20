@@ -87,6 +87,6 @@ fun LocalizedRoot(language: AppLanguage, content: @Composable () -> Unit) {
     }
 }
 
-/** 把资源 id 列表解析成当前语言下的文案，供 OverlayDropdownPreference 等组件使用 */
+/** 把资源 id 列表解析成当前语言下的文案，供 AppDropdown 等组件使用 */
 @Composable
 fun List<Int>.localizedLabels(): List<String> = map { stringResource(it) }

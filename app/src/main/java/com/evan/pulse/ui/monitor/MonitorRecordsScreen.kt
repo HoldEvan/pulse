@@ -28,12 +28,12 @@ import com.evan.pulse.data.model.addressText
 import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.subPageLazyListState
 import com.evan.pulse.ui.common.subPageOverScroll
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.theme.MiuixTheme
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppCard
+import com.evan.pulse.ui.design.AppDialog
+import com.evan.pulse.ui.design.AppText
+import com.evan.pulse.ui.design.AppTextButton
+import com.evan.pulse.ui.design.AppTextField
 import java.util.Locale
 
 /** 未通记录二级页：可搜索当前项目的全部未通记录，也可确认后清空 */
@@ -61,7 +61,7 @@ fun MonitorRecordsScreen(
         state = subPageLazyListState()
     ) {
         item(key = "search") {
-            TextField(
+            AppTextField(
                 value = viewModel.recordQuery,
                 onValueChange = { viewModel.recordQuery = it },
                 label = stringResource(R.string.monitor_records_search_hint),
@@ -79,19 +79,19 @@ fun MonitorRecordsScreen(
                         .fillParentMaxHeight(0.75f),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
+                    AppText(
                         text = stringResource(
                             if (records.isEmpty()) R.string.monitor_records_empty
                             else R.string.monitor_records_no_match
                         ),
                         fontSize = 13.sp,
-                        color = MiuixTheme.colorScheme.outline
+                        color = AppTheme.colors.outline
                     )
                 }
             }
         } else {
             item(key = "records") {
-                Card(modifier = Modifier.fillMaxWidth()) {
+                AppCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp)) {
                         filtered.forEach { record ->
                             MonitorRecordRow(
@@ -108,23 +108,23 @@ fun MonitorRecordsScreen(
     }
 
     if (viewModel.clearRecordsAsked) {
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = stringResource(R.string.monitor_records_clear),
             onDismissRequest = { viewModel.cancelClearRecords() }
         ) {
             Column {
-                Text(stringResource(R.string.monitor_records_clear_confirm))
+                AppText(stringResource(R.string.monitor_records_clear_confirm))
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.padding(top = 12.dp)
                 ) {
-                    TextButton(
+                    AppTextButton(
                         text = stringResource(R.string.action_cancel),
                         onClick = { viewModel.cancelClearRecords() },
                         modifier = Modifier.weight(1f)
                     )
-                    TextButton(
+                    AppTextButton(
                         text = stringResource(R.string.action_delete),
                         onClick = { viewModel.confirmClearRecords() },
                         modifier = Modifier.weight(1f)

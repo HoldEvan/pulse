@@ -40,13 +40,13 @@ import com.evan.pulse.ui.common.MonospaceBlock
 import com.evan.pulse.ui.common.rememberCopyToClipboard
 import com.evan.pulse.ui.common.subPageOverScroll
 import com.evan.pulse.ui.common.subPageScrollState
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.basic.TabRowWithContour
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppCard
+import com.evan.pulse.ui.design.AppTabRow
+import com.evan.pulse.ui.design.AppText
+import com.evan.pulse.ui.design.AppTextField
 import top.yukonga.miuix.kmp.squircle.squircleBackground
 import top.yukonga.miuix.kmp.squircle.squircleClip
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /** 信息码工具页顶层的转换项 */
 private enum class EncodingTool { BASE64, RADIX, URL, UNICODE, ASCII }
@@ -88,7 +88,7 @@ fun EncodingToolScreen(modifier: Modifier = Modifier) {
             stringResource(R.string.encoding_tab_unicode),
             stringResource(R.string.encoding_tab_ascii)
         )
-        TabRowWithContour(
+        AppTabRow(
             tabs = toolLabels,
             selectedTabIndex = tool.ordinal,
             onTabSelected = { tool = EncodingTool.entries[it] },
@@ -228,14 +228,14 @@ private fun EncodeDecodeSection(
         stringResource(R.string.base64_encode),
         stringResource(R.string.base64_decode)
     )
-    TabRowWithContour(
+    AppTabRow(
         tabs = modeLabels,
         selectedTabIndex = mode.ordinal,
         onTabSelected = { onModeChange(ConvertMode.entries[it]) },
         modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
     )
 
-    TextField(
+    AppTextField(
         value = input,
         onValueChange = onInputChange,
         label = stringResource(R.string.base64_input_label),
@@ -255,25 +255,25 @@ private fun EncodeDecodeSection(
     }
     when {
         result.invalid && invalidText != null -> {
-            Text(
+            AppText(
                 text = invalidText,
                 modifier = Modifier.padding(vertical = 4.dp),
                 fontSize = 13.sp,
-                color = MiuixTheme.colorScheme.error
+                color = AppTheme.colors.error
             )
         }
 
         result.text.isBlank() -> {
-            Text(
+            AppText(
                 text = stringResource(R.string.base64_empty_hint),
                 modifier = Modifier.padding(vertical = 4.dp),
                 fontSize = 13.sp,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                color = AppTheme.colors.onSurfaceSummary
             )
         }
 
         else -> {
-            Card(modifier = Modifier.fillMaxWidth()) {
+            AppCard(modifier = Modifier.fillMaxWidth()) {
                 MonospaceBlock(text = result.text, modifier = Modifier.padding(8.dp))
             }
         }
@@ -297,20 +297,20 @@ private fun RadixSection(
     )
     val value = parseRadix(input, base)
 
-    Text(
+    AppText(
         text = stringResource(R.string.radix_input_base),
         modifier = Modifier.padding(top = 10.dp),
         fontSize = 12.sp,
-        color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+        color = AppTheme.colors.onSurfaceSummary
     )
-    TabRowWithContour(
+    AppTabRow(
         tabs = baseLabels,
         selectedTabIndex = radixBases.indexOf(base).coerceAtLeast(0),
         onTabSelected = { onBaseChange(radixBases[it]) },
         modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
     )
 
-    TextField(
+    AppTextField(
         value = input,
         onValueChange = onInputChange,
         label = stringResource(R.string.radix_input_label),
@@ -325,20 +325,20 @@ private fun RadixSection(
     }
     when {
         input.isBlank() -> {
-            Text(
+            AppText(
                 text = stringResource(R.string.base64_empty_hint),
                 modifier = Modifier.padding(vertical = 4.dp),
                 fontSize = 13.sp,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                color = AppTheme.colors.onSurfaceSummary
             )
         }
 
         value == null -> {
-            Text(
+            AppText(
                 text = stringResource(R.string.radix_invalid),
                 modifier = Modifier.padding(vertical = 4.dp),
                 fontSize = 13.sp,
-                color = MiuixTheme.colorScheme.error
+                color = AppTheme.colors.error
             )
         }
 
@@ -352,11 +352,11 @@ private fun RadixSection(
                 ResultFieldRow(baseLabels[2], formatRadix(value, 10), copy)
                 ResultFieldRow(baseLabels[3], formatRadix(value, 16), copy)
             }
-            Text(
+            AppText(
                 text = stringResource(R.string.timestamp_tool_long_press_tip),
                 modifier = Modifier.padding(top = 6.dp),
                 fontSize = 12.sp,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                color = AppTheme.colors.onSurfaceSummary
             )
         }
     }
@@ -375,14 +375,14 @@ private fun AsciiSection(
         stringResource(R.string.base64_encode),
         stringResource(R.string.base64_decode)
     )
-    TabRowWithContour(
+    AppTabRow(
         tabs = modeLabels,
         selectedTabIndex = mode.ordinal,
         onTabSelected = { onModeChange(ConvertMode.entries[it]) },
         modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
     )
 
-    TextField(
+    AppTextField(
         value = input,
         onValueChange = onInputChange,
         label = stringResource(R.string.base64_input_label),
@@ -398,11 +398,11 @@ private fun AsciiSection(
     }
     if (mode == ConvertMode.ENCODE) {
         if (input.isBlank()) {
-            Text(
+            AppText(
                 text = stringResource(R.string.base64_empty_hint),
                 modifier = Modifier.padding(vertical = 4.dp),
                 fontSize = 13.sp,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                color = AppTheme.colors.onSurfaceSummary
             )
         } else {
             Column(
@@ -420,36 +420,36 @@ private fun AsciiSection(
                     copy = copy
                 )
             }
-            Text(
+            AppText(
                 text = stringResource(R.string.timestamp_tool_long_press_tip),
                 modifier = Modifier.padding(top = 6.dp),
                 fontSize = 12.sp,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                color = AppTheme.colors.onSurfaceSummary
             )
         }
     } else {
         val text = asciiFromCodes(input)
         when {
             input.isBlank() -> {
-                Text(
+                AppText(
                     text = stringResource(R.string.base64_empty_hint),
                     modifier = Modifier.padding(vertical = 4.dp),
                     fontSize = 13.sp,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                    color = AppTheme.colors.onSurfaceSummary
                 )
             }
 
             text == null -> {
-                Text(
+                AppText(
                     text = stringResource(R.string.ascii_invalid),
                     modifier = Modifier.padding(vertical = 4.dp),
                     fontSize = 13.sp,
-                    color = MiuixTheme.colorScheme.error
+                    color = AppTheme.colors.error
                 )
             }
 
             else -> {
-                Card(modifier = Modifier.fillMaxWidth()) {
+                AppCard(modifier = Modifier.fillMaxWidth()) {
                     MonospaceBlock(text = text, modifier = Modifier.padding(8.dp))
                 }
             }
@@ -465,20 +465,20 @@ private fun ResultFieldRow(label: String, value: String, copy: (String) -> Unit)
             .fillMaxWidth()
             .squircleClip(8.dp)
             .combinedClickable(onClick = {}, onLongClick = { copy(value) })
-            .squircleBackground(MiuixTheme.colorScheme.surfaceVariant, 8.dp)
+            .squircleBackground(AppTheme.colors.surfaceVariant, 8.dp)
             .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        Text(
+        AppText(
             text = label,
             fontSize = 12.sp,
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+            color = AppTheme.colors.onSurfaceSummary
         )
-        Text(
+        AppText(
             text = value,
             fontFamily = FontFamily.Monospace,
             fontSize = 13.sp,
-            color = MiuixTheme.colorScheme.onSurface
+            color = AppTheme.colors.onSurface
         )
     }
 }

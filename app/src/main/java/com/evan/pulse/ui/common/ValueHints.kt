@@ -11,8 +11,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.evan.pulse.R
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppText
 
 /**
  * 占位符解析提示：把文本里的 {{key}} 逐个展开为“名字 → 解析值”，缺失的标红。
@@ -31,7 +31,7 @@ fun ValueHints(
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         hints.forEach { (key, value) ->
-            Text(
+            AppText(
                 text = if (value != null) {
                     "{{$key}} → $value"
                 } else {
@@ -40,9 +40,9 @@ fun ValueHints(
                 fontFamily = FontFamily.Monospace,
                 fontSize = 11.sp,
                 color = if (value != null) {
-                    MiuixTheme.colorScheme.onSurfaceVariantSummary
+                    AppTheme.colors.onSurfaceSummary
                 } else {
-                    MiuixTheme.colorScheme.error
+                    AppTheme.colors.error
                 }
             )
         }

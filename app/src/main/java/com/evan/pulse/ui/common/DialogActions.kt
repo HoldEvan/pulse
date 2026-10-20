@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.evan.pulse.R
-import top.yukonga.miuix.kmp.basic.TextButton
+import com.evan.pulse.ui.design.AppTextButton
 
 /** 确认类弹窗共用的取消/确认按钮行：两键等宽，中间留出固定间距 */
 @Composable
@@ -22,12 +22,12 @@ fun DialogActions(
         modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        TextButton(
+        AppTextButton(
             text = stringResource(R.string.action_cancel),
             onClick = onCancel,
             modifier = Modifier.weight(1f)
         )
-        TextButton(
+        AppTextButton(
             text = confirmText,
             onClick = onConfirm,
             modifier = Modifier.weight(1f)

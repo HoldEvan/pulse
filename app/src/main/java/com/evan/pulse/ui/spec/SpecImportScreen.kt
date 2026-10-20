@@ -31,10 +31,10 @@ import com.evan.pulse.ui.common.ImportPreviewSheet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
+import com.evan.pulse.ui.design.AppDialog
+import com.evan.pulse.ui.design.AppText
+import com.evan.pulse.ui.design.AppTextButton
+import com.evan.pulse.ui.design.AppTextField
 
 /**
  * 导入 API 规范：输入文件 URL 或粘贴原始文本，解析后先看预览再写入集合。
@@ -87,7 +87,7 @@ fun SpecImportScreen(
         if (pending != null) R.string.import_preview_title else R.string.spec_import_title
     )
 
-    OverlayDialog(
+    AppDialog(
         show = true,
         title = title,
         onDismissRequest = onDismiss
@@ -105,7 +105,7 @@ fun SpecImportScreen(
             )
         } else {
             Column(modifier = Modifier.fillMaxWidth()) {
-                TextField(
+                AppTextField(
                     value = source,
                     onValueChange = {
                         source = it
@@ -121,12 +121,12 @@ fun SpecImportScreen(
                         .fillMaxWidth()
                         .height(180.dp)
                 )
-                Text(
+                AppText(
                     text = stringResource(R.string.spec_import_source_desc),
                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)
                 )
                 failure?.let { error ->
-                    Text(
+                    AppText(
                         text = failureText(error),
                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)
                     )
@@ -137,12 +137,12 @@ fun SpecImportScreen(
                         .padding(top = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    TextButton(
+                    AppTextButton(
                         text = stringResource(R.string.action_cancel),
                         onClick = onDismiss,
                         modifier = Modifier.weight(1f)
                     )
-                    TextButton(
+                    AppTextButton(
                         text = if (busy) {
                             stringResource(R.string.spec_import_parsing)
                         } else {

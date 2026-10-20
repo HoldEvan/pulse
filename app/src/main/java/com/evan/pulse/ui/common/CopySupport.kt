@@ -21,13 +21,13 @@ import com.evan.pulse.ui.history.UiEventLine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Copy
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppIcon
 
 /** 复制后图标变色的时长，供各页面统一反馈节奏 */
 const val COPY_FEEDBACK_MS = 1200L
@@ -85,10 +85,10 @@ fun CopyIconButton(text: String?, label: String, modifier: Modifier = Modifier) 
         }
     }
 
-    Icon(
+    AppIcon(
         imageVector = MiuixIcons.Light.Copy,
         contentDescription = label,
-        tint = if (copied) COPIED_TINT else MiuixTheme.colorScheme.onBackground,
+        tint = if (copied) COPIED_TINT else AppTheme.colors.onBackground,
         modifier = modifier
             .roundedPressable(onClick = {
                 copied = true

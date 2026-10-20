@@ -20,9 +20,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import top.yukonga.miuix.kmp.basic.Text
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppText
 import top.yukonga.miuix.kmp.squircle.squircleBackground
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /** Toast 显示时长，与复制图标的变绿时长配合使用 */
 const val TOAST_DURATION_MS = 1600L
@@ -88,15 +88,15 @@ private fun ToastPill(item: ToastItem, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .squircleBackground(
-                MiuixTheme.colorScheme.onSurface.copy(alpha = 0.92f),
+                AppTheme.colors.onSurface.copy(alpha = 0.92f),
                 20.dp
             )
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
+        AppText(
             text = item.text,
-            color = MiuixTheme.colorScheme.surface,
+            color = AppTheme.colors.surface,
             fontSize = 13.sp
         )
     }

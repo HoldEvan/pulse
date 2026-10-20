@@ -45,16 +45,16 @@ import com.evan.pulse.ui.common.roundedPressable
 import com.evan.pulse.ui.common.statusColor
 import com.evan.pulse.ui.common.subPageLazyListState
 import com.evan.pulse.ui.common.subPageOverScroll
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.basic.TextField
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppCard
+import com.evan.pulse.ui.design.AppDialog
+import com.evan.pulse.ui.design.AppIcon
+import com.evan.pulse.ui.design.AppText
+import com.evan.pulse.ui.design.AppTextButton
+import com.evan.pulse.ui.design.AppTextField
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.ExpandMore
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -92,7 +92,7 @@ fun HistoryScreen(
         state = subPageLazyListState()
     ) {
         item(key = "search") {
-            TextField(
+            AppTextField(
                 value = viewModel.keyword,
                 onValueChange = { viewModel.keyword = it },
                 label = stringResource(R.string.history_search_label),
@@ -143,23 +143,23 @@ fun HistoryScreen(
     }
 
     if (confirmClear) {
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = stringResource(R.string.history_clear),
             onDismissRequest = { viewModel.confirmClear = false }
         ) {
             Column {
-                Text(stringResource(R.string.history_clear_confirm))
+                AppText(stringResource(R.string.history_clear_confirm))
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.padding(top = 12.dp)
                 ) {
-                    TextButton(
+                    AppTextButton(
                         text = stringResource(R.string.action_cancel),
                         onClick = { viewModel.confirmClear = false },
                         modifier = Modifier.weight(1f)
                     )
-                    TextButton(
+                    AppTextButton(
                         text = stringResource(R.string.action_clear),
                         onClick = { viewModel.clear() },
                         modifier = Modifier.weight(1f)
@@ -193,10 +193,10 @@ private fun SwipeToDeleteRow(
     val spec = remember { tween<Float>(durationMillis = 200) }
 
     Box(modifier = modifier.fillMaxWidth()) {
-        Icon(
+        AppIcon(
             imageVector = MiuixIcons.Light.Delete,
             contentDescription = deleteLabel,
-            tint = MiuixTheme.colorScheme.error,
+            tint = AppTheme.colors.error,
             modifier = Modifier.align(Alignment.CenterStart).padding(start = 16.dp)
         )
 
@@ -235,7 +235,7 @@ private fun HistoryItem(
     modifier: Modifier = Modifier,
     onOpen: () -> Unit
 ) {
-    Card(
+    AppCard(
         modifier = modifier.fillMaxWidth(),
         onClick = onOpen,
         showIndication = true
@@ -243,35 +243,35 @@ private fun HistoryItem(
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 MethodBadge(entry.method)
-                Text(
+                AppText(
                     text = entry.statusCode.toString(),
                     color = statusColor(entry.statusCode),
                     modifier = Modifier.padding(start = 8.dp),
                     fontSize = 13.sp
                 )
-                Text(
+                AppText(
                     text = stringResource(R.string.duration_value, entry.durationMs),
                     modifier = Modifier.padding(start = 8.dp),
                     fontSize = 13.sp
                 )
                 if (projectName.isNotBlank()) {
-                    Text(
+                    AppText(
                         text = projectName,
                         modifier = Modifier.weight(1f).padding(start = 8.dp),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         fontSize = 12.sp,
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                        color = AppTheme.colors.onSurfaceSummary
                     )
                 } else {
                     Spacer(modifier = Modifier.weight(1f))
                 }
-                Text(
+                AppText(
                     text = timeFormat.format(Date(entry.createdAt)),
                     fontSize = 12.sp
                 )
             }
-            Text(
+            AppText(
                 text = entry.url,
                 modifier = Modifier.padding(top = 6.dp),
                 fontSize = 13.sp
@@ -283,7 +283,7 @@ private fun HistoryItem(
 /** 项目筛选入口：显示当前筛选值，点击展开选项 */
 @Composable
 private fun ProjectFilterChip(label: String, onClick: () -> Unit) {
-    Card(
+    AppCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp),
@@ -294,18 +294,18 @@ private fun ProjectFilterChip(label: String, onClick: () -> Unit) {
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
+            AppText(
                 text = stringResource(R.string.history_filter_label),
                 fontSize = 12.sp,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                color = AppTheme.colors.onSurfaceSummary
             )
-            Text(
+            AppText(
                 text = label,
                 modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            Icon(
+            AppIcon(
                 imageVector = MiuixIcons.Light.ExpandMore,
                 contentDescription = stringResource(R.string.history_filter_label)
             )
@@ -321,7 +321,7 @@ private fun ProjectFilterDialog(
     onPick: (Long?) -> Unit,
     onDismiss: () -> Unit
 ) {
-    OverlayDialog(
+    AppDialog(
         show = true,
         title = stringResource(R.string.history_filter_label),
         onDismissRequest = onDismiss
@@ -352,12 +352,12 @@ private fun FilterOptionRow(label: String, checked: Boolean, onClick: () -> Unit
         ),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
+        AppIcon(
             imageVector = if (checked) Icons.Filled.RadioButtonChecked
             else Icons.Filled.RadioButtonUnchecked,
             contentDescription = null
         )
-        Text(
+        AppText(
             text = label,
             modifier = Modifier.weight(1f).padding(start = 8.dp),
             maxLines = 1,

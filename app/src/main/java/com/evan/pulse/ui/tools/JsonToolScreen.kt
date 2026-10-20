@@ -26,10 +26,10 @@ import androidx.compose.foundation.layout.Spacer
 import com.evan.pulse.ui.common.subPageScrollState
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.basic.TabRowWithContour
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppTabRow
+import com.evan.pulse.ui.design.AppText
+import com.evan.pulse.ui.design.AppTextField
 
 private val formatJson = Json { prettyPrint = true }
 
@@ -71,14 +71,14 @@ fun JsonToolScreen(modifier: Modifier = Modifier) {
             stringResource(R.string.json_tool_pretty),
             stringResource(R.string.json_tool_minify)
         )
-        TabRowWithContour(
+        AppTabRow(
             tabs = modeLabels,
             selectedTabIndex = mode.ordinal,
             onTabSelected = { mode = JsonMode.entries[it] },
             modifier = Modifier.fillMaxWidth()
         )
 
-        TextField(
+        AppTextField(
             value = input,
             onValueChange = { input = it },
             label = stringResource(R.string.json_tool_input_label),
@@ -97,18 +97,18 @@ fun JsonToolScreen(modifier: Modifier = Modifier) {
             )
         }
         if (result.invalid) {
-            Text(
+            AppText(
                 text = stringResource(R.string.json_tool_invalid),
                 modifier = Modifier.padding(vertical = 4.dp),
                 fontSize = 13.sp,
-                color = MiuixTheme.colorScheme.error
+                color = AppTheme.colors.error
             )
         } else if (result.text.isBlank()) {
-            Text(
+            AppText(
                 text = stringResource(R.string.base64_empty_hint),
                 modifier = Modifier.padding(vertical = 4.dp),
                 fontSize = 13.sp,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                color = AppTheme.colors.onSurfaceSummary
             )
         } else {
             MonospaceBlock(text = result.text, modifier = Modifier.padding(top = 6.dp))

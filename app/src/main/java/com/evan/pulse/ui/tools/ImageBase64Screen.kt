@@ -64,14 +64,14 @@ import com.evan.pulse.ui.common.subPageScrollState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.basic.TabRowWithContour
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppCard
+import com.evan.pulse.ui.design.AppIcon
+import com.evan.pulse.ui.design.AppIconButton
+import com.evan.pulse.ui.design.AppTabRow
+import com.evan.pulse.ui.design.AppText
+import com.evan.pulse.ui.design.AppTextButton
+import com.evan.pulse.ui.design.AppTextField
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -104,7 +104,7 @@ fun ImageBase64Screen(modifier: Modifier = Modifier) {
             stringResource(R.string.base64_encode),
             stringResource(R.string.base64_decode)
         )
-        TabRowWithContour(
+        AppTabRow(
             tabs = toolLabels,
             selectedTabIndex = tool.ordinal,
             onTabSelected = { tool = ImageTool.entries[it] },
@@ -152,7 +152,7 @@ private fun ImageEncodeSection() {
         }
     }
 
-    TextButton(
+    AppTextButton(
         text = stringResource(R.string.image_pick),
         onClick = {
             pickImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
@@ -160,7 +160,7 @@ private fun ImageEncodeSection() {
         modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
     )
     pickedBitmap?.let { bitmap ->
-        Card(modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
+        AppCard(modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
             Image(
                 bitmap = bitmap.asImageBitmap(),
                 contentDescription = null,
@@ -180,15 +180,15 @@ private fun ImageEncodeSection() {
         )
     }
     if (imageBase64 != null) {
-        Card(modifier = Modifier.fillMaxWidth()) {
+        AppCard(modifier = Modifier.fillMaxWidth()) {
             MonospaceBlock(text = imageBase64Display ?: "", modifier = Modifier.padding(8.dp))
         }
     } else {
-        Text(
+        AppText(
             text = stringResource(R.string.base64_empty_hint),
             modifier = Modifier.padding(vertical = 4.dp),
             fontSize = 13.sp,
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+            color = AppTheme.colors.onSurfaceSummary
         )
     }
 }
@@ -222,7 +222,7 @@ private fun ImageDecodeSection(
         }
     }
 
-    TextField(
+    AppTextField(
         value = input,
         onValueChange = onInputChange,
         label = stringResource(R.string.base64_input_label),
@@ -237,25 +237,25 @@ private fun ImageDecodeSection(
     }
     when {
         input.isBlank() -> {
-            Text(
+            AppText(
                 text = stringResource(R.string.base64_empty_hint),
                 modifier = Modifier.padding(vertical = 4.dp),
                 fontSize = 13.sp,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                color = AppTheme.colors.onSurfaceSummary
             )
         }
 
         decodedBitmap == null -> {
-            Text(
+            AppText(
                 text = stringResource(R.string.image_invalid),
                 modifier = Modifier.padding(vertical = 4.dp),
                 fontSize = 13.sp,
-                color = MiuixTheme.colorScheme.error
+                color = AppTheme.colors.error
             )
         }
 
         else -> {
-            Card(modifier = Modifier.fillMaxWidth()) {
+            AppCard(modifier = Modifier.fillMaxWidth()) {
                 Image(
                     bitmap = decodedBitmap.asImageBitmap(),
                     contentDescription = null,
@@ -267,7 +267,7 @@ private fun ImageDecodeSection(
                     contentScale = ContentScale.Fit
                 )
             }
-            TextButton(
+            AppTextButton(
                 text = stringResource(R.string.image_save),
                 onClick = saveImage,
                 modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
@@ -338,16 +338,16 @@ private fun ImageViewerDialog(
                     .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onDismiss, modifier = Modifier.size(36.dp)) {
-                    Icon(
+                AppIconButton(onClick = onDismiss, modifier = Modifier.size(36.dp)) {
+                    AppIcon(
                         imageVector = Icons.Filled.Close,
                         contentDescription = stringResource(R.string.cd_close),
                         tint = Color.White
                     )
                 }
                 Box(modifier = Modifier.weight(1f))
-                IconButton(onClick = onSaveClick, modifier = Modifier.size(36.dp)) {
-                    Icon(
+                AppIconButton(onClick = onSaveClick, modifier = Modifier.size(36.dp)) {
+                    AppIcon(
                         imageVector = Icons.Filled.Download,
                         contentDescription = stringResource(R.string.image_save),
                         tint = Color.White

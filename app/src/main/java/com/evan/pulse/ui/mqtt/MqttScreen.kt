@@ -44,24 +44,24 @@ import com.evan.pulse.ui.common.subPageScrollState
 import com.evan.pulse.ui.history.UiEventLine
 import com.evan.pulse.ui.l10n.localizedLabels
 import com.evan.pulse.ui.common.subPageOverScroll
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
-import top.yukonga.miuix.kmp.basic.SmallTitle
-import top.yukonga.miuix.kmp.basic.Switch
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.basic.TextField
+import com.evan.pulse.ui.design.AppSmallTitle
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppCard
+import com.evan.pulse.ui.design.AppDialog
+import com.evan.pulse.ui.design.AppDropdown
+import com.evan.pulse.ui.design.AppIcon
+import com.evan.pulse.ui.design.AppIconButton
+import com.evan.pulse.ui.design.AppSwitch
+import com.evan.pulse.ui.design.AppText
+import com.evan.pulse.ui.design.AppTextButton
+import com.evan.pulse.ui.design.AppTextField
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Close
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Link
 import top.yukonga.miuix.kmp.icon.extended.Send
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
-import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference
 import top.yukonga.miuix.kmp.squircle.squircleBackground
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import com.evan.pulse.ui.design.AppButton
 
 private val qosLabels = listOf(R.string.qos_0, R.string.qos_1, R.string.qos_2)
 
@@ -73,8 +73,8 @@ private fun SectionTitleRow(status: @Composable () -> Unit, onSaveClick: () -> U
     ) {
         // 沿用 SmallTitle 的内边距节奏，保持与原分组标题一致的间距
         Box(modifier = Modifier.weight(1f).padding(start = 16.dp, top = 8.dp, bottom = 8.dp)) { status() }
-        IconButton(onClick = onSaveClick, modifier = Modifier.size(36.dp)) {
-            Icon(
+        AppIconButton(onClick = onSaveClick, modifier = Modifier.size(36.dp)) {
+            AppIcon(
                 imageVector = Icons.Filled.Save,
                 contentDescription = stringResource(R.string.cd_save_request)
             )
@@ -106,22 +106,22 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
             onSaveClick = { showSave = true }
         )
         Column(modifier = Modifier.fillMaxWidth()) {
-        Card(modifier = Modifier.fillMaxWidth()) {
+        AppCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(12.dp)) {
-                TextField(
+                AppTextField(
                     value = viewModel.brokerUrl,
                     onValueChange = { viewModel.brokerUrl = it },
                     label = stringResource(R.string.mqtt_broker_url_label),
                     modifier = Modifier.fillMaxWidth()
                 )
                 Row(modifier = Modifier.padding(top = 8.dp)) {
-                    TextField(
+                    AppTextField(
                         value = viewModel.clientId,
                         onValueChange = { viewModel.clientId = it },
                         label = stringResource(R.string.mqtt_client_id_label),
                         modifier = Modifier.weight(1f)
                     )
-                    TextField(
+                    AppTextField(
                         value = viewModel.keepAliveSec,
                         onValueChange = { viewModel.keepAliveSec = it },
                         label = stringResource(R.string.mqtt_keepalive_label),
@@ -131,13 +131,13 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                     )
                 }
                 Row(modifier = Modifier.padding(top = 8.dp)) {
-                    TextField(
+                    AppTextField(
                         value = viewModel.username,
                         onValueChange = { viewModel.username = it },
                         label = stringResource(R.string.mqtt_username_label),
                         modifier = Modifier.weight(1f)
                     )
-                    TextField(
+                    AppTextField(
                         value = viewModel.password,
                         onValueChange = { viewModel.password = it },
                         label = stringResource(R.string.mqtt_password_label),
@@ -153,11 +153,11 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                         .padding(top = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
+                    AppText(
                         text = stringResource(R.string.use_proxy_label),
                         modifier = Modifier.weight(1f)
                     )
-                    Switch(
+                    AppSwitch(
                         checked = viewModel.useProxy,
                         onCheckedChange = { viewModel.useProxy = it }
                     )
@@ -166,25 +166,25 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                     modifier = Modifier.padding(top = 10.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Button(
+                    AppButton(
                         onClick = { viewModel.connect() },
                         enabled = state == MqttConnectionState.IDLE || state == MqttConnectionState.DISCONNECTED || state == MqttConnectionState.FAILED,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Icon(MiuixIcons.Light.Link, contentDescription = null)
-                        Text(stringResource(R.string.action_connect), modifier = Modifier.padding(start = 4.dp))
+                        AppIcon(MiuixIcons.Light.Link, contentDescription = null)
+                        AppText(stringResource(R.string.action_connect), modifier = Modifier.padding(start = 4.dp))
                     }
-                    Button(
+                    AppButton(
                         onClick = { viewModel.disconnect() },
                         enabled = state == MqttConnectionState.CONNECTED,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Icon(Icons.Filled.LinkOff, contentDescription = null)
-                        Text(stringResource(R.string.action_disconnect), modifier = Modifier.padding(start = 4.dp))
+                        AppIcon(Icons.Filled.LinkOff, contentDescription = null)
+                        AppText(stringResource(R.string.action_disconnect), modifier = Modifier.padding(start = 4.dp))
                     }
                 }
                 viewModel.lastError?.let { err ->
-                    Text(
+                    AppText(
                         text = stringResource(R.string.mqtt_state_error, err),
                         color = Color(0xFFD32F2F),
                         modifier = Modifier.padding(top = 8.dp),
@@ -194,9 +194,9 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
             }
         }
 
-        SmallTitle(text = stringResource(R.string.mqtt_title_sub))
-        Card(modifier = Modifier.fillMaxWidth()) {
-            OverlayDropdownPreference(
+        AppSmallTitle(text = stringResource(R.string.mqtt_title_sub))
+        AppCard(modifier = Modifier.fillMaxWidth()) {
+            AppDropdown(
                 items = qosLabels.localizedLabels(),
                 selectedIndex = viewModel.subQos,
                 title = stringResource(R.string.mqtt_qos_label),
@@ -206,17 +206,17 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
             )
             Column(modifier = Modifier.padding(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    TextField(
+                    AppTextField(
                         value = viewModel.subTopic,
                         onValueChange = { viewModel.subTopic = it },
                         label = stringResource(R.string.mqtt_topic_label),
                         modifier = Modifier.weight(1f)
                     )
-                    Button(
+                    AppButton(
                         onClick = { viewModel.addSubscription() },
                         modifier = Modifier.padding(start = 8.dp)
                     ) {
-                        Text(stringResource(R.string.action_subscribe))
+                        AppText(stringResource(R.string.action_subscribe))
                     }
                 }
                 viewModel.subscriptions.forEachIndexed { index, sub ->
@@ -226,12 +226,12 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                             .padding(top = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
+                        AppText(
                             text = stringResource(R.string.sub_item, sub.topic, sub.qos),
                             modifier = Modifier.weight(1f),
                             fontSize = 13.sp
                         )
-                        Icon(
+                        AppIcon(
                             imageVector = MiuixIcons.Light.Close,
                             contentDescription = stringResource(R.string.action_unsubscribe),
                             modifier = Modifier
@@ -243,9 +243,9 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
             }
         }
 
-        SmallTitle(text = stringResource(R.string.mqtt_title_pub))
-        Card(modifier = Modifier.fillMaxWidth()) {
-            OverlayDropdownPreference(
+        AppSmallTitle(text = stringResource(R.string.mqtt_title_pub))
+        AppCard(modifier = Modifier.fillMaxWidth()) {
+            AppDropdown(
                 items = qosLabels.localizedLabels(),
                 selectedIndex = viewModel.pubQos,
                 title = stringResource(R.string.mqtt_pub_qos_label),
@@ -254,7 +254,7 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                 onSelectedIndexChange = { viewModel.pubQos = it }
             )
             Column(modifier = Modifier.padding(12.dp)) {
-                TextField(
+                AppTextField(
                     value = viewModel.pubTopic,
                     onValueChange = { viewModel.pubTopic = it },
                     label = stringResource(R.string.mqtt_pub_topic_label),
@@ -264,18 +264,18 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                     modifier = Modifier.padding(top = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextField(
+                    AppTextField(
                         value = viewModel.pubPayload,
                         onValueChange = { viewModel.pubPayload = it },
                         label = stringResource(R.string.mqtt_pub_payload_label),
                         modifier = Modifier.weight(1f)
                     )
-                    Button(
+                    AppButton(
                         onClick = { viewModel.publish() },
                         enabled = state == MqttConnectionState.CONNECTED,
                         modifier = Modifier.padding(start = 8.dp)
                     ) {
-                        Icon(MiuixIcons.Light.Send, contentDescription = stringResource(R.string.action_publish))
+                        AppIcon(MiuixIcons.Light.Send, contentDescription = stringResource(R.string.action_publish))
                     }
                 }
             }
@@ -285,7 +285,7 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            SmallTitle(
+            AppSmallTitle(
                 text = stringResource(R.string.event_stream_title),
                 modifier = Modifier.weight(1f)
             )
@@ -293,7 +293,7 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                 text = eventLogText(lines),
                 label = stringResource(R.string.cd_copy_stream)
             )
-            Icon(
+            AppIcon(
                 imageVector = MiuixIcons.Light.Delete,
                 contentDescription = stringResource(R.string.cd_clear_stream),
                 modifier = Modifier
@@ -301,7 +301,7 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                     .padding(6.dp)
             )
         }
-        Card(modifier = Modifier.fillMaxWidth().height(360.dp).padding(bottom = 0.dp)) {
+        AppCard(modifier = Modifier.fillMaxWidth().height(360.dp).padding(bottom = 0.dp)) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -316,15 +316,15 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
     }
 
     missingVars?.let { missing ->
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = stringResource(R.string.missing_env_title),
             onDismissRequest = { viewModel.dismissMissing() }
         ) {
             Column {
-                Text(stringResource(R.string.missing_env_desc))
-                Text(missing.joinToString(", "), modifier = Modifier.padding(vertical = 8.dp))
-                TextButton(
+                AppText(stringResource(R.string.missing_env_desc))
+                AppText(missing.joinToString(", "), modifier = Modifier.padding(vertical = 8.dp))
+                AppTextButton(
                     text = stringResource(R.string.action_got_it),
                     onClick = { viewModel.dismissMissing() },
                     modifier = Modifier.fillMaxWidth()
@@ -360,15 +360,15 @@ private fun EventLine(line: UiEventLine) {
             .fillMaxWidth()
             .squircleBackground(
                 if (line.isSystem) {
-                    MiuixTheme.colorScheme.surfaceVariant
+                    AppTheme.colors.surfaceVariant
                 } else {
-                    MiuixTheme.colorScheme.primary.copy(alpha = 0.15f)
+                    AppTheme.colors.primary.copy(alpha = 0.15f)
                 },
                 16.dp
             )
             .padding(8.dp)
     ) {
-        Text(text = time, fontSize = 11.sp)
-        Text(text = line.text, fontSize = 13.sp, modifier = Modifier.padding(top = 2.dp))
+        AppText(text = time, fontSize = 11.sp)
+        AppText(text = line.text, fontSize = 13.sp, modifier = Modifier.padding(top = 2.dp))
     }
 }

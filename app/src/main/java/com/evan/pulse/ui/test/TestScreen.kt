@@ -15,7 +15,7 @@ import com.evan.pulse.ui.l10n.localizedLabels
 import com.evan.pulse.ui.mqtt.MqttScreen
 import com.evan.pulse.ui.sse.SseScreen
 import com.evan.pulse.ui.ws.WsScreen
-import top.yukonga.miuix.kmp.basic.TabRowWithContour
+import com.evan.pulse.ui.design.AppTabRow
 
 private val testTabLabels = listOf(
     R.string.tab_http,
@@ -37,7 +37,7 @@ fun TestScreen(
     httpViewModel: HttpViewModel
 ) {
     Column(modifier = modifier.fillMaxSize().padding(top = LocalTopBarInset.current)) {
-        TabRowWithContour(
+        AppTabRow(
             tabs = testTabLabels.localizedLabels(),
             selectedTabIndex = protocolTab,
             onTabSelected = onProtocolTabChange,

@@ -19,8 +19,8 @@ import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import top.yukonga.miuix.kmp.blur.isRuntimeShaderSupported
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlin.math.floor
+import com.evan.pulse.ui.design.AppTheme
 
 /** 从预设的颜色数组（每 4 个浮点一组 RGBA）解析出渐变色列表 */
 private fun presetColors(config: BgEffectConfig.Config): List<Color> {
@@ -70,7 +70,7 @@ fun BgEffectBackground(
     Box(
         modifier = modifier,
     ) {
-        val surface = MiuixTheme.colorScheme.surface
+        val surface = AppTheme.colors.surface
         val isDarkTheme = isSystemInDarkTheme()
         val painter = remember(isOs3Effect) { BgEffectPainter(isOs3Effect) }
 

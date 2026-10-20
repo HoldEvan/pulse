@@ -27,22 +27,22 @@ import com.evan.pulse.ui.common.BlurredBar
 import com.evan.pulse.ui.common.DialogActions
 import com.evan.pulse.ui.common.blurredBarColor
 import com.evan.pulse.ui.common.roundedPressable
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
-import top.yukonga.miuix.kmp.basic.ScrollBehavior
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.basic.TopAppBar
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppRadioRow
+import com.evan.pulse.ui.design.AppDialog
+import com.evan.pulse.ui.design.AppIcon
+import com.evan.pulse.ui.design.AppIconButton
+import com.evan.pulse.ui.design.AppText
+import com.evan.pulse.ui.design.AppTextButton
+import com.evan.pulse.ui.design.AppTextField
+import com.evan.pulse.ui.design.AppTopBar
+import com.evan.pulse.ui.design.AppTopBarBehavior
+import com.evan.pulse.ui.design.rememberAppTopBarBehavior
 import top.yukonga.miuix.kmp.blur.LayerBackdrop
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Add
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Edit
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
-import top.yukonga.miuix.kmp.preference.RadioButtonLocation
-import top.yukonga.miuix.kmp.preference.RadioButtonPreference
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun ProjectBar(
@@ -51,7 +51,7 @@ fun ProjectBar(
     showEnvSelector: Boolean = false,
     onAddMonitor: (() -> Unit)? = null,
     onAddProject: (() -> Unit)? = null,
-    scrollBehavior: ScrollBehavior? = null,
+    behavior: AppTopBarBehavior? = null,
     backdrop: LayerBackdrop? = null,
     isBlurActive: Boolean = false,
     viewModel: ProjectViewModel = viewModel()
@@ -70,11 +70,13 @@ fun ProjectBar(
     val activeEnvNames = projectEnvs.filter { it.isActive }.map { it.name }
     var showEnvDialog by remember { mutableStateOf(false) }
 
+    val topBarBehavior = behavior ?: rememberAppTopBarBehavior()
+
     BlurredBar(backdrop, isBlurActive) {
-        TopAppBar(
+        AppTopBar(
             title = title,
             color = blurredBarColor(isBlurActive),
-            scrollBehavior = scrollBehavior,
+            behavior = topBarBehavior,
             actions = {
             if (showProjectSelector) {
                 Row(
@@ -83,12 +85,12 @@ fun ProjectBar(
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
+                    AppText(
                         text = (current?.name ?: stringResource(R.string.project_none)).take(10),
-                        style = MiuixTheme.textStyles.title4,
-                        color = MiuixTheme.colorScheme.onSurface
+                        style = AppTheme.typography.title4,
+                        color = AppTheme.colors.onSurface
                     )
-                    Icon(
+                    AppIcon(
                         imageVector = Icons.Filled.ArrowDropDown,
                         contentDescription = stringResource(R.string.cd_switch_project)
                     )
@@ -106,28 +108,28 @@ fun ProjectBar(
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
+                    AppText(
                         text = envLabel.take(10),
-                        style = MiuixTheme.textStyles.title4,
-                        color = MiuixTheme.colorScheme.onSurface
+                        style = AppTheme.typography.title4,
+                        color = AppTheme.colors.onSurface
                     )
-                    Icon(
+                    AppIcon(
                         imageVector = Icons.Filled.ArrowDropDown,
                         contentDescription = stringResource(R.string.cd_switch_env)
                     )
                 }
             }
             if (onAddMonitor != null) {
-                IconButton(onClick = onAddMonitor) {
-                    Icon(
+                AppIconButton(onClick = onAddMonitor) {
+                    AppIcon(
                         imageVector = MiuixIcons.Light.Add,
                         contentDescription = stringResource(R.string.monitor_add)
                     )
                 }
             }
             if (onAddProject != null) {
-                IconButton(onClick = onAddProject) {
-                    Icon(
+                AppIconButton(onClick = onAddProject) {
+                    AppIcon(
                         imageVector = MiuixIcons.Light.Add,
                         contentDescription = stringResource(R.string.project_new_title)
                     )
@@ -138,24 +140,23 @@ fun ProjectBar(
     }
 
     if (showDialog) {
-        OverlayDialog(
+        AppDialog(
             show = showDialog,
             title = stringResource(R.string.project_manage_title),
             onDismissRequest = { viewModel.closeDialog() }
         ) {
             Column {
                 projects.forEach { project ->
-                    RadioButtonPreference(
+                    AppRadioRow(
                         title = project.name,
                         selected = project.id == currentId,
                         onClick = {
                             viewModel.switch(project.id)
                             viewModel.closeDialog()
                         },
-                        radioButtonLocation = RadioButtonLocation.Start,
                         modifier = Modifier.fillMaxWidth(),
                         endActions = {
-                            IconButton(
+                            AppIconButton(
                                 onClick = {
                                     editing = project
                                     nameInput = project.name
@@ -164,19 +165,19 @@ fun ProjectBar(
                                     .size(32.dp)
                                     .offset(x = 4.dp)
                             ) {
-                                Icon(
+                                AppIcon(
                                     imageVector = MiuixIcons.Light.Edit,
                                     contentDescription = stringResource(R.string.cd_rename)
                                 )
                             }
                             if (projects.size > 1) {
-                                IconButton(
+                                AppIconButton(
                                     onClick = { deleting = project },
                                     modifier = Modifier
                                         .size(32.dp)
                                         .offset(x = 4.dp)
                                 ) {
-                                    Icon(
+                                    AppIcon(
                                         imageVector = MiuixIcons.Light.Delete,
                                         contentDescription = stringResource(R.string.action_delete)
                                     )
@@ -185,7 +186,7 @@ fun ProjectBar(
                         }
                     )
                 }
-                TextButton(
+                AppTextButton(
                     text = stringResource(R.string.project_new_title),
                     onClick = {
                         creating = true
@@ -200,7 +201,7 @@ fun ProjectBar(
     }
 
     if (creating || editing != null) {
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = if (creating) {
                 stringResource(R.string.project_new_title)
@@ -213,7 +214,7 @@ fun ProjectBar(
             }
         ) {
             Column {
-                TextField(
+                AppTextField(
                     value = nameInput,
                     onValueChange = { nameInput = it },
                     label = stringResource(R.string.project_name_label)
@@ -222,7 +223,7 @@ fun ProjectBar(
                     modifier = Modifier.padding(top = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    TextButton(
+                    AppTextButton(
                         text = stringResource(R.string.action_cancel),
                         onClick = {
                             creating = false
@@ -230,7 +231,7 @@ fun ProjectBar(
                         },
                         modifier = Modifier.weight(1f)
                     )
-                    TextButton(
+                    AppTextButton(
                         text = stringResource(R.string.action_save),
                         onClick = {
                             if (creating) viewModel.create(nameInput)
@@ -247,13 +248,13 @@ fun ProjectBar(
 
     val deletingTarget = deleting
     if (deletingTarget != null) {
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = stringResource(R.string.project_delete_title),
             onDismissRequest = { deleting = null }
         ) {
             Column {
-                Text(
+                AppText(
                     text = stringResource(R.string.project_delete_confirm, deletingTarget.name)
                 )
                 DialogActions(
@@ -269,20 +270,20 @@ fun ProjectBar(
     }
 
     if (showEnvDialog) {
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = stringResource(R.string.env_title),
             onDismissRequest = { showEnvDialog = false }
         ) {
             Column {
                 if (projectEnvs.isEmpty()) {
-                    Text(
+                    AppText(
                         text = stringResource(R.string.env_empty),
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
                     )
                 } else {
                     projectEnvs.forEach { env ->
-                        RadioButtonPreference(
+                        AppRadioRow(
                             title = env.name,
                             summary = stringResource(R.string.vars_count, env.variables.size),
                             selected = env.isActive,
@@ -290,7 +291,6 @@ fun ProjectBar(
                                 viewModel.activateEnv(env.id)
                                 showEnvDialog = false
                             },
-                            radioButtonLocation = RadioButtonLocation.Start,
                             modifier = Modifier.fillMaxWidth()
                         )
                     }

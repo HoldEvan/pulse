@@ -30,24 +30,23 @@ import com.evan.pulse.data.model.EnvironmentInfo
 import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.subPageScrollState
 import com.evan.pulse.ui.common.subPageOverScroll
-import top.yukonga.miuix.kmp.basic.BasicComponent
-import top.yukonga.miuix.kmp.basic.BasicComponent
-import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.DropdownEntry
 import top.yukonga.miuix.kmp.basic.DropdownItem
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.basic.TextField
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppInfoRow
+import com.evan.pulse.ui.design.AppCard
+import com.evan.pulse.ui.design.AppDialog
+import com.evan.pulse.ui.design.AppIcon
+import com.evan.pulse.ui.design.AppText
+import com.evan.pulse.ui.design.AppTextButton
+import com.evan.pulse.ui.design.AppTextField
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Add
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Edit
 import top.yukonga.miuix.kmp.icon.extended.More
 import top.yukonga.miuix.kmp.icon.extended.Settings
-import top.yukonga.miuix.kmp.menu.OverlayIconDropdownMenu
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import com.evan.pulse.ui.design.AppIconDropdownMenu
 
 @Composable
 fun EnvironmentScreen(
@@ -69,33 +68,38 @@ fun EnvironmentScreen(
             .padding(horizontal = 12.dp)
             .padding(bottom = 12.dp)
     ) {
-        Card(modifier = Modifier.fillMaxWidth()) {
+        AppCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier) {
-                projectEnvironments.forEach { env ->
+                projectEnvironments.forEachIndexed { index, env ->
                     val varsText = stringResource(R.string.vars_count, env.variables.size)
-                    BasicComponent(
+                    AppInfoRow(
                         title = env.name,
                         summary = varsText,
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(
                 color = if (env.isActive) {
-                    MiuixTheme.colorScheme.primary.copy(alpha = 0.15f)
+                    AppTheme.colors.primary.copy(alpha = 0.15f)
                 } else {
                     Color.Transparent
                 },
-                                shape = RoundedCornerShape(16.dp)
+                                shape = RoundedCornerShape(
+                                    topStart = if (index == 0) 16.dp else 0.dp,
+                                    topEnd = if (index == 0) 16.dp else 0.dp,
+                                    bottomStart = 0.dp,
+                                    bottomEnd = 0.dp
+                                )
                             ),
                         onClick = { onOpenVars(env.id) },
                         endActions = {
-                            OverlayIconDropdownMenu(
+                            AppIconDropdownMenu(
                                 entries = listOf(
                                     DropdownEntry(
                                         items = listOf(
                                             DropdownItem(
                                                 text = stringResource(R.string.cd_rename),
                                                 icon = { m ->
-                                                    Icon(
+                                                    AppIcon(
                                                         imageVector = MiuixIcons.Light.Edit,
                                                         contentDescription = null,
                                                         modifier = m
@@ -106,7 +110,7 @@ fun EnvironmentScreen(
                                             DropdownItem(
                                                 text = stringResource(R.string.action_delete),
                                                 icon = { m ->
-                                                    Icon(
+                                                    AppIcon(
                                                         imageVector = MiuixIcons.Light.Delete,
                                                         contentDescription = null,
                                                         modifier = m
@@ -123,7 +127,7 @@ fun EnvironmentScreen(
                                     .size(28.dp)
                                     .offset(x = 4.dp)
                             ) {
-                                Icon(
+                                AppIcon(
                                     imageVector = MiuixIcons.Light.More,
                                     contentDescription = stringResource(R.string.cd_more),
                                     modifier = Modifier.size(20.dp)
@@ -139,26 +143,26 @@ fun EnvironmentScreen(
                             .padding(vertical = 20.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Icon(
+                        AppIcon(
                             imageVector = MiuixIcons.Light.Settings,
                             contentDescription = null,
                             modifier = Modifier.size(28.dp),
-                            tint = MiuixTheme.colorScheme.outline
+                            tint = AppTheme.colors.outline
                         )
-                        Text(
+                        AppText(
                             text = stringResource(R.string.env_empty),
                             modifier = Modifier.padding(top = 8.dp),
                             fontSize = 13.sp,
-                            color = MiuixTheme.colorScheme.outline
+                            color = AppTheme.colors.outline
                         )
                     }
                 }
-                BasicComponent(
+                AppInfoRow(
                     modifier = Modifier.fillMaxWidth(),
                     onClick = { viewModel.openCreate() },
                     title = stringResource(R.string.env_create_title),
                     startAction = {
-                        Icon(
+                        AppIcon(
 imageVector = MiuixIcons.Light.Add,
                             contentDescription = stringResource(R.string.cd_add)
                         )
@@ -170,7 +174,7 @@ imageVector = MiuixIcons.Light.Add,
     }
 
     if (showEditor) {
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = if (viewModel.creating) {
                 stringResource(R.string.env_create_title)
@@ -180,7 +184,7 @@ imageVector = MiuixIcons.Light.Add,
             onDismissRequest = { viewModel.closeEditor() }
         ) {
             Column {
-                TextField(
+                AppTextField(
                     value = viewModel.nameInput,
                     onValueChange = { viewModel.nameInput = it },
                     label = stringResource(R.string.env_name_label)
@@ -190,12 +194,12 @@ imageVector = MiuixIcons.Light.Add,
                         .padding(top = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    TextButton(
+                    AppTextButton(
                         text = stringResource(R.string.action_cancel),
                         onClick = { viewModel.closeEditor() },
                         modifier = Modifier.weight(1f)
                     )
-                    TextButton(
+                    AppTextButton(
                         text = stringResource(R.string.action_save),
                         onClick = { viewModel.save() },
                         modifier = Modifier.weight(1f)
@@ -206,23 +210,23 @@ imageVector = MiuixIcons.Light.Add,
     }
 
     deleteTarget?.let { target ->
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = stringResource(R.string.env_delete_title),
             onDismissRequest = { viewModel.cancelDelete() }
         ) {
             Column {
-                Text(stringResource(R.string.env_delete_confirm, target.name))
+                AppText(stringResource(R.string.env_delete_confirm, target.name))
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.padding(top = 12.dp)
                 ) {
-                    TextButton(
+                    AppTextButton(
                         text = stringResource(R.string.action_cancel),
                         onClick = { viewModel.cancelDelete() },
                         modifier = Modifier.weight(1f)
                     )
-                    TextButton(
+                    AppTextButton(
                         text = stringResource(R.string.action_delete),
                         onClick = { viewModel.confirmDelete() },
                         modifier = Modifier.weight(1f)

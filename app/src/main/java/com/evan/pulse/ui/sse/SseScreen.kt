@@ -53,23 +53,23 @@ import com.evan.pulse.ui.common.eventLogText
 import com.evan.pulse.ui.common.subPageScrollState
 import com.evan.pulse.ui.l10n.localizedLabels
 import com.evan.pulse.ui.common.subPageOverScroll
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
-import top.yukonga.miuix.kmp.basic.SmallTitle
+import com.evan.pulse.ui.design.AppSmallTitle
 import androidx.compose.ui.text.input.KeyboardType
-import top.yukonga.miuix.kmp.basic.TabRowWithContour
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.Switch
-import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
-import top.yukonga.miuix.kmp.preference.CheckboxPreference
-import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference
+import com.evan.pulse.ui.design.AppCheckboxRow
+import com.evan.pulse.ui.design.AppCard
+import com.evan.pulse.ui.design.AppDialog
+import com.evan.pulse.ui.design.AppDropdown
+import com.evan.pulse.ui.design.AppIcon
+import com.evan.pulse.ui.design.AppIconButton
+import com.evan.pulse.ui.design.AppSwitch
+import com.evan.pulse.ui.design.AppTabRow
+import com.evan.pulse.ui.design.AppText
+import com.evan.pulse.ui.design.AppTextButton
+import com.evan.pulse.ui.design.AppTextField
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Link
+import com.evan.pulse.ui.design.AppButton
 
 private val sseMethods = HttpMethod.entries.toList()
 private val sseBodyTypes = listOf(BodyType.NONE, BodyType.JSON, BodyType.RAW)
@@ -97,8 +97,8 @@ private fun SectionTitleRow(status: @Composable () -> Unit, onSaveClick: () -> U
     ) {
         // 沿用 SmallTitle 的内边距节奏，保持与原分组标题一致的间距
         Box(modifier = Modifier.weight(1f).padding(start = 16.dp, top = 8.dp, bottom = 8.dp)) { status() }
-        IconButton(onClick = onSaveClick, modifier = Modifier.size(36.dp)) {
-            Icon(
+        AppIconButton(onClick = onSaveClick, modifier = Modifier.size(36.dp)) {
+            AppIcon(
                 imageVector = Icons.Filled.Save,
                 contentDescription = stringResource(R.string.cd_save_request)
             )
@@ -133,8 +133,8 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
             onSaveClick = { showSave = true }
         )
         Column(modifier = Modifier.fillMaxWidth()) {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                OverlayDropdownPreference(
+            AppCard(modifier = Modifier.fillMaxWidth()) {
+                AppDropdown(
                     items = sseMethods.map { it.name },
                     selectedIndex = sseMethods.indexOf(viewModel.method),
                     title = stringResource(R.string.sse_method_label),
@@ -143,7 +143,7 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                     onSelectedIndexChange = { viewModel.method = sseMethods[it] }
                 )
                 Column(modifier = Modifier.padding(12.dp)) {
-                    TextField(
+                    AppTextField(
                         value = viewModel.url,
                         onValueChange = { viewModel.url = it },
                         label = stringResource(R.string.sse_url_label),
@@ -151,7 +151,7 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                         modifier = Modifier.fillMaxWidth()
                     )
                     ValueHints(hints = viewModel.placeholderHints(viewModel.url))
-                    TextField(
+                    AppTextField(
                         value = viewModel.eventFilter,
                         onValueChange = { viewModel.eventFilter = it },
                         label = stringResource(R.string.sse_event_filter_label),
@@ -160,7 +160,7 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                             .fillMaxWidth()
                             .padding(top = 8.dp)
                     )
-                    TextField(
+                    AppTextField(
                         value = viewModel.reconnectDelaySec,
                         onValueChange = { viewModel.reconnectDelaySec = it },
                         label = stringResource(R.string.sse_reconnect_delay_label),
@@ -168,13 +168,13 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                             .fillMaxWidth()
                             .padding(top = 8.dp)
                     )
-                    CheckboxPreference(
+                    AppCheckboxRow(
                         title = stringResource(R.string.sse_auto_reconnect_label),
                         checked = viewModel.autoReconnect,
                         onCheckedChange = { viewModel.autoReconnect = it },
                         modifier = Modifier.fillMaxWidth()
                     )
-                    TabRowWithContour(
+                    AppTabRow(
                         tabs = sseTabLabels.localizedLabels(),
                         selectedTabIndex = viewModel.activeTab,
                         onTabSelected = { viewModel.activeTab = it },
@@ -212,7 +212,7 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                         2 -> BodyEditor(viewModel)
 
                         3 -> Column(modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp)) {
-                            TextField(
+                            AppTextField(
                                 value = viewModel.timeoutSec,
                                 onValueChange = { viewModel.timeoutSec = it.filter(Char::isDigit) },
                                 label = stringResource(R.string.timeout_sec_label),
@@ -225,11 +225,11 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                                     .padding(top = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
+                                AppText(
                                     text = stringResource(R.string.use_proxy_label),
                                     modifier = Modifier.weight(1f)
                                 )
-                                Switch(
+                                AppSwitch(
                                     checked = viewModel.useProxy,
                                     onCheckedChange = { viewModel.useProxy = it }
                                 )
@@ -243,25 +243,25 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Button(
+                        AppButton(
                             onClick = { viewModel.connect() },
                             enabled = state == SseConnectionState.IDLE || state == SseConnectionState.CLOSED || state == SseConnectionState.FAILED,
                             modifier = Modifier.weight(1f)
                         ) {
-                            Icon(MiuixIcons.Light.Link, contentDescription = null)
-                            Text(stringResource(R.string.sse_connect_button), modifier = Modifier.padding(start = 4.dp))
+                            AppIcon(MiuixIcons.Light.Link, contentDescription = null)
+                            AppText(stringResource(R.string.sse_connect_button), modifier = Modifier.padding(start = 4.dp))
                         }
-                        Button(
+                        AppButton(
                             onClick = { viewModel.disconnect() },
                             enabled = state == SseConnectionState.CONNECTED || state == SseConnectionState.CONNECTING,
                             modifier = Modifier.weight(1f)
                         ) {
-                            Icon(Icons.Filled.LinkOff, contentDescription = null)
-                            Text(stringResource(R.string.sse_disconnect_button), modifier = Modifier.padding(start = 4.dp))
+                            AppIcon(Icons.Filled.LinkOff, contentDescription = null)
+                            AppText(stringResource(R.string.sse_disconnect_button), modifier = Modifier.padding(start = 4.dp))
                         }
                     }
                     viewModel.lastError?.let { err ->
-                        Text(
+                        AppText(
                             text = stringResource(R.string.mqtt_state_error, err),
                             color = Color(0xFFD32F2F),
                             modifier = Modifier.padding(top = 8.dp),
@@ -271,9 +271,9 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                 }
             }
 
-            Card(modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
+            AppCard(modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
                 Column(modifier = Modifier.padding(12.dp)) {
-                    TextField(
+                    AppTextField(
                         value = viewModel.previewPath,
                         onValueChange = { viewModel.previewPath = it },
                         label = stringResource(R.string.sse_preview_path_label),
@@ -286,7 +286,7 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                             .padding(top = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        TabRowWithContour(
+                        AppTabRow(
                             tabs = previewTabLabels.localizedLabels(),
                             selectedTabIndex = viewModel.previewTab,
                             onTabSelected = { viewModel.previewTab = it },
@@ -297,7 +297,7 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                             label = stringResource(R.string.cd_copy_preview),
                             modifier = Modifier.padding(start = 4.dp)
                         )
-                        Icon(
+                        AppIcon(
                             imageVector = MiuixIcons.Light.Delete,
                             contentDescription = stringResource(R.string.cd_clear_preview),
                             modifier = Modifier
@@ -306,7 +306,7 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                         )
                     }
                     if (viewModel.previewText.isBlank()) {
-                        Text(
+                        AppText(
                             text = stringResource(R.string.sse_preview_empty),
                             color = Color.Gray,
                             fontSize = 13.sp,
@@ -321,7 +321,7 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                                 .verticalScroll(rememberScrollState())
                         ) {
                             if (viewModel.previewTab == 0) {
-                                Text(
+                                AppText(
                                     text = viewModel.previewText,
                                     fontSize = 13.sp,
                                     modifier = Modifier.fillMaxWidth()
@@ -344,12 +344,12 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                SmallTitle(text = stringResource(R.string.event_stream_title), modifier = Modifier.weight(1f))
+                AppSmallTitle(text = stringResource(R.string.event_stream_title), modifier = Modifier.weight(1f))
                 CopyIconButton(
                     text = eventLogText(lines),
                     label = stringResource(R.string.cd_copy_stream)
                 )
-                Icon(
+                AppIcon(
                     imageVector = MiuixIcons.Light.Delete,
                     contentDescription = stringResource(R.string.cd_clear_stream),
                     modifier = Modifier
@@ -357,7 +357,7 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                         .padding(6.dp)
                 )
             }
-            Card(modifier = Modifier.fillMaxWidth().height(300.dp)) {
+            AppCard(modifier = Modifier.fillMaxWidth().height(300.dp)) {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -372,15 +372,15 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
     }
 
     missingVars?.let { missing ->
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = stringResource(R.string.missing_env_title),
             onDismissRequest = { viewModel.dismissMissing() }
         ) {
             Column {
-                Text(stringResource(R.string.missing_env_desc))
-                Text(missing.joinToString(", "), modifier = Modifier.padding(vertical = 8.dp))
-                TextButton(
+                AppText(stringResource(R.string.missing_env_desc))
+                AppText(missing.joinToString(", "), modifier = Modifier.padding(vertical = 8.dp))
+                AppTextButton(
                     text = stringResource(R.string.action_got_it),
                     onClick = { viewModel.dismissMissing() },
                     modifier = Modifier.fillMaxWidth()
@@ -401,7 +401,7 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
 @Composable
 private fun BodyEditor(viewModel: SseViewModel) {
     Column(horizontalAlignment = Alignment.Start) {
-        OverlayDropdownPreference(
+        AppDropdown(
             items = sseBodyTypeLabels.localizedLabels(),
             selectedIndex = sseBodyTypes.indexOf(viewModel.bodyType),
             title = stringResource(R.string.body_type_label),
@@ -414,7 +414,7 @@ private fun BodyEditor(viewModel: SseViewModel) {
             Column(
                 modifier = Modifier.padding(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 12.dp)
             ) {
-                TextField(
+                AppTextField(
                     value = viewModel.bodyText,
                     onValueChange = { viewModel.bodyText = it },
                     label = if (viewModel.bodyType == BodyType.JSON) {

@@ -12,9 +12,9 @@ import com.evan.pulse.R
 import com.evan.pulse.ui.history.UiEventLine
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
-import top.yukonga.miuix.kmp.basic.Text
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppText
 import top.yukonga.miuix.kmp.squircle.squircleBackground
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private val prettyJson = Json { prettyPrint = true }
 
@@ -35,16 +35,16 @@ fun EventLine(line: UiEventLine, systemLabel: String, recvLabel: String) {
             .fillMaxWidth()
             .squircleBackground(
                 if (line.isSystem) {
-                    MiuixTheme.colorScheme.surfaceVariant
+                    AppTheme.colors.surfaceVariant
                 } else {
-                    MiuixTheme.colorScheme.primary.copy(alpha = 0.15f)
+                    AppTheme.colors.primary.copy(alpha = 0.15f)
                 },
                 16.dp
             )
             .padding(8.dp)
     ) {
-        Text(text = stringResource(R.string.event_time_direction, time, directionLabel), fontSize = 11.sp)
-        Text(
+        AppText(text = stringResource(R.string.event_time_direction, time, directionLabel), fontSize = 11.sp)
+        AppText(
             text = prettyLine(line.text),
             fontSize = 13.sp,
             modifier = Modifier.padding(top = 2.dp)

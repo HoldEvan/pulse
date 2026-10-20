@@ -43,18 +43,20 @@ import com.evan.pulse.ui.about.effect.BgEffectBackground
 import com.evan.pulse.ui.common.BlurredBar
 import com.evan.pulse.ui.common.blurredBarColor
 import com.evan.pulse.ui.common.rememberBlurBackdrop
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
-import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
-import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.SmallTopAppBar
-import top.yukonga.miuix.kmp.basic.Text
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppScaffold
+import com.evan.pulse.ui.design.AppArrowRow
+import com.evan.pulse.ui.design.AppCard
+import com.evan.pulse.ui.design.AppPreferenceGroup
+import com.evan.pulse.ui.design.AppIcon
+import com.evan.pulse.ui.design.AppIconButton
+import com.evan.pulse.ui.design.AppSmallTopBar
+import com.evan.pulse.ui.design.AppText
+import com.evan.pulse.ui.design.rememberAppTopBarBehavior
+import com.evan.pulse.ui.design.isMaterialStyle
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.ChevronBackward
-import top.yukonga.miuix.kmp.preference.ArrowPreference
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 
 /**
@@ -70,7 +72,7 @@ fun AboutScreen(
     onOpenAgreement: () -> Unit,
     onOpenPrivacy: () -> Unit
 ) {
-    val topAppBarScrollBehavior = MiuixScrollBehavior()
+    val topAppBarScrollBehavior = rememberAppTopBarBehavior()
     val lazyListState = rememberLazyListState()
     val uriHandler = LocalUriHandler.current
     val context = LocalContext.current
@@ -113,23 +115,23 @@ fun AboutScreen(
     val barColor = if (blurActive) {
         Color.Transparent
     } else {
-        if (scrollProgress == 1f) MiuixTheme.colorScheme.surface else Color.Transparent
+        if (scrollProgress == 1f) AppTheme.colors.surface else Color.Transparent
     }
 
-    Scaffold(
+    AppScaffold(
         topBar = {
             BlurredBar(backdrop, blurActive) {
-                SmallTopAppBar(
+                AppSmallTopBar(
                     title = stringResource(R.string.about_title),
-                    scrollBehavior = topAppBarScrollBehavior,
+                    behavior = topAppBarScrollBehavior,
                     color = barColor,
-                    titleColor = MiuixTheme.colorScheme.onSurface.copy(
+                    titleColor = AppTheme.colors.onSurface.copy(
                         alpha = ((scrollProgress - 0.35f) / 0.65f).coerceIn(0f, 1f)
                     ),
-                    defaultWindowInsetsPadding = false,
+                    defaultWindowInsetsPadding = isMaterialStyle,
                     navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(
+                        AppIconButton(onClick = onBack) {
+                            AppIcon(
                                 imageVector = MiuixIcons.Light.ChevronBackward,
                                 contentDescription = stringResource(R.string.cd_back)
                             )
@@ -189,69 +191,83 @@ fun AboutScreen(
                 Box {
                     Spacer(modifier = Modifier.fillParentMaxHeight())
                     Column {
-                        Card(
+                        AppPreferenceGroup(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 24.dp)
                         ) {
-                            ArrowPreference(
-                                title = stringResource(R.string.about_source),
-                                endActions = {
-                                    Text(
-                                        text = "GitHub",
-                                        fontSize = MiuixTheme.textStyles.body2.fontSize,
-                                        color = MiuixTheme.colorScheme.onSurfaceVariantActions
-                                    )
-                                },
-                                onClick = { uriHandler.openUri("https://github.com/HoldEvan/pulse") }
-                            )
+                            item {
+                                AppArrowRow(
+                                    title = stringResource(R.string.about_source),
+                                    endActions = {
+                                        AppText(
+                                            text = "GitHub",
+                                            fontSize = AppTheme.typography.body2.fontSize,
+                                            color = AppTheme.colors.onSurfaceSecondary
+                                        )
+                                    },
+                                    onClick = { uriHandler.openUri("https://github.com/HoldEvan/pulse") }
+                                )
+                            }
                         }
-                        Card(
+                        AppPreferenceGroup(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 12.dp)
                         ) {
-                            ArrowPreference(
-                                title = "Miuix",
-                                summary = "Apache-2.0",
-                                onClick = { uriHandler.openUri("https://github.com/miuix-kotlin-multiplatform/miuix") }
-                            )
-                            ArrowPreference(
-                                title = "Ktor",
-                                summary = "Apache-2.0",
-                                onClick = { uriHandler.openUri("https://github.com/ktorio/ktor") }
-                            )
-                            ArrowPreference(
-                                title = "Paho MQTT",
-                                summary = "EPL-1.0 / EDL-1.0",
-                                onClick = { uriHandler.openUri("https://github.com/eclipse/paho.mqtt.java") }
-                            )
-                            ArrowPreference(
-                                title = "Rhino",
-                                summary = "MPL-2.0",
-                                onClick = { uriHandler.openUri("https://github.com/mozilla/rhino") }
-                            )
+                            item {
+                                AppArrowRow(
+                                    title = "Miuix",
+                                    summary = "Apache-2.0",
+                                    onClick = { uriHandler.openUri("https://github.com/miuix-kotlin-multiplatform/miuix") }
+                                )
+                            }
+                            item {
+                                AppArrowRow(
+                                    title = "Ktor",
+                                    summary = "Apache-2.0",
+                                    onClick = { uriHandler.openUri("https://github.com/ktorio/ktor") }
+                                )
+                            }
+                            item {
+                                AppArrowRow(
+                                    title = "Paho MQTT",
+                                    summary = "EPL-1.0 / EDL-1.0",
+                                    onClick = { uriHandler.openUri("https://github.com/eclipse/paho.mqtt.java") }
+                                )
+                            }
+                            item {
+                                AppArrowRow(
+                                    title = "Rhino",
+                                    summary = "MPL-2.0",
+                                    onClick = { uriHandler.openUri("https://github.com/mozilla/rhino") }
+                                )
+                            }
                         }
-                        Card(
+                        AppPreferenceGroup(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 12.dp)
                         ) {
-                            ArrowPreference(
-                                title = stringResource(R.string.about_agreement),
-                                onClick = onOpenAgreement
-                            )
-                            ArrowPreference(
-                                title = stringResource(R.string.about_privacy),
-                                onClick = onOpenPrivacy
-                            )
+                            item {
+                                AppArrowRow(
+                                    title = stringResource(R.string.about_agreement),
+                                    onClick = onOpenAgreement
+                                )
+                            }
+                            item {
+                                AppArrowRow(
+                                    title = stringResource(R.string.about_privacy),
+                                    onClick = onOpenPrivacy
+                                )
+                            }
                         }
-                        Card(
+                        AppCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 12.dp)
                         ) {
-                            Text(
+                            AppText(
                                 text = stringResource(
                                     R.string.about_build_info,
                                     BuildConfig.VERSION_NAME,
@@ -262,7 +278,7 @@ fun AboutScreen(
                                     .fillMaxWidth()
                                     .padding(horizontal = 16.dp, vertical = 14.dp),
                                 fontSize = 12.sp,
-                                color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                                color = AppTheme.colors.onSurfaceSummary
                             )
                         }
                         Spacer(modifier = Modifier.height(12.dp))
@@ -297,7 +313,7 @@ private fun AboutHeader(
                     scaleY = 1f - iconProgress * 0.05f
                 }
         )
-        Text(
+        AppText(
             text = "Pulse",
             modifier = Modifier
                 .padding(top = 12.dp, bottom = 5.dp)
@@ -307,11 +323,11 @@ private fun AboutHeader(
                     scaleX = 1f - nameProgress * 0.05f
                     scaleY = 1f - nameProgress * 0.05f
                 },
-            color = MiuixTheme.colorScheme.onBackground,
+            color = AppTheme.colors.onBackground,
             fontWeight = FontWeight.Bold,
             fontSize = 30.sp
         )
-        Text(
+        AppText(
             text = stringResource(
                 R.string.version_value,
                 BuildConfig.VERSION_NAME,
@@ -321,7 +337,7 @@ private fun AboutHeader(
                 val versionProgress = ((scrollProgress() - 0.05f) / 0.15f).coerceIn(0f, 1f)
                 alpha = 1f - versionProgress
             },
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+            color = AppTheme.colors.onSurfaceSummary,
             fontSize = 14.sp
         )
     }

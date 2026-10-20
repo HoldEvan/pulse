@@ -40,20 +40,20 @@ import com.evan.pulse.ui.common.eventLogText
 import com.evan.pulse.ui.common.roundedPressable
 import com.evan.pulse.ui.common.subPageLazyListState
 import com.evan.pulse.ui.common.subPageOverScroll
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
-import top.yukonga.miuix.kmp.basic.SmallTitle
-import top.yukonga.miuix.kmp.basic.Switch
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.basic.TextField
+import com.evan.pulse.ui.design.AppSmallTitle
+import com.evan.pulse.ui.design.AppCard
+import com.evan.pulse.ui.design.AppDialog
+import com.evan.pulse.ui.design.AppIcon
+import com.evan.pulse.ui.design.AppIconButton
+import com.evan.pulse.ui.design.AppSwitch
+import com.evan.pulse.ui.design.AppText
+import com.evan.pulse.ui.design.AppTextButton
+import com.evan.pulse.ui.design.AppTextField
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Link
 import top.yukonga.miuix.kmp.icon.extended.Send
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
+import com.evan.pulse.ui.design.AppButton
 
 @Composable
 private fun SectionTitleRow(status: @Composable () -> Unit, onSaveClick: () -> Unit) {
@@ -63,8 +63,8 @@ private fun SectionTitleRow(status: @Composable () -> Unit, onSaveClick: () -> U
     ) {
         // 沿用 SmallTitle 的内边距节奏，保持与原分组标题一致的间距
         Box(modifier = Modifier.weight(1f).padding(start = 16.dp, top = 8.dp, bottom = 8.dp)) { status() }
-        IconButton(onClick = onSaveClick, modifier = Modifier.size(36.dp)) {
-            Icon(
+        AppIconButton(onClick = onSaveClick, modifier = Modifier.size(36.dp)) {
+            AppIcon(
                 imageVector = Icons.Filled.Save,
                 contentDescription = stringResource(R.string.cd_save_request)
             )
@@ -92,22 +92,22 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
             },
             onSaveClick = { showSave = true }
         )
-        Card(modifier = Modifier.fillMaxWidth()) {
+        AppCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(12.dp)) {
-                TextField(
+                AppTextField(
                     value = viewModel.url,
                     onValueChange = { viewModel.url = it },
                     label = stringResource(R.string.ws_url_label),
                     modifier = Modifier.fillMaxWidth()
                 )
                 Row(modifier = Modifier.padding(top = 8.dp)) {
-                    TextField(
+                    AppTextField(
                         value = viewModel.pingIntervalSec,
                         onValueChange = { viewModel.pingIntervalSec = it },
                         label = stringResource(R.string.ws_heartbeat_interval_label),
                         modifier = Modifier.weight(0.5f)
                     )
-                    TextField(
+                    AppTextField(
                         value = viewModel.pingPayload,
                         onValueChange = { viewModel.pingPayload = it },
                         label = stringResource(R.string.ws_heartbeat_payload_label),
@@ -123,11 +123,11 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
                         .padding(top = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
+                    AppText(
                         text = stringResource(R.string.use_proxy_label),
                         modifier = Modifier.weight(1f)
                     )
-                    Switch(
+                    AppSwitch(
                         checked = viewModel.useProxy,
                         onCheckedChange = { viewModel.useProxy = it }
                     )
@@ -136,25 +136,25 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
                     modifier = Modifier.padding(top = 10.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Button(
+                    AppButton(
                         onClick = { viewModel.connect() },
                         enabled = state == WsConnectionState.IDLE || state == WsConnectionState.CLOSED || state == WsConnectionState.FAILED,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Icon(MiuixIcons.Light.Link, contentDescription = null)
-                        Text(stringResource(R.string.action_connect), modifier = Modifier.padding(start = 4.dp))
+                        AppIcon(MiuixIcons.Light.Link, contentDescription = null)
+                        AppText(stringResource(R.string.action_connect), modifier = Modifier.padding(start = 4.dp))
                     }
-                    Button(
+                    AppButton(
                         onClick = { viewModel.disconnect() },
                         enabled = state == WsConnectionState.CONNECTED || state == WsConnectionState.CONNECTING,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Icon(Icons.Filled.LinkOff, contentDescription = null)
-                        Text(stringResource(R.string.action_disconnect), modifier = Modifier.padding(start = 4.dp))
+                        AppIcon(Icons.Filled.LinkOff, contentDescription = null)
+                        AppText(stringResource(R.string.action_disconnect), modifier = Modifier.padding(start = 4.dp))
                     }
                 }
                 viewModel.lastError?.let { err ->
-                    Text(
+                    AppText(
                         text = stringResource(R.string.mqtt_state_error, err),
                         color = Color(0xFFD32F2F),
                         modifier = Modifier.padding(top = 8.dp),
@@ -168,7 +168,7 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            SmallTitle(
+            AppSmallTitle(
                 text = stringResource(R.string.event_stream_title),
                 modifier = Modifier.weight(1f)
             )
@@ -176,7 +176,7 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
                 text = eventLogText(lines),
                 label = stringResource(R.string.cd_copy_stream)
             )
-            Icon(
+            AppIcon(
                 imageVector = MiuixIcons.Light.Delete,
                 contentDescription = stringResource(R.string.action_clear),
                 modifier = Modifier
@@ -184,7 +184,7 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
                     .padding(6.dp)
             )
         }
-        Card(modifier = Modifier.fillMaxWidth().weight(1f)) {
+        AppCard(modifier = Modifier.fillMaxWidth().weight(1f)) {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -204,33 +204,33 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
                 .padding(vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            TextField(
+            AppTextField(
                 value = viewModel.input,
                 onValueChange = { viewModel.input = it },
                 label = stringResource(R.string.ws_input_label),
                 modifier = Modifier.weight(1f)
             )
-            Button(
+            AppButton(
                 onClick = { viewModel.send() },
                 enabled = state == WsConnectionState.CONNECTED,
                 modifier = Modifier.padding(start = 8.dp)
             ) {
-                Icon(MiuixIcons.Light.Send, contentDescription = stringResource(R.string.action_send))
+                AppIcon(MiuixIcons.Light.Send, contentDescription = stringResource(R.string.action_send))
             }
         }
         BottomBarClearance()
     }
 
     missingVars?.let { missing ->
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = stringResource(R.string.missing_env_title),
             onDismissRequest = { viewModel.dismissMissing() }
         ) {
             Column {
-                Text(stringResource(R.string.missing_env_desc))
-                Text(missing.joinToString(", "), modifier = Modifier.padding(vertical = 8.dp))
-                TextButton(
+                AppText(stringResource(R.string.missing_env_desc))
+                AppText(missing.joinToString(", "), modifier = Modifier.padding(vertical = 8.dp))
+                AppTextButton(
                     text = stringResource(R.string.action_got_it),
                     onClick = { viewModel.dismissMissing() },
                     modifier = Modifier.fillMaxWidth()
@@ -256,4 +256,3 @@ private fun stateLabel(state: WsConnectionState): String = when (state) {
     WsConnectionState.CLOSED -> stringResource(R.string.state_disconnected)
     WsConnectionState.FAILED -> stringResource(R.string.state_failed)
 }
-

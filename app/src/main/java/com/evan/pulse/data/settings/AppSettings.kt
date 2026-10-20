@@ -10,8 +10,11 @@ import com.evan.pulse.domain.model.ProxyType
  * 因此读取端必须配合 getOrElse 使用。
  */
 data class AppSettings(
+    /** 界面风格下标，对应 ui.design.UiStyleEntries，0 为 Miuix */
+    val uiStyleIndex: Int = 0,
     /** 外观模式下标，对应 ui.theme.ThemeModeEntries */
     val themeModeIndex: Int = 0,
+    val monetEnabled: Boolean = false,
     /** 主题色下标，0 表示跟随系统取色，1..N 对应 ui.theme.ThemeKeyColors */
     val keyColorIndex: Int = 0,
     /** 调色板风格下标，对应 ui.theme.PaletteStyleEntries */

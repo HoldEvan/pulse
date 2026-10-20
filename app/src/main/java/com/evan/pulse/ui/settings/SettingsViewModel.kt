@@ -172,6 +172,14 @@ class SettingsViewModel(
         viewModelScope.launch { store.update { it.copy(barBlurStyleIndex = index) } }
     }
 
+    fun setUiStyle(index: Int) {
+        viewModelScope.launch { store.update { it.copy(uiStyleIndex = index.coerceAtLeast(0)) } }
+    }
+
+    fun setMonetEnabled(enabled: Boolean) {
+        viewModelScope.launch { store.update { it.copy(monetEnabled = enabled) } }
+    }
+
     fun setPureBlackInDark(enabled: Boolean) {
         viewModelScope.launch { store.update { it.copy(pureBlackInDark = enabled) } }
     }

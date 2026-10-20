@@ -14,8 +14,8 @@ import androidx.compose.foundation.layout.Spacer
 import com.evan.pulse.ui.common.subPageScrollState
 import com.evan.pulse.ui.common.subPageOverScroll
 import com.evan.pulse.ui.common.LocalTopBarInset
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppText
 
 /** 中文与英文正文共用的条款标题模式：中文序号、英文数字编号或日期行 */
 private val HeadingPattern = Regex(
@@ -43,7 +43,7 @@ fun LegalScreen(
             val trimmed = paragraph.trim()
             if (trimmed.isEmpty()) return@forEachIndexed
             val isHeading = index == 0 || HeadingPattern.matches(trimmed)
-            Text(
+            AppText(
                 text = trimmed,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -51,7 +51,7 @@ fun LegalScreen(
                 fontSize = if (isHeading) 15.sp else 14.sp,
                 lineHeight = 24.sp,
                 fontWeight = if (isHeading) FontWeight.Bold else FontWeight.Normal,
-                color = MiuixTheme.colorScheme.onSurface
+                color = AppTheme.colors.onSurface
             )
         }
     }

@@ -241,9 +241,23 @@ Entries discovered by the Agent during task execution should follow this format:
 - Date: 2026-10-09
 - Context: 用户反馈无法区分每轮真机测试安装的是哪一版 APK
 - Instructions:
-  - 每次构建发布前递增版本号：`app/build.gradle.kts` 的 `versionCode` 与 `versionName` 同步 +1（如 0.1.5/5 -> 0.1.6/6），便于用户在真机上区分新旧构建
   - 出包后在仓库根目录留一份带版本号命名的 APK 副本（如 `Pulse-v0.1.6-release.apk`）
   - 仓库根目录只保留最新一版 APK，出包后删除更早版本的副本，避免堆积
+
+[Project Knowledge Summary]
+- Date: 2026-10-19
+- Context: Discovered by Agent while fixing the code-export dialog crash and adding HTML response preview
+- Category: Troubleshooting & Debugging
+- Instructions:
+  - Miuix 0.9.4 的 `TabRowWithContour` 内部就是 `LazyList` 实现，自带滚动并会自动滚到选中项；被外层 `Modifier.horizontalScroll()` 包住后内层 LazyRow 拿到无限宽度约束，弹窗一打开就崩。正确做法是把 modifier 原样透传给它，让它自己滚动，`scrollable` 参数只对 Material 分支有意义（`AppTabRow` 已按此重构：Miuix 分支最先 return；Material 分支为文字下 24dp 短横线指示器的 MD3 标签样式，scrollable 时横向滚动，用户明确否决过填充胶囊/连接式分段两种样式）
+  - 响应体 HTML 预览的 WebView 安全基线：`javaScriptEnabled=false`、`allowFileAccess=false`、`allowContentAccess=false`、`domStorageEnabled=false`；CSS/图片要能显示所以 `blockNetworkLoads=false` + `MIXED_CONTENT_COMPATIBILITY_MODE`，但 `shouldOverrideUrlLoading` 一律返回 true 拦截主框架导航（链接点击/meta refresh 跳不走，img/CSS 等子资源不经过此回调正常放行）；`loadDataWithBaseURL` 的基准 URL 用响应对应的请求 URL 解析相对路径，含 `{{占位符}}` 的 URL 会优雅降级（基准为 null）；`view.tag != base to body` 守卫，否则每次重组都会重载闪烁。另外部分机型（Android 16/HyperOS，如 Redmi onyx）WebView 的 Vulkan 绘制路径会在 RenderThread 触发 SIGTRAP 原生崩溃（`libwebviewchromium.so` 的 `WebViewFunctor::drawVk`/`VkFunctorDrawHandler::draw`），静态预览须 `setLayerType(View.LAYER_TYPE_SOFTWARE, null)` 走软件渲染
+
+[User Instruction Summary]
+- Date: 2026-10-18
+- Context: 用户明确要求不要每轮都自动升版本号
+- Instructions:
+  - 不要主动递增 `versionCode` / `versionName`；仅在用户明确要求发布新版本时再改
+  - 每轮构建仍照常出 APK 并覆盖根目录的副本，但版本号保持不变
 
 
 [Project Knowledge Summary]

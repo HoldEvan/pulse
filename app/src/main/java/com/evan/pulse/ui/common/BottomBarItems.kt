@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -15,9 +16,9 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppIcon
+import com.evan.pulse.ui.design.AppText
 
 /**
  * 悬浮底栏的「图标 + 文字」条目。miuix 的 FloatingNavigationBarItem 只绘制图标，
@@ -33,12 +34,13 @@ fun FloatingNavItemWithLabel(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val tint = if (selected) {
-        MiuixTheme.colorScheme.primary
+        AppTheme.colors.primary
     } else {
-        MiuixTheme.colorScheme.onSurfaceContainer.copy(alpha = 0.55f)
+        AppTheme.colors.onSurfaceContainer.copy(alpha = 0.55f)
     }
     Column(
         modifier = modifier
+            .sizeIn(minWidth = 56.dp, minHeight = 56.dp)
             .selectable(
                 selected = selected,
                 onClick = onClick,
@@ -49,15 +51,15 @@ fun FloatingNavItemWithLabel(
             )
             .padding(horizontal = 6.dp, vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(2.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
     ) {
-        Icon(
-            modifier = Modifier.size(22.dp),
+        AppIcon(
+            modifier = Modifier.size(24.dp),
             imageVector = icon,
             tint = tint,
             contentDescription = null,
         )
-        Text(
+        AppText(
             text = label,
             color = tint,
             fontSize = 11.sp,

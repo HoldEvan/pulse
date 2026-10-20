@@ -17,6 +17,17 @@ import com.evan.pulse.data.settings.AppSettings
 import com.evan.pulse.ui.common.BarBlurStyle
 import com.evan.pulse.ui.common.LocalBarBlurStyle
 import com.evan.pulse.ui.common.LocalBlurEnabled
+import com.evan.pulse.ui.design.LocalAppTokens
+import com.evan.pulse.ui.design.LocalUiCapabilities
+import com.evan.pulse.ui.design.LocalUiStyle
+import com.evan.pulse.ui.design.UiStyle
+import com.evan.pulse.ui.design.UiStyleEntries
+import com.evan.pulse.ui.design.capabilities
+import com.evan.pulse.ui.design.currentAppTokens
+import com.evan.pulse.ui.design.materialAppTokens
+import com.evan.pulse.ui.design.materialColorScheme
+import com.evan.pulse.ui.design.materialTypography
+import androidx.compose.material3.MaterialTheme
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
 import top.yukonga.miuix.kmp.theme.LocalContentColor as MiuixLocalContentColor
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -27,26 +38,14 @@ import top.yukonga.miuix.kmp.theme.ThemePaletteStyle
 /** 未开启动态取色时的兜底种子色 */
 private const val FALLBACK_SEED = 0xFF6750A4.toInt()
 
-/** 外观模式：前三个为固定配色，后三个为莫奈取色 */
+/** Appearance mode is independent of Monet color generation. */
 val ThemeModeEntries: List<Pair<Int, ColorSchemeMode>> = listOf(
     R.string.appearance_system to ColorSchemeMode.System,
     R.string.appearance_dark to ColorSchemeMode.Dark,
-    R.string.appearance_light to ColorSchemeMode.Light,
-    R.string.appearance_monet_system to ColorSchemeMode.MonetSystem,
-    R.string.appearance_monet_dark to ColorSchemeMode.MonetDark,
-    R.string.appearance_monet_light to ColorSchemeMode.MonetLight
+    R.string.appearance_light to ColorSchemeMode.Light
 )
 
 val ThemeModeLabels: List<Int> = ThemeModeEntries.map { it.first }
-
-private val MonetModes = setOf(
-    ColorSchemeMode.MonetSystem,
-    ColorSchemeMode.MonetLight,
-    ColorSchemeMode.MonetDark
-)
-
-fun isMonetMode(index: Int): Boolean =
-    ThemeModeEntries.getOrElse(index) { ThemeModeEntries[0] }.second in MonetModes
 
 /** 自定义主题色，下标 1 起对应；index 0 表示跟随系统取色 */
 val ThemeKeyColors: List<Pair<Int, Color>> = listOf(
@@ -132,7 +131,17 @@ private fun readThemeCustomizationSeed(context: Context): Int? {
 fun PulseTheme(settings: AppSettings, content: @Composable () -> Unit) {
     val context = LocalContext.current
 
-    val mode = ThemeModeEntries.getOrElse(settings.themeModeIndex) { ThemeModeEntries[0] }.second
+    val uiStyle = UiStyleEntries.getOrElse(settings.uiStyleIndex) { UiStyleEntries[0] }.second
+    val monet = uiStyle == UiStyle.MIUIX && settings.monetEnabled
+    val paletteEnabled = uiStyle == UiStyle.MATERIAL || monet
+    val appearance = ThemeModeEntries.getOrElse(settings.themeModeIndex) { ThemeModeEntries[0] }.second
+    val mode = if (paletteEnabled) {
+        when (appearance) {
+            ColorSchemeMode.Dark -> ColorSchemeMode.MonetDark
+            ColorSchemeMode.Light -> ColorSchemeMode.MonetLight
+            else -> ColorSchemeMode.MonetSystem
+        }
+    } else appearance
     val paletteStyle = PaletteStyleEntries.getOrElse(settings.paletteStyleIndex) {
         PaletteStyleEntries[0]
     }.second
@@ -143,9 +152,11 @@ fun PulseTheme(settings: AppSettings, content: @Composable () -> Unit) {
     // 莫奈模式下始终提供种子色：选中具体主题色用该色，否则取系统种子色。
     // 只有传入了种子色，调色板风格与色彩规范才参与配色计算。
     val keyColor: Color? = when {
-        !isMonetMode(settings.themeModeIndex) -> null
-        settings.keyColorIndex <= 0 -> systemSeedColor(context)
-        else -> ThemeKeyColors.getOrNull(settings.keyColorIndex - 1)?.second
+        uiStyle == UiStyle.MATERIAL && settings.keyColorIndex <= 0 -> systemSeedColor(context)
+        monet && settings.keyColorIndex <= 0 -> systemSeedColor(context)
+        uiStyle == UiStyle.MATERIAL || monet ->
+            ThemeKeyColors.getOrNull(settings.keyColorIndex - 1)?.second
+        else -> null
     }
 
     val controller = remember(mode, keyColor, paletteStyle, colorSpec) {
@@ -195,12 +206,32 @@ fun PulseTheme(settings: AppSettings, content: @Composable () -> Unit) {
         BarBlurStyleEntries[0]
     }.second
 
+    val capabilities = uiStyle.capabilities()
+    val scheme = materialColorScheme(colors, darkActive, settings.pureBlackInDark)
+
     CompositionLocalProvider(
         LocalDensity provides scaledDensity,
-        LocalBlurEnabled provides settings.blurEnabled,
+        LocalBlurEnabled provides (settings.blurEnabled && capabilities.blurBars),
         LocalBarBlurStyle provides blurStyle,
-        MiuixLocalContentColor provides colors.onBackground
+        LocalUiStyle provides uiStyle,
+        LocalUiCapabilities provides capabilities,
+        MiuixLocalContentColor provides if (uiStyle == UiStyle.MATERIAL) {
+            scheme.onBackground
+        } else colors.onBackground
     ) {
-        MiuixTheme(colors = colors, content = content)
+        MiuixTheme(colors = colors) {
+            val typography = materialTypography(MiuixTheme.textStyles)
+            val tokens = when (uiStyle) {
+                UiStyle.MIUIX -> currentAppTokens()
+                UiStyle.MATERIAL -> materialAppTokens(scheme, typography)
+            }
+            // Keep the content at one composition location so changing skins preserves navigation.
+            MaterialTheme(colorScheme = scheme, typography = typography) {
+                CompositionLocalProvider(
+                    LocalAppTokens provides tokens,
+                    content = content
+                )
+            }
+        }
     }
 }

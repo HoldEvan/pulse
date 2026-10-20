@@ -32,21 +32,21 @@ import com.evan.pulse.data.model.ProjectInfo
 import com.evan.pulse.data.model.RequestType
 import com.evan.pulse.ui.common.subPageOverScroll
 import com.evan.pulse.ui.common.subPageScrollState
-import top.yukonga.miuix.kmp.basic.BasicComponent
-import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.DropdownEntry
 import top.yukonga.miuix.kmp.basic.DropdownItem
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.basic.TextField
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppInfoRow
+import com.evan.pulse.ui.design.AppCard
+import com.evan.pulse.ui.design.AppDialog
+import com.evan.pulse.ui.design.AppIcon
+import com.evan.pulse.ui.design.AppText
+import com.evan.pulse.ui.design.AppTextButton
+import com.evan.pulse.ui.design.AppTextField
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Edit
 import top.yukonga.miuix.kmp.icon.extended.More
-import top.yukonga.miuix.kmp.menu.OverlayIconDropdownMenu
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import com.evan.pulse.ui.design.AppIconDropdownMenu
 
 /** 资源页-项目 tab：项目列表管理与切换，支持新建、重命名、删除（带确认） */
 @Composable
@@ -89,10 +89,10 @@ fun ProjectsScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(modifier = Modifier.height(48.dp))
-                Text(
+                AppText(
                     text = stringResource(R.string.projects_empty),
                     fontSize = 13.sp,
-                    color = MiuixTheme.colorScheme.outline
+                    color = AppTheme.colors.outline
                 )
             }
         } else {
@@ -102,9 +102,9 @@ fun ProjectsScreen(
                     .subPageOverScroll()
                     .verticalScroll(subPageScrollState())
             ) {
-                Card(modifier = Modifier.fillMaxWidth()) {
+                AppCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier) {
-                        projects.forEach { project ->
+                        projects.forEachIndexed { index, project ->
                             val projectRequests =
                                 requests.filter { projectOfCollection[it.collectionId] == project.id }
                             val summary = stringResource(
@@ -119,6 +119,8 @@ fun ProjectsScreen(
                                 project = project,
                                 summary = summary,
                                 isCurrent = project.id == currentId,
+                                isFirst = index == 0,
+                                isLast = index == projects.lastIndex,
                                 canDelete = projects.size > 1,
                                 onRename = {
                                     editing = project
@@ -136,7 +138,7 @@ fun ProjectsScreen(
 
     if (showCreate || editing != null) {
         val creating = showCreate
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = stringResource(
                 if (creating) R.string.project_new_title else R.string.project_rename_title
@@ -146,7 +148,7 @@ fun ProjectsScreen(
             }
         ) {
             Column {
-                TextField(
+                AppTextField(
                     value = nameInput,
                     onValueChange = { nameInput = it },
                     label = stringResource(R.string.project_name_label)
@@ -155,14 +157,14 @@ fun ProjectsScreen(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.padding(top = 12.dp)
                 ) {
-                    TextButton(
+                    AppTextButton(
                         text = stringResource(R.string.action_cancel),
                         onClick = {
                             if (creating) viewModel.closeCreate() else editing = null
                         },
                         modifier = Modifier.weight(1f)
                     )
-                    TextButton(
+                    AppTextButton(
                         text = stringResource(R.string.action_save),
                         onClick = {
                             if (creating) viewModel.create(nameInput)
@@ -177,23 +179,23 @@ fun ProjectsScreen(
     }
 
     deleting?.let { target ->
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = stringResource(R.string.project_delete_title),
             onDismissRequest = { deleting = null }
         ) {
             Column {
-                Text(text = stringResource(R.string.project_delete_confirm, target.name))
+                AppText(text = stringResource(R.string.project_delete_confirm, target.name))
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.padding(top = 12.dp)
                 ) {
-                    TextButton(
+                    AppTextButton(
                         text = stringResource(R.string.action_cancel),
                         onClick = { deleting = null },
                         modifier = Modifier.weight(1f)
                     )
-                    TextButton(
+                    AppTextButton(
                         text = stringResource(R.string.action_delete),
                         onClick = {
                             viewModel.delete(target.id)
@@ -212,25 +214,32 @@ private fun ProjectRow(
     project: ProjectInfo,
     summary: String,
     isCurrent: Boolean,
+    isFirst: Boolean,
+    isLast: Boolean,
     canDelete: Boolean,
     onRename: () -> Unit,
     onDelete: () -> Unit
 ) {
-    BasicComponent(
+    AppInfoRow(
         modifier = Modifier
             .fillMaxWidth()
             .background(
                 color = if (isCurrent) {
-                    MiuixTheme.colorScheme.primary.copy(alpha = 0.15f)
+                    AppTheme.colors.primary.copy(alpha = 0.15f)
                 } else {
                     Color.Transparent
                 },
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(
+                    topStart = if (isFirst) 16.dp else 0.dp,
+                    topEnd = if (isFirst) 16.dp else 0.dp,
+                    bottomStart = if (isLast) 16.dp else 0.dp,
+                    bottomEnd = if (isLast) 16.dp else 0.dp
+                )
             ),
         title = project.name,
         summary = summary,
         endActions = {
-            OverlayIconDropdownMenu(
+            AppIconDropdownMenu(
                 entries = listOf(
                     DropdownEntry(
                         items = buildList {
@@ -238,7 +247,7 @@ private fun ProjectRow(
                                 DropdownItem(
                                     text = stringResource(R.string.cd_rename),
                                     icon = { m ->
-                                        Icon(
+                                        AppIcon(
                                             imageVector = MiuixIcons.Light.Edit,
                                             contentDescription = null,
                                             modifier = m
@@ -252,7 +261,7 @@ private fun ProjectRow(
                                     DropdownItem(
                                         text = stringResource(R.string.action_delete),
                                         icon = { m ->
-                                            Icon(
+                                            AppIcon(
                                                 imageVector = MiuixIcons.Light.Delete,
                                                 contentDescription = null,
                                                 modifier = m
@@ -271,7 +280,7 @@ private fun ProjectRow(
                     .size(28.dp)
                     .offset(x = 4.dp)
             ) {
-                Icon(
+                AppIcon(
                     imageVector = MiuixIcons.Light.More,
                     contentDescription = stringResource(R.string.cd_more),
                     modifier = Modifier.size(20.dp)

@@ -75,9 +75,10 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
-import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.NavigationItem
-import top.yukonga.miuix.kmp.basic.Text
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppIcon
+import com.evan.pulse.ui.design.AppText
 import top.yukonga.miuix.kmp.blur.LayerBackdrop
 import top.yukonga.miuix.kmp.blur.blur
 import top.yukonga.miuix.kmp.blur.drawBackdrop
@@ -89,7 +90,6 @@ import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.blur.sensor.rememberDeviceTilt
 import top.yukonga.miuix.kmp.theme.LocalContentColor
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.Platform
 import top.yukonga.miuix.kmp.utils.platform
 import kotlin.math.PI
@@ -224,9 +224,9 @@ internal fun LiquidGlassNavigationBar(
 ) {
     val isDark = isSystemInDarkTheme()
     val pillShape = remember { CircleShape }
-    val accentColor = MiuixTheme.colorScheme.primary
-    val tabContentColor = MiuixTheme.colorScheme.onSurface
-    val surfaceContainer = MiuixTheme.colorScheme.surfaceContainer
+    val accentColor = AppTheme.colors.primary
+    val tabContentColor = AppTheme.colors.onSurface
+    val surfaceContainer = AppTheme.colors.surfaceContainer
     val containerColor = if (isBlurActive) Color.Transparent else surfaceContainer
 
     val tabsBackdrop = rememberLayerBackdrop()
@@ -389,7 +389,7 @@ internal fun LiquidGlassNavigationBar(
                 verticalArrangement = Arrangement.spacedBy(1.dp, Alignment.CenterVertically),
                 horizontalAlignment = CenterHorizontally,
             ) {
-                Icon(
+                AppIcon(
                     modifier = Modifier.size(22.dp),
                     imageVector = item.icon,
                     tint = tabColor,
@@ -397,7 +397,7 @@ internal fun LiquidGlassNavigationBar(
                     contentDescription = if (showLabels) null else item.label,
                 )
                 if (showLabels) {
-                    Text(
+                    AppText(
                         text = item.label,
                         color = tabColor,
                         fontSize = 11.sp,

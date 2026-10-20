@@ -50,23 +50,23 @@ import com.evan.pulse.ui.spec.SpecImportScreen
 import com.evan.pulse.ui.common.subPageOverScroll
 import top.yukonga.miuix.kmp.basic.BreadcrumbBar
 import top.yukonga.miuix.kmp.basic.BreadcrumbItem
-import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.DropdownEntry
 import top.yukonga.miuix.kmp.basic.DropdownItem
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.basic.TextField
+import com.evan.pulse.ui.design.AppCard
+import com.evan.pulse.ui.design.AppDialog
+import com.evan.pulse.ui.design.AppIcon
+import com.evan.pulse.ui.design.AppIconButton
+import com.evan.pulse.ui.design.AppText
+import com.evan.pulse.ui.design.AppTextButton
+import com.evan.pulse.ui.design.AppTextField
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.ChevronForward
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Edit
 import top.yukonga.miuix.kmp.icon.extended.Folder
 import top.yukonga.miuix.kmp.icon.extended.More
-import top.yukonga.miuix.kmp.menu.OverlayIconDropdownMenu
+import com.evan.pulse.ui.design.AppIconDropdownMenu
 import top.yukonga.miuix.kmp.icon.extended.More
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
 
 /**
  * 集合页：用面包屑逐层进入集合。
@@ -177,10 +177,10 @@ icon = MiuixIcons.Light.Edit,
             }
         }
 
-        Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        AppCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
             Column(modifier = Modifier.padding(12.dp)) {
                 if (children.isEmpty() && ownRequests.isEmpty()) {
-                    Text(
+                    AppText(
                         text = stringResource(
                             if (current == null) R.string.collection_empty
                             else R.string.collection_folder_empty
@@ -222,7 +222,7 @@ icon = MiuixIcons.Light.Edit,
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            TextButton(
+            AppTextButton(
                 text = stringResource(
                     if (current == null) R.string.collection_new_title else R.string.collection_new_child
                 ),
@@ -232,7 +232,7 @@ icon = MiuixIcons.Light.Edit,
                 },
                 modifier = Modifier.weight(1f)
             )
-            TextButton(
+            AppTextButton(
                 text = stringResource(R.string.collection_import_spec),
                 onClick = { showImport = true },
                 modifier = Modifier.weight(1f)
@@ -242,7 +242,7 @@ icon = MiuixIcons.Light.Edit,
     }
 
     if (showCreate) {
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = stringResource(
                 if (current == null) R.string.collection_new_title else R.string.collection_new_child
@@ -250,7 +250,7 @@ icon = MiuixIcons.Light.Edit,
             onDismissRequest = { showCreate = false }
         ) {
             Column {
-                TextField(
+                AppTextField(
                     value = createName,
                     onValueChange = { createName = it },
                     label = stringResource(R.string.collection_name_label),
@@ -273,13 +273,13 @@ icon = MiuixIcons.Light.Edit,
 
     val renameTarget = if (renameOpen) current else null
     renameTarget?.let { target ->
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = stringResource(R.string.collection_rename),
             onDismissRequest = { renameOpen = false }
         ) {
             Column {
-                TextField(
+                AppTextField(
                     value = renameName,
                     onValueChange = { renameName = it },
                     label = stringResource(R.string.collection_name_label),
@@ -302,13 +302,13 @@ icon = MiuixIcons.Light.Edit,
     deleteTarget?.let { target ->
         val doomedFolders = viewModel.descendantFolderCount(target.id)
         val doomedRequests = viewModel.descendantRequestCount(target.id)
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = stringResource(R.string.collection_delete),
             onDismissRequest = { deleteOpen = false }
         ) {
             Column {
-                Text(
+                AppText(
                     text = stringResource(
                         R.string.collection_delete_confirm,
                         doomedFolders,
@@ -330,13 +330,13 @@ icon = MiuixIcons.Light.Edit,
     val moveFolder = moveFolderId?.let { id -> own.firstOrNull { it.id == id } }
     moveFolder?.let { folder ->
         val targets = remember(own, folder) { moveTargets(own, folder) }
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = stringResource(R.string.collection_move_to),
             onDismissRequest = { moveFolderId = null }
         ) {
             Column {
-                Text(
+                AppText(
                     text = folder.name,
                     modifier = Modifier.padding(vertical = 4.dp),
                     maxLines = 1,
@@ -364,7 +364,7 @@ icon = MiuixIcons.Light.Edit,
                     }
                 }
                 if (moveFailed) {
-                    Text(
+                    AppText(
                         text = stringResource(R.string.collection_move_forbidden),
                         modifier = Modifier.padding(top = 8.dp)
                     )
@@ -394,13 +394,13 @@ icon = MiuixIcons.Light.Edit,
     val moveRequest = moveRequestId?.let { id -> requests.firstOrNull { it.id == id } }
     moveRequest?.let { target ->
         val targets = remember(own) { requestTargets(own) }
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = stringResource(R.string.collection_move_to),
             onDismissRequest = { moveRequestId = null }
         ) {
             Column {
-                Text(
+                AppText(
                     text = target.name,
                     modifier = Modifier.padding(vertical = 4.dp),
                     maxLines = 1,
@@ -442,13 +442,13 @@ icon = MiuixIcons.Light.Edit,
 
     val renameRequest = renameRequestId?.let { id -> requests.firstOrNull { it.id == id } }
     renameRequest?.let { target ->
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = stringResource(R.string.collection_rename),
             onDismissRequest = { renameRequestId = null }
         ) {
             Column {
-                TextField(
+                AppTextField(
                     value = renameRequestName,
                     onValueChange = { renameRequestName = it },
                     label = stringResource(R.string.request_name_label),
@@ -491,12 +491,12 @@ private fun MoveTargetRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         repeat(depth) { Spacer(modifier = Modifier.width(16.dp)) }
-        Icon(
+        AppIcon(
             imageVector = if (selected) Icons.Filled.RadioButtonChecked else Icons.Filled.RadioButtonUnchecked,
             contentDescription = null,
             modifier = Modifier.padding(end = 8.dp)
         )
-        Text(
+        AppText(
             text = label,
             modifier = Modifier
                 .weight(1f)
@@ -518,12 +518,12 @@ private fun FolderRow(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
+        AppIcon(
             imageVector = MiuixIcons.Light.Folder,
             contentDescription = null,
             modifier = Modifier.padding(end = 6.dp)
         )
-        Text(
+        AppText(
             text = folder.name,
             modifier = Modifier
                 .weight(1f)
@@ -535,7 +535,7 @@ private fun FolderRow(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
-        Icon(
+        AppIcon(
             imageVector = MiuixIcons.Light.ChevronForward,
             contentDescription = null,
             modifier = Modifier.padding(end = 4.dp)
@@ -566,7 +566,7 @@ private fun RequestRow(
             .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
+        AppText(
             text = request.type.name,
             fontSize = 11.sp,
             modifier = Modifier.padding(end = 8.dp)
@@ -578,13 +578,13 @@ private fun RequestRow(
                 .clickable(onClick = onLoad)
                 .padding(vertical = 6.dp)
         ) {
-            Text(
+            AppText(
                 text = request.name,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             if (url.isNotEmpty()) {
-                Text(
+                AppText(
                     text = url,
                     modifier = Modifier.padding(top = 2.dp),
                     maxLines = 1,
@@ -593,14 +593,14 @@ private fun RequestRow(
                 )
             }
         }
-        OverlayIconDropdownMenu(
+        AppIconDropdownMenu(
             entries = listOf(
                 DropdownEntry(
                     items = listOf(
                         DropdownItem(
                             text = stringResource(R.string.cd_rename),
                             icon = { m ->
-                                Icon(
+                                AppIcon(
                                     imageVector = MiuixIcons.Light.Edit,
                                     contentDescription = null,
                                     modifier = m
@@ -611,7 +611,7 @@ private fun RequestRow(
                         DropdownItem(
                             text = stringResource(R.string.cd_move_request),
                             icon = { m ->
-                                Icon(
+                                AppIcon(
                                     imageVector = Icons.Filled.DragIndicator,
                                     contentDescription = null,
                                     modifier = m
@@ -622,7 +622,7 @@ private fun RequestRow(
                         DropdownItem(
                             text = stringResource(R.string.action_delete),
                             icon = { m ->
-                                Icon(
+                                AppIcon(
                                     imageVector = MiuixIcons.Light.Delete,
                                     contentDescription = null,
                                     modifier = m
@@ -639,7 +639,7 @@ private fun RequestRow(
                 .size(28.dp)
                 .offset(x = 4.dp)
         ) {
-            Icon(
+            AppIcon(
                 imageVector = MiuixIcons.Light.More,
                 contentDescription = stringResource(R.string.cd_more),
                 modifier = Modifier.size(20.dp)
@@ -655,7 +655,7 @@ private fun RowAction(
     icon: ImageVector,
     onClick: () -> Unit
 ) {
-    Icon(
+    AppIcon(
         imageVector = icon,
         contentDescription = label,
         modifier = Modifier

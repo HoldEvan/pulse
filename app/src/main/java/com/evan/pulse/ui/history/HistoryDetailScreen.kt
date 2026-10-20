@@ -30,10 +30,10 @@ import com.evan.pulse.ui.common.StatusBadge
 import com.evan.pulse.ui.common.ResponseBodyView
 import com.evan.pulse.ui.common.subPageScrollState
 import com.evan.pulse.ui.common.subPageOverScroll
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppCard
+import com.evan.pulse.ui.design.AppText
+import com.evan.pulse.ui.design.AppTextButton
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -58,7 +58,7 @@ fun HistoryDetailScreen(
     val entry = all.firstOrNull { it.id == entryId }
 
     if (entry == null) {
-        Text(
+        AppText(
             text = stringResource(R.string.history_detail_missing),
             modifier = modifier.fillMaxSize().padding(24.dp)
         )
@@ -75,16 +75,16 @@ fun HistoryDetailScreen(
         HistorySummary(entry, nameById[entry.projectId].orEmpty())
 
         if (!hasDetail(entry)) {
-            Text(
+            AppText(
                 text = stringResource(R.string.history_detail_legacy),
                 modifier = Modifier.padding(top = 10.dp),
                 fontSize = 12.sp,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                color = AppTheme.colors.onSurfaceSummary
             )
         }
 
         SectionTitleRow(label = stringResource(R.string.http_request_label))
-        Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        AppCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
             Column(modifier = Modifier.padding(12.dp)) {
                 MonospaceBlock(entry.url)
                 if (entry.requestHeaders.isNotEmpty()) {
@@ -100,14 +100,14 @@ fun HistoryDetailScreen(
         }
 
         SectionTitleRow(label = stringResource(R.string.http_response_label))
-        Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        AppCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
             Column(modifier = Modifier.padding(12.dp)) {
                 if (entry.responseHeaders.isNotEmpty()) {
                     CardSectionTitle(stringResource(R.string.http_response_headers))
                     MonospaceBlock(entry.responseHeaders.joinToString("\n"))
                 }
                 if (entry.responseBody.isNotEmpty()) {
-                    ResponseBody(entry.responseBody)
+                    ResponseBody(entry.responseBody, entry.url)
                     TruncatedHint(entry.responseBodyTruncated)
                 }
             }
@@ -125,57 +125,57 @@ private fun hasDetail(entry: HistoryEntry): Boolean =
 @Composable
 private fun TruncatedHint(truncated: Boolean) {
     if (!truncated) return
-    Text(
+    AppText(
         text = stringResource(R.string.history_body_truncated),
         modifier = Modifier.padding(top = 6.dp),
         fontSize = 11.sp,
-        color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+        color = AppTheme.colors.onSurfaceSummary
     )
 }
 
 @Composable
 private fun HistorySummary(entry: HistoryEntry, projectName: String) {
-    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+    AppCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 MethodBadge(entry.method)
                 StatusBadge(entry.statusCode, modifier = Modifier.padding(start = 8.dp))
                 if (entry.statusText.isNotBlank()) {
-                    Text(
+                    AppText(
                         text = entry.statusText,
                         modifier = Modifier.padding(start = 8.dp),
                         fontSize = 12.sp,
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                        color = AppTheme.colors.onSurfaceSummary
                     )
                 }
                 Spacer(modifier = Modifier.weight(1f))
-                Text(
+                AppText(
                     text = detailTimeFormat.format(Date(entry.createdAt)),
                     fontSize = 12.sp
                 )
             }
             Row {
-                Text(
+                AppText(
                     text = stringResource(R.string.duration_value, entry.durationMs),
                     fontSize = 12.sp
                 )
-                Text(
+                AppText(
                     text = stringResource(R.string.history_size_value, entry.responseSizeBytes),
                     modifier = Modifier.padding(start = 8.dp),
                     fontSize = 12.sp
                 )
                 if (projectName.isNotBlank()) {
-                    Text(
+                    AppText(
                         text = projectName,
                         modifier = Modifier.padding(start = 8.dp),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         fontSize = 12.sp,
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                        color = AppTheme.colors.onSurfaceSummary
                     )
                 }
             }
-            Text(
+            AppText(
                 text = entry.url,
                 modifier = Modifier.padding(top = 6.dp),
                 fontSize = 13.sp
@@ -184,9 +184,9 @@ private fun HistorySummary(entry: HistoryEntry, projectName: String) {
     }
 }
 
-/** 响应体：五种格式查看，可整块复制 */
+/** 响应体：六种格式查看，可整块复制 */
 @Composable
-private fun ResponseBody(body: String) {
+private fun ResponseBody(body: String, url: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
@@ -194,5 +194,5 @@ private fun ResponseBody(body: String) {
         CardSectionTitle(stringResource(R.string.http_response_body), Modifier.weight(1f))
         CopyIconButton(text = body, label = stringResource(R.string.cd_copy_response))
     }
-    ResponseBodyView(body)
+    ResponseBodyView(body, url)
 }

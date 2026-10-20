@@ -25,10 +25,10 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.Text
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppIcon
+import com.evan.pulse.ui.design.AppText
 import top.yukonga.miuix.kmp.squircle.squircleBackground
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private val jsonTreeJson = Json { ignoreUnknownKeys = true }
 
@@ -53,7 +53,7 @@ fun JsonTreeView(
     val blockModifier = modifier
         .fillMaxWidth()
         .padding(top = 6.dp)
-        .squircleBackground(MiuixTheme.colorScheme.surfaceVariant, 8.dp)
+        .squircleBackground(AppTheme.colors.surfaceVariant, 8.dp)
         .padding(10.dp)
 
     val element = remember(jsonText) {
@@ -101,18 +101,18 @@ private fun JsonNodeRow(
             .then(toggle),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
+        AppIcon(
             imageVector = if (isCollapsed) Icons.Filled.ExpandMore else Icons.Filled.ExpandLess,
             contentDescription = null,
-            tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+            tint = AppTheme.colors.onSurfaceSummary,
             modifier = Modifier.padding(end = 2.dp)
         )
         JsonName(name)
-        Text(
+        AppText(
             text = preview(element, isCollapsed),
             fontFamily = FontFamily.Monospace,
             fontSize = 12.sp,
-            color = MiuixTheme.colorScheme.onSurface
+            color = AppTheme.colors.onSurface
         )
     }
 
@@ -133,11 +133,11 @@ private fun JsonNodeRow(
 private fun JsonLeafRow(name: String?, element: JsonElement, depth: Int) {
     Row(modifier = Modifier.padding(start = (depth * 14 + 20).dp)) {
         JsonName(name)
-        Text(
+        AppText(
             text = scalarText(element),
             fontFamily = FontFamily.Monospace,
             fontSize = 12.sp,
-            color = scalarColor(element, MiuixTheme.colorScheme.onSurface)
+            color = scalarColor(element, AppTheme.colors.onSurface)
         )
     }
 }
@@ -145,7 +145,7 @@ private fun JsonLeafRow(name: String?, element: JsonElement, depth: Int) {
 @Composable
 private fun JsonName(name: String?) {
     if (name == null) return
-    Text(
+    AppText(
         text = if (name.startsWith("[")) name else "\"$name\": ",
         fontFamily = FontFamily.Monospace,
         fontSize = 12.sp,

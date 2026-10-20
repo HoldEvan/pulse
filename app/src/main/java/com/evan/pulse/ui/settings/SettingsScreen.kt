@@ -43,19 +43,21 @@ import com.evan.pulse.ui.common.SectionTitle
 import com.evan.pulse.ui.common.subPageLazyListState
 import com.evan.pulse.ui.l10n.localizedLabels
 import com.evan.pulse.ui.common.subPageOverScroll
-import top.yukonga.miuix.kmp.basic.BasicComponent
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
-import top.yukonga.miuix.kmp.preference.ArrowPreference
-import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference
-import top.yukonga.miuix.kmp.preference.SwitchPreference
+import com.evan.pulse.ui.design.AppInfoRow
+import com.evan.pulse.ui.design.AppSwitchRow
+import com.evan.pulse.ui.design.AppArrowRow
+import com.evan.pulse.ui.design.AppCard
+import com.evan.pulse.ui.design.AppPreferenceGroup
+import com.evan.pulse.ui.design.AppDialog
+import com.evan.pulse.ui.design.AppDropdown
+import com.evan.pulse.ui.design.AppText
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppTextButton
+import com.evan.pulse.ui.design.AppTextField
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.evan.pulse.ui.design.AppButton
 
 private val LanguageLabels: List<Int> = listOf(
     R.string.lang_system,
@@ -78,22 +80,22 @@ private fun RemoteBackupItem(
     onRestore: () -> Unit,
     onDelete: () -> Unit
 ) {
-    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+    AppCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Column(modifier = Modifier.padding(CardContentPadding)) {
-            Text(entry.display)
-            Text(
+            AppText(entry.display)
+            AppText(
                 text = CacheCleaner.formatBytes(entry.size) + " · " + backupDateFormat.format(entry.lastModified),
                 fontSize = 13.sp,
                 modifier = Modifier.padding(top = 4.dp)
             )
             Row(modifier = Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextButton(
+                AppTextButton(
                     text = stringResource(R.string.backup_restore),
                     onClick = onRestore,
                     enabled = !busy,
                     modifier = Modifier.weight(1f)
                 )
-                TextButton(
+                AppTextButton(
                     text = stringResource(R.string.backup_delete),
                     onClick = onDelete,
                     enabled = !busy,
@@ -109,14 +111,14 @@ private fun WebDavTestResultView(state: WebDavTestState) {
     if (!state.busy && state.result == null) return
     Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
         if (state.busy) {
-            Text(
+            AppText(
                 text = stringResource(R.string.webdav_testing),
                 color = Color(0xFF8A8F98),
                 fontSize = 13.sp
             )
         } else {
             state.result?.let { result ->
-                Text(
+                AppText(
                     text = if (result.ok) {
                         stringResource(R.string.webdav_test_passed, result.elapsedMs)
                     } else {
@@ -148,7 +150,7 @@ private fun WebDavTestResultView(state: WebDavTestState) {
 
 @Composable
 private fun WebDavStageLine(label: String, detail: String, ok: Boolean) {
-    Text(
+    AppText(
         text = stringResource(R.string.webdav_stage_line, label, detail),
         color = if (ok) Color(0xFF2E7D32) else Color(0xFFD32F2F),
         fontSize = 13.sp,
@@ -210,40 +212,44 @@ fun SettingsScreen(
         }
 
         item(key = "general_card") {
-        Card(modifier = Modifier.fillMaxWidth()) {
-            OverlayDropdownPreference(
-                title = stringResource(R.string.settings_language),
-                summary = stringResource(R.string.settings_language_summary),
-                items = LanguageLabels.localizedLabels(),
-                selectedIndex = settings.languageIndex,
-                onSelectedIndexChange = { viewModel.setLanguage(it) }
-            )
-
-            ArrowPreference(
-                title = stringResource(R.string.settings_appearance),
-                summary = stringResource(R.string.appearance_summary),
-                onClick = onOpenAppearance
-            )
-
-            SwitchPreference(
-                checked = settings.monitorNotify,
-                onCheckedChange = { value ->
-                    if (value &&
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                        !ServiceLocator.monitorNotifier.isGranted()
-                    ) {
-                        requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-                    }
-                    viewModel.setMonitorNotify(value)
-                },
-                title = stringResource(R.string.settings_monitor_notify),
-                summary = if (settings.monitorNotify && !notifyPermissionGranted) {
-                    permissionDeniedText
-                } else {
-                    stringResource(R.string.settings_monitor_notify_summary)
+            AppPreferenceGroup(modifier = Modifier.fillMaxWidth()) {
+                item {
+                    AppDropdown(
+                        title = stringResource(R.string.settings_language),
+                        summary = stringResource(R.string.settings_language_summary),
+                        items = LanguageLabels.localizedLabels(),
+                        selectedIndex = settings.languageIndex,
+                        onSelectedIndexChange = { viewModel.setLanguage(it) }
+                    )
                 }
-            )
-        }
+                item {
+                    AppArrowRow(
+                        title = stringResource(R.string.settings_appearance),
+                        summary = stringResource(R.string.appearance_summary),
+                        onClick = onOpenAppearance
+                    )
+                }
+                item {
+                    AppSwitchRow(
+                        checked = settings.monitorNotify,
+                        onCheckedChange = { value ->
+                            if (value &&
+                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                                !ServiceLocator.monitorNotifier.isGranted()
+                            ) {
+                                requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            }
+                            viewModel.setMonitorNotify(value)
+                        },
+                        title = stringResource(R.string.settings_monitor_notify),
+                        summary = if (settings.monitorNotify && !notifyPermissionGranted) {
+                            permissionDeniedText
+                        } else {
+                            stringResource(R.string.settings_monitor_notify_summary)
+                        }
+                    )
+                }
+            }
         }
 
         item(key = "network_title") {
@@ -254,8 +260,8 @@ fun SettingsScreen(
         }
 
         item(key = "network_card") {
-        Card(modifier = Modifier.fillMaxWidth()) {
-            OverlayDropdownPreference(
+        AppCard(modifier = Modifier.fillMaxWidth()) {
+            AppDropdown(
                 title = stringResource(R.string.settings_proxy),
                 summary = stringResource(
                     ProxyTypeLabels.getOrElse(settings.proxyTypeIndex) { R.string.proxy_summary_none }
@@ -276,7 +282,7 @@ fun SettingsScreen(
                     )
                 }
                 Column(modifier = Modifier.padding(CardContentPadding)) {
-                    TextField(
+                    AppTextField(
                         value = proxyAddress,
                         onValueChange = { text ->
                             proxyAddress = text
@@ -299,7 +305,7 @@ fun SettingsScreen(
                             .padding(top = 8.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        TextField(
+                        AppTextField(
                             value = settings.proxyUsername,
                             onValueChange = { viewModel.setProxyUsername(it) },
                             label = stringResource(R.string.username_label),
@@ -308,7 +314,7 @@ fun SettingsScreen(
                             modifier = Modifier.weight(1f)
                         )
 
-                        TextField(
+                        AppTextField(
                             value = settings.proxyPassword,
                             onValueChange = { viewModel.setProxyPassword(it) },
                             label = stringResource(R.string.password_label),
@@ -332,7 +338,7 @@ fun SettingsScreen(
         val webdavConfigured = viewModel.isWebdavConfigured(settings)
 
         item(key = "backup_local_card") {
-        Card(modifier = Modifier.fillMaxWidth()) {
+        AppCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(CardContentPadding)) {
                 CardSectionTitle(
                     text = stringResource(R.string.backup_local_title),
@@ -344,19 +350,19 @@ fun SettingsScreen(
                         .padding(top = 10.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Button(
+                    AppButton(
                         onClick = { viewModel.exportLocal() },
                         enabled = !status.busy,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(stringResource(R.string.backup_export_local))
+                        AppText(stringResource(R.string.backup_export_local))
                     }
-                    Button(
+                    AppButton(
                         onClick = { viewModel.importLocal() },
                         enabled = !status.busy,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(stringResource(R.string.backup_import_local))
+                        AppText(stringResource(R.string.backup_import_local))
                     }
                 }
             }
@@ -364,7 +370,7 @@ fun SettingsScreen(
         }
 
         item(key = "backup_webdav_card") {
-        Card(modifier = Modifier.fillMaxWidth().padding(top = CardGap)) {
+        AppCard(modifier = Modifier.fillMaxWidth().padding(top = CardGap)) {
             Column(modifier = Modifier.padding(CardContentPadding)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -374,7 +380,7 @@ fun SettingsScreen(
                         text = stringResource(R.string.backup_webdav_title),
                         modifier = Modifier.weight(1f)
                     )
-                    Text(
+                    AppText(
                         text = if (webdavConfigured) {
                             stringResource(R.string.backup_configured)
                         } else {
@@ -384,7 +390,7 @@ fun SettingsScreen(
                         fontSize = 12.sp
                     )
                 }
-                TextField(
+                AppTextField(
                     value = settings.webdavUrl,
                     onValueChange = { viewModel.setWebdavUrl(it) },
                     label = stringResource(R.string.webdav_url_label),
@@ -395,7 +401,7 @@ fun SettingsScreen(
                         .fillMaxWidth()
                         .padding(top = 10.dp)
                 )
-                TextField(
+                AppTextField(
                     value = settings.webdavPath,
                     onValueChange = { viewModel.setWebdavPath(it) },
                     label = stringResource(R.string.webdav_path_label),
@@ -411,14 +417,14 @@ fun SettingsScreen(
                         .padding(top = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    TextField(
+                    AppTextField(
                         value = settings.webdavUsername,
                         onValueChange = { viewModel.setWebdavUsername(it) },
                         label = stringResource(R.string.username_label),
                         singleLine = true,
                         modifier = Modifier.weight(1f)
                     )
-                    TextField(
+                    AppTextField(
                         value = settings.webdavPassword,
                         onValueChange = { viewModel.setWebdavPassword(it) },
                         label = stringResource(R.string.password_label),
@@ -426,8 +432,9 @@ fun SettingsScreen(
                         modifier = Modifier.weight(1f)
                     )
                 }
-                TextButton(
+                AppTextButton(
                     text = stringResource(R.string.webdav_test_connection),
+                    filled = true,
                     onClick = { viewModel.testWebDav(settings) },
                     enabled = !status.busy && !webDavTest.busy && webdavConfigured,
                     modifier = Modifier
@@ -441,15 +448,21 @@ fun SettingsScreen(
                         .padding(top = 10.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Button(
+                    AppButton(
                         onClick = { viewModel.exportToWebDav(settings) },
                         enabled = !status.busy && webdavConfigured,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(stringResource(R.string.backup_export_webdav))
+                        AppText(
+                            text = stringResource(R.string.backup_export_webdav),
+                            style = AppTheme.typography.button,
+                            maxLines = 1,
+                            softWrap = false
+                        )
                     }
-                    TextButton(
+                    AppTextButton(
                         text = stringResource(R.string.backup_browse_remote),
+                        filled = true,
                         onClick = {
                             showRemoteList = true
                             viewModel.refreshRemoteBackups(settings)
@@ -462,7 +475,7 @@ fun SettingsScreen(
         }
 
         if (status.busy || status.message != null) {
-            Text(
+            AppText(
                 text = if (status.busy) {
                     stringResource(R.string.backup_busy)
                 } else if (status.success) {
@@ -486,18 +499,18 @@ fun SettingsScreen(
         }
 
         if (showRemoteList) {
-            OverlayDialog(
+            AppDialog(
                 show = true,
                 title = stringResource(R.string.backup_browse_remote),
                 onDismissRequest = { showRemoteList = false }
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     if (remoteBackups.loading) {
-                        Text(stringResource(R.string.backup_busy))
+                        AppText(stringResource(R.string.backup_busy))
                     } else if (!remoteBackups.error.isNullOrBlank()) {
-                        Text(remoteBackups.error ?: stringResource(R.string.backup_failed))
+                        AppText(remoteBackups.error ?: stringResource(R.string.backup_failed))
                     } else if (remoteBackups.entries.isEmpty()) {
-                        Text(stringResource(R.string.backup_browse_empty))
+                        AppText(stringResource(R.string.backup_browse_empty))
                     } else {
                         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                             remoteBackups.entries.forEach { entry ->
@@ -511,7 +524,7 @@ fun SettingsScreen(
                         }
                     }
 
-                    TextButton(
+                    AppTextButton(
                         text = stringResource(R.string.action_cancel),
                         onClick = { showRemoteList = false },
                         modifier = Modifier
@@ -531,26 +544,30 @@ fun SettingsScreen(
         }
 
         item(key = "about_card") {
-        Card(modifier = Modifier.fillMaxWidth()) {
-            BasicComponent(
-                title = stringResource(R.string.cache_clear_label),
-                summary = stringResource(
-                    R.string.cache_size_value,
-                    CacheCleaner.formatBytes(cacheStats.bytes)
-                ),
-                enabled = !cacheBusy,
-                onClick = { showCacheConfirm = !cacheBusy }
-            )
-            ArrowPreference(
-                title = stringResource(R.string.settings_about),
-                summary = stringResource(
-                    R.string.version_value,
-                    BuildConfig.VERSION_NAME,
-                    BuildConfig.VERSION_CODE
-                ),
-                onClick = onOpenAbout
-            )
-        }
+            AppPreferenceGroup(modifier = Modifier.fillMaxWidth()) {
+                item {
+                    AppInfoRow(
+                        title = stringResource(R.string.cache_clear_label),
+                        summary = stringResource(
+                            R.string.cache_size_value,
+                            CacheCleaner.formatBytes(cacheStats.bytes)
+                        ),
+                        enabled = !cacheBusy,
+                        onClick = { showCacheConfirm = !cacheBusy }
+                    )
+                }
+                item {
+                    AppArrowRow(
+                        title = stringResource(R.string.settings_about),
+                        summary = stringResource(
+                            R.string.version_value,
+                            BuildConfig.VERSION_NAME,
+                            BuildConfig.VERSION_CODE
+                        ),
+                        onClick = onOpenAbout
+                    )
+                }
+            }
         }
 
         item(key = "clearance") {
@@ -559,23 +576,23 @@ fun SettingsScreen(
     }
 
     if (showCacheConfirm) {
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = stringResource(R.string.cache_clear_label),
             onDismissRequest = { showCacheConfirm = false }
         ) {
             Column {
-                Text(stringResource(R.string.cache_clear_confirm, CacheCleaner.formatBytes(cacheStats.bytes)))
+                AppText(stringResource(R.string.cache_clear_confirm, CacheCleaner.formatBytes(cacheStats.bytes)))
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.padding(top = 12.dp)
                 ) {
-                    TextButton(
+                    AppTextButton(
                         text = stringResource(R.string.action_cancel),
                         onClick = { showCacheConfirm = false },
                         modifier = Modifier.weight(1f)
                     )
-                    TextButton(
+                    AppTextButton(
                         text = stringResource(R.string.cache_clear_label),
                         onClick = {
                             showCacheConfirm = false

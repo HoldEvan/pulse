@@ -60,24 +60,23 @@ import com.evan.pulse.ui.common.roundedPressable
 import com.evan.pulse.ui.common.subPageScrollState
 import com.evan.pulse.ui.l10n.localizedLabels
 import com.evan.pulse.ui.common.subPageOverScroll
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
-import top.yukonga.miuix.kmp.basic.Switch
-import top.yukonga.miuix.kmp.basic.TabRow
-import top.yukonga.miuix.kmp.basic.TabRowWithContour
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.basic.TextField
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppCard
+import com.evan.pulse.ui.design.AppDialog
+import com.evan.pulse.ui.design.AppDropdown
+import com.evan.pulse.ui.design.AppIcon
+import com.evan.pulse.ui.design.AppIconButton
+import com.evan.pulse.ui.design.AppSwitch
+import com.evan.pulse.ui.design.AppTabRow
+import com.evan.pulse.ui.design.AppText
+import com.evan.pulse.ui.design.AppTextButton
+import com.evan.pulse.ui.design.AppTextField
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Add
 import top.yukonga.miuix.kmp.icon.extended.Close
 import top.yukonga.miuix.kmp.icon.extended.Send
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
-import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference
 import top.yukonga.miuix.kmp.squircle.squircleSurface
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import com.evan.pulse.ui.design.AppButton
 
 private val httpMethods = HttpMethod.entries.toList()
 private val bodyTypes = listOf(BodyType.NONE, BodyType.JSON, BodyType.RAW, BodyType.FORM_URLENCODED, BodyType.FORM_DATA, BodyType.GRAPHQL)
@@ -138,20 +137,20 @@ fun HttpScreen(
         SectionTitleRow(
             label = stringResource(R.string.http_request_label),
             actions = {
-                IconButton(onClick = onOpenHistory, modifier = Modifier.size(36.dp)) {
-                    Icon(
+                AppIconButton(onClick = onOpenHistory, modifier = Modifier.size(36.dp)) {
+                    AppIcon(
                         imageVector = Icons.Filled.History,
                         contentDescription = stringResource(R.string.history_title)
                     )
                 }
-                IconButton(onClick = { showExport = true }, modifier = Modifier.size(36.dp)) {
-                    Icon(
+                AppIconButton(onClick = { showExport = true }, modifier = Modifier.size(36.dp)) {
+                    AppIcon(
                         imageVector = Icons.Filled.Code,
                         contentDescription = stringResource(R.string.cd_export_request)
                     )
                 }
-                IconButton(onClick = { showSave = true }, modifier = Modifier.size(36.dp)) {
-                    Icon(
+                AppIconButton(onClick = { showSave = true }, modifier = Modifier.size(36.dp)) {
+                    AppIcon(
                         imageVector = Icons.Filled.Save,
                         contentDescription = stringResource(R.string.cd_save_request)
                     )
@@ -183,19 +182,19 @@ fun HttpScreen(
     ExportFormatDialog(show = showExport, viewModel = viewModel, onDismiss = { showExport = false })
 
     missingVars?.let { missing ->
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = stringResource(R.string.missing_env_title),
             onDismissRequest = { viewModel.dismissMissing() }
         ) {
             Column {
-                Text(stringResource(R.string.missing_env_desc))
-                Text(
+                AppText(stringResource(R.string.missing_env_desc))
+                AppText(
                     text = missing.joinToString(", "),
                     modifier = Modifier.padding(vertical = 8.dp),
-                    color = MiuixTheme.colorScheme.onBackground
+                    color = AppTheme.colors.onBackground
                 )
-                TextButton(
+                AppTextButton(
                     text = stringResource(R.string.action_got_it),
                     onClick = { viewModel.dismissMissing() },
                     modifier = Modifier.fillMaxWidth()
@@ -207,8 +206,8 @@ fun HttpScreen(
 
 @Composable
 private fun RequestEditorCard(viewModel: HttpViewModel) {
-    Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
-        OverlayDropdownPreference(
+    AppCard(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+        AppDropdown(
             items = httpMethods.map { it.name },
             selectedIndex = httpMethods.indexOf(viewModel.method),
             title = stringResource(R.string.http_method_label),
@@ -217,29 +216,29 @@ private fun RequestEditorCard(viewModel: HttpViewModel) {
             onSelectedIndexChange = { viewModel.method = httpMethods[it] }
         )
         Column(modifier = Modifier.padding(12.dp)) {
-            TextField(
+            AppTextField(
                 value = viewModel.url,
                 onValueChange = { viewModel.url = it },
                 label = stringResource(R.string.http_url_label),
                 modifier = Modifier.fillMaxWidth()
             )
             ValueHints(hints = viewModel.placeholderHints(viewModel.url))
-            Button(
+            AppButton(
                 onClick = { viewModel.send() },
                 enabled = !viewModel.sending,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp)
             ) {
-                Icon(
+                AppIcon(
                     imageVector = MiuixIcons.Light.Send,
                     contentDescription = null,
                     modifier = Modifier.padding(end = 4.dp)
                 )
-                Text(if (viewModel.sending) stringResource(R.string.action_sending) else stringResource(R.string.http_send_button), modifier = Modifier.padding(start = 4.dp))
+                AppText(if (viewModel.sending) stringResource(R.string.action_sending) else stringResource(R.string.http_send_button), modifier = Modifier.padding(start = 4.dp))
             }
 
-            TabRowWithContour(
+            AppTabRow(
                 tabs = httpTabLabels.localizedLabels(),
                 selectedTabIndex = viewModel.activeTab,
                 onTabSelected = { viewModel.activeTab = it },
@@ -277,16 +276,17 @@ private fun ExportFormatDialog(show: Boolean, viewModel: HttpViewModel, onDismis
     val preview = remember(picked) { viewModel.exportText(HttpExportFormat.entries[picked]) }
     val copy = rememberCopyToClipboard()
 
-    OverlayDialog(
+    AppDialog(
         show = true,
         onDismissRequest = onDismiss
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            TabRowWithContour(
+            AppTabRow(
                 tabs = tabLabels,
                 selectedTabIndex = picked,
                 onTabSelected = { picked = it },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                scrollable = true
             )
             // 预览区限制高度并内部滚动，避免长报文把复制按钮挤出屏幕；
             // 可选中文本，长按拖选即可复制任意片段
@@ -299,7 +299,7 @@ private fun ExportFormatDialog(show: Boolean, viewModel: HttpViewModel, onDismis
             ) {
                 MonospaceBlock(preview, selectable = true)
             }
-            TextButton(
+            AppTextButton(
                 text = stringResource(R.string.action_copy),
                 onClick = { copy(preview) },
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
@@ -345,7 +345,7 @@ private fun TabContent(vm: HttpViewModel) {
 private fun NetworkEditor(viewModel: HttpViewModel) {
     Column(horizontalAlignment = Alignment.Start) {
         // 档位即开关：关闭 / 各弱网档 / 强制超时，与请求体类型下拉一样贴卡边
-        OverlayDropdownPreference(
+        AppDropdown(
             items = throttleLabels.localizedLabels(),
             selectedIndex = viewModel.throttlePreset.ordinal,
             title = stringResource(R.string.net_throttle_label),
@@ -358,7 +358,7 @@ private fun NetworkEditor(viewModel: HttpViewModel) {
             modifier = Modifier.padding(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            TextField(
+            AppTextField(
                 value = viewModel.timeoutSec,
                 onValueChange = { viewModel.timeoutSec = it.filter(Char::isDigit) },
                 label = stringResource(R.string.timeout_sec_label),
@@ -367,18 +367,18 @@ private fun NetworkEditor(viewModel: HttpViewModel) {
             )
             if (viewModel.throttlePreset == NetworkPreset.FORCE_TIMEOUT) {
                 Column {
-                    TextField(
+                    AppTextField(
                         value = viewModel.forceTimeoutSec,
                         onValueChange = { viewModel.forceTimeoutSec = it.filter(Char::isDigit) },
                         label = stringResource(R.string.net_force_timeout_label),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Text(
+                    AppText(
                         text = stringResource(R.string.net_force_timeout_hint),
                         modifier = Modifier.padding(top = 6.dp),
                         fontSize = 12.sp,
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                        color = AppTheme.colors.onSurfaceSummary
                     )
                 }
             }
@@ -386,11 +386,11 @@ private fun NetworkEditor(viewModel: HttpViewModel) {
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
+                AppText(
                     text = stringResource(R.string.use_proxy_label),
                     modifier = Modifier.weight(1f)
                 )
-                Switch(
+                AppSwitch(
                     checked = viewModel.useProxy,
                     onCheckedChange = { viewModel.useProxy = it }
                 )
@@ -407,9 +407,9 @@ private fun NetworkEditor(viewModel: HttpViewModel) {
  */
 @Composable
 private fun ScriptEditorCard(viewModel: HttpViewModel, onOpenScriptEditor: (Int) -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+    AppCard(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
         Column(modifier = Modifier.padding(12.dp)) {
-            TabRowWithContour(
+            AppTabRow(
                 tabs = scriptTabLabels.localizedLabels(),
                 selectedTabIndex = viewModel.scriptTab,
                 onTabSelected = { viewModel.scriptTab = it },
@@ -441,7 +441,7 @@ private fun ScriptEditor(viewModel: HttpViewModel, onOpenScriptEditor: (Int) -> 
         val error = viewModel.scriptError
         if (console.isEmpty() && tests.isEmpty() && error == null) return
 
-        Text(
+        AppText(
             text = stringResource(R.string.script_console),
             modifier = Modifier.padding(top = 4.dp)
         )
@@ -464,19 +464,19 @@ private fun ScriptPreview(script: String, placeholder: String, onClick: () -> Un
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 96.dp, max = 160.dp)
-            .squircleSurface(MiuixTheme.colorScheme.surfaceVariant, 8.dp)
+            .squircleSurface(AppTheme.colors.surfaceVariant, 8.dp)
             .clickable(onClick = onClick)
             .verticalScroll(rememberScrollState())
             .padding(10.dp)
     ) {
-        Text(
+        AppText(
             text = if (empty) placeholder else script,
             fontFamily = FontFamily.Monospace,
             fontSize = 12.sp,
             color = if (empty) {
-                MiuixTheme.colorScheme.onSurfaceVariantSummary
+                AppTheme.colors.onSurfaceSummary
             } else {
-                MiuixTheme.colorScheme.onSurface
+                AppTheme.colors.onSurface
             }
         )
     }
@@ -485,7 +485,7 @@ private fun ScriptPreview(script: String, placeholder: String, onClick: () -> Un
 @Composable
 private fun BodyEditor(viewModel: HttpViewModel) {
     Column(horizontalAlignment = Alignment.Start) {
-        OverlayDropdownPreference(
+        AppDropdown(
             items = bodyTypeLabels.localizedLabels(),
             selectedIndex = bodyTypes.indexOf(viewModel.bodyType),
             title = stringResource(R.string.body_type_label),
@@ -502,7 +502,7 @@ private fun BodyEditor(viewModel: HttpViewModel) {
             when (viewModel.bodyType) {
             BodyType.NONE -> {}
             BodyType.JSON, BodyType.RAW -> {
-                TextField(
+                AppTextField(
                     value = viewModel.bodyText,
                     onValueChange = { viewModel.bodyText = it },
                     label = if (viewModel.bodyType == BodyType.JSON) stringResource(R.string.body_json_label) else stringResource(R.string.body_raw_label),
@@ -512,14 +512,14 @@ private fun BodyEditor(viewModel: HttpViewModel) {
             }
 
             BodyType.GRAPHQL -> {
-                TextField(
+                AppTextField(
                     value = viewModel.bodyText,
                     onValueChange = { viewModel.bodyText = it },
                     label = stringResource(R.string.graphql_query_label),
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 8
                 )
-                TextField(
+                AppTextField(
                     value = viewModel.graphqlVariables,
                     onValueChange = { viewModel.graphqlVariables = it },
                     label = stringResource(R.string.graphql_variables_label),
@@ -556,14 +556,14 @@ private fun BodyEditor(viewModel: HttpViewModel) {
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        TextField(
+                        AppTextField(
                             value = field.name,
                             onValueChange = { viewModel.updateFormField(index, field.copy(name = it)) },
                             label = stringResource(R.string.form_field_name),
                             modifier = Modifier.weight(0.35f)
                         )
                         if (field.isFile) {
-                            Text(
+                            AppText(
                                 text = field.fileName ?: stringResource(R.string.form_file_selected),
                                 modifier = Modifier
                                     .weight(0.5f)
@@ -575,7 +575,7 @@ private fun BodyEditor(viewModel: HttpViewModel) {
                                 maxLines = 1
                             )
                         } else {
-                            TextField(
+                            AppTextField(
                                 value = field.value,
                                 onValueChange = { viewModel.updateFormField(index, field.copy(value = it)) },
                                 label = stringResource(R.string.kv_value_label),
@@ -584,7 +584,7 @@ private fun BodyEditor(viewModel: HttpViewModel) {
                                     .padding(start = 6.dp)
                             )
                         }
-                        Icon(
+                        AppIcon(
                             imageVector = MiuixIcons.Light.Close,
                             contentDescription = stringResource(R.string.cd_delete),
                             modifier = Modifier
@@ -621,18 +621,18 @@ private fun AddFieldButton(label: String, onClick: () -> Unit) {
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
+        AppIcon(
             imageVector = MiuixIcons.Light.Add,
             contentDescription = stringResource(R.string.cd_add)
         )
-        Text(label, modifier = Modifier.padding(start = 6.dp))
+        AppText(label, modifier = Modifier.padding(start = 6.dp))
     }
 }
 
 @Composable
 private fun AuthEditor(viewModel: HttpViewModel) {
     Column {
-        OverlayDropdownPreference(
+        AppDropdown(
             items = authTypeLabels.localizedLabels(),
             selectedIndex = viewModel.authType.ordinal,
             title = stringResource(R.string.auth_type_label),
@@ -649,7 +649,7 @@ private fun AuthEditor(viewModel: HttpViewModel) {
             when (viewModel.authType) {
             com.evan.pulse.domain.model.AuthType.NONE -> {}
             com.evan.pulse.domain.model.AuthType.BEARER -> {
-                TextField(
+                AppTextField(
                     value = viewModel.bearerToken,
                     onValueChange = { viewModel.bearerToken = it },
                     label = stringResource(R.string.bearer_token_label),
@@ -658,13 +658,13 @@ private fun AuthEditor(viewModel: HttpViewModel) {
             }
 
             com.evan.pulse.domain.model.AuthType.APIKEY -> {
-                TextField(
+                AppTextField(
                     value = viewModel.apiKeyName,
                     onValueChange = { viewModel.apiKeyName = it },
                     label = stringResource(R.string.apikey_name_label),
                     modifier = Modifier.fillMaxWidth()
                 )
-                TextField(
+                AppTextField(
                     value = viewModel.apiKeyValue,
                     onValueChange = { viewModel.apiKeyValue = it },
                     label = stringResource(R.string.apikey_value_label),
@@ -673,13 +673,13 @@ private fun AuthEditor(viewModel: HttpViewModel) {
             }
 
             com.evan.pulse.domain.model.AuthType.BASIC -> {
-                TextField(
+                AppTextField(
                     value = viewModel.basicUsername,
                     onValueChange = { viewModel.basicUsername = it },
                     label = stringResource(R.string.username_label),
                     modifier = Modifier.fillMaxWidth()
                 )
-                TextField(
+                AppTextField(
                     value = viewModel.basicPassword,
                     onValueChange = { viewModel.basicPassword = it },
                     label = stringResource(R.string.password_label),
@@ -696,19 +696,19 @@ private fun AuthEditor(viewModel: HttpViewModel) {
 private fun ResponseCard(viewModel: HttpViewModel) {
     val outcome = viewModel.outcome
 
-    Card(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
+    AppCard(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
         when (outcome) {
-            null -> Text(
+            null -> AppText(
                 text = stringResource(R.string.http_no_response),
                 modifier = Modifier.padding(16.dp)
             )
 
             is HttpCallOutcome.Failure -> Column(modifier = Modifier.padding(16.dp)) {
-                Text(
+                AppText(
                     text = stringResource(R.string.http_failure, outcome.errorType.name),
                     color = Color(0xFFD32F2F)
                 )
-                Text(
+                AppText(
                     text = outcome.message,
                     modifier = Modifier.padding(top = 6.dp),
                     fontSize = 13.sp
@@ -719,13 +719,13 @@ private fun ResponseCard(viewModel: HttpViewModel) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     StatusBadge(outcome.statusCode)
                     if (outcome.statusText.isNotBlank()) {
-                        Text(
+                        AppText(
                             text = outcome.statusText,
                             modifier = Modifier.padding(start = 10.dp),
                             fontSize = 13.sp
                         )
                     }
-                    Text(
+                    AppText(
                         text = stringResource(R.string.duration_size, outcome.durationMs, outcome.responseSizeBytes),
                         modifier = Modifier.padding(start = 10.dp),
                         fontSize = 13.sp
@@ -733,19 +733,19 @@ private fun ResponseCard(viewModel: HttpViewModel) {
                 }
                 val headersText = outcome.headers.joinToString("\n") { "${it.key}: ${it.value}" }
                 if (headersText.isNotBlank()) {
-                    Text(
+                    AppText(
                         text = stringResource(R.string.http_response_headers),
                         modifier = Modifier.padding(top = 14.dp, bottom = 2.dp),
                         fontSize = 13.sp
                     )
                     MonospaceBlock(headersText, selectable = true)
                 }
-                Text(
+                AppText(
                     text = stringResource(R.string.http_response_body),
                     modifier = Modifier.padding(top = 14.dp, bottom = 8.dp),
                     fontSize = 13.sp
                 )
-                ResponseBodyView(outcome.body)
+                ResponseBodyView(outcome.body, viewModel.url)
             }
         }
     }

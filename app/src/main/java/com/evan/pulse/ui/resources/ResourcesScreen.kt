@@ -3,7 +3,9 @@ package com.evan.pulse.ui.resources
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -14,7 +16,9 @@ import com.evan.pulse.ui.env.EnvironmentScreen
 import com.evan.pulse.ui.l10n.localizedLabels
 import com.evan.pulse.ui.project.ProjectViewModel
 import com.evan.pulse.ui.project.ProjectsScreen
-import top.yukonga.miuix.kmp.basic.TabRowWithContour
+import com.evan.pulse.ui.design.AppTabRow
+import com.evan.pulse.ui.design.LocalUiStyle
+import com.evan.pulse.ui.design.UiStyle
 
 private val resourceTabLabels = listOf(
     R.string.tab_projects,
@@ -35,12 +39,15 @@ fun ResourcesScreen(
     onOpenEnvVars: (Long) -> Unit = {}
 ) {
     Column(modifier = modifier.fillMaxSize().padding(top = LocalTopBarInset.current)) {
-        TabRowWithContour(
+        AppTabRow(
             tabs = resourceTabLabels.localizedLabels(),
             selectedTabIndex = resourceTab.coerceIn(0, resourceTabLabels.lastIndex),
             onTabSelected = onTabChange,
             modifier = Modifier.padding(horizontal = 12.dp)
         )
+        if (LocalUiStyle.current == UiStyle.MATERIAL) {
+            Spacer(Modifier.height(8.dp))
+        }
         when (resourceTab.coerceIn(0, resourceTabLabels.lastIndex)) {
             0 -> ProjectsScreen(Modifier.weight(1f).fillMaxWidth(), viewModel = projectViewModel)
             1 -> CollectionScreen(Modifier.weight(1f).fillMaxWidth(), onSwitchTab)

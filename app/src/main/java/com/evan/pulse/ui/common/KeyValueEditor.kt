@@ -13,10 +13,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.evan.pulse.R
 import com.evan.pulse.domain.model.KeyValue
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Close
+import com.evan.pulse.ui.design.AppIcon
+import com.evan.pulse.ui.design.AppTextField
 
 /**
  * 通用键值对编辑器（参数 / 请求头等），供 HTTP 与 SSE 等协议页共用。
@@ -75,14 +75,14 @@ fun KeyValueEditor(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    TextField(
+                    AppTextField(
                         value = kv.key,
                         onValueChange = { onEdited(index, kv.copy(key = it)) },
                         label = keyLabel,
                         modifier = Modifier.weight(0.4f),
                         singleLine = true
                     )
-                    TextField(
+                    AppTextField(
                         value = kv.value,
                         onValueChange = { onEdited(index, kv.copy(value = it)) },
                         label = valueLabel,
@@ -92,7 +92,7 @@ fun KeyValueEditor(
                         singleLine = true
                     )
                     if (items.size > 1) {
-                        Icon(
+                        AppIcon(
                             imageVector = MiuixIcons.Light.Close,
                             contentDescription = stringResource(R.string.cd_delete),
                             modifier = Modifier

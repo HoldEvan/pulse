@@ -22,9 +22,12 @@ import com.evan.pulse.ui.common.CardSectionTitle
 import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.subPageScrollState
 import com.evan.pulse.ui.common.subPageOverScroll
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.Text
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppArrowRow
+import com.evan.pulse.ui.design.AppCard
+import com.evan.pulse.ui.design.AppPreferenceGroup
+import com.evan.pulse.ui.design.AppIcon
+import com.evan.pulse.ui.design.AppText
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.ConvertFile
 import top.yukonga.miuix.kmp.icon.extended.Folder
@@ -32,8 +35,6 @@ import top.yukonga.miuix.kmp.icon.extended.Image
 import top.yukonga.miuix.kmp.icon.extended.Notes
 import top.yukonga.miuix.kmp.icon.extended.Recent
 import top.yukonga.miuix.kmp.icon.extended.Stopwatch
-import top.yukonga.miuix.kmp.preference.ArrowPreference
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /** 首页：统计概览 + 工具箱。统计卡来自各内存 Store，工具入口打开对应二级页 */
 @Composable
@@ -66,14 +67,14 @@ fun DashboardScreen(
             StatCard(
                 title = stringResource(R.string.dashboard_stat_projects),
                 value = stats.projectCount,
-                icon = { Icon(MiuixIcons.Light.Folder, contentDescription = null) },
+                icon = { AppIcon(MiuixIcons.Light.Folder, contentDescription = null) },
                 onClick = onOpenProjects,
                 modifier = Modifier.weight(1f)
             )
             StatCard(
                 title = stringResource(R.string.dashboard_stat_history),
                 value = stats.historyCount,
-                icon = { Icon(MiuixIcons.Light.Recent, contentDescription = null) },
+                icon = { AppIcon(MiuixIcons.Light.Recent, contentDescription = null) },
                 onClick = onOpenHistory,
                 modifier = Modifier.weight(1f)
             )
@@ -85,14 +86,14 @@ fun DashboardScreen(
             StatCard(
                 title = stringResource(R.string.dashboard_stat_requests),
                 value = stats.savedRequestCount,
-                icon = { Icon(MiuixIcons.Light.Notes, contentDescription = null) },
+                icon = { AppIcon(MiuixIcons.Light.Notes, contentDescription = null) },
                 onClick = onOpenRequests,
                 modifier = Modifier.weight(1f)
             )
             StatCard(
                 title = stringResource(R.string.dashboard_stat_monitors),
                 value = stats.monitorTargetCount,
-                icon = { Icon(MiuixIcons.Light.Stopwatch, contentDescription = null) },
+                icon = { AppIcon(MiuixIcons.Light.Stopwatch, contentDescription = null) },
                 onClick = onOpenMonitors,
                 modifier = Modifier.weight(1f)
             )
@@ -102,55 +103,63 @@ fun DashboardScreen(
             text = stringResource(R.string.dashboard_tools_title),
             modifier = Modifier.padding(top = 12.dp)
         )
-        Card(
+        AppPreferenceGroup(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 12.dp)
         ) {
-            ArrowPreference(
-                title = stringResource(R.string.tool_encoding),
-                summary = stringResource(R.string.tool_encoding_summary),
-                startAction = {
-                    Icon(
-                        imageVector = MiuixIcons.Light.ConvertFile,
-                        contentDescription = null
-                    )
-                },
-                onClick = onOpenEncoding
-            )
-            ArrowPreference(
-                title = stringResource(R.string.tool_image_base64),
-                summary = stringResource(R.string.tool_image_base64_summary),
-                startAction = {
-                    Icon(
-                        imageVector = MiuixIcons.Light.Image,
-                        contentDescription = null
-                    )
-                },
-                onClick = onOpenImageBase64
-            )
-            ArrowPreference(
-                title = stringResource(R.string.tool_json),
-                summary = stringResource(R.string.tool_json_summary),
-                startAction = {
-                    Icon(
-                        imageVector = MiuixIcons.Light.Notes,
-                        contentDescription = null
-                    )
-                },
-                onClick = onOpenJson
-            )
-            ArrowPreference(
-                title = stringResource(R.string.tool_timestamp),
-                summary = stringResource(R.string.tool_timestamp_summary),
-                startAction = {
-                    Icon(
-                        imageVector = MiuixIcons.Light.Stopwatch,
-                        contentDescription = null
-                    )
-                },
-                onClick = onOpenTimestamp
-            )
+            item {
+                AppArrowRow(
+                    title = stringResource(R.string.tool_encoding),
+                    summary = stringResource(R.string.tool_encoding_summary),
+                    startAction = {
+                        AppIcon(
+                            imageVector = MiuixIcons.Light.ConvertFile,
+                            contentDescription = null
+                        )
+                    },
+                    onClick = onOpenEncoding
+                )
+            }
+            item {
+                AppArrowRow(
+                    title = stringResource(R.string.tool_image_base64),
+                    summary = stringResource(R.string.tool_image_base64_summary),
+                    startAction = {
+                        AppIcon(
+                            imageVector = MiuixIcons.Light.Image,
+                            contentDescription = null
+                        )
+                    },
+                    onClick = onOpenImageBase64
+                )
+            }
+            item {
+                AppArrowRow(
+                    title = stringResource(R.string.tool_json),
+                    summary = stringResource(R.string.tool_json_summary),
+                    startAction = {
+                        AppIcon(
+                            imageVector = MiuixIcons.Light.Notes,
+                            contentDescription = null
+                        )
+                    },
+                    onClick = onOpenJson
+                )
+            }
+            item {
+                AppArrowRow(
+                    title = stringResource(R.string.tool_timestamp),
+                    summary = stringResource(R.string.tool_timestamp_summary),
+                    startAction = {
+                        AppIcon(
+                            imageVector = MiuixIcons.Light.Stopwatch,
+                            contentDescription = null
+                        )
+                    },
+                    onClick = onOpenTimestamp
+                )
+            }
         }
 
         BottomBarClearance()
@@ -165,24 +174,24 @@ private fun StatCard(
     onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    AppCard(
         modifier = modifier.fillMaxWidth(),
         onClick = onClick,
         showIndication = onClick != null
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             icon()
-            Text(
+            AppText(
                 text = value.toString(),
                 modifier = Modifier.padding(top = 6.dp),
                 fontSize = 26.sp,
-                color = MiuixTheme.colorScheme.onSurface
+                color = AppTheme.colors.onSurface
             )
-            Text(
+            AppText(
                 text = title,
                 modifier = Modifier.padding(top = 2.dp),
                 fontSize = 13.sp,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                color = AppTheme.colors.onSurfaceSummary
             )
         }
     }

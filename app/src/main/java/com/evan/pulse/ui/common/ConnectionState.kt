@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.sp
 import com.evan.pulse.domain.model.MqttConnectionState
 import com.evan.pulse.domain.model.SseConnectionState
 import com.evan.pulse.domain.model.WsConnectionState
-import top.yukonga.miuix.kmp.basic.Text
+import com.evan.pulse.ui.design.AppText
 
 /** 各协议共用连接状态色：灰=空闲/关闭，蓝=连接中，绿=已连接，红=失败 */
 fun connectionStateColor(state: SseConnectionState): Color = when (state) {
@@ -51,7 +51,7 @@ fun ConnectionStateIndicator(
 ) {
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
         Box(modifier = Modifier.size(10.dp).background(color, CircleShape))
-        Text(
+        AppText(
             text = label,
             color = color,
             fontSize = 12.sp,

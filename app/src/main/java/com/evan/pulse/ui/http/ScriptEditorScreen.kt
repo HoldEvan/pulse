@@ -1,4 +1,5 @@
 package com.evan.pulse.ui.http
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -44,13 +45,13 @@ import androidx.compose.foundation.layout.Spacer
 import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.subPageOverScroll
 import com.evan.pulse.ui.common.subPageScrollState
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
-import top.yukonga.miuix.kmp.basic.Text
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppCard
+import com.evan.pulse.ui.design.AppIcon
+import com.evan.pulse.ui.design.AppIconButton
+import com.evan.pulse.ui.design.AppText
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Delete
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 private val editorFontSize = 13.sp
 private val editorLineHeight = 20.sp
 private val gutterGap = 12.dp
@@ -93,16 +94,16 @@ fun ScriptEditorScreen(
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
+            AppText(
                 text = stringResource(if (isPre) R.string.script_pre_title else R.string.script_post_title),
                 modifier = Modifier.weight(1f),
                 fontSize = 15.sp
             )
-            IconButton(
+            AppIconButton(
                 onClick = { commit(TextFieldValue("")) },
                 modifier = Modifier.size(36.dp)
             ) {
-                Icon(
+                AppIcon(
                     imageVector = MiuixIcons.Light.Delete,
                     contentDescription = stringResource(R.string.cd_clear_script)
                 )
@@ -121,7 +122,7 @@ fun ScriptEditorScreen(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
             )
         }
-        Card(modifier = Modifier.fillMaxWidth().weight(1f)) {
+        AppCard(modifier = Modifier.fillMaxWidth().weight(1f)) {
             ScriptCodeArea(
                 value = value,
                 onValueChange = { commit(it) },
@@ -144,13 +145,13 @@ private fun ScriptCodeArea(
         fontFamily = FontFamily.Monospace,
         fontSize = editorFontSize,
         lineHeight = editorLineHeight,
-        color = MiuixTheme.colorScheme.onSurface
+        color = AppTheme.colors.onSurface
     )
     val numberStyle = TextStyle(
         fontFamily = FontFamily.Monospace,
         fontSize = editorFontSize,
         lineHeight = editorLineHeight,
-        color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+        color = AppTheme.colors.onSurfaceSummary
     )
     val measurer = rememberTextMeasurer()
     val density = LocalDensity.current
@@ -232,7 +233,7 @@ private fun ScriptCodeArea(
                     value = value,
                     onValueChange = onValueChange,
                     textStyle = editorStyle,
-                    cursorBrush = SolidColor(MiuixTheme.colorScheme.onSurface),
+                    cursorBrush = SolidColor(AppTheme.colors.onSurface),
                     onTextLayout = { layout = it },
                     modifier = Modifier
                         .wrapContentWidth()
@@ -254,7 +255,7 @@ private fun SuggestionPanel(
     onPick: (ScriptApiToken) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(modifier = modifier) {
+    AppCard(modifier = modifier) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -270,15 +271,15 @@ private fun SuggestionPanel(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Start
                 ) {
-                    Text(
+                    AppText(
                         text = token.path,
                         fontFamily = FontFamily.Monospace,
                         fontSize = editorFontSize
                     )
                     if (token.detailText().isNotEmpty()) {
-                        Text(
+                        AppText(
                             text = token.detailText(),
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                            color = AppTheme.colors.onSurfaceSummary,
                             fontSize = 12.sp,
                             modifier = Modifier.padding(start = 8.dp)
                         )

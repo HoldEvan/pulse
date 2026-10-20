@@ -22,7 +22,9 @@ import kotlinx.coroutines.flow.stateIn
 private val Context.settingsDataStore: DataStore<Preferences> by
     preferencesDataStore(name = "pulse_settings")
 
+private val KEY_UI_STYLE = intPreferencesKey("ui_style_index")
 private val KEY_THEME_MODE = intPreferencesKey("theme_mode_index")
+private val KEY_MONET_ENABLED = booleanPreferencesKey("monet_enabled")
 private val KEY_COLOR = intPreferencesKey("key_color_index")
 private val KEY_PALETTE = intPreferencesKey("palette_style_index")
 private val KEY_COLOR_SPEC = intPreferencesKey("color_spec_index")
@@ -46,8 +48,14 @@ private val KEY_BAR_BLUR_STYLE = intPreferencesKey("bar_blur_style_index")
 private val KEY_PURE_BLACK_IN_DARK = booleanPreferencesKey("pure_black_in_dark")
 private val KEY_UI_SCALE_PERCENT = intPreferencesKey("ui_scale_percent")
 
-private fun Preferences.toAppSettings(): AppSettings = AppSettings(
-    themeModeIndex = (get(KEY_THEME_MODE) ?: 0).coerceAtLeast(0),
+internal fun Preferences.toAppSettings(): AppSettings = AppSettings(
+    uiStyleIndex = (get(KEY_UI_STYLE) ?: 0).coerceAtLeast(0),
+    themeModeIndex = when (val index = get(KEY_THEME_MODE) ?: 0) {
+        in 0..2 -> index
+        in 3..5 -> index - 3
+        else -> 0
+    },
+    monetEnabled = get(KEY_MONET_ENABLED) ?: ((get(KEY_THEME_MODE) ?: 0) in 3..5),
     keyColorIndex = (get(KEY_COLOR) ?: 0).coerceAtLeast(0),
     paletteStyleIndex = (get(KEY_PALETTE) ?: 0).coerceAtLeast(0),
     colorSpecIndex = (get(KEY_COLOR_SPEC) ?: 0).coerceAtLeast(0),
@@ -88,7 +96,9 @@ class SettingsStore(context: Context) {
     suspend fun update(transform: (AppSettings) -> AppSettings) {
         dataStore.edit { prefs ->
             val next = transform(prefs.toAppSettings())
+            prefs[KEY_UI_STYLE] = next.uiStyleIndex
             prefs[KEY_THEME_MODE] = next.themeModeIndex
+            prefs[KEY_MONET_ENABLED] = next.monetEnabled
             prefs[KEY_COLOR] = next.keyColorIndex
             prefs[KEY_PALETTE] = next.paletteStyleIndex
             prefs[KEY_COLOR_SPEC] = next.colorSpecIndex

@@ -48,27 +48,27 @@ import com.evan.pulse.ui.common.subPageOverScroll
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.DropdownEntry
 import top.yukonga.miuix.kmp.basic.DropdownItem
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.basic.TextField
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppCheckboxRow
+import com.evan.pulse.ui.design.AppCard
+import com.evan.pulse.ui.design.AppDialog
+import com.evan.pulse.ui.design.AppDropdown
+import com.evan.pulse.ui.design.AppIcon
+import com.evan.pulse.ui.design.AppIconButton
+import com.evan.pulse.ui.design.AppText
+import com.evan.pulse.ui.design.AppTextButton
+import com.evan.pulse.ui.design.AppTextField
 import top.yukonga.miuix.kmp.squircle.squircleClip
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.preference.CheckboxLocation
-import top.yukonga.miuix.kmp.preference.CheckboxPreference
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Edit
 import top.yukonga.miuix.kmp.icon.extended.More
 import top.yukonga.miuix.kmp.icon.extended.Pause
 import top.yukonga.miuix.kmp.icon.extended.Play
-import top.yukonga.miuix.kmp.menu.OverlayIconDropdownMenu
-import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import com.evan.pulse.ui.design.AppIconDropdownMenu
 
 private val recordTimeFormat = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
 
@@ -110,8 +110,8 @@ fun MonitorScreen(
             SectionTitleRow(
                 label = stringResource(R.string.monitor_records_title),
                 actions = {
-                    IconButton(onClick = onOpenRecordsList) {
-                        Icon(
+                    AppIconButton(onClick = onOpenRecordsList) {
+                        AppIcon(
                             imageVector = MiuixIcons.Light.More,
                             contentDescription = stringResource(R.string.monitor_records_more)
                         )
@@ -120,17 +120,17 @@ fun MonitorScreen(
             )
         }
         item(key = "records_card") {
-        Card(modifier = Modifier.fillMaxWidth()) {
+        AppCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp)) {
                 if (records.isEmpty()) {
-                    Text(
+                    AppText(
                         text = stringResource(R.string.monitor_records_empty),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 10.dp),
                         textAlign = TextAlign.Center,
                         fontSize = 13.sp,
-                        color = MiuixTheme.colorScheme.outline
+                        color = AppTheme.colors.outline
                     )
                 }
                 records.take(2).forEach { record ->
@@ -146,7 +146,7 @@ fun MonitorScreen(
         }
 
         item(key = "targets_card") {
-        Card(
+        AppCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 12.dp)
@@ -192,17 +192,17 @@ fun MonitorScreen(
                             .padding(vertical = 20.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Icon(
+                        AppIcon(
                             imageVector = MiuixIcons.Light.Play,
                             contentDescription = null,
                             modifier = Modifier.size(28.dp),
-                            tint = MiuixTheme.colorScheme.outline
+                            tint = AppTheme.colors.outline
                         )
-                        Text(
+                        AppText(
                             text = stringResource(R.string.monitor_empty),
                             modifier = Modifier.padding(top = 8.dp),
                             fontSize = 13.sp,
-                            color = MiuixTheme.colorScheme.outline
+                            color = AppTheme.colors.outline
                         )
                     }
                 }
@@ -216,7 +216,7 @@ fun MonitorScreen(
     }
 
     if (viewModel.showEditor) {
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = if (viewModel.creating) {
                 stringResource(R.string.monitor_create_title)
@@ -226,13 +226,13 @@ fun MonitorScreen(
             onDismissRequest = { viewModel.closeEditor() }
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
-                TextField(
+                AppTextField(
                     value = viewModel.nameInput,
                     onValueChange = { viewModel.nameInput = it },
                     label = stringResource(R.string.monitor_name_label),
                     modifier = Modifier.fillMaxWidth()
                 )
-                TextField(
+                AppTextField(
                     value = viewModel.groupInput,
                     onValueChange = { viewModel.groupInput = it },
                     label = stringResource(R.string.monitor_group_label),
@@ -240,7 +240,7 @@ fun MonitorScreen(
                         .fillMaxWidth()
                         .padding(top = 8.dp)
                 )
-                OverlayDropdownPreference(
+                AppDropdown(
                     title = stringResource(R.string.monitor_type_label),
                     items = monitorTypeLabels.localizedLabels(),
                     selectedIndex = viewModel.type.ordinal,
@@ -249,7 +249,7 @@ fun MonitorScreen(
                     onSelectedIndexChange = { viewModel.type = MonitorType.entries[it] }
                 )
                 if (viewModel.type != MonitorType.HTTP) {
-                    TextField(
+                    AppTextField(
                         value = viewModel.hostInput,
                         onValueChange = { viewModel.hostInput = it },
                         label = stringResource(R.string.monitor_host_label),
@@ -260,7 +260,7 @@ fun MonitorScreen(
                     )
                 }
                 if (viewModel.type == MonitorType.PORT) {
-                    TextField(
+                    AppTextField(
                         value = viewModel.portInput,
                         onValueChange = { viewModel.portInput = it },
                         label = stringResource(R.string.monitor_port_label),
@@ -271,7 +271,7 @@ fun MonitorScreen(
                     )
                 }
                 if (viewModel.type == MonitorType.HTTP) {
-                    TextField(
+                    AppTextField(
                         value = viewModel.urlInput,
                         onValueChange = { viewModel.urlInput = it },
                         label = stringResource(R.string.monitor_url_label),
@@ -281,14 +281,14 @@ fun MonitorScreen(
                             .padding(top = 8.dp)
                     )
                     Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                        TextField(
+                        AppTextField(
                             value = viewModel.statusMinInput,
                             onValueChange = { viewModel.statusMinInput = it },
                             label = stringResource(R.string.monitor_status_min_label),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(0.45f)
                         )
-                        TextField(
+                        AppTextField(
                             value = viewModel.statusMaxInput,
                             onValueChange = { viewModel.statusMaxInput = it },
                             label = stringResource(R.string.monitor_status_max_label),
@@ -299,7 +299,7 @@ fun MonitorScreen(
                         )
                     }
                 }
-                OverlayDropdownPreference(
+                AppDropdown(
                     title = stringResource(R.string.monitor_timeout_label),
                     items = timeoutOptions.map { durationLabel(it / 1000L) },
                     selectedIndex = timeoutOptions.indexOf(viewModel.timeoutMs)
@@ -308,7 +308,7 @@ fun MonitorScreen(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp).squircleClip(12.dp),
                     onSelectedIndexChange = { viewModel.timeoutMs = timeoutOptions[it] }
                 )
-                OverlayDropdownPreference(
+                AppDropdown(
                     title = stringResource(R.string.monitor_interval_label),
                     items = MONITOR_INTERVAL_PRESETS.map { durationLabel(it) },
                     selectedIndex = MONITOR_INTERVAL_PRESETS.indexOf(viewModel.intervalSec)
@@ -317,7 +317,7 @@ fun MonitorScreen(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp).squircleClip(12.dp),
                     onSelectedIndexChange = { viewModel.intervalSec = MONITOR_INTERVAL_PRESETS[it] }
                 )
-                CheckboxPreference(
+                AppCheckboxRow(
                     title = stringResource(R.string.monitor_enabled_label),
                     checked = viewModel.enabled,
                     onCheckedChange = { viewModel.enabled = it },
@@ -325,9 +325,9 @@ fun MonitorScreen(
                 )
                 val validation = viewModel.editorValidation
                 if (validation is TargetValidation.Invalid) {
-                    Text(
+                    AppText(
                         text = stringResource(validation.message),
-                        color = MiuixTheme.colorScheme.error,
+                        color = AppTheme.colors.error,
                         fontSize = 13.sp,
                         modifier = Modifier.padding(top = 8.dp)
                     )
@@ -338,12 +338,12 @@ fun MonitorScreen(
                         .padding(top = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    TextButton(
+                    AppTextButton(
                         text = stringResource(R.string.action_cancel),
                         onClick = { viewModel.closeEditor() },
                         modifier = Modifier.weight(1f)
                     )
-                    TextButton(
+                    AppTextButton(
                         text = stringResource(R.string.action_save),
                         onClick = { viewModel.save() },
                         modifier = Modifier.weight(1f)
@@ -354,23 +354,23 @@ fun MonitorScreen(
     }
 
     viewModel.deleteTarget?.let { target ->
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = stringResource(R.string.monitor_delete_title),
             onDismissRequest = { viewModel.cancelDelete() }
         ) {
             Column {
-                Text(stringResource(R.string.monitor_delete_confirm, target.name))
+                AppText(stringResource(R.string.monitor_delete_confirm, target.name))
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.padding(top = 12.dp)
                 ) {
-                    TextButton(
+                    AppTextButton(
                         text = stringResource(R.string.action_cancel),
                         onClick = { viewModel.cancelDelete() },
                         modifier = Modifier.weight(1f)
                     )
-                    TextButton(
+                    AppTextButton(
                         text = stringResource(R.string.action_delete),
                         onClick = { viewModel.confirmDelete() },
                         modifier = Modifier.weight(1f)
@@ -408,7 +408,7 @@ private fun MonitorTargetRow(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
+            AppText(
                 text = target.name,
                 modifier = Modifier.weight(1f),
                 maxLines = 1,
@@ -416,12 +416,12 @@ private fun MonitorTargetRow(
                 fontSize = 15.sp
             )
             if (run != null) {
-                Text(
+                AppText(
                     text = recordTimeFormat.format(Date(run.checkedAt)),
                     modifier = Modifier.padding(end = 10.dp),
                     maxLines = 1,
                     fontSize = 12.sp,
-                    color = MiuixTheme.colorScheme.outline
+                    color = AppTheme.colors.outline
                 )
             }
             ConnectionStateIndicator(color = stateColor, label = stateLabel)
@@ -430,21 +430,21 @@ private fun MonitorTargetRow(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
+            AppText(
                 text = targetSummary(target, run),
                 modifier = Modifier.weight(1f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 fontSize = 13.sp,
-                color = MiuixTheme.colorScheme.outline
+                color = AppTheme.colors.outline
             )
-            IconButton(
+            AppIconButton(
                 onClick = onToggleEnabled,
                 modifier = Modifier
                     .padding(end = 2.dp)
                     .size(28.dp)
             ) {
-                Icon(
+                AppIcon(
                     imageVector = if (target.enabled) MiuixIcons.Light.Pause else MiuixIcons.Light.Play,
                     contentDescription = if (target.enabled) {
                         stringResource(R.string.monitor_pause)
@@ -454,14 +454,14 @@ private fun MonitorTargetRow(
                     modifier = Modifier.size(20.dp)
                 )
             }
-            OverlayIconDropdownMenu(
+            AppIconDropdownMenu(
                 entries = listOf(
                     DropdownEntry(
                         items = listOf(
                             DropdownItem(
                                 text = stringResource(R.string.cd_edit),
                                 icon = { m ->
-                                    Icon(
+                                    AppIcon(
                                         imageVector = MiuixIcons.Light.Edit,
                                         contentDescription = null,
                                         modifier = m
@@ -472,7 +472,7 @@ private fun MonitorTargetRow(
                             DropdownItem(
                                 text = stringResource(R.string.action_delete),
                                 icon = { m ->
-                                    Icon(
+                                    AppIcon(
                                         imageVector = MiuixIcons.Light.Delete,
                                         contentDescription = null,
                                         modifier = m
@@ -489,7 +489,7 @@ private fun MonitorTargetRow(
                     .size(28.dp)
                     .offset(x = 4.dp)
             ) {
-                Icon(
+                AppIcon(
                     imageVector = MiuixIcons.Light.More,
                     contentDescription = stringResource(R.string.cd_more),
                     modifier = Modifier.size(20.dp)
@@ -507,7 +507,7 @@ internal fun MonitorRecordRow(record: MonitorRecord, modifier: Modifier = Modifi
                 color = STATE_DOWN_COLOR,
                 label = stringResource(R.string.monitor_state_down)
             )
-            Text(
+            AppText(
                 text = record.targetName,
                 modifier = Modifier.padding(start = 10.dp),
                 maxLines = 1,
@@ -515,29 +515,29 @@ internal fun MonitorRecordRow(record: MonitorRecord, modifier: Modifier = Modifi
                 fontSize = 14.sp
             )
             Spacer(modifier = Modifier.weight(1f))
-            Text(
+            AppText(
                 text = stringResource(monitorTypeLabels[record.type.ordinal]),
                 fontSize = 12.sp,
-                color = MiuixTheme.colorScheme.outline
+                color = AppTheme.colors.outline
             )
-            Text(
+            AppText(
                 text = stringResource(R.string.duration_value, record.durationMs),
                 modifier = Modifier.padding(start = 8.dp),
                 fontSize = 12.sp,
-                color = MiuixTheme.colorScheme.outline
+                color = AppTheme.colors.outline
             )
-            Text(
+            AppText(
                 text = recordTimeFormat.format(Date(record.checkedAt)),
                 modifier = Modifier.padding(start = 8.dp),
                 fontSize = 12.sp,
-                color = MiuixTheme.colorScheme.outline
+                color = AppTheme.colors.outline
             )
         }
-        Text(
+        AppText(
             text = record.message,
             modifier = Modifier.padding(top = 4.dp),
             fontSize = 13.sp,
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+            color = AppTheme.colors.onSurfaceSummary
         )
         Spacer(modifier = Modifier.height(8.dp))
     }

@@ -22,10 +22,10 @@ import com.evan.pulse.data.model.HttpSnapshot
 import com.evan.pulse.data.model.ImportGroup
 import com.evan.pulse.data.model.ImportedItem
 import com.evan.pulse.data.model.snapshotJson
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.SmallTitle
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
+import com.evan.pulse.ui.design.AppSmallTitle
+import com.evan.pulse.ui.design.AppCard
+import com.evan.pulse.ui.design.AppText
+import com.evan.pulse.ui.design.AppTextButton
 
 /**
  * 导入预览内容：按标签分组列出将要写入的接口，支持整组展开收起。
@@ -50,8 +50,8 @@ fun ImportPreviewSheet(
         ) {
             item(key = "summary") {
                 Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                    SmallTitle(text = collectionName)
-                    Text(
+                    AppSmallTitle(text = collectionName)
+                    AppText(
                         text = stringResource(R.string.import_summary_format, totalCount, groups.size),
                         modifier = Modifier.padding(top = 4.dp)
                     )
@@ -60,7 +60,7 @@ fun ImportPreviewSheet(
 
         groups.forEach { group ->
             item(key = "group:${group.tag}") {
-                Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+                AppCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -69,11 +69,11 @@ fun ImportPreviewSheet(
                             text = group.tag,
                             modifier = Modifier.weight(1f).padding(vertical = 8.dp)
                         )
-                        Text(
+                        AppText(
                             text = group.items.size.toString(),
                             modifier = Modifier.padding(end = 4.dp)
                         )
-                        TextButton(
+                        AppTextButton(
                             text = if (collapsed.value[group.tag] == true) {
                                 stringResource(R.string.action_expand)
                             } else {
@@ -105,12 +105,12 @@ fun ImportPreviewSheet(
             .padding(top = 8.dp, bottom = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        TextButton(
+        AppTextButton(
             text = stringResource(R.string.action_cancel),
             onClick = onDismiss,
             modifier = Modifier.weight(1f)
         )
-        TextButton(
+        AppTextButton(
             text = stringResource(R.string.import_confirm_button),
             onClick = onConfirm,
             modifier = Modifier.weight(1f)
@@ -122,11 +122,11 @@ fun ImportPreviewSheet(
 @Composable
 private fun RequestPreviewCard(request: ImportedItem) {
     val url = remember(request.data) { requestUrl(request.data) }
-    Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 28.dp, vertical = 2.dp)) {
+    AppCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 28.dp, vertical = 2.dp)) {
         Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
-            Text(text = request.name)
+            AppText(text = request.name)
             if (url.isNotEmpty()) {
-                Text(
+                AppText(
                     text = url,
                     modifier = Modifier.padding(top = 2.dp),
                     maxLines = 1,

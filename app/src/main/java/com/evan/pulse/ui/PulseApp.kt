@@ -32,7 +32,6 @@ import com.evan.pulse.R
 import com.evan.pulse.ui.about.AboutScreen
 import com.evan.pulse.ui.about.LegalScreen
 import com.evan.pulse.ui.common.BlurredBar
-import com.evan.pulse.ui.common.FloatingNavItemWithLabel
 import com.evan.pulse.ui.common.LocalSubPageCanScroll
 import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.TabPageScaffold
@@ -40,6 +39,15 @@ import com.evan.pulse.ui.common.ToastHost
 import com.evan.pulse.ui.common.blurredBarColor
 import com.evan.pulse.ui.common.rememberBlurBackdrop
 import com.evan.pulse.ui.dashboard.DashboardScreen
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.AppBottomBar
+import com.evan.pulse.ui.design.AppBottomBarItem
+import com.evan.pulse.ui.design.AppIcon
+import com.evan.pulse.ui.design.AppIconButton
+import com.evan.pulse.ui.design.AppTopBar
+import com.evan.pulse.ui.design.AppTopBarBehavior
+import com.evan.pulse.ui.design.rememberAppTopBarBehavior
+import com.evan.pulse.ui.design.uiCapabilities
 import com.evan.pulse.ui.env.EnvViewModel
 import com.evan.pulse.ui.env.EnvVarsScreen
 import com.evan.pulse.ui.glass.LiquidGlassNavigationBar
@@ -67,18 +75,8 @@ import com.evan.pulse.ui.tools.EncodingToolScreen
 import com.evan.pulse.ui.tools.ImageBase64Screen
 import com.evan.pulse.ui.tools.JsonToolScreen
 import com.evan.pulse.ui.tools.TimestampToolScreen
-import top.yukonga.miuix.kmp.basic.FloatingNavigationBar
-import top.yukonga.miuix.kmp.basic.FloatingNavigationBarItem
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
-import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
-import top.yukonga.miuix.kmp.basic.NavigationBar
-import top.yukonga.miuix.kmp.basic.NavigationBarDisplayMode
-import top.yukonga.miuix.kmp.basic.NavigationBarItem
 import top.yukonga.miuix.kmp.basic.NavigationItem
-import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.TopAppBar
-import top.yukonga.miuix.kmp.basic.rememberTopAppBarState
+import com.evan.pulse.ui.design.AppScaffold
 import top.yukonga.miuix.kmp.blur.LayerBackdrop
 import top.yukonga.miuix.kmp.blur.isRuntimeShaderSupported
 import top.yukonga.miuix.kmp.blur.layerBackdrop
@@ -98,7 +96,6 @@ import top.yukonga.miuix.kmp.nav.core.NavDisplayEffects
 import top.yukonga.miuix.kmp.nav.transition.NavTransition
 import top.yukonga.miuix.kmp.nav.transition.NavTransitions
 import top.yukonga.miuix.kmp.nav.transition.navGraphicsTransition
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private data class PulseTab(
     @StringRes val label: Int,
@@ -154,13 +151,16 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
         fadeTransition
     }
 
-    /** 液态玻璃悬浮底栏开关：悬浮栏与玻璃效果同时开启时才生效，只在标签页显示 */
-    val glassBottomBar = settings.floatingBottomBar && settings.liquidGlassBottomBar
+    /** 液态玻璃悬浮底栏开关：悬浮栏、玻璃效果、皮肤能力同时具备时才生效，只在标签页显示 */
+    val capabilities = uiCapabilities
+    val glassBottomBar = settings.floatingBottomBar &&
+        settings.liquidGlassBottomBar &&
+        capabilities.glassBottomBar
 
     /** 顶栏磨砂与底栏玻璃共用的内容采样层：捕获页面内容供实时模糊取样；
      *  关闭模糊或运行时不支持 RuntimeShader 时返回 null，顶栏退化为纯色、底栏退化为纯色胶囊 */
     val backdrop: LayerBackdrop? = if (settings.blurEnabled && isRuntimeShaderSupported()) {
-        val surfaceColor = MiuixTheme.colorScheme.surface
+        val surfaceColor = AppTheme.colors.surface
         rememberLayerBackdrop(
             onDraw = {
                 drawRect(surfaceColor)
@@ -175,18 +175,24 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
      *  MiuixScrollBehavior 内部经 rememberSaveable 保持状态，直接创建即可；
      *  每个 tab 配一个"内容可滚动"槽位，内容不足一屏时顶栏不收缩；
      *  已收缩状态下保持可滚，避免收缩过程中视口变高引发的复位抖动 */
-    val tabStates = List(5) { rememberTopAppBarState() }
     val tabCanScroll = remember { List(5) { mutableStateOf(true) } }
     val tabScrollBehaviors = List(5) { index ->
-        val state = tabStates[index]
-        val canScrollCheck = remember { { tabCanScroll[index].value || state.heightOffset < -1f } }
-        MiuixScrollBehavior(state = state, canScroll = canScrollCheck)
+        lateinit var behavior: AppTopBarBehavior
+        behavior = rememberAppTopBarBehavior {
+            tabCanScroll[index].value || !behavior.isExpanded
+        }
+        behavior
     }
     val topAppBarScrollBehavior = tabScrollBehaviors[tabState.selectedTab]
 
     /** 供玻璃底栏使用的标签项 */
     val navigationItems = tabs.map { tab ->
         NavigationItem(icon = tab.icon, label = stringResource(tab.label))
+    }
+
+    /** 供皮肤无关底栏使用的标签项 */
+    val bottomBarItems = tabs.map { tab ->
+        AppBottomBarItem(icon = tab.icon, label = stringResource(tab.label))
     }
 
     /** 标签页的一屏：底栏与五个 tab 内容（顶栏随各页滑动，见 pager 内的逐页 Scaffold）。
@@ -237,7 +243,7 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
             settingsViewModel.selectTab(0)
         }
 
-        Scaffold(
+        AppScaffold(
             bottomBar = {
                 if (glassBottomBar) {
                     LiquidGlassNavigationBar(
@@ -248,43 +254,14 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                         isBlurActive = backdrop != null,
                         showLabels = settings.bottomBarLabelVisible
                     )
-                } else if (settings.floatingBottomBar) {
-                    FloatingNavigationBar(color = MiuixTheme.colorScheme.surfaceContainer) {
-                        tabs.forEachIndexed { index, tab ->
-                            if (settings.bottomBarLabelVisible) {
-                                FloatingNavItemWithLabel(
-                                    selected = tabState.selectedTab == index,
-                                    onClick = { settingsViewModel.selectTab(index) },
-                                    icon = tab.icon,
-                                    label = stringResource(tab.label)
-                                )
-                            } else {
-                                FloatingNavigationBarItem(
-                                    selected = tabState.selectedTab == index,
-                                    onClick = { settingsViewModel.selectTab(index) },
-                                    icon = tab.icon,
-                                    label = stringResource(tab.label)
-                                )
-                            }
-                        }
-                    }
                 } else {
-                    NavigationBar(
-                        mode = if (settings.bottomBarLabelVisible) {
-                            NavigationBarDisplayMode.IconAndText
-                        } else {
-                            NavigationBarDisplayMode.IconOnly
-                        }
-                    ) {
-                        tabs.forEachIndexed { index, tab ->
-                            NavigationBarItem(
-                                selected = tabState.selectedTab == index,
-                                onClick = { settingsViewModel.selectTab(index) },
-                                icon = tab.icon,
-                                label = stringResource(tab.label)
-                            )
-                        }
-                    }
+                    AppBottomBar(
+                        items = bottomBarItems,
+                        selectedIndex = tabState.selectedTab,
+                        onItemSelected = { settingsViewModel.selectTab(it) },
+                        showLabels = settings.bottomBarLabelVisible,
+                        floating = settings.floatingBottomBar
+                    )
                 }
             }
         ) { _ ->
@@ -320,7 +297,7 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                                     showProjectSelector = true,
                                     showEnvSelector = true,
                                     viewModel = projectViewModel,
-                                    scrollBehavior = pageBehavior,
+                                    behavior = pageBehavior,
                                     backdrop = pageBackdrop,
                                     isBlurActive = pageBackdrop != null
                                 )
@@ -335,7 +312,7 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                                         null
                                     },
                                     viewModel = projectViewModel,
-                                    scrollBehavior = pageBehavior,
+                                    behavior = pageBehavior,
                                     backdrop = pageBackdrop,
                                     isBlurActive = pageBackdrop != null
                                 )
@@ -343,14 +320,14 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                                     title = stringResource(tabs[3].label),
                                     onAddMonitor = { monitorViewModel.openCreate() },
                                     viewModel = projectViewModel,
-                                    scrollBehavior = pageBehavior,
+                                    behavior = pageBehavior,
                                     backdrop = pageBackdrop,
                                     isBlurActive = pageBackdrop != null
                                 )
                                 else -> ProjectBar(
                                     title = stringResource(tabs[tab].label),
                                     viewModel = projectViewModel,
-                                    scrollBehavior = pageBehavior,
+                                    behavior = pageBehavior,
                                     backdrop = pageBackdrop,
                                     isBlurActive = pageBackdrop != null
                                 )
@@ -425,9 +402,8 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
             // 收缩会让视口变高、maxValue 归零、canScroll 翻 false，
             // 若此时强制展开会与进行中的收缩形成循环，标题反复弹跳。
             val current = tabCanScroll[tabState.selectedTab]
-            if (!current.value && topAppBarScrollBehavior.state.heightOffset >= -1f) {
-                topAppBarScrollBehavior.state.heightOffset = 0f
-                topAppBarScrollBehavior.state.contentOffset = 0f
+            if (!current.value && topAppBarScrollBehavior.isExpanded) {
+                topAppBarScrollBehavior.expand()
             }
         }
     }
@@ -440,26 +416,27 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
         content: @Composable () -> Unit
     ) {
         val canScroll = remember { mutableStateOf(true) }
-        val topAppBarState = rememberTopAppBarState()
         // 滞后判定：顶栏一旦收缩（heightOffset<0）就保持可滚，避免收缩中内容视口变高
         // 导致 maxValue 归零、canScroll 翻转、强制复位展开的抖动循环
-        val canScrollCheck = remember { { canScroll.value || topAppBarState.heightOffset < -1f } }
-        val topAppBarScrollBehavior = MiuixScrollBehavior(state = topAppBarState, canScroll = canScrollCheck)
+        lateinit var topAppBarScrollBehavior: AppTopBarBehavior
+        topAppBarScrollBehavior = rememberAppTopBarBehavior {
+            canScroll.value || !topAppBarScrollBehavior.isExpanded
+        }
         // 二级页顶栏同样做实时磨砂：内容铺满整屏并从顶栏下方穿过，
         // 顶栏取样本页内容做模糊；顶部让位经 LocalTopBarInset 交给各页的滚动容器
         val backdrop = rememberBlurBackdrop()
         val blurActive = backdrop != null
-        Scaffold(
+        AppScaffold(
             topBar = {
                 BlurredBar(backdrop, blurActive) {
-                    TopAppBar(
+                    AppTopBar(
                         title = title,
                         color = blurredBarColor(blurActive),
-                        scrollBehavior = topAppBarScrollBehavior,
+                        behavior = topAppBarScrollBehavior,
                         actions = actions,
                         navigationIcon = {
-                            IconButton(onClick = { navController.pop() }) {
-                                Icon(
+                            AppIconButton(onClick = { navController.pop() }) {
+                                AppIcon(
                                     imageVector = MiuixIcons.Light.ChevronBackward,
                                     contentDescription = stringResource(R.string.cd_back)
                                 )
@@ -489,9 +466,8 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
             // 内容变短（旋转/字号调整等）后顶栏若停在收缩态会卡住，直接展开复位。
             // 仅在顶栏仍处于展开态时复位，避免与进行中的收缩形成弹跳循环
             // （内容只略超一屏的二级页收缩后视口变高，maxValue 会归零翻转）。
-            if (!canScroll.value && topAppBarScrollBehavior.state.heightOffset >= -1f) {
-                topAppBarScrollBehavior.state.heightOffset = 0f
-                topAppBarScrollBehavior.state.contentOffset = 0f
+            if (!canScroll.value && topAppBarScrollBehavior.isExpanded) {
+                topAppBarScrollBehavior.expand()
             }
         }
     }
@@ -548,8 +524,8 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
             SubPageScreen(
                 title = stringResource(R.string.monitor_records_title),
                 actions = {
-                    IconButton(onClick = { monitorViewModel.requestClearRecords() }) {
-                        Icon(
+                    AppIconButton(onClick = { monitorViewModel.requestClearRecords() }) {
+                        AppIcon(
                             imageVector = MiuixIcons.Light.Delete,
                             contentDescription = stringResource(R.string.monitor_records_clear)
                         )
@@ -569,8 +545,8 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                     if (route.target == 0) R.string.script_tab_pre else R.string.script_tab_post
                 ),
                 actions = {
-                    IconButton(onClick = { navController.pushRoute(PulseRoute.ScriptDocs(route.target)) }) {
-                        Icon(
+                    AppIconButton(onClick = { navController.pushRoute(PulseRoute.ScriptDocs(route.target)) }) {
+                        AppIcon(
                             imageVector = Icons.AutoMirrored.Filled.Article,
                             contentDescription = stringResource(R.string.cd_script_docs)
                         )
@@ -600,8 +576,8 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                 title = envs.firstOrNull { it.id == route.envId }?.name
                     ?: stringResource(R.string.env_title),
                 actions = {
-                    IconButton(onClick = { envViewModel.openVarEditor(route.envId, null) }) {
-                        Icon(
+                    AppIconButton(onClick = { envViewModel.openVarEditor(route.envId, null) }) {
+                        AppIcon(
                             imageVector = MiuixIcons.Light.Add,
                             contentDescription = stringResource(R.string.cd_add_var)
                         )
@@ -620,8 +596,8 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
             SubPageScreen(
                 title = stringResource(R.string.history_title),
                 actions = {
-                    IconButton(onClick = { historyViewModel.confirmClear = true }) {
-                        Icon(
+                    AppIconButton(onClick = { historyViewModel.confirmClear = true }) {
+                        AppIcon(
                             imageVector = MiuixIcons.Light.Delete,
                             contentDescription = stringResource(R.string.history_clear)
                         )
