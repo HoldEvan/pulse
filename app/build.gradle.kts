@@ -30,8 +30,8 @@ android {
         applicationId = "com.evan.pulse"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 37
-        versionName = "0.1.37"
+        versionCode = 38
+        versionName = "0.2.0"
         buildConfigField("long", "BUILD_TIME_MS", "${buildTimeMillis}L")
     }
 
