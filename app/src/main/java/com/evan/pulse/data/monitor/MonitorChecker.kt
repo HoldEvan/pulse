@@ -61,7 +61,20 @@ class MonitorChecker(
         if (result is TargetValidation.Invalid) {
             return MonitorRun(false, L10n.t(result.message), 0L, clock())
         }
-        return runCheck(target, vars, proxy)
+        val run = runCheck(target, vars, proxy)
+        return if (run.ok && target.latencyThresholdMs > 0L && run.durationMs > target.latencyThresholdMs) {
+            run.copy(
+                slow = true,
+                detail = L10n.t(
+                    R.string.monitor_slow_detail,
+                    run.detail,
+                    run.durationMs,
+                    target.latencyThresholdMs
+                )
+            )
+        } else {
+            run
+        }
     }
 
     private suspend fun runCheck(

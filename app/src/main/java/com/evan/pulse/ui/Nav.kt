@@ -30,8 +30,14 @@ sealed interface PulseRoute : NavKey {
     /** 历史二级页：单条记录的详情 */
     @Serializable data class HistoryDetail(val entryId: Long) : PulseRoute
 
+    /** 历史三级页：以某条记录为基准与另一条记录对比响应差异 */
+    @Serializable data class ResponseDiff(val entryId: Long) : PulseRoute
+
     /** 拨测二级页：当前项目的全部未通记录 */
     @Serializable data object MonitorRecords : PulseRoute
+
+    /** 拨测二级页：某目标的趋势与可用率 */
+    @Serializable data class MonitorTrend(val targetId: Long) : PulseRoute
 
     /** HTTP 三级页：脚本代码编辑器，target 0 为前置脚本、1 为后置脚本 */
     @Serializable data class ScriptEditor(val target: Int) : PulseRoute
@@ -44,6 +50,9 @@ sealed interface PulseRoute : NavKey {
     /** 历史列表二级页：从 HTTP 页顶部历史图标进入 */
     @Serializable data object History : PulseRoute
 
+    /** HTTP 三级页：当前项目的 Cookie 管理（自动收集 + 手动添加） */
+    @Serializable data object Cookies : PulseRoute
+
     /** 工具二级页：信息码转换（Base64/进制/URL/Unicode/ASCII） */
     @Serializable data object EncodingTool : PulseRoute
 
@@ -55,6 +64,27 @@ sealed interface PulseRoute : NavKey {
 
     /** 工具二级页：时间戳转换 */
     @Serializable data object TimestampTool : PulseRoute
+
+    /** 工具二级页：JWT 解码 */
+    @Serializable data object JwtTool : PulseRoute
+
+    /** 工具二级页：Hash（MD5/SHA） */
+    @Serializable data object HashTool : PulseRoute
+
+    /** 工具二级页：UUID 生成/校验 */
+    @Serializable data object UuidTool : PulseRoute
+
+    /** 工具二级页：正则测试 */
+    @Serializable data object RegexTool : PulseRoute
+
+    /** 工具二级页：cron 解析 */
+    @Serializable data object CronTool : PulseRoute
+
+    /** 工具二级页：局域网扫描 */
+    @Serializable data object LanScanTool : PulseRoute
+
+    /** 集合二级页：顺序运行一个集合（或其下全部子集合）的 HTTP 请求，collectionId 为空表示当前项目全部 */
+    @Serializable data class CollectionRunner(val collectionId: Long? = null) : PulseRoute
 }
 
 /**

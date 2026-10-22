@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -43,17 +44,32 @@ class MainActivity : ComponentActivity() {
             onSave = { createBackupFile.launch("pulse_backup.json") },
             onImport = { openBackupFile.launch(arrayOf("application/json", "*/*")) },
         )
+        handleShortcutIntent(intent)
 
         // 返回事件由 miuix-nav 的返回驱动接管：栈上有页面时预测性返回逐层弹出，
         // 栈底时无启用的回调，系统默认行为（退出应用）自然生效
         setContent {
             val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
+            LaunchedEffect(intent?.action) {
+                if (intent?.action == ACTION_OPEN_TOOLS) settingsViewModel.selectTab(0)
+            }
             LocalizedRoot(language = fromIndex(settings.languageIndex)) {
                 PulseTheme(settings) {
                     PulseApp(settingsViewModel = settingsViewModel)
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleShortcutIntent(intent)
+    }
+
+    private fun handleShortcutIntent(intent: android.content.Intent?) {
+        if (intent?.action != ACTION_OPEN_TOOLS) return
+        settingsViewModel.selectTab(0)
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -67,5 +83,9 @@ class MainActivity : ComponentActivity() {
                 ) as T
         }
         return ViewModelProvider(this, factory)[SettingsViewModel::class.java]
+    }
+
+    companion object {
+        const val ACTION_OPEN_TOOLS = "com.evan.pulse.action.OPEN_TOOLS"
     }
 }

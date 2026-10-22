@@ -1,5 +1,8 @@
 package com.evan.pulse.domain.net
 
+import android.content.Context
+import android.net.Uri
+import android.webkit.MimeTypeMap
 import com.evan.pulse.domain.model.BodyType
 import com.evan.pulse.domain.model.FormField
 import com.evan.pulse.domain.model.HttpCallConfig
@@ -18,6 +21,9 @@ import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.timeout
 import io.ktor.client.request.forms.FormDataContent
+import io.ktor.client.request.forms.MultiPartFormDataContent
+import io.ktor.client.request.forms.append
+import io.ktor.client.request.forms.formData
 import io.ktor.client.request.header
 import io.ktor.client.request.request
 import io.ktor.client.request.setBody
@@ -28,23 +34,23 @@ import io.ktor.http.ContentType
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.HttpMethod as KtorHttpMethod
 import io.ktor.http.Parameters
-import io.ktor.http.content.ByteArrayContent
 import io.ktor.http.content.TextContent
 import io.ktor.http.takeFrom
 import io.ktor.util.flattenEntries
-import java.io.ByteArrayOutputStream
+import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.Proxy
 import java.net.SocketTimeoutException
+import java.net.URLConnection
 import kotlin.random.Random
 import java.net.UnknownHostException
 import java.nio.charset.Charset
-import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import javax.net.ssl.SSLException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
+import kotlinx.io.asOutputStream
 import okhttp3.Credentials
 
 /**
@@ -57,10 +63,47 @@ import okhttp3.Credentials
  * 代理认证采用预置 Proxy-Authorization 头的方式下发，与 curl --proxy-user 行为一致；
  * SOCKS5 代理不支持认证（java.net.Proxy 不携带凭据）。
  */
-class OkHttpEngine : HttpEngine {
+class OkHttpEngine(private val appContextProvider: () -> Context? = { null }) : HttpEngine {
 
     private val clients = ConcurrentHashMap<ProxyConfig, HttpClient>()
     private val throttleRandom = Random.Default
+
+    /** 按完整 URL 关联本次请求的时间线采集器；OkHttp 事件在分发线程回调，map 需线程安全 */
+    private val timelines = ConcurrentHashMap<String, MutableTimeline>()
+
+    private val timelineListener = object : okhttp3.EventListener() {
+        override fun callStart(call: okhttp3.Call) {
+            timelines[call.request().url.toString()]?.markCallStart(System.nanoTime())
+        }
+
+        override fun dnsStart(call: okhttp3.Call, domainName: String) {
+            timelines[call.request().url.toString()]?.markDnsStart(System.nanoTime())
+        }
+
+        override fun dnsEnd(call: okhttp3.Call, domainName: String, inetAddressList: List<java.net.InetAddress>) {
+            timelines[call.request().url.toString()]?.markDnsEnd(System.nanoTime())
+        }
+
+        override fun connectStart(call: okhttp3.Call, inetSocketAddress: java.net.InetSocketAddress, proxy: java.net.Proxy) {
+            timelines[call.request().url.toString()]?.markConnectStart(System.nanoTime())
+        }
+
+        override fun secureConnectStart(call: okhttp3.Call) {
+            timelines[call.request().url.toString()]?.markSecureStart(System.nanoTime())
+        }
+
+        override fun secureConnectEnd(call: okhttp3.Call, handshake: okhttp3.Handshake?) {
+            timelines[call.request().url.toString()]?.markSecureEnd(System.nanoTime())
+        }
+
+        override fun connectEnd(call: okhttp3.Call, inetSocketAddress: java.net.InetSocketAddress, proxy: java.net.Proxy, protocol: okhttp3.Protocol?) {
+            timelines[call.request().url.toString()]?.markConnectEnd(System.nanoTime())
+        }
+
+        override fun responseHeadersStart(call: okhttp3.Call) {
+            timelines[call.request().url.toString()]?.markHeadersStart(System.nanoTime())
+        }
+    }
 
     override suspend fun execute(config: HttpCallConfig): HttpCallOutcome {
         if (!config.url.startsWith("http://", ignoreCase = true) &&
@@ -77,9 +120,12 @@ class OkHttpEngine : HttpEngine {
         // 请求前随机 RTT + 请求体上行耗时，响应后按响应体大小估算下行耗时
         val throttle = config.throttle
         val start = System.currentTimeMillis()
+        val timeline = MutableTimeline()
+        timelines[config.url] = timeline
         if (throttle.isActive) {
             if (throttle.preset == NetworkPreset.FORCE_TIMEOUT) {
                 delay(throttle.forceTimeoutSec * 1000L)
+                timelines.remove(config.url)
                 return HttpCallOutcome.Failure(
                     HttpErrorType.TIMEOUT,
                     "网络配置强制超时（${throttle.forceTimeoutSec}s）"
@@ -110,17 +156,25 @@ class OkHttpEngine : HttpEngine {
             NetworkThrottle.downloadDelayMs(bytes.size.toLong(), throttle)
                 .takeIf { it > 0 }
                 ?.let { delay(it) }
-            HttpCallOutcome.Success(
+            val elapsed = System.currentTimeMillis() - start
+            val snap = timeline.snapshot(elapsed)
+            val outcome = HttpCallOutcome.Success(
                 statusCode = response.status.value,
                 statusText = response.status.description,
                 headers = responseHeaders(response),
                 body = String(bytes, charsetOf(response.headers["Content-Type"])),
-                durationMs = System.currentTimeMillis() - start,
-                responseSizeBytes = bytes.size.toLong()
+                durationMs = elapsed,
+                responseSizeBytes = bytes.size.toLong(),
+                timeline = snap,
+                bodyBytes = bytes
             )
+            timelines.remove(config.url)
+            outcome
         } catch (e: CancellationException) {
+            timelines.remove(config.url)
             throw e
         } catch (e: Throwable) {
+            timelines.remove(config.url)
             HttpCallOutcome.Failure(classify(e), describe(e))
         }
     }
@@ -137,6 +191,7 @@ class OkHttpEngine : HttpEngine {
         install(HttpTimeout)
         engine {
             config {
+                eventListener(timelineListener)
                 connectTimeout(0, TimeUnit.MILLISECONDS)
                 readTimeout(0, TimeUnit.MILLISECONDS)
                 writeTimeout(0, TimeUnit.MILLISECONDS)
@@ -172,27 +227,50 @@ class OkHttpEngine : HttpEngine {
                 )
             }
 
-        BodyType.FORM_DATA -> config.textFormFields().takeIf { it.isNotEmpty() }
+        BodyType.FORM_DATA -> config.formFields.filter { it.name.isNotBlank() }
+            .takeIf { it.isNotEmpty() }
             ?.let { multipartBody(it) }
     }
 
-    /** 手动拼装 multipart 边界，不依赖 formData DSL，避免跨模块引用文件门面类 */
-    private fun multipartBody(fields: List<FormField>): ByteArrayContent {
-        val boundary = "----pulse" + UUID.randomUUID().toString().replace("-", "")
-        val crlf = "\r\n".toByteArray()
-        val out = ByteArrayOutputStream()
-        fields.forEach { field ->
-            out.write("--$boundary\r\n".toByteArray())
-            out.write("Content-Disposition: form-data; name=\"${field.name}\"\r\n".toByteArray())
-            out.write(crlf)
-            out.write(field.value.toByteArray())
-            out.write(crlf)
+    /**
+     * Ktor formData 构造 multipart：文本字段直传，文件字段经 ContentResolver
+     * 流式写入请求体，不整读进内存；openAssetFileDescriptor 取文件大小，
+     * 所有字段大小已知时请求体携带 Content-Length，弱网上行模拟与上传进度计算可用。
+     */
+    private fun multipartBody(fields: List<FormField>): MultiPartFormDataContent {
+        val resolver = appContextProvider()?.contentResolver
+        val parts = formData {
+            fields.forEach { field ->
+                val uri = if (field.isFile) field.fileUri?.let(Uri::parse) else null
+                if (uri == null || resolver == null) {
+                    append(field.name, field.value)
+                } else {
+                    val size = runCatching {
+                        resolver.openAssetFileDescriptor(uri, "r")?.use { it.length }
+                    }.getOrNull()?.takeIf { it > 0 }
+                    append(
+                        key = field.name,
+                        filename = field.fileName?.takeIf { it.isNotBlank() } ?: "file",
+                        contentType = ContentType.parse(guessFileMime(field.fileName)),
+                        size = size,
+                    ) {
+                        resolver.openInputStream(uri)?.use { input ->
+                            input.copyTo(asOutputStream())
+                        } ?: throw IOException("无法读取文件：${field.fileName ?: uri}")
+                    }
+                }
+            }
         }
-        out.write("--$boundary--\r\n".toByteArray())
-        return ByteArrayContent(
-            out.toByteArray(),
-            ContentType.MultiPart.FormData.withParameter("boundary", boundary)
-        )
+        return MultiPartFormDataContent(parts)
+    }
+
+    /** 先查 Android MIME 表，再退回文件名推断，均失败按二进制流处理 */
+    private fun guessFileMime(fileName: String?): String {
+        val ext = fileName?.substringAfterLast('.', "")?.lowercase().orEmpty()
+        if (ext.isNotEmpty()) {
+            MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext)?.let { return it }
+        }
+        return URLConnection.guessContentTypeFromName(fileName.orEmpty()) ?: "application/octet-stream"
     }
 
     /** 请求头优先于 Content-Type 推断结果；为空或解析失败时回退到按 body 类型推断的默认值 */

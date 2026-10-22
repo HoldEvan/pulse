@@ -18,6 +18,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.RadioButtonChecked
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -49,6 +51,7 @@ import com.evan.pulse.ui.design.AppTheme
 import com.evan.pulse.ui.design.AppCard
 import com.evan.pulse.ui.design.AppDialog
 import com.evan.pulse.ui.design.AppIcon
+import com.evan.pulse.ui.design.AppIconButton
 import com.evan.pulse.ui.design.AppText
 import com.evan.pulse.ui.design.AppTextButton
 import com.evan.pulse.ui.design.AppTextField
@@ -123,7 +126,8 @@ fun HistoryScreen(
                 HistoryItem(
                     entry = entry,
                     projectName = nameById[entry.projectId].orEmpty(),
-                    onOpen = { onOpenDetail(entry.id) }
+                    onOpen = { onOpenDetail(entry.id) },
+                    onToggleFavorite = { viewModel.toggleFavorite(entry.id) }
                 )
             }
         }
@@ -162,6 +166,7 @@ fun HistoryScreen(
                     AppTextButton(
                         text = stringResource(R.string.action_clear),
                         onClick = { viewModel.clear() },
+                        primary = true,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -233,7 +238,8 @@ private fun HistoryItem(
     entry: HistoryEntry,
     projectName: String,
     modifier: Modifier = Modifier,
-    onOpen: () -> Unit
+    onOpen: () -> Unit,
+    onToggleFavorite: () -> Unit
 ) {
     AppCard(
         modifier = modifier.fillMaxWidth(),
@@ -270,6 +276,18 @@ private fun HistoryItem(
                     text = timeFormat.format(Date(entry.createdAt)),
                     fontSize = 12.sp
                 )
+                AppIconButton(
+                    onClick = onToggleFavorite,
+                    modifier = Modifier.padding(start = 4.dp)
+                ) {
+                    AppIcon(
+                        imageVector = if (entry.favorite) Icons.Filled.Star else Icons.Filled.StarBorder,
+                        contentDescription = stringResource(
+                            if (entry.favorite) R.string.history_unfavorite else R.string.history_favorite
+                        ),
+                        tint = if (entry.favorite) AppTheme.colors.primary else AppTheme.colors.outline
+                    )
+                }
             }
             AppText(
                 text = entry.url,

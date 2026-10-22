@@ -63,10 +63,11 @@ class MonitorScheduler(
     }
 
     /** 立即检查一次指定目标，不受频率限制 */
-    fun runOnce(targetId: Long) {
+    fun runOnce(targetId: Long, onComplete: (() -> Unit)? = null) {
         scope.launch {
             val target = store.get(targetId) ?: return@launch
             runAndReport(target)
+            onComplete?.invoke()
         }
     }
 
@@ -86,10 +87,12 @@ class MonitorScheduler(
     }
 
     private suspend fun runAndReport(target: MonitorTarget) {
-        val previousOk = _runs.value[target.id]?.ok
+        val previous = _runs.value[target.id]
         val run = runCheck(target)
         _runs.value = _runs.value + (target.id to run)
-        report(target, run, previousOk)
+        store.recordResult(target, run.ok, run.detail, run.durationMs, run.checkedAt)
+        store.recordHistory(target, run.ok, run.slow, run.durationMs, run.checkedAt)
+        report(target, run, previous)
     }
 
     private suspend fun runCheck(target: MonitorTarget) = try {
@@ -102,20 +105,29 @@ class MonitorScheduler(
         MonitorRun(false, "", 0L, System.currentTimeMillis())
     }
 
-    private fun report(target: MonitorTarget, run: MonitorRun, previousOk: Boolean?) {
-        if (run.ok) {
-            if (previousOk == false) notifyRecovered(target)
-            return
-        }
-        // 只有「通 → 不通」这一跳算新事件：记一条未通记录，同时发一次告警
-        if (previousOk != false) {
-            store.recordFailure(target, run.detail, run.durationMs)
-            notifyDown(target, run.detail)
+    /**
+     * 告警状态机：通 / 慢 / 断三态加"从未检查"。记录已由 [runAndReport] 全量落库，
+     * 这里只负责在状态变化时发通知，持续异常不重复打扰：
+     * - 断：从未检查或上一轮通/慢时发告警；
+     * - 慢：连通但延迟超阈值，上一轮慢则静默，其余发"响应过慢"；
+     * - 通：从断或慢恢复时发恢复通知。
+     */
+    private fun report(target: MonitorTarget, run: MonitorRun, previous: MonitorRun?) {
+        val previousDown = previous != null && !previous.ok
+        val previousSlow = previous?.slow == true
+        when {
+            run.slow -> if (!previousSlow) notifySlow(target, run.detail)
+            run.ok -> if (previousDown || previousSlow) notifyRecovered(target)
+            else -> if (!previousDown) notifyDown(target, run.detail)
         }
     }
 
     private fun notifyDown(target: MonitorTarget, detail: String) {
         if (settingsStore.settings.value.monitorNotify) notifier.postDown(target, detail)
+    }
+
+    private fun notifySlow(target: MonitorTarget, detail: String) {
+        if (settingsStore.settings.value.monitorNotify) notifier.postSlow(target, detail)
     }
 
     private fun notifyRecovered(target: MonitorTarget) {

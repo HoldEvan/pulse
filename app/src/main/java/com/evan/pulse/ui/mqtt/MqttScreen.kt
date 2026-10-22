@@ -7,11 +7,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -31,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.evan.pulse.R
+import com.evan.pulse.data.model.MqttSubscriptionEntry
 import com.evan.pulse.data.model.RequestType
 import com.evan.pulse.domain.model.MqttConnectionState
 import com.evan.pulse.ui.collection.SaveRequestDialog
@@ -87,6 +90,7 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
     val state by viewModel.state.collectAsState()
     val lines = viewModel.lines
     val missingVars = viewModel.missingVars
+    val subscriptions by viewModel.subscriptions.collectAsState()
     var showSave by remember { mutableStateOf(false) }
 
     Column(
@@ -208,7 +212,10 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     AppTextField(
                         value = viewModel.subTopic,
-                        onValueChange = { viewModel.subTopic = it },
+                        onValueChange = {
+                            viewModel.subTopic = it
+                            viewModel.clearFilterError()
+                        },
                         label = stringResource(R.string.mqtt_topic_label),
                         modifier = Modifier.weight(1f)
                     )
@@ -219,26 +226,27 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                         AppText(stringResource(R.string.action_subscribe))
                     }
                 }
-                viewModel.subscriptions.forEachIndexed { index, sub ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        AppText(
-                            text = stringResource(R.string.sub_item, sub.topic, sub.qos),
-                            modifier = Modifier.weight(1f),
-                            fontSize = 13.sp
-                        )
-                        AppIcon(
-                            imageVector = MiuixIcons.Light.Close,
-                            contentDescription = stringResource(R.string.action_unsubscribe),
-                            modifier = Modifier
-                                .clickable { viewModel.removeSubscription(index) }
-                                .padding(6.dp)
-                        )
-                    }
+                if (viewModel.subFilterInvalid) {
+                    AppText(
+                        text = stringResource(R.string.mqtt_filter_invalid),
+                        color = Color(0xFFD32F2F),
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+                // Topic 树是保存 filter 的纯投影；展开/收起只改本地折叠集合，不动订阅数据（需求 4.1）
+                val tree = remember(subscriptions) { buildMqttTopicTree(subscriptions) }
+                var collapsed by remember { mutableStateOf(emptySet<String>()) }
+                tree.forEach { root ->
+                    TopicBranch(
+                        node = root,
+                        depth = 0,
+                        collapsed = collapsed,
+                        onToggle = { path ->
+                            collapsed = if (path in collapsed) collapsed - path else collapsed + path
+                        },
+                        onRemove = viewModel::removeSubscription
+                    )
                 }
             }
         }
@@ -327,6 +335,7 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                 AppTextButton(
                     text = stringResource(R.string.action_got_it),
                     onClick = { viewModel.dismissMissing() },
+                    primary = true,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -340,6 +349,53 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
         snapshotProvider = { viewModel.snapshot() },
         onDismiss = { showSave = false }
     )
+}
+
+@Composable
+private fun TopicBranch(
+    node: MqttTopicNode,
+    depth: Int,
+    collapsed: Set<String>,
+    onToggle: (String) -> Unit,
+    onRemove: (String) -> Unit
+) {
+    val expanded = node.path !in collapsed
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onToggle(node.path) }
+            .padding(top = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        repeat(depth) { Spacer(modifier = Modifier.width(12.dp)) }
+        AppText(text = if (expanded) "▾" else "▸", fontSize = 13.sp)
+        AppText(text = node.segment, modifier = Modifier.padding(start = 6.dp), fontSize = 13.sp)
+    }
+    if (expanded) {
+        node.leaves.forEach { leaf ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                repeat(depth + 1) { Spacer(modifier = Modifier.width(12.dp)) }
+                AppText(
+                    text = stringResource(R.string.sub_item, leaf.topic, leaf.qos),
+                    modifier = Modifier.weight(1f),
+                    fontSize = 13.sp
+                )
+                AppIcon(
+                    imageVector = MiuixIcons.Light.Close,
+                    contentDescription = stringResource(R.string.action_unsubscribe),
+                    modifier = Modifier
+                        .clickable { onRemove(leaf.topic) }
+                        .padding(6.dp)
+                )
+            }
+        }
+        node.children.forEach { TopicBranch(it, depth + 1, collapsed, onToggle, onRemove) }
+    }
 }
 
 @Composable

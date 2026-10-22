@@ -32,7 +32,7 @@ class HistoryViewModel : ViewModel() {
                 (kw.isEmpty() ||
                     entry.url.contains(kw, ignoreCase = true) ||
                     entry.method.equals(kw, ignoreCase = true))
-        }
+        }.sortedWith(compareByDescending<HistoryEntry> { it.favorite }.thenByDescending { it.createdAt })
     }
 
     /** 历史里出现过的项目，用于判断是否需要展示筛选器 */
@@ -54,5 +54,9 @@ class HistoryViewModel : ViewModel() {
     /** 侧滑删除单条记录；详情页正打开着这条时一并退回历史列表 */
     fun delete(id: Long) {
         store.delete(id)
+    }
+
+    fun toggleFavorite(id: Long) {
+        store.toggleFavorite(id)
     }
 }

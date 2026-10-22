@@ -96,6 +96,7 @@ fun SaveRequestDialog(
                 )
                 AppTextButton(
                     text = stringResource(R.string.action_save),
+                    primary = true,
                     onClick = {
                         viewModel.saveRequest(
                             collectionId = projectCollections.getOrNull(selectedIndex)?.id ?: -1L,

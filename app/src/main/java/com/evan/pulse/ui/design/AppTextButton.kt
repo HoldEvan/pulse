@@ -7,6 +7,7 @@ import androidx.compose.material3.TextButton as M3TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import top.yukonga.miuix.kmp.basic.ButtonDefaults as MiuixButtonDefaults
 import top.yukonga.miuix.kmp.basic.TextButton as MiuixTextButton
 
 /**
@@ -22,13 +23,20 @@ fun AppTextButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     filled: Boolean = false,
+    /** 主操作：用主题色作为按钮底色，用于确认类弹窗的「确认/保存/删除」 */
+    primary: Boolean = false,
 ) {
     if (LocalUiStyle.current == UiStyle.MIUIX) {
         MiuixTextButton(
             text = text,
             onClick = onClick,
             modifier = modifier,
-            enabled = enabled
+            enabled = enabled,
+            colors = if (primary) {
+                MiuixButtonDefaults.textButtonColorsPrimary()
+            } else {
+                MiuixButtonDefaults.textButtonColors()
+            }
         )
         return
     }
@@ -37,12 +45,17 @@ fun AppTextButton(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,
-        colors = if (filled) {
-            ButtonDefaults.textButtonColors(
+        colors = when {
+            primary -> ButtonDefaults.textButtonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            )
+            filled -> ButtonDefaults.textButtonColors(
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             )
-        } else ButtonDefaults.textButtonColors(),
+            else -> ButtonDefaults.textButtonColors()
+        },
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
     ) {
         AppText(

@@ -31,5 +31,7 @@ data class HistoryEntry(
     /** "key: value" 形式的响应头 */
     val responseHeaders: List<String> = emptyList(),
     val responseBody: String = "",
-    val responseBodyTruncated: Boolean = false
+    val responseBodyTruncated: Boolean = false,
+    /** 收藏项在历史列表中置顶 */
+    val favorite: Boolean = false
 )

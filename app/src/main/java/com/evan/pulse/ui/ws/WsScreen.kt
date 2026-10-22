@@ -54,6 +54,7 @@ import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Link
 import top.yukonga.miuix.kmp.icon.extended.Send
 import com.evan.pulse.ui.design.AppButton
+import com.evan.pulse.ui.history.UiEventLine
 
 @Composable
 private fun SectionTitleRow(status: @Composable () -> Unit, onSaveClick: () -> Unit) {
@@ -76,7 +77,8 @@ private fun SectionTitleRow(status: @Composable () -> Unit, onSaveClick: () -> U
 @Composable
 fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()) {
     val state by viewModel.state.collectAsState()
-    val lines = viewModel.lines
+    val history by viewModel.history.collectAsState()
+    val lines = remember(history) { history.map { UiEventLine(it.text, it.isSystem, it.timestamp) } }
     val missingVars = viewModel.missingVars
     val systemLabel = stringResource(R.string.ws_direction_system)
     val recvLabel = stringResource(R.string.ws_direction_recv)
@@ -131,6 +133,37 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
                         checked = viewModel.useProxy,
                         onCheckedChange = { viewModel.useProxy = it }
                     )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    AppText(stringResource(R.string.ws_auto_reconnect_label), modifier = Modifier.weight(1f))
+                    AppSwitch(checked = viewModel.autoReconnect, onCheckedChange = viewModel::updateAutoReconnect)
+                }
+                if (viewModel.autoReconnect) {
+                    Row(modifier = Modifier.padding(top = 8.dp)) {
+                        AppTextField(
+                            value = viewModel.reconnectBaseDelaySec,
+                            onValueChange = viewModel::updateReconnectBase,
+                            label = stringResource(R.string.ws_reconnect_base_label),
+                            modifier = Modifier.weight(1f)
+                        )
+                        AppTextField(
+                            value = viewModel.reconnectMaxDelaySec,
+                            onValueChange = viewModel::updateReconnectMax,
+                            label = stringResource(R.string.ws_reconnect_max_label),
+                            modifier = Modifier.weight(1f).padding(start = 8.dp)
+                        )
+                    }
+                    if (!viewModel.reconnectDelaysValid) {
+                        AppText(
+                            stringResource(R.string.ws_reconnect_delay_error),
+                            color = Color(0xFFD32F2F),
+                            modifier = Modifier.padding(top = 4.dp),
+                            fontSize = 13.sp
+                        )
+                    }
                 }
                 Row(
                     modifier = Modifier.padding(top = 10.dp),
@@ -233,6 +266,7 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
                 AppTextButton(
                     text = stringResource(R.string.action_got_it),
                     onClick = { viewModel.dismissMissing() },
+                    primary = true,
                     modifier = Modifier.fillMaxWidth()
                 )
             }

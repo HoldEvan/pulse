@@ -1,5 +1,6 @@
 package com.evan.pulse.domain.model
 
+import com.evan.pulse.domain.net.HttpTimeline
 import com.evan.pulse.domain.net.NetworkThrottleConfig
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
@@ -69,7 +70,10 @@ sealed interface HttpCallOutcome {
         val headers: List<KeyValue>,
         val body: String,
         val durationMs: Long,
-        val responseSizeBytes: Long
+        val responseSizeBytes: Long,
+        val timeline: HttpTimeline = HttpTimeline(),
+        /** 响应原始字节，供媒体（image/audio/video）预览；文本响应可为空 */
+        val bodyBytes: ByteArray? = null
     ) : HttpCallOutcome
 
     data class Failure(

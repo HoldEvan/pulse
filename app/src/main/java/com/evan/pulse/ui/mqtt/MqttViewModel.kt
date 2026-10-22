@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.evan.pulse.data.model.MqttSnapshot
+import com.evan.pulse.data.model.MqttSubscriptionEntry
 import com.evan.pulse.data.model.RequestType
 import com.evan.pulse.data.model.snapshotJson
 import com.evan.pulse.di.ServiceLocator
@@ -17,18 +18,15 @@ import com.evan.pulse.domain.model.MqttEvent
 import com.evan.pulse.domain.model.ProxyConfig
 import com.evan.pulse.ui.history.UiEventLine
 import com.evan.pulse.ui.l10n.L10n
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-
-data class MqttSubscription(
-    val topic: String,
-    val qos: Int
-)
 
 class MqttViewModel : ViewModel() {
 
     private val engine = ServiceLocator.mqttEngine
     private val resolver = ServiceLocator.placeholderResolver
     private val settingsStore = ServiceLocator.settingsStore
+    private val sessions = ServiceLocator.protocolSessionStore
 
     var brokerUrl by mutableStateOf("tcp://{{mqttHost}}:1883")
     var clientId by mutableStateOf("pulse-android")
@@ -45,7 +43,12 @@ class MqttViewModel : ViewModel() {
     /** 是否套用设置页里的全局代理；关闭则本次连接强制直连 */
     var useProxy by mutableStateOf(true)
 
-    val subscriptions = mutableStateListOf<MqttSubscription>()
+    /** 持久化订阅集合，来自 ProtocolSessionStore，启动时随 app_data.json 恢复 */
+    val subscriptions: StateFlow<List<MqttSubscriptionEntry>> = sessions.mqttSubscriptions
+
+    /** 最近一次订阅输入未通过 filter 校验，用于行内提示 */
+    var subFilterInvalid by mutableStateOf(false)
+        private set
     val state = engine.state
     val events = engine.events
     val lines = mutableStateListOf<UiEventLine>()
@@ -141,7 +144,10 @@ class MqttViewModel : ViewModel() {
                             proxy = proxy
                         )
                     )
-                    subscriptions.forEach { engine.subscribe(it.topic, it.qos) }
+                    // 连接建立或恢复后，对保存的订阅逐一按存储的 QoS 重新订阅（需求 3.3）
+                    if (engine.state.value == MqttConnectionState.CONNECTED) {
+                        sessions.mqttSubscriptions.value.forEach { engine.subscribe(it.topic, it.qos) }
+                    }
                 }
             }
         }
@@ -149,15 +155,26 @@ class MqttViewModel : ViewModel() {
 
     fun addSubscription() {
         val topic = subTopic.trim()
-        if (topic.isBlank()) return
-        subscriptions.add(MqttSubscription(topic, subQos))
+        if (!isValidMqttFilter(topic)) {
+            subFilterInvalid = true
+            return
+        }
+        subFilterInvalid = false
+        // 相同 filter 更新 QoS；无效输入到此为止，已保存集合保持不变（需求 3.5）
+        sessions.setMqttSubscriptions(
+            sessions.mqttSubscriptions.value.filter { it.topic != topic } + MqttSubscriptionEntry(topic, subQos)
+        )
         if (state.value == MqttConnectionState.CONNECTED) {
             viewModelScope.launch { engine.subscribe(topic, subQos) }
         }
     }
 
-    fun removeSubscription(index: Int) {
-        subscriptions.removeAt(index)
+    fun removeSubscription(topic: String) {
+        sessions.setMqttSubscriptions(sessions.mqttSubscriptions.value.filter { it.topic != topic })
+    }
+
+    fun clearFilterError() {
+        subFilterInvalid = false
     }
 
     fun publish() {

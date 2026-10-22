@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Pulse</string>
+    <string name="shortcut_tools_short">工具</string>
+    <string name="shortcut_tools_long">開啟 Pulse 工具</string>
+    <string name="widget_monitor_title">撥測</string>
+    <string name="widget_monitor_empty">目前沒有啟用的撥測目標</string>
+    <string name="widget_refresh">重新整理撥測狀態</string>
+    <string name="widget_run">立即撥測</string>
+    <string name="widget_status_unknown">待測</string>
+    <string name="widget_status_up">正常</string>
+    <string name="widget_status_slow">較慢</string>
+    <string name="widget_status_down">異常</string>
 
     <!-- 底部導覽與頁面標題 -->
     <string name="tab_http">HTTP</string>
@@ -70,6 +80,63 @@
     <string name="json_tree_items">%1$d 項</string>
 
     <!-- 時間戳轉換工具 -->
+    <string name="tool_jwt">JWT 解碼</string>
+    <string name="tool_jwt_summary">解析 JWT 的 Header 與 Payload</string>
+    <string name="jwt_tool_title">JWT 解碼</string>
+    <string name="jwt_input_label">JWT（eyJhbGciOi...）</string>
+    <string name="jwt_empty_hint">貼上 JWT 即可解碼</string>
+    <string name="jwt_invalid">無法解碼，請確認是合法的三段式 JWT</string>
+    <string name="jwt_header_label">Header</string>
+    <string name="jwt_payload_label">Payload</string>
+    <string name="jwt_signature_label">Signature</string>
+    <string name="tool_hash">Hash</string>
+    <string name="tool_hash_summary">MD5 / SHA-1 / SHA-256 摘要</string>
+    <string name="hash_tool_title">Hash 計算</string>
+    <string name="hash_input_label">待計算文字</string>
+    <string name="hash_output_label">摘要</string>
+    <string name="tool_uuid">UUID</string>
+    <string name="tool_uuid_summary">產生、校驗與規範化 UUID</string>
+    <string name="uuid_tool_title">UUID 工具</string>
+    <string name="uuid_generate_label">產生</string>
+    <string name="uuid_refresh">重新產生</string>
+    <string name="uuid_show_dash">加連字號</string>
+    <string name="uuid_hide_dash">去連字號</string>
+    <string name="uuid_check_label">校驗</string>
+    <string name="uuid_input_hint">輸入 UUID 或 32 位十六進位</string>
+    <string name="uuid_valid">合法 UUID</string>
+    <string name="uuid_invalid">不是合法 UUID</string>
+    <string name="uuid_normalized_label">規範化</string>
+    <string name="tool_regex">正則測試</string>
+    <string name="tool_regex_summary">測試正則表達式與擷取群組</string>
+    <string name="regex_tool_title">正則測試</string>
+    <string name="regex_pattern_label">正則表達式</string>
+    <string name="regex_text_label">待比對文字</string>
+    <string name="regex_empty_hint">輸入正則與文字即可測試</string>
+    <string name="regex_pattern_error">正則表達式非法</string>
+    <string name="regex_no_match">沒有符合項目</string>
+    <string name="regex_matches_count">共符合 %1$d 項</string>
+    <string name="tool_cron">cron 解析</string>
+    <string name="tool_cron_summary">解析標準 cron 表達式的下次觸發時間</string>
+    <string name="cron_tool_title">cron 解析</string>
+    <string name="tool_lan_scan">區域網路掃描</string>
+    <string name="tool_lan_scan_summary">掃描區域網路內的線上裝置與常用服務</string>
+    <string name="lan_scan_title">區域網路掃描</string>
+    <string name="lan_scan_network_label">偵測到的網段</string>
+    <string name="lan_scan_hosts_count">個位址</string>
+    <string name="lan_scan_start">開始掃描</string>
+    <string name="lan_scan_stop">停止</string>
+    <string name="lan_scan_complete">掃描完成，發現 %1$d 台裝置</string>
+    <string name="lan_scan_progress">已掃描 %1$d / %2$d</string>
+    <string name="lan_scan_no_lan">未偵測到可用區域網路介面，請檢查 Wi-Fi、熱點或乙太網路連線</string>
+    <string name="lan_scan_monitor_added">已新增至撥測「IP 連通」</string>
+    <string name="lan_scan_add_monitor_title">新增撥測</string>
+    <string name="lan_scan_add_monitor_confirm">將 %1$s 新增至目前專案的「IP 連通」撥測？</string>
+    <string name="lan_scan_monitor_exists">此 IP 已在目前專案的撥測中</string>
+    <string name="lan_scan_empty_hint">尚未掃描。點擊「開始掃描」探測區域網路內線上主機</string>
+    <string name="cron_input_label">cron 表達式（分 時 日 月 週）</string>
+    <string name="cron_hint">例如：0 */5 * * *</string>
+    <string name="cron_invalid">表達式非法，請檢查各欄位</string>
+    <string name="cron_next_label">未來 10 次執行時間</string>
     <string name="tool_timestamp">時間戳轉換</string>
     <string name="timestamp_tool_title">時間戳轉換</string>
     <string name="timestamp_tool_input_label">時間戳（秒或毫秒）</string>
@@ -107,6 +174,14 @@
     <!-- 格式化文案 -->
     <string name="duration_value">%1$dms</string>
     <string name="duration_size">%1$dms · %2$d B</string>
+    <string name="http_timing_title">耗時分解</string>
+    <string name="http_timing_dns">DNS 查詢</string>
+    <string name="http_timing_tcp">建立連線</string>
+    <string name="http_timing_tls">TLS 握手</string>
+    <string name="http_timing_wait">等待首位元組</string>
+    <string name="http_timing_download">內容下載</string>
+    <string name="http_timing_total">總計 %1$dms</string>
+    <string name="http_timing_value">%1$dms</string>
     <string name="version_value">%1$s (%2$d)</string>
 
     <!-- 連線狀態 -->
@@ -196,6 +271,8 @@
     <string name="resp_view_xml">XML</string>
     <string name="resp_view_hex">HEX</string>
     <string name="resp_view_b64">Base64</string>
+    <string name="resp_view_preview">預覽</string>
+    <string name="resp_preview_unavailable">僅即時回應的媒體內容可預覽</string>
     <string name="resp_truncated">已截斷顯示（完整 %1$s）</string>
 
     <!-- WebSocket 頁 -->
@@ -209,6 +286,7 @@
     <string name="mqtt_title_sub">訂閱</string>
     <string name="mqtt_qos_label">訂閱 QoS</string>
     <string name="mqtt_topic_label">Topic，支援 + 與 # 萬用字元</string>
+    <string name="mqtt_filter_invalid">Topic filter 無效：不能為空，+ 必須獨佔一層，# 只能獨佔最後一層</string>
     <string name="sub_item">%1$s · QoS %2$d</string>
     <string name="mqtt_title_pub">發佈</string>
     <string name="mqtt_state_error">錯誤：%1$s</string>
@@ -375,9 +453,39 @@
     <string name="history_clear">清空歷史</string>
     <string name="history_clear_confirm">確定清空全部專案的歷史記錄？此操作無法復原。</string>
     <string name="history_delete">確定刪除這條歷史記錄？此操作無法復原。</string>
+    <string name="history_favorite">收藏並置頂</string>
+    <string name="history_unfavorite">取消收藏</string>
     <string name="history_detail_title">歷史詳情</string>
     <string name="history_detail_missing">這條記錄已不存在</string>
     <string name="history_detail_legacy">這條記錄由較早的版本寫入，沒有保存請求與回應詳情</string>
+    <string name="diff_title">回應對比</string>
+    <string name="diff_open">對比</string>
+    <string name="diff_base">當前記錄</string>
+    <string name="diff_target">對比對象</string>
+    <string name="diff_change">更換</string>
+    <string name="diff_pick_title">選擇對比記錄</string>
+    <string name="diff_pick_empty">沒有其他歷史記錄</string>
+    <string name="diff_same_api">同介面</string>
+    <string name="diff_no_difference">兩個回應完全一致</string>
+    <string name="diff_no_body">該記錄沒有回應體</string>
+    <string name="diff_truncated">內容過長，僅對比前 %1$d 行</string>
+    <string name="cookie_title">Cookie 管理</string>
+    <string name="cookie_empty">暫無 Cookie。發送請求後自動收集回應的 Set-Cookie，也可手動新增。</string>
+    <string name="cookie_domain_summary">%1$d 條 Cookie</string>
+    <string name="cookie_expired">已過期</string>
+    <string name="cookie_menu_delete">刪除 %1$s</string>
+    <string name="cookie_menu_clear_host">清除該網域全部 Cookie</string>
+    <string name="cookie_clear_all">清空當前專案的 Cookie</string>
+    <string name="cookie_add_title">新增 Cookie</string>
+    <string name="cookie_host_label">網域（如 api.example.com）</string>
+    <string name="cookie_name_label">名稱</string>
+    <string name="cookie_value_label">值</string>
+    <string name="cd_add_cookie">新增 Cookie</string>
+    <string name="runner_title">集合執行</string>
+    <string name="runner_run">執行集合</string>
+    <string name="runner_running">執行中…</string>
+    <string name="runner_empty">目前集合共有 %1$d 個請求，點右上角播放按鈕依序執行。</string>
+    <string name="runner_summary">通過 %1$d 個，失敗 %2$d 個</string>
     <string name="history_filter_label">專案篩選</string>
     <string name="history_filter_all">全部專案</string>
     <string name="history_request_headers">請求標頭</string>
@@ -434,6 +542,11 @@
     <string name="apikey_value_label">Key 值</string>
     <string name="ws_heartbeat_interval_label">心跳間隔（秒）</string>
     <string name="ws_heartbeat_payload_label">心跳內容</string>
+    <string name="ws_auto_reconnect_label">斷線自動重連</string>
+    <string name="ws_reconnect_base_label">初始延遲（秒）</string>
+    <string name="ws_reconnect_max_label">最大延遲（秒）</string>
+    <string name="ws_reconnect_delay_error">請輸入 1–3600 秒，最大延遲不可小於初始延遲</string>
+    <string name="ws_log_reconnecting">%1$d 秒後重連</string>
     <string name="cd_switch_env">切換環境</string>
     <string name="collection_new_title">新增集合</string>
     <string name="collection_name_label">集合名稱</string>
@@ -471,6 +584,8 @@
     <string name="cd_clear_preview">清除拼接結果</string>
 
     <string name="collection_import_spec">匯入規範</string>
+    <string name="collection_import_postman">匯入 Postman 集合</string>
+    <string name="collection_import_har">匯入 HAR 抓包</string>
     <string name="spec_import_title">匯入 API 規範</string>
     <string name="spec_import_source_label">規範檔案 URL 或原始文字</string>
     <string name="spec_import_source_desc">支援 http/https 的 OpenAPI 3.x 與 Swagger 2.0 檔案位址，也可直接貼上 JSON 或 YAML 內容。支援 YAML 錨點與別名，以及 $ref 引用解析。</string>
@@ -483,6 +598,14 @@
     <string name="spec_import_error_no_operations">規範中沒有可匯入的介面</string>
     <string name="spec_import_error_fetch">下載失敗，請確認位址可存取</string>
     <string name="spec_import_error_unknown">解析失敗</string>
+    <string name="spec_format_openapi">OpenAPI</string>
+    <string name="spec_format_postman">Postman</string>
+    <string name="spec_format_har">HAR</string>
+    <string name="spec_import_error_not_recognized">無法識別為所選格式，請確認內容符合該格式規範</string>
+    <string name="spec_import_title_postman">匯入 Postman 集合</string>
+    <string name="spec_import_title_har">匯入 HAR 抓包</string>
+    <string name="spec_import_source_desc_postman">支援 http/https 的 Postman Collection v2.1 JSON 檔案位址，也可直接貼上集合內容。依資料夾分組並保留 {{var}} 佔位符。</string>
+    <string name="spec_import_source_desc_har">支援 http/https 的 HAR 1.2 JSON 檔案位址，也可直接貼上抓包內容。逐筆還原請求並依 host 分組。</string>
     <string name="import_preview_title">匯入預覽</string>
     <string name="import_summary_format">共 %1$d 個介面，%2$d 個標籤</string>
     <string name="import_confirm_button">匯入</string>
@@ -539,14 +662,26 @@
     <string name="monitor_state_disabled">已停用</string>
     <string name="monitor_row_meta">%1$s · %2$s</string>
     <string name="monitor_delete_title">刪除撥測</string>
-    <string name="monitor_delete_confirm">確定刪除「%1$s」及其未通記錄？此操作不可復原。</string>
-    <string name="monitor_records_title">未通記錄</string>
+    <string name="monitor_delete_confirm">確定刪除「%1$s」及其撥測記錄？此操作不可復原。</string>
+    <string name="monitor_records_title">撥測記錄</string>
     <string name="monitor_records_clear">清空記錄</string>
-    <string name="monitor_records_clear_confirm">確定清空當前專案的全部未通記錄？此操作不可復原。</string>
+    <string name="monitor_records_clear_confirm">確定清空當前專案的全部撥測記錄？此操作不可復原。</string>
     <string name="monitor_records_more">更多</string>
-    <string name="monitor_records_search_hint">搜尋名稱、位址或失敗原因</string>
+    <string name="monitor_records_search_hint">搜尋名稱、位址或結果</string>
     <string name="monitor_records_no_match">沒有比對的記錄</string>
-    <string name="monitor_records_empty">暫無未通記錄</string>
+    <string name="monitor_records_empty">暫無撥測記錄</string>
+    <string name="monitor_records_filter_status_all">全部狀態</string>
+    <string name="monitor_records_filter_passed">通過</string>
+    <string name="monitor_records_filter_failed">未通過</string>
+    <string name="monitor_records_filter_type_all">全部類型</string>
+    <string name="monitor_records_filter_status">篩選狀態</string>
+    <string name="monitor_records_filter_type">篩選類型</string>
+    <string name="monitor_trend">趨勢</string>
+    <string name="monitor_trend_empty">暫無趨勢資料，啟用目標後自動採集</string>
+    <string name="monitor_trend_success_rate">可用率</string>
+    <string name="monitor_trend_avg">平均延遲</string>
+    <string name="monitor_trend_peak">峰值延遲</string>
+    <string name="monitor_trend_samples">樣本數</string>
     <string name="monitor_unresolved">無法解析主機 %1$s</string>
     <string name="monitor_ip_ok">埠號 %1$d 可連</string>
     <string name="monitor_ip_unreachable">埠號 %1$s 均不可連</string>
@@ -562,10 +697,14 @@
     <string name="monitor_notify_down_title">「%1$s」已不通</string>
     <string name="monitor_notify_up_title">「%1$s」已恢復</string>
     <string name="monitor_notify_up_body">該目標最近一次檢查已通過</string>
+    <string name="monitor_notify_slow_title">「%1$s」回應過慢</string>
+    <string name="monitor_latency_label">延遲告警閾值（毫秒）</string>
+    <string name="monitor_latency_hint">連通但耗時超過該值時按回應過慢告警，0 表示關閉</string>
+    <string name="monitor_slow_detail">%1$s，耗時 %2$dms 超出閾值 %3$dms</string>
 
     <string name="about_agreement">使用者協議</string>
     <string name="about_privacy">隱私政策</string>
-    <string name="settings_monitor_notify_summary">撥測異常時傳送系統通知</string>
+    <string name="settings_monitor_notify_summary">接收系統通知</string>
     <string name="agreement_body">使用者協議\n\n更新日期：2026年10月11日\n\n歡迎使用 Pulse（以下簡稱「本應用」）。請在使用前仔細閱讀本協議，使用本應用即表示您已理解並同意本協議的全部內容。\n\n一、軟體性質\n本應用是一款開源的網路撥測工具，原始碼託管於 GitHub（HoldEvan/pulse），基於 Apache-2.0 授權條款發布。您可以在遵守授權條款的前提下自由使用、修改和分發本應用。\n\n二、服務說明\n本應用按「現狀」提供，開發者不作任何明示或默示的保證。因網路環境、目標服務狀態或裝置差異導致的功能異常，開發者不承擔相關責任。\n\n三、使用規範\n您應遵守所在國家或地區的法律法規使用本應用，不得利用本應用對未獲授權的目標進行測試或任何干擾性行為。撥測目標、代理伺服器、WebDAV 等設定由您自行填寫，您應確保對相關資源擁有合法的使用權。\n\n四、資料與備份\n您的全部設定與記錄僅保存在裝置本地。因裝置遺失、系統重置或誤操作導致的資料遺失，請透過備份功能自行預防與恢復。\n\n五、更新與終止\n開發者可酌情更新本應用的功能與內容，不承諾持續維護。若您不同意更新後的協議，可以選擇停止使用並解除安裝本應用。\n\n六、聯絡渠道\n如對本協議有任何疑問，歡迎透過 GitHub 儲存庫提交 Issue 回饋。</string>
     <string name="privacy_body">隱私政策\n\n更新日期：2026年10月11日\n\n我們非常重視您的隱私。本應用在設計上遵循「資料不出裝置」的原則，請在使用前仔細閱讀本政策。\n\n一、我們不收集的資訊\n本應用不收集、不上傳任何個人資料，不包含任何統計、廣告或追蹤元件，也不申請與撥測功能無關的系統權限。\n\n二、本地資料\n專案設定、撥測記錄、應用設定等全部資料僅保存在您的裝置本地儲存中。您可以在設定中隨時清除快取，或解除安裝應用以徹底刪除全部資料。\n\n三、網路存取說明\n本應用存取網路僅用於以下場景：1. 對您自行設定的目標地址執行撥測；2. 連線您自行設定的 WebDAV 服務，完成備份與還原；3. 開啟 GitHub 專案主頁等您主動點擊的外部連結。除上述場景外，本應用不會主動連線任何伺服器。\n\n四、第三方元件\n本應用整合了 Miuix、Ktor、Eclipse Paho MQTT、Mozilla Rhino 等開源元件，這些元件自身的執行行為受其各自開源授權條款約束。\n\n五、政策更新\n本政策可能隨應用版本更新而調整，更新後的內容會在應用內展示。若您繼續使用更新後的應用，即視為接受修訂後的政策。\n\n六、聯絡渠道\n如對本政策有任何疑問，歡迎透過 GitHub 儲存庫提交 Issue 回饋。</string>
     <string name="settings_language_summary">切換應用語言</string>

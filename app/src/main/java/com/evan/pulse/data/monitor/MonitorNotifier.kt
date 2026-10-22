@@ -45,9 +45,35 @@ class MonitorNotifier(private val context: Context) {
         post(target, L10n.t(R.string.monitor_notify_down_title, target.name), message)
     }
 
+    /** 响应过慢的告警：服务是通的，但延迟超出预期 */
+    fun postSlow(target: MonitorTarget, message: String) {
+        post(target, L10n.t(R.string.monitor_notify_slow_title, target.name), message)
+    }
+
     /** 从异常恢复到正常的通知 */
     fun postRecovered(target: MonitorTarget) {
         post(target, L10n.t(R.string.monitor_notify_up_title, target.name), L10n.t(R.string.monitor_notify_up_body))
+    }
+
+    fun postScanCompleted(count: Int) {
+        if (!isGranted()) return
+        val channelId = "pulse_scan_results"
+        val manager = context.getSystemService(NotificationManager::class.java) ?: return
+        manager.createNotificationChannel(
+            NotificationChannel(channelId, L10n.t(R.string.lan_scan_title), NotificationManager.IMPORTANCE_LOW)
+        )
+        val pending = PendingIntent.getActivity(
+            context, 21001, Intent(context, MainActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val notification = NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(R.drawable.ic_monitor_alert)
+            .setContentTitle(L10n.t(R.string.lan_scan_title))
+            .setContentText(L10n.t(R.string.lan_scan_complete, count))
+            .setAutoCancel(true)
+            .setContentIntent(pending)
+            .build()
+        runCatching { manager.notify(21001, notification) }
     }
 
     private fun post(target: MonitorTarget, title: String, text: String) {

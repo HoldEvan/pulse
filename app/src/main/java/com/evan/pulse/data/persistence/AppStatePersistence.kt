@@ -4,18 +4,25 @@ import android.content.Context
 import com.evan.pulse.data.model.CollectionInfo
 import com.evan.pulse.data.model.EnvironmentInfo
 import com.evan.pulse.data.model.HistoryEntry
+import com.evan.pulse.data.model.MonitorHistoryEntry
 import com.evan.pulse.data.model.MonitorRecord
 import com.evan.pulse.data.model.MonitorTarget
+import com.evan.pulse.data.model.MqttSubscriptionEntry
 import com.evan.pulse.data.model.MonitorType
 import com.evan.pulse.data.model.ProjectInfo
 import com.evan.pulse.data.model.RequestType
 import com.evan.pulse.data.model.SavedRequest
+import com.evan.pulse.data.model.WsSessionEntry
+import com.evan.pulse.data.model.WsReconnectSettings
 import com.evan.pulse.di.CollectionStoreSnapshot
+import com.evan.pulse.di.CookieStoreSnapshot
 import com.evan.pulse.di.EnvStoreSnapshot
 import com.evan.pulse.di.HistoryStoreSnapshot
 import com.evan.pulse.di.MonitorStoreSnapshot
 import com.evan.pulse.di.ProjectStoreSnapshot
+import com.evan.pulse.di.ProtocolSessionStoreSnapshot
 import com.evan.pulse.di.ServiceLocator
+import com.evan.pulse.di.StoredCookie
 import java.io.File
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -139,10 +146,18 @@ class AppStatePersistence(context: Context) {
                 records = root.arrayValue("monitorRecords")?.mapNotNull { item ->
                     parseMonitorRecord(item.jsonObject)
                 } ?: emptyList(),
+                history = root.arrayValue("monitorHistory")?.mapNotNull { item ->
+                    parseMonitorHistory(item.jsonObject)
+                } ?: emptyList(),
                 nextTargetId = root.longValue("monitorNextId", 1L),
-                nextRecordId = root.longValue("monitorRecordNextId", 1L)
+                nextRecordId = root.longValue("monitorRecordNextId", 1L),
+                nextHistoryId = root.longValue("monitorHistoryNextId", 1L)
             )
         )
+
+        restoreProtocolSessions(root)
+
+        restoreCookies(root)
     }
 
     /** 从外部 JSON 恢复各 Store（备份文件读回），与 load() 解析逻辑一致 */
@@ -227,11 +242,78 @@ class AppStatePersistence(context: Context) {
                 records = root.arrayValue("monitorRecords")?.mapNotNull { item ->
                     parseMonitorRecord(item.jsonObject)
                 } ?: emptyList(),
+                history = root.arrayValue("monitorHistory")?.mapNotNull { item ->
+                    parseMonitorHistory(item.jsonObject)
+                } ?: emptyList(),
                 nextTargetId = root.longValue("monitorNextId", 1L),
-                nextRecordId = root.longValue("monitorRecordNextId", 1L)
+                nextRecordId = root.longValue("monitorRecordNextId", 1L),
+                nextHistoryId = root.longValue("monitorHistoryNextId", 1L)
             )
         )
+
+        restoreProtocolSessions(root)
+
+        restoreCookies(root)
         save()
+    }
+
+    /** Cookie 库恢复：按项目 + 域名分桶结构原样读回 */
+    private fun restoreCookies(root: JsonObject) {
+        ServiceLocator.cookieStore.restore(
+            CookieStoreSnapshot(
+                projects = root.arrayValue("cookies")?.mapNotNull { item ->
+                    val o = item.jsonObject
+                    val projectId = o.longValue("projectId", -1L)
+                    if (projectId < 0) return@mapNotNull null
+                    val hosts = o.arrayValue("hosts")?.mapNotNull { hostItem ->
+                        val host = hostItem.jsonObject
+                        val domain = host.stringValue("host")
+                        if (domain.isBlank()) return@mapNotNull null
+                        domain to (host.arrayValue("cookies")?.mapNotNull { cookieItem ->
+                            val c = cookieItem.jsonObject
+                            val name = c.stringValue("name")
+                            if (name.isBlank()) null else StoredCookie(
+                                name = name,
+                                value = c.stringValue("value"),
+                                domain = domain,
+                                path = c.stringValue("path").ifBlank { "/" },
+                                expiresAtMs = c.longValue("expiresAtMs", Long.MAX_VALUE)
+                            )
+                        } ?: emptyList())
+                    }?.toMap() ?: emptyMap()
+                    projectId to hosts
+                }?.toMap() ?: emptyMap()
+            )
+        )
+    }
+
+    private fun restoreProtocolSessions(root: JsonObject) {
+        ServiceLocator.protocolSessionStore.restore(
+            ProtocolSessionStoreSnapshot(
+                wsHistory = root.arrayValue("wsSessionHistory")?.mapNotNull { item ->
+                    val o = item.jsonObject
+                    WsSessionEntry(
+                        id = o.longValue("id", -1L),
+                        endpoint = o.stringValue("endpoint"),
+                        text = o.stringValue("text"),
+                        isSystem = o.booleanValue("isSystem", false),
+                        timestamp = o.longValue("timestamp", 0L)
+                    ).takeIf { it.id >= 0 }
+                } ?: emptyList(),
+                mqttSubscriptions = root.arrayValue("mqttSubscriptions")?.mapNotNull { item ->
+                    val o = item.jsonObject
+                    val topic = o.stringValue("topic")
+                    val qos = o.intValue("qos", -1)
+                    MqttSubscriptionEntry(topic, qos).takeIf { topic.isNotBlank() && qos in 0..2 }
+                } ?: emptyList(),
+                nextWsId = root.longValue("wsSessionNextId", 1L),
+                wsReconnectSettings = WsReconnectSettings(
+                    enabled = root.booleanValue("wsAutoReconnect", false),
+                    baseDelaySec = root.intValue("wsReconnectBaseDelaySec", 3),
+                    maxDelaySec = root.intValue("wsReconnectMaxDelaySec", 60)
+                )
+            )
+        )
     }
 
     /** 把当前四个 Store 的状态写入磁盘 */
@@ -241,6 +323,7 @@ class AppStatePersistence(context: Context) {
         val history = ServiceLocator.historyStore.snapshot()
         val collection = ServiceLocator.collectionStore.snapshot()
         val monitor = ServiceLocator.monitorStore.snapshot()
+        val protocolSessions = ServiceLocator.protocolSessionStore.snapshot()
 
         val root = buildJsonObject {
             put("projects", buildJsonArray {
@@ -297,6 +380,7 @@ class AppStatePersistence(context: Context) {
                         })
                         put("responseBody", h.responseBody)
                         put("responseBodyTruncated", h.responseBodyTruncated)
+                        put("favorite", h.favorite)
                     })
                 }
             })
@@ -342,6 +426,7 @@ class AppStatePersistence(context: Context) {
                         put("intervalSec", m.intervalSec)
                         put("statusMin", m.statusMin)
                         put("statusMax", m.statusMax)
+                        put("latencyThresholdMs", m.latencyThresholdMs)
                         put("enabled", m.enabled)
                         put("group", m.group)
                         put("createdAt", m.createdAt)
@@ -361,10 +446,75 @@ class AppStatePersistence(context: Context) {
                         put("message", r.message)
                         put("durationMs", r.durationMs)
                         put("checkedAt", r.checkedAt)
+                        put("ok", r.ok)
                     })
                 }
             })
             put("monitorRecordNextId", monitor.nextRecordId)
+
+            put("monitorHistory", buildJsonArray {
+                monitor.history.forEach { h ->
+                    add(buildJsonObject {
+                        put("id", h.id)
+                        put("targetId", h.targetId)
+                        put("ok", h.ok)
+                        put("slow", h.slow)
+                        put("durationMs", h.durationMs)
+                        put("checkedAt", h.checkedAt)
+                    })
+                }
+            })
+            put("monitorHistoryNextId", monitor.nextHistoryId)
+
+            put("wsSessionHistory", buildJsonArray {
+                protocolSessions.wsHistory.forEach { entry ->
+                    add(buildJsonObject {
+                        put("id", entry.id)
+                        put("endpoint", entry.endpoint)
+                        put("text", entry.text)
+                        put("isSystem", entry.isSystem)
+                        put("timestamp", entry.timestamp)
+                    })
+                }
+            })
+            put("wsSessionNextId", protocolSessions.nextWsId)
+            put("wsAutoReconnect", protocolSessions.wsReconnectSettings.enabled)
+            put("wsReconnectBaseDelaySec", protocolSessions.wsReconnectSettings.baseDelaySec)
+            put("wsReconnectMaxDelaySec", protocolSessions.wsReconnectSettings.maxDelaySec)
+            put("mqttSubscriptions", buildJsonArray {
+                protocolSessions.mqttSubscriptions.forEach { subscription ->
+                    add(buildJsonObject {
+                        put("topic", subscription.topic)
+                        put("qos", subscription.qos)
+                    })
+                }
+            })
+
+            put("cookies", buildJsonArray {
+                val cookie = ServiceLocator.cookieStore.snapshot()
+                cookie.projects.forEach { (projectId, hosts) ->
+                    add(buildJsonObject {
+                        put("projectId", projectId)
+                        put("hosts", buildJsonArray {
+                            hosts.forEach { (domain, list) ->
+                                add(buildJsonObject {
+                                    put("host", domain)
+                                    put("cookies", buildJsonArray {
+                                        list.forEach { c ->
+                                            add(buildJsonObject {
+                                                put("name", c.name)
+                                                put("value", c.value)
+                                                put("path", c.path)
+                                                put("expiresAtMs", c.expiresAtMs)
+                                            })
+                                        }
+                                    })
+                                })
+                            }
+                        })
+                    })
+                }
+            })
         }
 
         try {
@@ -419,7 +569,8 @@ class AppStatePersistence(context: Context) {
         requestBodyTruncated = o.booleanValue("requestBodyTruncated", false),
         responseHeaders = o.stringValueList("responseHeaders"),
         responseBody = o.stringValue("responseBody"),
-        responseBodyTruncated = o.booleanValue("responseBodyTruncated", false)
+        responseBodyTruncated = o.booleanValue("responseBodyTruncated", false),
+        favorite = o.booleanValue("favorite", false)
     ).takeIf { it.id >= 0 }
 
     /** 解析单个拨测目标；类型不认识或 id 缺失时跳过整行 */
@@ -438,11 +589,23 @@ class AppStatePersistence(context: Context) {
             intervalSec = o.longValue("intervalSec", 60L),
             statusMin = o.intValue("statusMin", 200),
             statusMax = o.intValue("statusMax", 399),
+            latencyThresholdMs = o.longValue("latencyThresholdMs", 0L),
             enabled = o.booleanValue("enabled", true),
             group = o.stringValue("group"),
             createdAt = o.longValue("createdAt", 0L)
         ).takeIf { it.id >= 0 }
     }
+
+    /** 解析单条拨测历史样本 */
+    private fun parseMonitorHistory(o: JsonObject): MonitorHistoryEntry? =
+        MonitorHistoryEntry(
+            id = o.longValue("id", -1L),
+            targetId = o.longValue("targetId", -1L),
+            ok = o.booleanValue("ok", false),
+            slow = o.booleanValue("slow", false),
+            durationMs = o.longValue("durationMs", 0L),
+            checkedAt = o.longValue("checkedAt", 0L)
+        ).takeIf { it.id >= 0 && it.targetId >= 0 }
 
     /** 解析单条拨测记录 */
     private fun parseMonitorRecord(o: JsonObject): MonitorRecord? {
@@ -456,7 +619,8 @@ class AppStatePersistence(context: Context) {
             type = type,
             message = o.stringValue("message"),
             durationMs = o.longValue("durationMs", 0L),
-            checkedAt = o.longValue("checkedAt", 0L)
+            checkedAt = o.longValue("checkedAt", 0L),
+            ok = o.booleanValue("ok", false)
         ).takeIf { it.id >= 0 }
     }
 }

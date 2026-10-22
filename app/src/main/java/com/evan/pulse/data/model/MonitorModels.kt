@@ -23,6 +23,8 @@ data class MonitorTarget(
     val statusMin: Int = 200,
     /** 接口类型判定为通的结束状态码 */
     val statusMax: Int = 399,
+    /** 延迟告警阈值毫秒；0 表示关闭，连通但超出阈值按"响应过慢"告警 */
+    val latencyThresholdMs: Long = 0L,
     val enabled: Boolean = true,
     /** 一级分组名，空字符串表示未分组 */
     val group: String = "",
@@ -35,10 +37,12 @@ data class MonitorRun(
     /** 结果的简短说明，例如 HTTP 200、端口可连、连接超时 */
     val detail: String,
     val durationMs: Long,
-    val checkedAt: Long
+    val checkedAt: Long,
+    /** 连通但延迟超出阈值；告警语义介于通与断之间 */
+    val slow: Boolean = false
 )
 
-/** 未通的拨测记录，按时间倒序保留最近若干条 */
+/** 一次拨测记录（无论通断），按时间倒序保留最近若干条 */
 data class MonitorRecord(
     val id: Long,
     val projectId: Long,
@@ -46,6 +50,21 @@ data class MonitorRecord(
     val targetName: String,
     val type: MonitorType,
     val message: String,
+    val durationMs: Long,
+    val checkedAt: Long,
+    /** 本次检查是否连通；旧数据没有该字段时按未通处理 */
+    val ok: Boolean = false
+)
+
+/**
+ * 拨测历史样本：每次检查（无论成败）记一条，用于趋势曲线与可用率统计。
+ * 倒序保留每个目标最近若干条，最新在前。
+ */
+data class MonitorHistoryEntry(
+    val id: Long,
+    val targetId: Long,
+    val ok: Boolean,
+    val slow: Boolean,
     val durationMs: Long,
     val checkedAt: Long
 )
@@ -57,8 +76,11 @@ val MONITOR_INTERVAL_PRESETS: List<Long> =
 /** IP 连通检查依次尝试的端口 */
 val MONITOR_IP_PROBE_PORTS: List<Int> = listOf(80, 443)
 
-/** 拨测记录的保留上限 */
-const val MONITOR_RECORD_LIMIT = 300
+/** 拨测记录的保留上限；通断都记录，上限按全部记录计 */
+const val MONITOR_RECORD_LIMIT = 2000
+
+/** 每个目标保留的趋势历史样本上限 */
+const val MONITOR_HISTORY_LIMIT = 720
 
 /** 目标的完整地址：IP 连通显示主机，端口显示主机与端口，接口显示请求地址 */
 fun MonitorTarget.addressText(): String = when (type) {

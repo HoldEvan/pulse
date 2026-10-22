@@ -7,10 +7,16 @@ import com.evan.pulse.data.model.EnvironmentInfo
 import com.evan.pulse.data.model.HistoryEntry
 import com.evan.pulse.data.model.ImportGroup
 import com.evan.pulse.data.model.ImportResult
+import com.evan.pulse.data.model.MONITOR_HISTORY_LIMIT
+import com.evan.pulse.data.model.MonitorHistoryEntry
 import com.evan.pulse.data.model.MonitorRecord
 import com.evan.pulse.data.model.MonitorTarget
 import com.evan.pulse.data.model.MONITOR_RECORD_LIMIT
 import com.evan.pulse.data.model.ProjectInfo
+import com.evan.pulse.data.model.MqttSubscriptionEntry
+import com.evan.pulse.data.model.WsSessionEntry
+import com.evan.pulse.data.model.WsReconnectSettings
+import com.evan.pulse.data.model.WS_SESSION_HISTORY_LIMIT
 import com.evan.pulse.data.model.RequestType
 import com.evan.pulse.data.model.SavedRequest
 import com.evan.pulse.data.monitor.MonitorChecker
@@ -164,6 +170,16 @@ class HistoryStore(private val persist: PersistenceHandle) {
         persist.save()
     }
 
+    fun toggleFavorite(id: Long): Boolean {
+        val before = _entries.value
+        if (before.none { it.id == id }) return false
+        _entries.value = before.map { entry ->
+            if (entry.id == id) entry.copy(favorite = !entry.favorite) else entry
+        }
+        persist.save()
+        return true
+    }
+
     /** 删除单条历史；返回是否真的删到了 */
     fun delete(id: Long): Boolean {
         val before = _entries.value
@@ -185,6 +201,84 @@ class HistoryStore(private val persist: PersistenceHandle) {
 class HistoryStoreSnapshot(
     val entries: List<HistoryEntry>,
     val nextId: Long
+)
+
+/** 单个 Cookie：okhttp3.Cookie 解析后的精简形态，按项目 + 域名分桶存储 */
+data class StoredCookie(
+    val name: String,
+    val value: String,
+    val domain: String,
+    val path: String = "/",
+    val expiresAtMs: Long = Long.MAX_VALUE
+)
+
+class CookieStore(private val persist: PersistenceHandle) {
+    private val _cookies = MutableStateFlow<Map<Long, Map<String, List<StoredCookie>>>>(emptyMap())
+    val cookies: StateFlow<Map<Long, Map<String, List<StoredCookie>>>> = _cookies.asStateFlow()
+
+    private val nowMs: Long get() = System.currentTimeMillis()
+
+    /** 当前项目下各域名的未过期 Cookie */
+    fun active(projectId: Long): Map<String, List<StoredCookie>> =
+        _cookies.value[projectId]
+            ?.mapValues { (_, list) -> list.filter { it.expiresAtMs > nowMs } }
+            ?.filterValues { it.isNotEmpty() }
+            ?: emptyMap()
+
+    /**
+     * 命中请求 host 的未过期 Cookie：精确域名优先，其余按父域匹配
+     * （Domain=example.com 写入的 Cookie 对 api.example.com 同样生效）。
+     */
+    fun forHost(projectId: Long, host: String): List<StoredCookie> {
+        val lower = host.lowercase()
+        val all = active(projectId)
+        val exact = all[lower].orEmpty()
+        val wider = all.filterKeys { key -> lower != key && lower.endsWith(".$key") }
+            .values.flatten()
+        return exact + wider
+    }
+
+    /** 同名同路径覆盖，实现 Set-Cookie 的更新语义 */
+    fun upsert(projectId: Long, cookie: StoredCookie) {
+        if (cookie.name.isBlank() || cookie.domain.isBlank()) return
+        val hosts = _cookies.value[projectId].orEmpty().toMutableMap()
+        val kept = hosts[cookie.domain].orEmpty()
+            .filter { it.name != cookie.name || it.path != cookie.path }
+        hosts[cookie.domain] = (kept + cookie).sortedBy { it.name }
+        _cookies.value = _cookies.value + (projectId to hosts)
+        persist.save()
+    }
+
+    fun remove(projectId: Long, domain: String, name: String) {
+        val hosts = _cookies.value[projectId] ?: return
+        val kept = hosts[domain]?.filter { it.name != name } ?: return
+        val updated = hosts.toMutableMap()
+        if (kept.isEmpty()) updated.remove(domain) else updated[domain] = kept
+        _cookies.value = _cookies.value + (projectId to updated)
+        persist.save()
+    }
+
+    fun clearHost(projectId: Long, domain: String) {
+        val hosts = _cookies.value[projectId] ?: return
+        _cookies.value = _cookies.value + (projectId to (hosts - domain))
+        persist.save()
+    }
+
+    fun clearProject(projectId: Long) {
+        if (!_cookies.value.containsKey(projectId)) return
+        _cookies.value = _cookies.value - projectId
+        persist.save()
+    }
+
+    fun snapshot() = CookieStoreSnapshot(_cookies.value)
+
+    fun restore(state: CookieStoreSnapshot) {
+        _cookies.value = state.projects
+    }
+}
+
+class CookieStoreSnapshot(
+    val projects: Map<Long, Map<String, List<StoredCookie>>>
 )
 
 class EnvStore(private val persist: PersistenceHandle) {
@@ -466,14 +560,22 @@ class MonitorStore(private val persist: PersistenceHandle) {
     private val _records = MutableStateFlow(emptyList<MonitorRecord>())
     val records: StateFlow<List<MonitorRecord>> = _records.asStateFlow()
 
+    private val _history = MutableStateFlow(emptyList<MonitorHistoryEntry>())
+    val history: StateFlow<List<MonitorHistoryEntry>> = _history.asStateFlow()
+
     private var nextTargetId = 1L
     private var nextRecordId = 1L
+    private var nextHistoryId = 1L
 
     fun targetsFor(projectId: Long): List<MonitorTarget> =
         _targets.value.filter { it.projectId == projectId }
 
     fun recordsFor(projectId: Long): List<MonitorRecord> =
         _records.value.filter { it.projectId == projectId }
+
+    /** 某目标的趋势历史，倒序（最新在前） */
+    fun historyFor(targetId: Long): List<MonitorHistoryEntry> =
+        _history.value.filter { it.targetId == targetId }
 
     fun get(id: Long): MonitorTarget? = _targets.value.firstOrNull { it.id == id }
 
@@ -503,14 +605,22 @@ class MonitorStore(private val persist: PersistenceHandle) {
 
     fun delete(id: Long) {
         _targets.value = _targets.value.filter { it.id != id }
-        val before = _records.value
-        _records.value = before.filter { it.targetId != id }
-        if (_records.value == before) return
+        val recordsBefore = _records.value
+        _records.value = recordsBefore.filter { it.targetId != id }
+        val historyBefore = _history.value
+        _history.value = historyBefore.filter { it.targetId != id }
+        if (_records.value == recordsBefore && _history.value == historyBefore) return
         persist.save()
     }
 
-    /** 记录一次未通的拨测，最新在前，超出上限丢弃最旧的 */
-    fun recordFailure(target: MonitorTarget, message: String, durationMs: Long) {
+    /** 记录一次拨测结果（通与不通都记录），最新在前，超出上限丢弃最旧的 */
+    fun recordResult(
+        target: MonitorTarget,
+        ok: Boolean,
+        message: String,
+        durationMs: Long,
+        checkedAt: Long = System.currentTimeMillis()
+    ) {
         val record = MonitorRecord(
             id = nextRecordId++,
             projectId = target.projectId,
@@ -519,36 +629,135 @@ class MonitorStore(private val persist: PersistenceHandle) {
             type = target.type,
             message = message,
             durationMs = durationMs,
-            checkedAt = System.currentTimeMillis()
+            checkedAt = checkedAt,
+            ok = ok
         )
         _records.value = (listOf(record) + _records.value).take(MONITOR_RECORD_LIMIT)
         persist.save()
     }
 
-    fun clearRecords(projectId: Long) {
-        val before = _records.value
-        _records.value = before.filter { it.projectId != projectId }
-        if (_records.value == before) return
+    /** 记录一次拨测历史样本（无论成败），每个目标倒序保留最近若干条 */
+    fun recordHistory(target: MonitorTarget, ok: Boolean, slow: Boolean, durationMs: Long, checkedAt: Long) {
+        val entry = MonitorHistoryEntry(
+            id = nextHistoryId++,
+            targetId = target.id,
+            ok = ok,
+            slow = slow,
+            durationMs = durationMs,
+            checkedAt = checkedAt
+        )
+        _history.value = (listOf(entry) + _history.value).take(MONITOR_HISTORY_LIMIT)
         persist.save()
     }
 
-    fun snapshot() = MonitorStoreSnapshot(_targets.value, _records.value, nextTargetId, nextRecordId)
+    fun clearRecords(projectId: Long) {
+        val recordsBefore = _records.value
+        _records.value = recordsBefore.filter { it.projectId != projectId }
+        val historyBefore = _history.value
+        _history.value = historyBefore.filter { entry ->
+            targetsFor(projectId).none { it.id == entry.targetId }
+        }
+        if (_records.value == recordsBefore && _history.value == historyBefore) return
+        persist.save()
+    }
+
+    fun snapshot() = MonitorStoreSnapshot(
+        _targets.value,
+        _records.value,
+        _history.value,
+        nextTargetId,
+        nextRecordId,
+        nextHistoryId
+    )
 
     fun restore(state: MonitorStoreSnapshot) {
         _targets.value = state.targets
         _records.value = state.records.filter { record ->
             state.targets.any { it.id == record.targetId }
         }
+        _history.value = state.history.filter { entry ->
+            state.targets.any { it.id == entry.targetId }
+        }
         nextTargetId = state.nextTargetId.coerceAtLeast((state.targets.maxOfOrNull { it.id } ?: 0L) + 1)
         nextRecordId = state.nextRecordId.coerceAtLeast((state.records.maxOfOrNull { it.id } ?: 0L) + 1)
+        nextHistoryId = state.nextHistoryId.coerceAtLeast((state.history.maxOfOrNull { it.id } ?: 0L) + 1)
     }
 }
+
+class ProtocolSessionStore(private val persist: PersistenceHandle) {
+    private val _wsHistory = MutableStateFlow<List<WsSessionEntry>>(emptyList())
+    val wsHistory: StateFlow<List<WsSessionEntry>> = _wsHistory.asStateFlow()
+
+    private val _mqttSubscriptions = MutableStateFlow<List<MqttSubscriptionEntry>>(emptyList())
+    val mqttSubscriptions: StateFlow<List<MqttSubscriptionEntry>> = _mqttSubscriptions.asStateFlow()
+
+    private val _wsReconnectSettings = MutableStateFlow(WsReconnectSettings())
+    val wsReconnectSettings: StateFlow<WsReconnectSettings> = _wsReconnectSettings.asStateFlow()
+
+    private var nextWsId = 1L
+
+    fun appendWs(endpoint: String, text: String, isSystem: Boolean, timestamp: Long): WsSessionEntry {
+        val entry = WsSessionEntry(nextWsId++, endpoint, text, isSystem, timestamp)
+        _wsHistory.value = (_wsHistory.value + entry).takeLast(WS_SESSION_HISTORY_LIMIT)
+        persist.save()
+        return entry
+    }
+
+    fun clearWsHistory() {
+        if (_wsHistory.value.isEmpty()) return
+        _wsHistory.value = emptyList()
+        persist.save()
+    }
+
+    fun setMqttSubscriptions(subscriptions: List<MqttSubscriptionEntry>) {
+        if (_mqttSubscriptions.value == subscriptions) return
+        _mqttSubscriptions.value = subscriptions.distinctBy { it.topic }
+        persist.save()
+    }
+
+    fun setWsReconnectSettings(settings: WsReconnectSettings) {
+        val normalized = settings.copy(
+            baseDelaySec = settings.baseDelaySec.coerceIn(1, 3600),
+            maxDelaySec = settings.maxDelaySec.coerceIn(settings.baseDelaySec.coerceIn(1, 3600), 3600)
+        )
+        if (_wsReconnectSettings.value == normalized) return
+        _wsReconnectSettings.value = normalized
+        persist.save()
+    }
+
+    fun snapshot() = ProtocolSessionStoreSnapshot(
+        _wsHistory.value,
+        _mqttSubscriptions.value,
+        nextWsId,
+        _wsReconnectSettings.value
+    )
+
+    fun restore(snapshot: ProtocolSessionStoreSnapshot) {
+        _wsHistory.value = snapshot.wsHistory.takeLast(WS_SESSION_HISTORY_LIMIT)
+        _mqttSubscriptions.value = snapshot.mqttSubscriptions.distinctBy { it.topic }
+        val settings = snapshot.wsReconnectSettings
+        _wsReconnectSettings.value = settings.copy(
+            baseDelaySec = settings.baseDelaySec.coerceIn(1, 3600),
+            maxDelaySec = settings.maxDelaySec.coerceIn(settings.baseDelaySec.coerceIn(1, 3600), 3600)
+        )
+        nextWsId = maxOf(snapshot.nextWsId, (_wsHistory.value.maxOfOrNull { it.id } ?: 0L) + 1L)
+    }
+}
+
+class ProtocolSessionStoreSnapshot(
+    val wsHistory: List<WsSessionEntry>,
+    val mqttSubscriptions: List<MqttSubscriptionEntry>,
+    val nextWsId: Long,
+    val wsReconnectSettings: WsReconnectSettings = WsReconnectSettings()
+)
 
 class MonitorStoreSnapshot(
     val targets: List<MonitorTarget>,
     val records: List<MonitorRecord>,
+    val history: List<MonitorHistoryEntry>,
     val nextTargetId: Long,
-    val nextRecordId: Long
+    val nextRecordId: Long,
+    val nextHistoryId: Long
 )
 
 /** Store 的持久化回调句柄：init 前为空操作，避免启动早期写入 */
@@ -563,6 +772,14 @@ object ServiceLocator {
     private var _settingsStore: SettingsStore? = null
     private var _persistence: AppStatePersistence? = null
 
+    /** 由 [init] 注入的应用级 Context，供引擎读取 content:// 文件等系统资源 */
+    private var _appContext: Context? = null
+    val appContext: Context
+        get() = checkNotNull(_appContext) { "ServiceLocator 尚未初始化" }
+
+    /** 直读可空字段，供引擎在对象初始化期安全取得 context（不触发 checkNotNull） */
+    private fun appContextOrNull(): Context? = _appContext
+
     private val persistHandle = PersistenceHandle()
 
     val projectStore = ProjectStore(persistHandle)
@@ -573,14 +790,21 @@ object ServiceLocator {
     val authApplier: AuthApplier = SimpleAuthApplier()
     val scriptExecutor: com.evan.pulse.domain.script.ScriptExecutor = RhinoScriptExecutor()
     val scriptEnvWriter: ScriptEnvWriter = ActiveEnvWriter()
-    val httpEngine: HttpEngine = OkHttpEngine()
+
+    // 拨测目标与未通记录。必须在 httpEngine 之后声明，MonitorChecker 依赖它。
+    // httpEngine 走 lazy 且 monitorChecker 同样 lazy：两处都不允许在 <clinit>（ServiceLocator
+    // 类加载）期间触发 appContext 的 checkNotNull getter——否则 init 注入前首个访问即崩。
+    // provider 走私有函数直读可空字段，避免 R8/编译器把 lambda 内私有字段 accessor 合并成公共
+    // checkNotNull getter。
+    val httpEngine: HttpEngine by lazy { OkHttpEngine(::appContextOrNull) }
     val wsEngine: WsEngine = KtorWsEngine()
     val mqttEngine: MqttEngine = PahoMqttEngine()
     val sseEngine: SseEngine = KtorSseEngine()
 
-    /** 拨测目标与未通记录。必须在 httpEngine 之后声明，MonitorChecker 依赖它 */
     val monitorStore = MonitorStore(persistHandle)
-    val monitorChecker: MonitorChecker = MonitorChecker()
+    val cookieStore = CookieStore(persistHandle)
+    val protocolSessionStore = ProtocolSessionStore(persistHandle)
+    val monitorChecker: MonitorChecker by lazy { MonitorChecker() }
 
     private var _monitorNotifier: MonitorNotifier? = null
     private var _monitorScheduler: MonitorScheduler? = null
@@ -598,6 +822,7 @@ object ServiceLocator {
 
     /** 初始化数据持久化：注册写盘回调并读回已有数据。必须在 Application.onCreate 中调用 */
     fun init(context: Context) {
+        _appContext = context.applicationContext
         val persistence = AppStatePersistence(context)
         _persistence = persistence
         persistHandle.action = { persistence.save() }

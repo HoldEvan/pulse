@@ -4,6 +4,12 @@ import com.evan.pulse.R
 import com.evan.pulse.data.model.MonitorTarget
 import com.evan.pulse.data.model.MonitorType
 import com.evan.pulse.data.model.addressText
+import com.evan.pulse.domain.model.HttpCallConfig
+import com.evan.pulse.domain.model.HttpCallOutcome
+import com.evan.pulse.domain.model.HttpErrorType
+import com.evan.pulse.domain.model.ProxyConfig
+import com.evan.pulse.domain.net.HttpEngine
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -196,5 +202,54 @@ class MonitorCheckerTest {
             "http://10.0.0.5:8080/health",
             target(MonitorType.HTTP, url = "http://10.0.0.5:8080/health").addressText()
         )
+    }
+
+    private class FakeEngine(private val durationMs: Long) : HttpEngine {
+        override suspend fun execute(config: HttpCallConfig): HttpCallOutcome =
+            HttpCallOutcome.Success(
+                statusCode = 200,
+                statusText = "OK",
+                headers = emptyList(),
+                body = "",
+                durationMs = durationMs,
+                responseSizeBytes = 0
+            )
+    }
+
+    private val passthroughResolver = object : com.evan.pulse.domain.PlaceholderResolver {
+        override fun resolve(text: String, vars: Map<String, String>):
+            com.evan.pulse.domain.PlaceholderResolver.ResolveResult =
+            com.evan.pulse.domain.PlaceholderResolver.ResolveResult.Ok(text)
+    }
+
+    private fun httpChecker(durationMs: Long) = MonitorChecker(
+        httpEngine = FakeEngine(durationMs),
+        resolver = passthroughResolver,
+        socketFactory = { throw IllegalStateException("HTTP probe should not touch socket") }
+    )
+
+    @Test
+    fun `check marks slow when latency exceeds threshold`() = runBlocking {
+        val t = target(MonitorType.HTTP, url = "https://example.com/ping").copy(latencyThresholdMs = 500)
+        val run = httpChecker(1200).check(t, emptyMap(), ProxyConfig())
+        assertTrue(run.ok)
+        assertTrue(run.slow)
+        assertEquals(1200, run.durationMs)
+    }
+
+    @Test
+    fun `check does not mark slow when latency within threshold`() = runBlocking {
+        val t = target(MonitorType.HTTP, url = "https://example.com/ping").copy(latencyThresholdMs = 500)
+        val run = httpChecker(200).check(t, emptyMap(), ProxyConfig())
+        assertTrue(run.ok)
+        assertFalse(run.slow)
+    }
+
+    @Test
+    fun `check with zero threshold never marks slow`() = runBlocking {
+        val t = target(MonitorType.HTTP, url = "https://example.com/ping").copy(latencyThresholdMs = 0)
+        val run = httpChecker(5000).check(t, emptyMap(), ProxyConfig())
+        assertTrue(run.ok)
+        assertFalse(run.slow)
     }
 }

@@ -239,6 +239,7 @@ fun ProjectBar(
                             creating = false
                             editing = null
                         },
+                        primary = true,
                         modifier = Modifier.weight(1f)
                     )
                 }

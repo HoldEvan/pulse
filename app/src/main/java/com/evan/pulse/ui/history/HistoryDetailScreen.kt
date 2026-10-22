@@ -50,7 +50,8 @@ private val detailTimeFormat = SimpleDateFormat("MM-dd HH:mm:ss", Locale.getDefa
 fun HistoryDetailScreen(
     modifier: Modifier = Modifier,
     viewModel: HistoryViewModel = viewModel(),
-    entryId: Long
+    entryId: Long,
+    onOpenDiff: (Long) -> Unit = {}
 ) {
     val all by viewModel.history.collectAsState()
     val projects by viewModel.projects.collectAsState()
@@ -107,7 +108,7 @@ fun HistoryDetailScreen(
                     MonospaceBlock(entry.responseHeaders.joinToString("\n"))
                 }
                 if (entry.responseBody.isNotEmpty()) {
-                    ResponseBody(entry.responseBody, entry.url)
+                    ResponseBody(entry.responseBody, entry.url, onOpenDiff = { onOpenDiff(entry.id) })
                     TruncatedHint(entry.responseBodyTruncated)
                 }
             }
@@ -184,14 +185,22 @@ private fun HistorySummary(entry: HistoryEntry, projectName: String) {
     }
 }
 
-/** 响应体：六种格式查看，可整块复制 */
+/** 响应体：六种格式查看，可整块复制；标题行可进入与另一条记录的响应对比 */
 @Composable
-private fun ResponseBody(body: String, url: String) {
+private fun ResponseBody(
+    body: String,
+    url: String,
+    onOpenDiff: () -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         CardSectionTitle(stringResource(R.string.http_response_body), Modifier.weight(1f))
+        AppTextButton(
+            text = stringResource(R.string.diff_open),
+            onClick = onOpenDiff
+        )
         CopyIconButton(text = body, label = stringResource(R.string.cd_copy_response))
     }
     ResponseBodyView(body, url)

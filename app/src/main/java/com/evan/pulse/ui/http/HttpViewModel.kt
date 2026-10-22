@@ -13,6 +13,7 @@ import com.evan.pulse.data.model.KeyValueEntry
 import com.evan.pulse.data.model.RequestType
 import com.evan.pulse.data.model.snapshotJson
 import com.evan.pulse.di.ServiceLocator
+import com.evan.pulse.di.StoredCookie
 import com.evan.pulse.R
 import com.evan.pulse.domain.PlaceholderResolver
 import com.evan.pulse.domain.http.HttpExportFormat
@@ -26,6 +27,8 @@ import com.evan.pulse.domain.model.HttpCallOutcome
 import com.evan.pulse.domain.model.HttpMethod
 import com.evan.pulse.domain.model.buildGraphqlRequestBody
 import com.evan.pulse.domain.model.KeyValue
+import okhttp3.Cookie
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import com.evan.pulse.domain.model.ProxyConfig
 import com.evan.pulse.domain.net.NetworkPreset
 import com.evan.pulse.domain.net.NetworkThrottleConfig
@@ -222,9 +225,21 @@ class HttpViewModel : ViewModel() {
     }
 
     fun setFormFieldFile(index: Int, uri: android.net.Uri) {
-        val displayName = uri.lastPathSegment ?: uri.path?.substringAfterLast('/') ?: uri.toString()
+        val resolver = ServiceLocator.appContext.contentResolver
+        val displayName = runCatching {
+            resolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) cursor.getString(0) else null
+            }
+        }.getOrNull()?.takeIf { !it.isNullOrBlank() }
+        val name = displayName
+            ?: uri.lastPathSegment?.substringAfterLast('/')
+            ?: uri.toString()
+        // 尽量把一次性读授权升级为可持久化授权，历史重发/重试时文件仍可读
+        runCatching {
+            resolver.takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
         formFields = formFields.mapIndexed { i, f ->
-            if (i == index) f.copy(isFile = true, fileName = displayName, fileUri = uri.toString()) else f
+            if (i == index) f.copy(isFile = true, fileName = name, fileUri = uri.toString()) else f
         }
     }
 
@@ -358,9 +373,10 @@ class HttpViewModel : ViewModel() {
                     return@launch
                 }
 
-                val result = engine.execute(built.config)
+                val result = engine.execute(withCookies(built.config))
                 outcome = result
                 if (result is HttpCallOutcome.Success) {
+                    storeResponseCookies(built.config.url, result.headers)
                     val requestBody = clipBody(renderedBody(built.config))
                     val responseBody = clipBody(result.body)
                     historyStore.add(
@@ -415,6 +431,37 @@ class HttpViewModel : ViewModel() {
         BodyType.GRAPHQL -> buildGraphqlRequestBody(config.body, config.graphqlVariables)
         BodyType.FORM_URLENCODED, BodyType.FORM_DATA -> config.formFields
             .joinToString("&") { field -> "${field.name}=${field.value}" }
+    }
+
+    /** 自动附带当前项目 Cookie 库里命中 host 的 Cookie；用户手动设置的 Cookie 头优先 */
+    private fun withCookies(config: HttpCallConfig): HttpCallConfig {
+        if (config.headers.any { it.enabled && it.key.equals("Cookie", ignoreCase = true) }) return config
+        val host = config.url.toHttpUrlOrNull()?.host ?: return config
+        val jar = ServiceLocator.cookieStore.forHost(currentProjectId.value, host)
+        if (jar.isEmpty()) return config
+        val value = jar.joinToString("; ") { "${it.name}=${it.value}" }
+        return config.copy(headers = config.headers + KeyValue("Cookie", value))
+    }
+
+    /** 收集响应 Set-Cookie 存入当前项目 Cookie 库，供后续同域请求自动携带 */
+    private fun storeResponseCookies(url: String, headers: List<KeyValue>) {
+        val httpUrl = url.toHttpUrlOrNull() ?: return
+        headers.filter { it.key.equals("Set-Cookie", ignoreCase = true) }.forEach { kv ->
+            Cookie.parse(httpUrl, kv.value)?.let { cookie ->
+                if (cookie.name.isNotBlank()) {
+                    ServiceLocator.cookieStore.upsert(
+                        currentProjectId.value,
+                        StoredCookie(
+                            name = cookie.name,
+                            value = cookie.value,
+                            domain = cookie.domain,
+                            path = cookie.path,
+                            expiresAtMs = cookie.expiresAt
+                        )
+                    )
+                }
+            }
+        }
     }
 
     /**

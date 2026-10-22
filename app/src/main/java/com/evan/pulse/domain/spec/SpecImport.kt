@@ -9,6 +9,7 @@ import com.charleskorn.kaml.YamlNode
 import com.charleskorn.kaml.YamlNull
 import com.charleskorn.kaml.YamlScalar
 import com.charleskorn.kaml.YamlTaggedNode
+import com.evan.pulse.data.model.ImportGroup
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
@@ -17,7 +18,20 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
 
 /** 导入失败原因；UI 层按枚举映射成本地化文案 */
-enum class SpecError { EMPTY, UNPARSEABLE, NOT_OPENAPI, NO_OPERATIONS, FETCH_FAILED }
+enum class SpecError {
+    EMPTY,
+    UNPARSEABLE,
+    NOT_OPENAPI,
+    NOT_RECOGNIZED,
+    NO_OPERATIONS,
+    FETCH_FAILED
+}
+
+/** 支持导入的 API 描述格式 */
+enum class SpecFormat { OPENAPI, POSTMAN, HAR }
+
+/** 解析结果：集合名 + 分组列表，三种格式共用一套预览与写入管线 */
+data class ImportPlan(val collectionName: String, val groups: List<ImportGroup>)
 
 class SpecImportException(val error: SpecError, message: String) : Exception(message)
 

@@ -49,18 +49,25 @@ fun AppDropdown(
     summary: String = "",
     showValue: Boolean = true,
     enabled: Boolean = true,
+    /** 填色容器：与同列的输入框保持一致的背景、圆角与内边距，用于表单弹窗 */
+    filled: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     if (LocalUiStyle.current == UiStyle.MIUIX) {
+        val shape = RoundedCornerShape(AppTheme.radii.control)
         MiuixDropdownPreference(
             title = title,
             items = items,
             selectedIndex = selectedIndex,
             onSelectedIndexChange = onSelectedIndexChange,
-            summary = summary,
+            summary = summary.ifBlank { null },
             showValue = showValue,
             enabled = enabled,
-            modifier = modifier
+            modifier = if (filled) {
+                modifier.clip(shape).background(AppTheme.colors.surfaceContainer, shape)
+            } else {
+                modifier
+            }
         )
         return
     }
@@ -74,9 +81,19 @@ fun AppDropdown(
         modifier = modifier.fillMaxWidth()
     ) {
         val valueMaxWidth = maxWidth * 0.4f
+        val shape = RoundedCornerShape(AppTheme.radii.control)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .then(
+                    if (filled) {
+                        Modifier
+                            .clip(shape)
+                            .background(colors.surfaceContainer, shape)
+                    } else {
+                        Modifier
+                    }
+                )
                 .clickable(enabled = enabled && items.isNotEmpty()) { expanded = true }
                 .padding(
                     horizontal = AppTheme.spacing.cardContent,

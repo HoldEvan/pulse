@@ -202,6 +202,7 @@ imageVector = MiuixIcons.Light.Add,
                     AppTextButton(
                         text = stringResource(R.string.action_save),
                         onClick = { viewModel.save() },
+                        primary = true,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -229,6 +230,7 @@ imageVector = MiuixIcons.Light.Add,
                     AppTextButton(
                         text = stringResource(R.string.action_delete),
                         onClick = { viewModel.confirmDelete() },
+                        primary = true,
                         modifier = Modifier.weight(1f)
                     )
                 }

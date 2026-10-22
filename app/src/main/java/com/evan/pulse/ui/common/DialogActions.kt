@@ -30,6 +30,7 @@ fun DialogActions(
         AppTextButton(
             text = confirmText,
             onClick = onConfirm,
+            primary = true,
             modifier = Modifier.weight(1f)
         )
     }

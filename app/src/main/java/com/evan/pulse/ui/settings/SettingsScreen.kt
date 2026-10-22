@@ -598,6 +598,7 @@ fun SettingsScreen(
                             showCacheConfirm = false
                             viewModel.clearCache()
                         },
+                        primary = true,
                         modifier = Modifier.weight(1f)
                     )
                 }

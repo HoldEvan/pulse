@@ -181,7 +181,7 @@ fun isJson(body: String): Boolean = try {
 }
 
 /** 响应体的五种展示形态；顺序即界面标签顺序 */
-enum class BodyViewMode { RAW, JSON, XML, HTML, HEX, BASE64 }
+enum class BodyViewMode { RAW, JSON, XML, HTML, HEX, BASE64, PREVIEW }
 
 /** [text] 为渲染结果，[truncated] 表示大内容被截断，[totalBytes] 为原始响应体字节数 */
 data class RenderedBody(
@@ -219,7 +219,7 @@ private fun base64Wrapped(bytes: ByteArray): String {
     return sb.toString()
 }
 
-private fun prettyXml(xml: String): String {
+fun prettyXml(xml: String): String {
     return try {
         val factory = DocumentBuilderFactory.newInstance()
         factory.isNamespaceAware = true
@@ -274,5 +274,6 @@ fun renderBody(body: String, mode: BodyViewMode): RenderedBody {
         BodyViewMode.HTML -> clipText(body, totalBytes)
         BodyViewMode.HEX -> hexDump(body.toByteArray(Charsets.UTF_8), MAX_HEX_BYTES)
         BodyViewMode.BASE64 -> clipText(base64Wrapped(body.toByteArray(Charsets.UTF_8)), totalBytes)
+        BodyViewMode.PREVIEW -> RenderedBody("", totalBytes, false)
     }
 }

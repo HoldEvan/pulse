@@ -60,7 +60,6 @@ import com.evan.pulse.ui.design.AppIconButton
 import com.evan.pulse.ui.design.AppText
 import com.evan.pulse.ui.design.AppTextButton
 import com.evan.pulse.ui.design.AppTextField
-import top.yukonga.miuix.kmp.squircle.squircleClip
 import top.yukonga.miuix.kmp.preference.CheckboxLocation
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Delete
@@ -68,6 +67,7 @@ import top.yukonga.miuix.kmp.icon.extended.Edit
 import top.yukonga.miuix.kmp.icon.extended.More
 import top.yukonga.miuix.kmp.icon.extended.Pause
 import top.yukonga.miuix.kmp.icon.extended.Play
+import top.yukonga.miuix.kmp.icon.extended.Promotions
 import com.evan.pulse.ui.design.AppIconDropdownMenu
 
 private val recordTimeFormat = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
@@ -92,10 +92,11 @@ private val timeoutOptions = listOf(1000L, 3000L, 5000L, 10000L, 30000L, 60000L)
 fun MonitorScreen(
     modifier: Modifier = Modifier,
     viewModel: MonitorViewModel = viewModel(),
-    onOpenRecordsList: () -> Unit = {}
+    onOpenRecordsList: () -> Unit = {},
+    onOpenTrend: (MonitorTarget) -> Unit = {}
 ) {
     val targets by viewModel.targets.collectAsState()
-    val records by viewModel.records.collectAsState()
+    val records by viewModel.failedRecords.collectAsState()
     val runs by viewModel.runs.collectAsState()
 
     LazyColumn(
@@ -130,7 +131,7 @@ fun MonitorScreen(
                             .padding(vertical = 10.dp),
                         textAlign = TextAlign.Center,
                         fontSize = 13.sp,
-                        color = AppTheme.colors.outline
+                        color = AppTheme.colors.onSurfaceSummary
                     )
                 }
                 records.take(2).forEach { record ->
@@ -178,6 +179,7 @@ fun MonitorScreen(
                                 onToggleEnabled = { viewModel.toggleEnabled(target) },
                                 onEdit = { viewModel.openEdit(target) },
                                 onDelete = { viewModel.requestDelete(target) },
+                                onTrend = { onOpenTrend(target) },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 2.dp)
@@ -196,13 +198,13 @@ fun MonitorScreen(
                             imageVector = MiuixIcons.Light.Play,
                             contentDescription = null,
                             modifier = Modifier.size(28.dp),
-                            tint = AppTheme.colors.outline
+                            tint = AppTheme.colors.onSurfaceSummary
                         )
                         AppText(
                             text = stringResource(R.string.monitor_empty),
                             modifier = Modifier.padding(top = 8.dp),
                             fontSize = 13.sp,
-                            color = AppTheme.colors.outline
+                            color = AppTheme.colors.onSurfaceSummary
                         )
                     }
                 }
@@ -245,26 +247,40 @@ fun MonitorScreen(
                     items = monitorTypeLabels.localizedLabels(),
                     selectedIndex = viewModel.type.ordinal,
                     showValue = true,
-                    modifier = Modifier.fillMaxWidth().squircleClip(12.dp),
+                    filled = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
                     onSelectedIndexChange = { viewModel.type = MonitorType.entries[it] }
                 )
-                if (viewModel.type != MonitorType.HTTP) {
+                if (viewModel.type == MonitorType.PORT) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AppTextField(
+                            value = viewModel.hostInput,
+                            onValueChange = { viewModel.hostInput = it },
+                            label = stringResource(R.string.monitor_host_label),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                            modifier = Modifier.weight(0.65f)
+                        )
+                        AppTextField(
+                            value = viewModel.portInput,
+                            onValueChange = { viewModel.portInput = it },
+                            label = stringResource(R.string.monitor_port_label),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.weight(0.35f)
+                        )
+                    }
+                } else if (viewModel.type != MonitorType.HTTP) {
                     AppTextField(
                         value = viewModel.hostInput,
                         onValueChange = { viewModel.hostInput = it },
                         label = stringResource(R.string.monitor_host_label),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp)
-                    )
-                }
-                if (viewModel.type == MonitorType.PORT) {
-                    AppTextField(
-                        value = viewModel.portInput,
-                        onValueChange = { viewModel.portInput = it },
-                        label = stringResource(R.string.monitor_port_label),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 8.dp)
@@ -305,7 +321,8 @@ fun MonitorScreen(
                     selectedIndex = timeoutOptions.indexOf(viewModel.timeoutMs)
                         .coerceAtLeast(0),
                     showValue = true,
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp).squircleClip(12.dp),
+                    filled = true,
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     onSelectedIndexChange = { viewModel.timeoutMs = timeoutOptions[it] }
                 )
                 AppDropdown(
@@ -314,8 +331,24 @@ fun MonitorScreen(
                     selectedIndex = MONITOR_INTERVAL_PRESETS.indexOf(viewModel.intervalSec)
                         .coerceAtLeast(0),
                     showValue = true,
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp).squircleClip(12.dp),
+                    filled = true,
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     onSelectedIndexChange = { viewModel.intervalSec = MONITOR_INTERVAL_PRESETS[it] }
+                )
+                AppTextField(
+                    value = viewModel.latencyInput,
+                    onValueChange = { viewModel.latencyInput = it },
+                    label = stringResource(R.string.monitor_latency_label),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                )
+                AppText(
+                    text = stringResource(R.string.monitor_latency_hint),
+                    modifier = Modifier.padding(top = 2.dp),
+                    fontSize = 12.sp,
+                    color = AppTheme.colors.onSurfaceSummary
                 )
                 AppCheckboxRow(
                     title = stringResource(R.string.monitor_enabled_label),
@@ -346,6 +379,7 @@ fun MonitorScreen(
                     AppTextButton(
                         text = stringResource(R.string.action_save),
                         onClick = { viewModel.save() },
+                        primary = true,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -373,6 +407,7 @@ fun MonitorScreen(
                     AppTextButton(
                         text = stringResource(R.string.action_delete),
                         onClick = { viewModel.confirmDelete() },
+                        primary = true,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -389,6 +424,7 @@ private fun MonitorTargetRow(
     onToggleEnabled: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
+    onTrend: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val stateColor = when {
@@ -421,7 +457,7 @@ private fun MonitorTargetRow(
                     modifier = Modifier.padding(end = 10.dp),
                     maxLines = 1,
                     fontSize = 12.sp,
-                    color = AppTheme.colors.outline
+                    color = AppTheme.colors.onSurfaceSummary
                 )
             }
             ConnectionStateIndicator(color = stateColor, label = stateLabel)
@@ -436,7 +472,7 @@ private fun MonitorTargetRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 fontSize = 13.sp,
-                color = AppTheme.colors.outline
+                color = AppTheme.colors.onSurfaceSummary
             )
             AppIconButton(
                 onClick = onToggleEnabled,
@@ -468,6 +504,17 @@ private fun MonitorTargetRow(
                                     )
                                 },
                                 onClick = onEdit
+                            ),
+                            DropdownItem(
+                                text = stringResource(R.string.monitor_trend),
+                                icon = { m ->
+                                    AppIcon(
+                                        imageVector = MiuixIcons.Light.Promotions,
+                                        contentDescription = null,
+                                        modifier = m
+                                    )
+                                },
+                                onClick = onTrend
                             ),
                             DropdownItem(
                                 text = stringResource(R.string.action_delete),
@@ -504,8 +551,10 @@ internal fun MonitorRecordRow(record: MonitorRecord, modifier: Modifier = Modifi
     Column(modifier = modifier) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             ConnectionStateIndicator(
-                color = STATE_DOWN_COLOR,
-                label = stringResource(R.string.monitor_state_down)
+                color = if (record.ok) STATE_OK_COLOR else STATE_DOWN_COLOR,
+                label = stringResource(
+                    if (record.ok) R.string.monitor_state_ok else R.string.monitor_state_down
+                )
             )
             AppText(
                 text = record.targetName,
@@ -518,19 +567,19 @@ internal fun MonitorRecordRow(record: MonitorRecord, modifier: Modifier = Modifi
             AppText(
                 text = stringResource(monitorTypeLabels[record.type.ordinal]),
                 fontSize = 12.sp,
-                color = AppTheme.colors.outline
+                color = AppTheme.colors.onSurfaceSummary
             )
             AppText(
                 text = stringResource(R.string.duration_value, record.durationMs),
                 modifier = Modifier.padding(start = 8.dp),
                 fontSize = 12.sp,
-                color = AppTheme.colors.outline
+                color = AppTheme.colors.onSurfaceSummary
             )
             AppText(
                 text = recordTimeFormat.format(Date(record.checkedAt)),
                 modifier = Modifier.padding(start = 8.dp),
                 fontSize = 12.sp,
-                color = AppTheme.colors.outline
+                color = AppTheme.colors.onSurfaceSummary
             )
         }
         AppText(

@@ -65,8 +65,8 @@ import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Edit
 import top.yukonga.miuix.kmp.icon.extended.Folder
 import top.yukonga.miuix.kmp.icon.extended.More
+import top.yukonga.miuix.kmp.icon.extended.Play
 import com.evan.pulse.ui.design.AppIconDropdownMenu
-import top.yukonga.miuix.kmp.icon.extended.More
 
 /**
  * 集合页：用面包屑逐层进入集合。
@@ -84,6 +84,7 @@ import top.yukonga.miuix.kmp.icon.extended.More
 fun CollectionScreen(
     modifier: Modifier = Modifier,
     onSwitchTab: (Int) -> Unit,
+    onRunCollection: (Long?) -> Unit = {},
     viewModel: CollectionsViewModel = viewModel()
 ) {
     val collections by viewModel.collections.collectAsState()
@@ -149,6 +150,11 @@ fun CollectionScreen(
                     },
                     modifier = Modifier.weight(1f),
                     highlightIndex = stack.size
+                )
+                RowAction(
+                    label = stringResource(R.string.runner_run),
+                    icon = MiuixIcons.Light.Play,
+                    onClick = { onRunCollection(current?.id) }
                 )
                 current?.let { folder ->
                     RowAction(

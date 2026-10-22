@@ -11,11 +11,14 @@ import com.evan.pulse.data.model.MonitorTarget
 import com.evan.pulse.data.model.MonitorType
 import com.evan.pulse.data.monitor.MonitorChecker
 import com.evan.pulse.data.monitor.MonitorScheduler
+import com.evan.pulse.data.monitor.MonitorTrend
+import com.evan.pulse.data.monitor.TrendStats
 import com.evan.pulse.data.monitor.TargetValidation
 import com.evan.pulse.data.settings.SettingsStore
 import com.evan.pulse.di.MonitorStore
 import com.evan.pulse.di.ProjectStore
 import com.evan.pulse.di.ServiceLocator
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -37,10 +40,16 @@ class MonitorViewModel : ViewModel() {
             all.filter { it.projectId == id }.sortedByDescending { it.createdAt }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
+    /** 当前项目的全部拨测记录（通与不通都在内），供记录页筛选展示 */
     val records: StateFlow<List<MonitorRecord>> =
         combine(store.records, projectStore.currentProjectId) { all, id ->
             all.filter { it.projectId == id }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /** 首页只展示未通记录 */
+    val failedRecords: StateFlow<List<MonitorRecord>> =
+        records.map { list -> list.filter { !it.ok } }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val runs: StateFlow<Map<Long, MonitorRun>> = scheduler.runs
 
@@ -61,18 +70,43 @@ class MonitorViewModel : ViewModel() {
     var intervalSec by mutableStateOf(60L)
     var statusMinInput by mutableStateOf("200")
     var statusMaxInput by mutableStateOf("399")
+    var latencyInput by mutableStateOf("0")
     var enabled by mutableStateOf(true)
     var deleteTarget by mutableStateOf<MonitorTarget?>(null)
     var clearRecordsAsked by mutableStateOf(false)
 
-    /** 未通记录二级页的搜索关键词 */
+    /** 记录二级页的搜索关键词 */
     var recordQuery by mutableStateOf("")
+
+    /** 记录二级页的通断筛选 */
+    var recordStatusFilter by mutableStateOf(RecordStatusFilter.ALL)
+
+    /** 记录二级页的类型筛选；null 表示不限类型 */
+    var recordTypeFilter by mutableStateOf<MonitorType?>(null)
 
     /** 全部拨测目标按 id 索引，供未通记录页按目标地址检索 */
     val targetsById: StateFlow<Map<Long, MonitorTarget>> =
         store.targets
             .map { all -> all.associateBy { it.id } }
             .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+
+    /** 趋势页当前选中的目标 id；null 表示趋势页未打开 */
+    private val _trendTargetId = MutableStateFlow<Long?>(null)
+
+    /** 趋势页数据：随历史样本与当前目标实时重算 */
+    val trendStats: StateFlow<TrendStats?> =
+        combine(store.history, _trendTargetId) { history, targetId ->
+            if (targetId == null) return@combine null
+            MonitorTrend.compute(history.filter { it.targetId == targetId })
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    fun openTrend(target: MonitorTarget) {
+        _trendTargetId.value = target.id
+    }
+
+    fun closeTrend() {
+        _trendTargetId.value = null
+    }
 
     /** 编辑器当前草稿的配置是否可保存 */
     val editorValidation: TargetValidation
@@ -91,8 +125,16 @@ class MonitorViewModel : ViewModel() {
         intervalSec = 60L
         statusMinInput = "200"
         statusMaxInput = "399"
+        latencyInput = "0"
         enabled = true
         showEditor = true
+    }
+
+    fun openCreateIp(host: String) {
+        openCreate()
+        type = MonitorType.IP
+        hostInput = host
+        nameInput = host
     }
 
     fun openEdit(target: MonitorTarget) {
@@ -108,6 +150,7 @@ class MonitorViewModel : ViewModel() {
         intervalSec = target.intervalSec
         statusMinInput = target.statusMin.toString()
         statusMaxInput = target.statusMax.toString()
+        latencyInput = target.latencyThresholdMs.toString()
         enabled = target.enabled
         showEditor = true
     }
@@ -186,8 +229,12 @@ class MonitorViewModel : ViewModel() {
             intervalSec = intervalSec,
             statusMin = statusMinInput.trim().toIntOrNull() ?: 0,
             statusMax = statusMaxInput.trim().toIntOrNull() ?: 0,
+            latencyThresholdMs = latencyInput.trim().toLongOrNull()?.coerceAtLeast(0L) ?: 0L,
             enabled = enabled,
             createdAt = existing?.createdAt ?: 0L
         )
     }
 }
+
+/** 记录页的通断筛选 */
+enum class RecordStatusFilter { ALL, PASSED, FAILED }

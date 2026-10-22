@@ -113,6 +113,7 @@ fun ImportPreviewSheet(
         AppTextButton(
             text = stringResource(R.string.import_confirm_button),
             onClick = onConfirm,
+            primary = true,
             modifier = Modifier.weight(1f)
         )
     }

@@ -383,6 +383,7 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                 AppTextButton(
                     text = stringResource(R.string.action_got_it),
                     onClick = { viewModel.dismissMissing() },
+                    primary = true,
                     modifier = Modifier.fillMaxWidth()
                 )
             }

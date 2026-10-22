@@ -35,6 +35,12 @@ import top.yukonga.miuix.kmp.icon.extended.Image
 import top.yukonga.miuix.kmp.icon.extended.Notes
 import top.yukonga.miuix.kmp.icon.extended.Recent
 import top.yukonga.miuix.kmp.icon.extended.Stopwatch
+import top.yukonga.miuix.kmp.icon.extended.Lock
+import top.yukonga.miuix.kmp.icon.extended.Tune
+import top.yukonga.miuix.kmp.icon.extended.Create
+import top.yukonga.miuix.kmp.icon.extended.Search
+import top.yukonga.miuix.kmp.icon.extended.Timer
+import top.yukonga.miuix.kmp.icon.extended.Scan
 
 /** 首页：统计概览 + 工具箱。统计卡来自各内存 Store，工具入口打开对应二级页 */
 @Composable
@@ -44,6 +50,12 @@ fun DashboardScreen(
     onOpenImageBase64: () -> Unit = {},
     onOpenJson: () -> Unit = {},
     onOpenTimestamp: () -> Unit = {},
+    onOpenJwt: () -> Unit = {},
+    onOpenHash: () -> Unit = {},
+    onOpenUuid: () -> Unit = {},
+    onOpenRegex: () -> Unit = {},
+    onOpenCron: () -> Unit = {},
+    onOpenLanScan: () -> Unit = {},
     onOpenProjects: () -> Unit = {},
     onOpenHistory: () -> Unit = {},
     onOpenRequests: () -> Unit = {},
@@ -158,6 +170,84 @@ fun DashboardScreen(
                         )
                     },
                     onClick = onOpenTimestamp
+                )
+            }
+            item {
+                AppArrowRow(
+                    title = stringResource(R.string.tool_jwt),
+                    summary = stringResource(R.string.tool_jwt_summary),
+                    startAction = {
+                        AppIcon(
+                            imageVector = MiuixIcons.Light.Lock,
+                            contentDescription = null
+                        )
+                    },
+                    onClick = onOpenJwt
+                )
+            }
+            item {
+                AppArrowRow(
+                    title = stringResource(R.string.tool_hash),
+                    summary = stringResource(R.string.tool_hash_summary),
+                    startAction = {
+                        AppIcon(
+                            imageVector = MiuixIcons.Light.Tune,
+                            contentDescription = null
+                        )
+                    },
+                    onClick = onOpenHash
+                )
+            }
+            item {
+                AppArrowRow(
+                    title = stringResource(R.string.tool_uuid),
+                    summary = stringResource(R.string.tool_uuid_summary),
+                    startAction = {
+                        AppIcon(
+                            imageVector = MiuixIcons.Light.Create,
+                            contentDescription = null
+                        )
+                    },
+                    onClick = onOpenUuid
+                )
+            }
+            item {
+                AppArrowRow(
+                    title = stringResource(R.string.tool_regex),
+                    summary = stringResource(R.string.tool_regex_summary),
+                    startAction = {
+                        AppIcon(
+                            imageVector = MiuixIcons.Light.Search,
+                            contentDescription = null
+                        )
+                    },
+                    onClick = onOpenRegex
+                )
+            }
+            item {
+                AppArrowRow(
+                    title = stringResource(R.string.tool_cron),
+                    summary = stringResource(R.string.tool_cron_summary),
+                    startAction = {
+                        AppIcon(
+                            imageVector = MiuixIcons.Light.Timer,
+                            contentDescription = null
+                        )
+                    },
+                    onClick = onOpenCron
+                )
+            }
+            item {
+                AppArrowRow(
+                    title = stringResource(R.string.tool_lan_scan),
+                    summary = stringResource(R.string.tool_lan_scan_summary),
+                    startAction = {
+                        AppIcon(
+                            imageVector = MiuixIcons.Light.Scan,
+                            contentDescription = null
+                        )
+                    },
+                    onClick = onOpenLanScan
                 )
             }
         }

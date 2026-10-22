@@ -36,7 +36,8 @@ fun ResourcesScreen(
     // 必须显式传入：NavDisplay 每个 entry 有独立 ViewModelStore，
     // 默认 viewModel() 会得到与顶栏（App 层）不同的实例，顶栏"新建项目"状态将无法送达
     projectViewModel: ProjectViewModel,
-    onOpenEnvVars: (Long) -> Unit = {}
+    onOpenEnvVars: (Long) -> Unit = {},
+    onRunCollection: (Long?) -> Unit = {}
 ) {
     Column(modifier = modifier.fillMaxSize().padding(top = LocalTopBarInset.current)) {
         AppTabRow(
@@ -50,7 +51,11 @@ fun ResourcesScreen(
         }
         when (resourceTab.coerceIn(0, resourceTabLabels.lastIndex)) {
             0 -> ProjectsScreen(Modifier.weight(1f).fillMaxWidth(), viewModel = projectViewModel)
-            1 -> CollectionScreen(Modifier.weight(1f).fillMaxWidth(), onSwitchTab)
+            1 -> CollectionScreen(
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                onSwitchTab = onSwitchTab,
+                onRunCollection = onRunCollection
+            )
             else -> EnvironmentScreen(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
                 onOpenVars = onOpenEnvVars

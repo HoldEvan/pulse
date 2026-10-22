@@ -36,7 +36,7 @@ object OpenApiImporter {
 
     data class Plan(val collectionName: String, val groups: List<ImportGroup>)
 
-    fun plan(raw: String, untaggedLabel: String): Plan {
+    fun plan(raw: String, untaggedLabel: String): ImportPlan {
         val root = SpecParser.parseAny(raw)
         val paths = root.obj("paths")
             ?: throw SpecImportException(SpecError.NOT_OPENAPI, "缺少 paths 节点")
@@ -66,7 +66,7 @@ object OpenApiImporter {
             throw SpecImportException(SpecError.NO_OPERATIONS, "没有可导入的接口")
         }
 
-        return Plan(
+        return ImportPlan(
             collectionName = title,
             groups = bucket.entries.map { (tag, items) -> ImportGroup(tag, uniquify(items.toList())) }
         )

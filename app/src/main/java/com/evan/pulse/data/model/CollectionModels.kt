@@ -87,7 +87,10 @@ data class WsSnapshot(
     val pingIntervalSec: Int = 0,
     val pingPayload: String = "ping",
     /** 是否使用设置页的全局代理 */
-    val useProxy: Boolean = true
+    val useProxy: Boolean = true,
+    val autoReconnect: Boolean = false,
+    val reconnectBaseDelaySec: Int = 3,
+    val reconnectMaxDelaySec: Int = 60
 )
 
 @Serializable

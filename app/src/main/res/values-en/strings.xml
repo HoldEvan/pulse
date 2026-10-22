@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Pulse</string>
+    <string name="shortcut_tools_short">Tools</string>
+    <string name="shortcut_tools_long">Open Pulse tools</string>
+    <string name="widget_monitor_title">Monitor</string>
+    <string name="widget_monitor_empty">No enabled monitor targets</string>
+    <string name="widget_refresh">Refresh monitor status</string>
+    <string name="widget_run">Run monitor now</string>
+    <string name="widget_status_unknown">Pending</string>
+    <string name="widget_status_up">Online</string>
+    <string name="widget_status_slow">Slow</string>
+    <string name="widget_status_down">Down</string>
 
     <!-- Bottom navigation and page titles -->
     <string name="tab_http">HTTP</string>
@@ -70,6 +80,63 @@
     <string name="json_tree_items">%1$d items</string>
 
     <!-- Timestamp converter tool -->
+    <string name="tool_jwt">JWT Decode</string>
+    <string name="tool_jwt_summary">Decode JWT header and payload</string>
+    <string name="jwt_tool_title">JWT Decode</string>
+    <string name="jwt_input_label">JWT (eyJhbGciOi...)</string>
+    <string name="jwt_empty_hint">Paste a JWT to decode</string>
+    <string name="jwt_invalid">Cannot decode; check it is a valid three-part JWT</string>
+    <string name="jwt_header_label">Header</string>
+    <string name="jwt_payload_label">Payload</string>
+    <string name="jwt_signature_label">Signature</string>
+    <string name="tool_hash">Hash</string>
+    <string name="tool_hash_summary">MD5 / SHA-1 / SHA-256 digest</string>
+    <string name="hash_tool_title">Hash</string>
+    <string name="hash_input_label">Text to hash</string>
+    <string name="hash_output_label">Digest</string>
+    <string name="tool_uuid">UUID</string>
+    <string name="tool_uuid_summary">Generate, validate and normalize UUID</string>
+    <string name="uuid_tool_title">UUID Tool</string>
+    <string name="uuid_generate_label">Generate</string>
+    <string name="uuid_refresh">Refresh</string>
+    <string name="uuid_show_dash">With dashes</string>
+    <string name="uuid_hide_dash">No dashes</string>
+    <string name="uuid_check_label">Validate</string>
+    <string name="uuid_input_hint">Enter a UUID or 32-hex</string>
+    <string name="uuid_valid">Valid UUID</string>
+    <string name="uuid_invalid">Not a valid UUID</string>
+    <string name="uuid_normalized_label">Normalized</string>
+    <string name="tool_regex">Regex Tester</string>
+    <string name="tool_regex_summary">Test regex and capture groups</string>
+    <string name="regex_tool_title">Regex Tester</string>
+    <string name="regex_pattern_label">Regex</string>
+    <string name="regex_text_label">Text to match</string>
+    <string name="regex_empty_hint">Enter a regex and text to test</string>
+    <string name="regex_pattern_error">Invalid regex</string>
+    <string name="regex_no_match">No match</string>
+    <string name="regex_matches_count">%1$d match(es)</string>
+    <string name="tool_cron">Cron Parser</string>
+    <string name="tool_cron_summary">Resolve next run of a cron expression</string>
+    <string name="cron_tool_title">Cron Parser</string>
+    <string name="tool_lan_scan">LAN Scan</string>
+    <string name="tool_lan_scan_summary">Discover online devices and common services on your local network</string>
+    <string name="lan_scan_title">LAN Scanner</string>
+    <string name="lan_scan_network_label">Detected network</string>
+    <string name="lan_scan_hosts_count">addresses</string>
+    <string name="lan_scan_start">Start Scan</string>
+    <string name="lan_scan_stop">Stop</string>
+    <string name="lan_scan_complete">Scan complete: %1$d devices found</string>
+    <string name="lan_scan_progress">Scanned %1$d / %2$d</string>
+    <string name="lan_scan_no_lan">No available LAN interface. Check Wi-Fi, hotspot or Ethernet</string>
+    <string name="lan_scan_monitor_added">Added to IP connectivity monitors</string>
+    <string name="lan_scan_add_monitor_title">Add monitor</string>
+    <string name="lan_scan_add_monitor_confirm">Add %1$s to IP connectivity monitors in the current project?</string>
+    <string name="lan_scan_monitor_exists">This IP already has a monitor in the current project</string>
+    <string name="lan_scan_empty_hint">Not scanned yet. Tap Start to discover LAN hosts</string>
+    <string name="cron_input_label">Cron (min hour day month week)</string>
+    <string name="cron_hint">e.g. 0 */5 * * *</string>
+    <string name="cron_invalid">Invalid expression; check the fields</string>
+    <string name="cron_next_label">Next 10 execution times</string>
     <string name="tool_timestamp">Timestamp Converter</string>
     <string name="timestamp_tool_title">Timestamp Converter</string>
     <string name="timestamp_tool_input_label">Timestamp (seconds or millis)</string>
@@ -107,6 +174,14 @@
     <!-- Formatted strings -->
     <string name="duration_value">%1$d ms</string>
     <string name="duration_size">%1$d ms · %2$d B</string>
+    <string name="http_timing_title">Timing breakdown</string>
+    <string name="http_timing_dns">DNS lookup</string>
+    <string name="http_timing_tcp">Connecting</string>
+    <string name="http_timing_tls">TLS handshake</string>
+    <string name="http_timing_wait">Waiting (TTFB)</string>
+    <string name="http_timing_download">Content download</string>
+    <string name="http_timing_total">Total %1$dms</string>
+    <string name="http_timing_value">%1$dms</string>
     <string name="version_value">%1$s (%2$d)</string>
 
     <!-- Connection states -->
@@ -196,6 +271,8 @@
     <string name="resp_view_xml">XML</string>
     <string name="resp_view_hex">HEX</string>
     <string name="resp_view_b64">Base64</string>
+    <string name="resp_view_preview">Preview</string>
+    <string name="resp_preview_unavailable">Media preview is only available for live responses</string>
     <string name="resp_truncated">Truncated (full body %1$s)</string>
 
     <!-- WebSocket screen -->
@@ -209,6 +286,7 @@
     <string name="mqtt_title_sub">Subscribe</string>
     <string name="mqtt_qos_label">Subscribe QoS</string>
     <string name="mqtt_topic_label">Topic, supports + and # wildcards</string>
+    <string name="mqtt_filter_invalid">Invalid topic filter: cannot be empty, + must occupy a whole level and # only as the final level</string>
     <string name="sub_item">%1$s · QoS %2$d</string>
     <string name="mqtt_title_pub">Publish</string>
     <string name="mqtt_state_error">Error: %1$s</string>
@@ -375,9 +453,39 @@
     <string name="history_clear">Clear history</string>
     <string name="history_clear_confirm">Clear history for all projects? This cannot be undone.</string>
     <string name="history_delete">Delete this record? This cannot be undone.</string>
+    <string name="history_favorite">Favorite and pin</string>
+    <string name="history_unfavorite">Remove favorite</string>
     <string name="history_detail_title">History detail</string>
     <string name="history_detail_missing">This record no longer exists</string>
     <string name="history_detail_legacy">This record was written by an earlier version and has no request or response details</string>
+    <string name="diff_title">Response Diff</string>
+    <string name="diff_open">Diff</string>
+    <string name="diff_base">Current record</string>
+    <string name="diff_target">Compare with</string>
+    <string name="diff_change">Change</string>
+    <string name="diff_pick_title">Select record to compare</string>
+    <string name="diff_pick_empty">No other history records</string>
+    <string name="diff_same_api">same API</string>
+    <string name="diff_no_difference">The two responses are identical</string>
+    <string name="diff_no_body">This record has no response body</string>
+    <string name="diff_truncated">Content too long, comparing first %1$d lines</string>
+    <string name="cookie_title">Cookie Manager</string>
+    <string name="cookie_empty">No cookies yet. Set-Cookie responses are collected automatically after requests; you can also add cookies manually.</string>
+    <string name="cookie_domain_summary">%1$d cookies</string>
+    <string name="cookie_expired">expired</string>
+    <string name="cookie_menu_delete">Delete %1$s</string>
+    <string name="cookie_menu_clear_host">Clear all cookies for this domain</string>
+    <string name="cookie_clear_all">Clear cookies of the current project</string>
+    <string name="cookie_add_title">Add Cookie</string>
+    <string name="cookie_host_label">Domain (e.g. api.example.com)</string>
+    <string name="cookie_name_label">Name</string>
+    <string name="cookie_value_label">Value</string>
+    <string name="cd_add_cookie">Add Cookie</string>
+    <string name="runner_title">Collection Runner</string>
+    <string name="runner_run">Run collection</string>
+    <string name="runner_running">Running…</string>
+    <string name="runner_empty">%1$d request(s) in the current collection. Tap the play button to run them in order.</string>
+    <string name="runner_summary">%1$d passed, %2$d failed</string>
     <string name="history_filter_label">Filter by project</string>
     <string name="history_filter_all">All projects</string>
     <string name="history_request_headers">Request headers</string>
@@ -434,6 +542,11 @@
     <string name="apikey_value_label">Key value</string>
     <string name="ws_heartbeat_interval_label">Heartbeat interval (sec)</string>
     <string name="ws_heartbeat_payload_label">Heartbeat payload</string>
+    <string name="ws_auto_reconnect_label">Auto reconnect on drop</string>
+    <string name="ws_reconnect_base_label">Initial delay (sec)</string>
+    <string name="ws_reconnect_max_label">Maximum delay (sec)</string>
+    <string name="ws_reconnect_delay_error">Use 1–3600 seconds; maximum must be at least the initial delay</string>
+    <string name="ws_log_reconnecting">Reconnecting in %1$d sec</string>
     <string name="cd_switch_env">Switch environment</string>
     <string name="collection_new_title">New collection</string>
     <string name="collection_name_label">Collection name</string>
@@ -471,6 +584,8 @@
     <string name="cd_clear_preview">Clear assembled output</string>
 
     <string name="collection_import_spec">Import Spec</string>
+    <string name="collection_import_postman">Import Postman Collection</string>
+    <string name="collection_import_har">Import HAR Capture</string>
     <string name="spec_import_title">Import API Spec</string>
     <string name="spec_import_source_label">Spec file URL or raw text</string>
     <string name="spec_import_source_desc">Supports http/https URLs of OpenAPI 3.x and Swagger 2.0 files, or paste JSON / YAML content directly. YAML anchors and aliases, plus $ref resolution, are supported.</string>
@@ -483,6 +598,14 @@
     <string name="spec_import_error_no_operations">No importable operations found in the spec</string>
     <string name="spec_import_error_fetch">Download failed, please check the URL is reachable</string>
     <string name="spec_import_error_unknown">Parsing failed</string>
+    <string name="spec_format_openapi">OpenAPI</string>
+    <string name="spec_format_postman">Postman</string>
+    <string name="spec_format_har">HAR</string>
+    <string name="spec_import_error_not_recognized">Cannot recognize as the selected format, please check the content conforms to the format</string>
+    <string name="spec_import_title_postman">Import Postman Collection</string>
+    <string name="spec_import_title_har">Import HAR Capture</string>
+    <string name="spec_import_source_desc_postman">Supports http/https URLs of Postman Collection v2.1 JSON files, or paste the collection content directly. Requests are grouped by folders and {{var}} placeholders are preserved.</string>
+    <string name="spec_import_source_desc_har">Supports http/https URLs of HAR 1.2 JSON files, or paste the capture content directly. Requests are restored one by one and grouped by host.</string>
     <string name="import_preview_title">Import Preview</string>
     <string name="import_summary_format">%1$d operations, %2$d tags in total</string>
     <string name="import_confirm_button">Import</string>
@@ -539,14 +662,26 @@
     <string name="monitor_state_disabled">Disabled</string>
     <string name="monitor_row_meta">%1$s · %2$s</string>
     <string name="monitor_delete_title">Delete monitor</string>
-    <string name="monitor_delete_confirm">Delete "%1$s" and its failure records? This cannot be undone.</string>
-    <string name="monitor_records_title">Failure records</string>
+    <string name="monitor_delete_confirm">Delete "%1$s" and its test records? This cannot be undone.</string>
+    <string name="monitor_records_title">Test records</string>
     <string name="monitor_records_clear">Clear records</string>
-    <string name="monitor_records_clear_confirm">Clear all failure records of this project? This cannot be undone.</string>
+    <string name="monitor_records_clear_confirm">Clear all test records of this project? This cannot be undone.</string>
     <string name="monitor_records_more">More</string>
-    <string name="monitor_records_search_hint">Search by name, address or failure reason</string>
+    <string name="monitor_records_search_hint">Search by name, address or result</string>
     <string name="monitor_records_no_match">No matching records</string>
-    <string name="monitor_records_empty">No failure records yet</string>
+    <string name="monitor_records_empty">No test records yet</string>
+    <string name="monitor_records_filter_status_all">All statuses</string>
+    <string name="monitor_records_filter_passed">Passed</string>
+    <string name="monitor_records_filter_failed">Failed</string>
+    <string name="monitor_records_filter_type_all">All types</string>
+    <string name="monitor_records_filter_status">Filter by status</string>
+    <string name="monitor_records_filter_type">Filter by type</string>
+    <string name="monitor_trend">Trend</string>
+    <string name="monitor_trend_empty">No trend data yet; enable the target to start collecting</string>
+    <string name="monitor_trend_success_rate">Success rate</string>
+    <string name="monitor_trend_avg">Avg latency</string>
+    <string name="monitor_trend_peak">Peak latency</string>
+    <string name="monitor_trend_samples">Samples</string>
     <string name="monitor_unresolved">Cannot resolve host %1$s</string>
     <string name="monitor_ip_ok">Port %1$d is reachable</string>
     <string name="monitor_ip_unreachable">None of ports %1$s are reachable</string>
@@ -562,10 +697,14 @@
     <string name="monitor_notify_down_title">"%1$s" is down</string>
     <string name="monitor_notify_up_title">"%1$s" is back up</string>
     <string name="monitor_notify_up_body">The most recent check of this target passed</string>
+    <string name="monitor_notify_slow_title">"%1$s" is slow</string>
+    <string name="monitor_latency_label">Latency alert threshold (ms)</string>
+    <string name="monitor_latency_hint">Alert as slow when connected but taking longer than this value, 0 disables it</string>
+    <string name="monitor_slow_detail">%1$s, took %2$dms over the %3$dms threshold</string>
 
     <string name="about_agreement">User Agreement</string>
     <string name="about_privacy">Privacy Policy</string>
-    <string name="settings_monitor_notify_summary">Send a system notification when a probe fails</string>
+    <string name="settings_monitor_notify_summary">Receive system notifications</string>
     <string name="agreement_body">User Agreement\n\nLast updated: October 11, 2026\n\nWelcome to Pulse (the \"App\"). Please read this agreement carefully before use. By using the App, you acknowledge that you have read and agreed to all of its terms.\n\n1. Nature of the App\nThe App is an open-source network probing tool whose source code is hosted on GitHub (HoldEvan/pulse) and released under the Apache-2.0 license. You may freely use, modify and distribute the App in compliance with the license terms.\n\n2. Service Disclaimer\nThe App is provided \"as is\", without warranty of any kind, express or implied. The developer shall not be liable for malfunctions caused by network conditions, target service states or device differences.\n\n3. Acceptable Use\nYou shall use the App in compliance with the laws and regulations of your country or region, and shall not use it to probe or interfere with any target without authorization. Probing targets, proxy servers and WebDAV settings are provided by you, and you are responsible for ensuring lawful rights to those resources.\n\n4. Data and Backup\nAll your configurations and records are stored locally on your device only. To prevent data loss caused by a lost device, a system reset or misoperation, please use the backup feature.\n\n5. Updates and Termination\nThe developer may update the features and content of the App at any time and does not promise continuous maintenance. If you disagree with the updated agreement, you may stop using and uninstall the App.\n\n6. Contact\nIf you have any questions about this agreement, feel free to submit an issue in the GitHub repository.</string>
     <string name="privacy_body">Privacy Policy\n\nLast updated: October 11, 2026\n\nWe take your privacy seriously. The App is designed on the principle that data never leaves your device. Please read this policy carefully before use.\n\n1. Information We Do Not Collect\nThe App does not collect or upload any personal data, contains no analytics, advertising or tracking components, and requests no system permissions beyond what probing requires.\n\n2. Local Data\nProject configurations, probing records and app settings are stored only in your device\'s local storage. You may clear the cache at any time in Settings, or uninstall the App to permanently delete all data.\n\n3. Network Access\nThe App accesses the network only for the following purposes: 1. Probing target addresses configured by you; 2. Connecting to a WebDAV service configured by you for backup and restore; 3. Opening external links you actively tap, such as the GitHub project page. Beyond these scenarios, the App will not connect to any server on its own.\n\n4. Third-Party Components\nThe App integrates open-source components including Miuix, Ktor, Eclipse Paho MQTT and Mozilla Rhino, whose behavior is governed by their respective licenses.\n\n5. Policy Updates\nThis policy may be adjusted with app version updates, and the updated content will be shown in the App. Continued use of the updated App constitutes acceptance of the revised policy.\n\n6. Contact\nIf you have any questions about this policy, feel free to submit an issue in the GitHub repository.</string>
     <string name="settings_language_summary">Change the app language</string>

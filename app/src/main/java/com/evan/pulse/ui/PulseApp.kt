@@ -54,6 +54,11 @@ import com.evan.pulse.ui.glass.LiquidGlassNavigationBar
 import com.evan.pulse.ui.history.HistoryDetailScreen
 import com.evan.pulse.ui.history.HistoryScreen
 import com.evan.pulse.ui.history.HistoryViewModel
+import com.evan.pulse.ui.history.ResponseDiffScreen
+import com.evan.pulse.ui.collection.CollectionRunnerScreen
+import com.evan.pulse.ui.collection.CollectionRunnerViewModel
+import com.evan.pulse.ui.http.CookieScreen
+import com.evan.pulse.ui.http.CookieViewModel
 import com.evan.pulse.ui.http.HttpViewModel
 import com.evan.pulse.ui.http.ScriptDocsScreen
 import com.evan.pulse.ui.http.ScriptEditorScreen
@@ -61,8 +66,10 @@ import com.evan.pulse.ui.l10n.LocalizedRoot
 import com.evan.pulse.ui.l10n.fromIndex
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import com.evan.pulse.ui.monitor.MonitorRecordsFilterActions
 import com.evan.pulse.ui.monitor.MonitorRecordsScreen
 import com.evan.pulse.ui.monitor.MonitorScreen
+import com.evan.pulse.ui.monitor.MonitorTrendScreen
 import com.evan.pulse.ui.monitor.MonitorViewModel
 import com.evan.pulse.ui.project.ProjectViewModel
 import com.evan.pulse.ui.project.ProjectBar
@@ -75,6 +82,12 @@ import com.evan.pulse.ui.tools.EncodingToolScreen
 import com.evan.pulse.ui.tools.ImageBase64Screen
 import com.evan.pulse.ui.tools.JsonToolScreen
 import com.evan.pulse.ui.tools.TimestampToolScreen
+import com.evan.pulse.ui.tools.JwtToolScreen
+import com.evan.pulse.ui.tools.HashToolScreen
+import com.evan.pulse.ui.tools.UuidToolScreen
+import com.evan.pulse.ui.tools.RegexToolScreen
+import com.evan.pulse.ui.tools.CronToolScreen
+import com.evan.pulse.ui.tools.LanScanToolScreen
 import top.yukonga.miuix.kmp.basic.NavigationItem
 import com.evan.pulse.ui.design.AppScaffold
 import top.yukonga.miuix.kmp.blur.LayerBackdrop
@@ -88,6 +101,7 @@ import top.yukonga.miuix.kmp.icon.extended.Folder
 import top.yukonga.miuix.kmp.icon.extended.Home
 import top.yukonga.miuix.kmp.icon.extended.Add
 import top.yukonga.miuix.kmp.icon.extended.Settings
+import top.yukonga.miuix.kmp.icon.extended.Play
 import top.yukonga.miuix.kmp.nav.core.NavController
 import top.yukonga.miuix.kmp.nav.core.NavDisplay
 import top.yukonga.miuix.kmp.nav.core.rememberNavController
@@ -142,6 +156,7 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
     val envViewModel: EnvViewModel = viewModel()
 
     val navController = rememberNavController<PulseRoute>(PulseRoute.Tabs)
+
 
     /** 返回手势模式同时决定页面转场：0 = Miuix 滑动，1 = 淡入淡出；
      *  预测性返回由 miuix-nav 内置驱动，两种模式都支持跟手 */
@@ -357,6 +372,12 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                                         onOpenImageBase64 = { navController.pushRoute(PulseRoute.ImageBase64Tool) },
                                         onOpenJson = { navController.pushRoute(PulseRoute.JsonTool) },
                                         onOpenTimestamp = { navController.pushRoute(PulseRoute.TimestampTool) },
+                                        onOpenJwt = { navController.pushRoute(PulseRoute.JwtTool) },
+                                        onOpenHash = { navController.pushRoute(PulseRoute.HashTool) },
+                                        onOpenUuid = { navController.pushRoute(PulseRoute.UuidTool) },
+                                        onOpenRegex = { navController.pushRoute(PulseRoute.RegexTool) },
+                                        onOpenCron = { navController.pushRoute(PulseRoute.CronTool) },
+                                        onOpenLanScan = { navController.pushRoute(PulseRoute.LanScanTool) },
                                         onOpenProjects = { settingsViewModel.openResourceTab(0) },
                                         onOpenHistory = { navController.pushRoute(PulseRoute.History) },
                                         onOpenRequests = { settingsViewModel.openResourceTab(1) },
@@ -368,6 +389,7 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                                         onProtocolTabChange = { settingsViewModel.selectHomeProtocol(it) },
                                         onOpenScriptEditor = { navController.pushRoute(PulseRoute.ScriptEditor(it)) },
                                         onOpenHistory = { navController.pushRoute(PulseRoute.History) },
+                                        onOpenCookies = { navController.pushRoute(PulseRoute.Cookies) },
                                         httpViewModel = httpViewModel
                                     )
                                     2 -> ResourcesScreen(
@@ -376,12 +398,17 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                                         onTabChange = { settingsViewModel.selectResourceTab(it) },
                                         onSwitchTab = { settingsViewModel.openHomeProtocol(it) },
                                         projectViewModel = projectViewModel,
-                                        onOpenEnvVars = { navController.pushRoute(PulseRoute.EnvVars(it)) }
+                                        onOpenEnvVars = { navController.pushRoute(PulseRoute.EnvVars(it)) },
+                                        onRunCollection = { navController.pushRoute(PulseRoute.CollectionRunner(it)) }
                                     )
                                     3 -> MonitorScreen(
                                         modifier = Modifier.fillMaxSize(),
                                         viewModel = monitorViewModel,
-                                        onOpenRecordsList = { navController.pushRoute(PulseRoute.MonitorRecords) }
+                                        onOpenRecordsList = { navController.pushRoute(PulseRoute.MonitorRecords) },
+                                        onOpenTrend = { target ->
+                                        monitorViewModel.openTrend(target)
+                                        navController.pushRoute(PulseRoute.MonitorTrend(target.id))
+                                        }
                                     )
                                     else -> SettingsScreen(
                                         modifier = Modifier.fillMaxSize(),
@@ -515,6 +542,17 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                 HistoryDetailScreen(
                     modifier = Modifier.fillMaxSize(),
                     viewModel = historyViewModel,
+                    entryId = route.entryId,
+                    onOpenDiff = { navController.pushRoute(PulseRoute.ResponseDiff(it)) }
+                )
+            }
+        }
+
+        entry<PulseRoute.ResponseDiff> { route ->
+            SubPageScreen(title = stringResource(R.string.diff_title)) {
+                ResponseDiffScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    viewModel = historyViewModel,
                     entryId = route.entryId
                 )
             }
@@ -524,6 +562,7 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
             SubPageScreen(
                 title = stringResource(R.string.monitor_records_title),
                 actions = {
+                    MonitorRecordsFilterActions(viewModel = monitorViewModel)
                     AppIconButton(onClick = { monitorViewModel.requestClearRecords() }) {
                         AppIcon(
                             imageVector = MiuixIcons.Light.Delete,
@@ -534,6 +573,18 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
             ) {
                 MonitorRecordsScreen(
                     modifier = Modifier.fillMaxSize(),
+                    viewModel = monitorViewModel
+                )
+            }
+        }
+
+        entry<PulseRoute.MonitorTrend> { route ->
+            SubPageScreen(
+                title = stringResource(R.string.monitor_trend)
+            ) {
+                MonitorTrendScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    targetId = route.targetId,
                     viewModel = monitorViewModel
                 )
             }
@@ -612,6 +663,36 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
             }
         }
 
+        entry<PulseRoute.Cookies> {
+            val cookieViewModel: CookieViewModel = viewModel()
+            SubPageScreen(
+                title = stringResource(R.string.cookie_title),
+                actions = {
+                    AppIconButton(onClick = { cookieViewModel.openAdd() }) {
+                        AppIcon(
+                            imageVector = MiuixIcons.Light.Add,
+                            contentDescription = stringResource(R.string.cd_add_cookie)
+                        )
+                    }
+                    AppIconButton(
+                        onClick = {
+                            cookieViewModel.currentProjectId.value.let { cookieViewModel.clearProject(it) }
+                        }
+                    ) {
+                        AppIcon(
+                            imageVector = MiuixIcons.Light.Delete,
+                            contentDescription = stringResource(R.string.cookie_clear_all)
+                        )
+                    }
+                }
+            ) {
+                CookieScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    viewModel = cookieViewModel
+                )
+            }
+        }
+
         entry<PulseRoute.EncodingTool> {
             SubPageScreen(title = stringResource(R.string.encoding_title)) {
                 EncodingToolScreen(modifier = Modifier.fillMaxSize())
@@ -633,6 +714,71 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
         entry<PulseRoute.TimestampTool> {
             SubPageScreen(title = stringResource(R.string.timestamp_tool_title)) {
                 TimestampToolScreen(modifier = Modifier.fillMaxSize())
+            }
+        }
+
+        entry<PulseRoute.JwtTool> {
+            SubPageScreen(title = stringResource(R.string.jwt_tool_title)) {
+                JwtToolScreen(modifier = Modifier.fillMaxSize())
+            }
+        }
+
+        entry<PulseRoute.HashTool> {
+            SubPageScreen(title = stringResource(R.string.hash_tool_title)) {
+                HashToolScreen(modifier = Modifier.fillMaxSize())
+            }
+        }
+
+        entry<PulseRoute.UuidTool> {
+            SubPageScreen(title = stringResource(R.string.uuid_tool_title)) {
+                UuidToolScreen(modifier = Modifier.fillMaxSize())
+            }
+        }
+
+        entry<PulseRoute.RegexTool> {
+            SubPageScreen(title = stringResource(R.string.regex_tool_title)) {
+                RegexToolScreen(modifier = Modifier.fillMaxSize())
+            }
+        }
+
+        entry<PulseRoute.CronTool> {
+            SubPageScreen(title = stringResource(R.string.cron_tool_title)) {
+                CronToolScreen(modifier = Modifier.fillMaxSize())
+            }
+        }
+
+        entry<PulseRoute.LanScanTool> {
+            SubPageScreen(title = stringResource(R.string.lan_scan_title)) {
+                LanScanToolScreen(
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+
+        entry<PulseRoute.CollectionRunner> { route ->
+            val runnerViewModel: CollectionRunnerViewModel = viewModel()
+            SubPageScreen(
+                title = stringResource(R.string.runner_title),
+                actions = {
+                    AppIconButton(
+                        onClick = { runnerViewModel.run(route.collectionId) },
+                        enabled = !runnerViewModel.running
+                    ) {
+                        AppIcon(
+                            imageVector = MiuixIcons.Light.Play,
+                            contentDescription = stringResource(R.string.runner_run)
+                        )
+                    }
+                }
+            ) {
+                androidx.compose.runtime.LaunchedEffect(route.collectionId) {
+                    runnerViewModel.prepare(route.collectionId)
+                }
+                CollectionRunnerScreen(
+                    collectionId = route.collectionId,
+                    modifier = Modifier.fillMaxSize(),
+                    viewModel = runnerViewModel
+                )
             }
         }
     }

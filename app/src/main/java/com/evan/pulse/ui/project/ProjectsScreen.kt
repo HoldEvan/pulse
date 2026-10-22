@@ -171,6 +171,7 @@ fun ProjectsScreen(
                             editing?.let { viewModel.rename(it.id, nameInput) }
                             if (creating) viewModel.closeCreate() else editing = null
                         },
+                        primary = true,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -201,6 +202,7 @@ fun ProjectsScreen(
                             viewModel.delete(target.id)
                             deleting = null
                         },
+                        primary = true,
                         modifier = Modifier.weight(1f)
                     )
                 }

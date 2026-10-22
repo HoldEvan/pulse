@@ -2,21 +2,28 @@ package com.evan.pulse.ui.http
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Cookie
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.runtime.Composable
@@ -28,12 +35,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
+import com.evan.pulse.domain.net.HttpTimeline
 import com.evan.pulse.domain.net.NetworkPreset
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.evan.pulse.R
@@ -120,6 +129,7 @@ fun HttpScreen(
     modifier: Modifier = Modifier,
     onOpenScriptEditor: (Int) -> Unit = {},
     onOpenHistory: () -> Unit = {},
+    onOpenCookies: () -> Unit = {},
     viewModel: HttpViewModel = viewModel(),
 ) {
     val scroll = subPageScrollState()
@@ -141,6 +151,12 @@ fun HttpScreen(
                     AppIcon(
                         imageVector = Icons.Filled.History,
                         contentDescription = stringResource(R.string.history_title)
+                    )
+                }
+                AppIconButton(onClick = onOpenCookies, modifier = Modifier.size(36.dp)) {
+                    AppIcon(
+                        imageVector = Icons.Filled.Cookie,
+                        contentDescription = stringResource(R.string.cookie_title)
                     )
                 }
                 AppIconButton(onClick = { showExport = true }, modifier = Modifier.size(36.dp)) {
@@ -197,6 +213,7 @@ fun HttpScreen(
                 AppTextButton(
                     text = stringResource(R.string.action_got_it),
                     onClick = { viewModel.dismissMissing() },
+                    primary = true,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -731,6 +748,13 @@ private fun ResponseCard(viewModel: HttpViewModel) {
                         fontSize = 13.sp
                     )
                 }
+                val tl = outcome.timeline
+                if (tl.dnsMs > 0 || tl.tcpMs > 0 || tl.tlsMs > 0 || tl.ttfbMs > 0) {
+                    HttpTimingBreakdown(
+                        timeline = tl,
+                        modifier = Modifier.padding(top = 12.dp)
+                    )
+                }
                 val headersText = outcome.headers.joinToString("\n") { "${it.key}: ${it.value}" }
                 if (headersText.isNotBlank()) {
                     AppText(
@@ -745,7 +769,130 @@ private fun ResponseCard(viewModel: HttpViewModel) {
                     modifier = Modifier.padding(top = 14.dp, bottom = 8.dp),
                     fontSize = 13.sp
                 )
-                ResponseBodyView(outcome.body, viewModel.url)
+                ResponseBodyView(
+                    outcome.body,
+                    viewModel.url,
+                    contentType = responseContentType(outcome.headers),
+                    bodyBytes = outcome.bodyBytes
+                )
+            }
+        }
+    }
+}
+
+/** 从响应头里取 Content-Type（不区分大小写） */
+private fun responseContentType(headers: List<KeyValue>): String? =
+    headers.firstOrNull { it.key.equals("Content-Type", ignoreCase = true) }?.value
+
+/** 各阶段配色：与主流开发者工具的水瀑图保持一致的语义区分 */
+private val TIMING_DNS_COLOR = Color(0xFF4C8DFF)
+private val TIMING_TCP_COLOR = Color(0xFFF0A43C)
+private val TIMING_TLS_COLOR = Color(0xFF9C6ADE)
+private val TIMING_WAIT_COLOR = Color(0xFF2FA37A)
+private val TIMING_DOWNLOAD_COLOR = Color(0xFF6C7BE0)
+
+private data class TimingPhase(val labelRes: Int, val ms: Long, val color: Color)
+
+/**
+ * 耗时分解水瀑图：把 DNS / 连接 / TLS / 等待首字节 / 内容下载按耗时占比横向铺开，
+ * 下方用图例列出每段毫秒数，便于一眼看出瓶颈落在哪个阶段。
+ */
+@Composable
+private fun HttpTimingBreakdown(timeline: HttpTimeline, modifier: Modifier = Modifier) {
+    val dns = timeline.dnsMs
+    val tcp = timeline.tcpMs
+    val tls = timeline.tlsMs
+    val wait = (timeline.ttfbMs - dns - tcp - tls).coerceAtLeast(0L)
+    val total = if (timeline.totalMs > 0L) {
+        timeline.totalMs
+    } else {
+        dns + tcp + tls + timeline.ttfbMs
+    }
+    val download = (total - timeline.ttfbMs).coerceAtLeast(0L)
+
+    val phases = listOf(
+        TimingPhase(R.string.http_timing_dns, dns, TIMING_DNS_COLOR),
+        TimingPhase(R.string.http_timing_tcp, tcp, TIMING_TCP_COLOR),
+        TimingPhase(R.string.http_timing_tls, tls, TIMING_TLS_COLOR),
+        TimingPhase(R.string.http_timing_wait, wait, TIMING_WAIT_COLOR),
+        TimingPhase(R.string.http_timing_download, download, TIMING_DOWNLOAD_COLOR)
+    ).filter { it.ms > 0L }
+
+    if (phases.isEmpty()) return
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AppText(
+                text = stringResource(R.string.http_timing_title),
+                modifier = Modifier.weight(1f),
+                fontSize = 12.sp,
+                color = AppTheme.colors.onSurfaceSummary
+            )
+            AppText(
+                text = stringResource(R.string.http_timing_total, total),
+                fontSize = 11.sp,
+                color = AppTheme.colors.onSurfaceSummary
+            )
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 6.dp)
+                .height(12.dp)
+                .clip(RoundedCornerShape(6.dp))
+        ) {
+            phases.forEach { phase ->
+                Box(
+                    modifier = Modifier
+                        .weight(phase.ms.toFloat().coerceAtLeast(0.4f))
+                        .fillMaxHeight()
+                        .background(phase.color)
+                )
+            }
+        }
+        Column(
+            modifier = Modifier.padding(top = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            phases.chunked(2).forEach { rowPhases ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    rowPhases.forEach { phase ->
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(phase.color)
+                            )
+                            AppText(
+                                text = stringResource(phase.labelRes),
+                                modifier = Modifier.padding(start = 6.dp),
+                                maxLines = 1,
+                                fontSize = 11.sp,
+                                color = AppTheme.colors.onSurfaceSummary
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                            AppText(
+                                text = stringResource(R.string.http_timing_value, phase.ms),
+                                maxLines = 1,
+                                fontSize = 11.sp,
+                                color = AppTheme.colors.onSurface
+                            )
+                        }
+                    }
+                    if (rowPhases.size == 1) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
             }
         }
     }
