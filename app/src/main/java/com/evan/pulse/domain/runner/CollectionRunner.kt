@@ -71,13 +71,17 @@ object CollectionRunner {
     suspend fun run(
         requests: List<SavedRequest>,
         projectId: Long,
-        withHistory: Boolean = true
+        withHistory: Boolean = true,
+        onStep: ((Step) -> Unit)? = null
     ): RunResult {
         // 整链共享一个作用域：前置/后置脚本设的变量在后续请求里都可见
         val scope = VariableScope(::activeEnvVars, ServiceLocator.scriptEnvWriter)
         val steps = ArrayList<Step>(requests.size)
         for (request in requests) {
-            steps += runOne(request, projectId, scope, withHistory)
+            val step = runOne(request, projectId, scope, withHistory)
+            steps += step
+            // 每步完成就回调，界面可以边跑边显示，不必等整条链结束
+            onStep?.invoke(step)
         }
         return RunResult(steps)
     }

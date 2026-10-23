@@ -21,6 +21,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.evan.pulse.R
 import com.evan.pulse.data.model.HistoryEntry
 import com.evan.pulse.ui.common.CardSectionTitle
+import com.evan.pulse.ui.common.CollapsibleKeyValueTable
 import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.MethodBadge
@@ -33,10 +34,13 @@ import com.evan.pulse.ui.common.subPageOverScroll
 import com.evan.pulse.ui.design.AppTheme
 import com.evan.pulse.ui.design.AppCard
 import com.evan.pulse.ui.design.AppText
-import com.evan.pulse.ui.design.AppTextButton
+import com.evan.pulse.ui.common.roundedPressable
+import com.evan.pulse.ui.design.AppIcon
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Replace
 
 private val detailTimeFormat = SimpleDateFormat("MM-dd HH:mm:ss", Locale.getDefault())
 
@@ -89,8 +93,11 @@ fun HistoryDetailScreen(
             Column(modifier = Modifier.padding(12.dp)) {
                 MonospaceBlock(entry.url)
                 if (entry.requestHeaders.isNotEmpty()) {
-                    CardSectionTitle(stringResource(R.string.history_request_headers))
-                    MonospaceBlock(entry.requestHeaders.joinToString("\n"))
+                    CollapsibleKeyValueTable(
+                        title = stringResource(R.string.history_request_headers),
+                        items = entry.requestHeaders.map(::splitHeaderLine),
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
                 }
                 if (entry.requestBody.isNotEmpty()) {
                     CardSectionTitle(stringResource(R.string.history_request_body))
@@ -104,8 +111,12 @@ fun HistoryDetailScreen(
         AppCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
             Column(modifier = Modifier.padding(12.dp)) {
                 if (entry.responseHeaders.isNotEmpty()) {
-                    CardSectionTitle(stringResource(R.string.http_response_headers))
-                    MonospaceBlock(entry.responseHeaders.joinToString("\n"))
+                    CollapsibleKeyValueTable(
+                        title = stringResource(R.string.http_response_headers),
+                        items = entry.responseHeaders.map(::splitHeaderLine),
+                        modifier = Modifier.padding(top = 8.dp),
+                        initiallyExpanded = true
+                    )
                 }
                 if (entry.responseBody.isNotEmpty()) {
                     ResponseBody(entry.responseBody, entry.url, onOpenDiff = { onOpenDiff(entry.id) })
@@ -113,6 +124,16 @@ fun HistoryDetailScreen(
                 }
             }
         }
+    }
+}
+
+/** 历史里请求头按 "key: value" 存成一行，展示前拆成两列 */
+private fun splitHeaderLine(line: String): Pair<String, String> {
+    val index = line.indexOf(':')
+    return if (index < 0) {
+        line.trim() to ""
+    } else {
+        line.substring(0, index).trim() to line.substring(index + 1).trim()
     }
 }
 
@@ -197,9 +218,12 @@ private fun ResponseBody(
         verticalAlignment = Alignment.CenterVertically
     ) {
         CardSectionTitle(stringResource(R.string.http_response_body), Modifier.weight(1f))
-        AppTextButton(
-            text = stringResource(R.string.diff_open),
-            onClick = onOpenDiff
+        AppIcon(
+            imageVector = MiuixIcons.Light.Replace,
+            contentDescription = stringResource(R.string.diff_open),
+            modifier = Modifier
+                .roundedPressable(onClick = onOpenDiff)
+                .padding(6.dp)
         )
         CopyIconButton(text = body, label = stringResource(R.string.cd_copy_response))
     }

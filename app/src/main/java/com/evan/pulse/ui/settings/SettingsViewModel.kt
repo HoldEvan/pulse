@@ -50,7 +50,7 @@ data class TabState(
     /** 首页内的协议子页：0=HTTP、1=SSE、2=WS、3=MQTT */
     val homeProtocolTab: Int = 0,
     /** 资源页内的子页：0=项目、1=集合、2=环境 */
-    val resourceTab: Int = 0,
+    val resourceTab: Int = 1,
 )
 
 class SettingsViewModel(

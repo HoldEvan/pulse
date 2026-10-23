@@ -1,5 +1,7 @@
 package com.evan.pulse.ui.monitor
 
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
@@ -17,6 +20,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -31,6 +36,7 @@ import com.evan.pulse.ui.common.subPageOverScroll
 import com.evan.pulse.ui.design.AppCard
 import com.evan.pulse.ui.design.AppDialog
 import com.evan.pulse.ui.design.AppIcon
+import com.evan.pulse.ui.design.AppIconButton
 import com.evan.pulse.ui.design.AppIconDropdownMenu
 import com.evan.pulse.ui.design.AppText
 import com.evan.pulse.ui.design.AppTextButton
@@ -55,7 +61,8 @@ fun MonitorRecordsScreen(
     val query = viewModel.recordQuery.trim().lowercase(Locale.getDefault())
     val statusFilter = viewModel.recordStatusFilter
     val typeFilter = viewModel.recordTypeFilter
-    val filtered = remember(records, targetsById, query, statusFilter, typeFilter) {
+    val targetId = viewModel.recordTargetId
+    val filtered = remember(records, targetsById, query, statusFilter, typeFilter, targetId) {
         records.filter { record ->
             val matchesQuery = query.isEmpty() || searchText(record, targetsById).contains(query)
             val matchesStatus = when (statusFilter) {
@@ -64,7 +71,8 @@ fun MonitorRecordsScreen(
                 RecordStatusFilter.FAILED -> !record.ok
             }
             val matchesType = typeFilter == null || record.type == typeFilter
-            matchesQuery && matchesStatus && matchesType
+            val matchesTarget = targetId == null || record.targetId == targetId
+            matchesQuery && matchesStatus && matchesType && matchesTarget
         }
     }
 
@@ -77,6 +85,47 @@ fun MonitorRecordsScreen(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         state = subPageLazyListState()
     ) {
+        targetId?.let { id ->
+            val name = targetsById[id]?.name
+            item(key = "target_scope") {
+                // 清除「仅看」时让卡片淡出、下方列表平滑上移，避免瞬间跳变
+                AppCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .animateItem(
+                            fadeInSpec = tween(200),
+                            fadeOutSpec = tween(200),
+                            placementSpec = spring()
+                        )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        AppText(
+                            text = stringResource(
+                                R.string.monitor_records_scope_target,
+                                name ?: stringResource(R.string.monitor_records_scope_unknown)
+                            ),
+                            modifier = Modifier.weight(1f),
+                            fontSize = 13.sp
+                        )
+                        AppIconButton(
+                            onClick = { viewModel.clearRecordTarget() },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            AppIcon(
+                                imageVector = Icons.Filled.Close,
+                                contentDescription = stringResource(R.string.monitor_records_scope_clear),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
         item(key = "search") {
             AppTextField(
                 value = viewModel.recordQuery,
@@ -152,6 +201,7 @@ fun MonitorRecordsFilterActions(
 ) {
     val statusFilter = viewModel.recordStatusFilter
     val typeFilter = viewModel.recordTypeFilter
+    val targetScoped = viewModel.recordTargetId != null
     AppIconDropdownMenu(
         entries = statusEntries(statusFilter) { viewModel.recordStatusFilter = it },
         modifier = modifier,
@@ -163,16 +213,19 @@ fun MonitorRecordsFilterActions(
             contentDescription = stringResource(R.string.monitor_records_filter_status)
         )
     }
-    AppIconDropdownMenu(
-        entries = typeEntries(typeFilter) { viewModel.recordTypeFilter = it },
-        modifier = modifier,
-        minWidth = 40.dp,
-        minHeight = 40.dp
-    ) {
-        AppIcon(
-            imageVector = MiuixIcons.Light.ListView,
-            contentDescription = stringResource(R.string.monitor_records_filter_type)
-        )
+    // 单目标记录的类型是固定的，此时类型筛选没有意义
+    if (!targetScoped) {
+        AppIconDropdownMenu(
+            entries = typeEntries(typeFilter) { viewModel.recordTypeFilter = it },
+            modifier = modifier,
+            minWidth = 40.dp,
+            minHeight = 40.dp
+        ) {
+            AppIcon(
+                imageVector = MiuixIcons.Light.ListView,
+                contentDescription = stringResource(R.string.monitor_records_filter_type)
+            )
+        }
     }
 }
 

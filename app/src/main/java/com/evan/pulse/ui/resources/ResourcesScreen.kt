@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import com.evan.pulse.R
 import com.evan.pulse.ui.collection.CollectionScreen
 import com.evan.pulse.ui.common.LocalTopBarInset
+import com.evan.pulse.ui.env.EnvViewModel
 import com.evan.pulse.ui.env.EnvironmentScreen
 import com.evan.pulse.ui.l10n.localizedLabels
 import com.evan.pulse.ui.project.ProjectViewModel
@@ -30,12 +31,14 @@ private val resourceTabLabels = listOf(
 @Composable
 fun ResourcesScreen(
     modifier: Modifier = Modifier,
-    resourceTab: Int = 0,
+    resourceTab: Int = 1,
     onTabChange: (Int) -> Unit = {},
     onSwitchTab: (Int) -> Unit = {},
     // 必须显式传入：NavDisplay 每个 entry 有独立 ViewModelStore，
     // 默认 viewModel() 会得到与顶栏（App 层）不同的实例，顶栏"新建项目"状态将无法送达
     projectViewModel: ProjectViewModel,
+    // 与顶栏"新建环境"按钮共享同一个实例，否则按钮改不到本页状态
+    envViewModel: EnvViewModel,
     onOpenEnvVars: (Long) -> Unit = {},
     onRunCollection: (Long?) -> Unit = {}
 ) {
@@ -58,7 +61,8 @@ fun ResourcesScreen(
             )
             else -> EnvironmentScreen(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
-                onOpenVars = onOpenEnvVars
+                onOpenVars = onOpenEnvVars,
+                viewModel = envViewModel
             )
         }
     }

@@ -43,15 +43,18 @@ fun ResponseBodyView(
         stringResource(R.string.resp_view_preview)
     )
     Column(modifier = modifier) {
+        // 七个标签平铺会把宽度压到 44dp 左右，Base64/预览等文字被截断且整排
+        // 刚好占满屏幕导致无法滑动；抬高最小宽度让整排溢出，两种皮肤都可横向滚动
         AppTabRow(
             tabs = modeLabels,
             selectedTabIndex = mode.ordinal,
             onTabSelected = { mode = BodyViewMode.entries[it] },
-            minWidth = 44.dp,
-            maxWidth = 120.dp,
+            minWidth = 84.dp,
+            maxWidth = 160.dp,
             height = 40.dp,
             itemSpacing = 4.dp,
-            cornerRadius = 10.dp
+            cornerRadius = 10.dp,
+            scrollable = true
         )
         if (mode == BodyViewMode.PREVIEW) {
             MediaPreview(

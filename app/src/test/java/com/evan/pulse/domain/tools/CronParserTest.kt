@@ -9,13 +9,16 @@ import org.junit.Test
 
 class CronParserTest {
 
-    private fun at(year: Int, month: Int, day: Int, hour: Int, minute: Int): Long {
+    private fun at(year: Int, month: Int, day: Int, hour: Int, minute: Int, second: Int = 0): Long {
         val cal = Calendar.getInstance(TimeZone.getDefault())
         cal.clear()
-        cal.set(year, month - 1, day, hour, minute, 0)
+        cal.set(year, month - 1, day, hour, minute, second)
         cal.set(Calendar.MILLISECOND, 0)
         return cal.timeInMillis
     }
+
+    private fun parse(expression: String, type: CronType, from: Long) =
+        CronParser.parse(expression, type, from)
 
     @Test
     fun `ten runs are ordered nearest first across year boundary`() {
@@ -113,5 +116,153 @@ class CronParserTest {
         val r = CronParser.parse("0 8-10 * * *", fromMs = at(2026, 1, 1, 9, 30))
         assertTrue(r.valid)
         assertEquals(at(2026, 1, 1, 10, 0), r.nextRunMs)
+    }
+
+    @Test
+    fun `spring expression with question mark day`() {
+        val r = parse("0 0 9 * * ?", CronType.SPRING, at(2026, 1, 1, 8, 0))
+        assertTrue(r.valid)
+        assertEquals(at(2026, 1, 1, 9, 0), r.nextRunMs)
+    }
+
+    @Test
+    fun `spring second field controls next run`() {
+        val r = parse("*/30 * * * * *", CronType.SPRING, at(2026, 1, 1, 0, 3))
+        assertTrue(r.valid)
+        assertEquals(at(2026, 1, 1, 0, 3, 30), r.nextRunMs)
+    }
+
+    @Test
+    fun `spring results include seconds`() {
+        val r = parse("30 * * * * *", CronType.SPRING, at(2026, 1, 1, 0, 0))
+        assertTrue(r.valid)
+        assertEquals("2026-01-01 00:00:30", r.runTimesText.lines().first())
+        assertEquals("2026-01-01 00:00:30", r.nextRunText)
+    }
+
+    @Test
+    fun `linux results omit seconds`() {
+        val r = CronParser.parse("0 1 * * *", fromMs = at(2026, 1, 1, 0, 0))
+        assertTrue(r.valid)
+        assertEquals("2026-01-01 01:00", r.runTimesText.lines().first())
+    }
+
+    @Test
+    fun `quartz results include seconds`() {
+        val r = parse("15 0 9 * * ?", CronType.QUARTZ, at(2026, 1, 1, 0, 0))
+        assertTrue(r.valid)
+        assertEquals("2026-01-01 09:00:15", r.runTimesText.lines().first())
+    }
+
+    @Test
+    fun `quartz weekday names map monday`() {
+        val r = parse("0 0 9 ? * MON", CronType.QUARTZ, at(2026, 1, 1, 0, 0))
+        assertTrue(r.valid)
+        assertEquals(at(2026, 1, 5, 9, 0), r.nextRunMs)
+    }
+
+    @Test
+    fun `quartz numeric weekday starts at sunday`() {
+        val r = parse("0 0 9 ? * 2", CronType.QUARTZ, at(2026, 1, 1, 0, 0))
+        assertTrue(r.valid)
+        assertEquals(at(2026, 1, 5, 9, 0), r.nextRunMs)
+    }
+
+    @Test
+    fun `quartz last day of month`() {
+        val r = parse("0 0 0 L * ?", CronType.QUARTZ, at(2026, 1, 2, 0, 0))
+        assertTrue(r.valid)
+        assertEquals(at(2026, 1, 31, 0, 0), r.nextRunMs)
+    }
+
+    @Test
+    fun `quartz last friday of month`() {
+        val r = parse("0 0 0 ? * 6L", CronType.QUARTZ, at(2026, 1, 1, 0, 0))
+        assertTrue(r.valid)
+        assertEquals(at(2026, 1, 30, 0, 0), r.nextRunMs)
+    }
+
+    @Test
+    fun `quartz second monday of month`() {
+        val r = parse("0 0 0 ? * MON#2", CronType.QUARTZ, at(2026, 1, 1, 0, 0))
+        assertTrue(r.valid)
+        assertEquals(at(2026, 1, 12, 0, 0), r.nextRunMs)
+    }
+
+    @Test
+    fun `quartz nearest weekday`() {
+        val r = parse("0 0 0 15W * ?", CronType.QUARTZ, at(2026, 1, 1, 0, 0))
+        assertTrue(r.valid)
+        assertEquals(at(2026, 1, 15, 0, 0), r.nextRunMs)
+    }
+
+    @Test
+    fun `quartz requires exactly one of day and week`() {
+        assertEquals("dayConflict", parse("0 0 0 15 * MON", CronType.QUARTZ, at(2026, 1, 1, 0, 0)).error)
+        assertEquals("dayConflict", parse("0 0 0 ? * ?", CronType.QUARTZ, at(2026, 1, 1, 0, 0)).error)
+    }
+
+    @Test
+    fun `quartz optional year limits runs`() {
+        val r = parse("0 0 0 1 1 ? 2030", CronType.QUARTZ, at(2026, 1, 1, 0, 0))
+        assertTrue(r.valid)
+        assertEquals(at(2030, 1, 1, 0, 0), r.nextRunMs)
+        assertEquals(1, r.runTimes.size)
+    }
+
+    @Test
+    fun `linux aliases are resolved`() {
+        val r = CronParser.parse("@daily", fromMs = at(2026, 1, 1, 3, 0))
+        assertTrue(r.valid)
+        assertEquals(at(2026, 1, 2, 0, 0), r.nextRunMs)
+        assertEquals("unsupported", CronParser.parse("@reboot").error)
+        assertEquals("fields", parse("@daily", CronType.SPRING, at(2026, 1, 1, 0, 0)).error)
+    }
+
+    @Test
+    fun `linux rejects question mark`() {
+        assertEquals("day", CronParser.parse("0 0 ? * *", fromMs = at(2026, 1, 1, 0, 0)).error)
+    }
+
+    @Test
+    fun `builder field layout per dialect`() {
+        assertEquals(
+            listOf(CronField.MINUTE, CronField.HOUR, CronField.DAY_OF_MONTH, CronField.MONTH, CronField.DAY_OF_WEEK),
+            CronBuilder.fields(CronType.LINUX)
+        )
+        assertEquals(CronField.SECOND, CronBuilder.fields(CronType.SPRING).first())
+        assertEquals(CronField.YEAR, CronBuilder.fields(CronType.QUARTZ).last())
+    }
+
+    @Test
+    fun `builder defaults produce wildcard expression`() {
+        val quartz = CronBuilder.build(CronType.QUARTZ, CronBuilder.defaults(CronType.QUARTZ))
+        assertEquals("0 * * * * ?", quartz)
+        val spring = CronBuilder.build(CronType.SPRING, CronBuilder.defaults(CronType.SPRING))
+        assertEquals("0 * * * * *", spring)
+        assertTrue(CronParser.parse(quartz, CronType.QUARTZ).valid)
+        assertTrue(CronParser.parse(spring, CronType.SPRING).valid)
+    }
+
+    @Test
+    fun `builder presets build valid expressions`() {
+        CronType.entries.forEach { type ->
+            CronPreset.entries.forEach { preset ->
+                val expression = CronBuilder.build(type, CronBuilder.preset(type, preset))
+                assertTrue("$type $preset -> $expression", CronParser.parse(expression, type).valid)
+            }
+        }
+    }
+
+    @Test
+    fun `builder preset matches expected expression`() {
+        assertEquals(
+            "0 9 * * 1",
+            CronBuilder.build(CronType.LINUX, CronBuilder.preset(CronType.LINUX, CronPreset.WEEKLY_MONDAY_9AM))
+        )
+        assertEquals(
+            "0 0 9 * * ?",
+            CronBuilder.build(CronType.QUARTZ, CronBuilder.preset(CronType.QUARTZ, CronPreset.DAILY_9AM))
+        )
     }
 }

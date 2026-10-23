@@ -57,6 +57,7 @@ import com.evan.pulse.domain.model.KeyValue
 import com.evan.pulse.domain.pathOnly
 import com.evan.pulse.ui.collection.SaveRequestDialog
 import com.evan.pulse.ui.common.BottomBarClearance
+import com.evan.pulse.ui.common.CollapsibleKeyValueTable
 import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.KeyValueEditor
 import com.evan.pulse.ui.common.MonospaceBlock
@@ -165,7 +166,10 @@ fun HttpScreen(
                         contentDescription = stringResource(R.string.cd_export_request)
                     )
                 }
-                AppIconButton(onClick = { showSave = true }, modifier = Modifier.size(36.dp)) {
+                AppIconButton(
+                    onClick = { if (!viewModel.saveOverLoaded()) showSave = true },
+                    modifier = Modifier.size(36.dp)
+                ) {
                     AppIcon(
                         imageVector = Icons.Filled.Save,
                         contentDescription = stringResource(R.string.cd_save_request)
@@ -193,7 +197,8 @@ fun HttpScreen(
         type = RequestType.HTTP,
         defaultName = viewModel.url.pathOnly().ifEmpty { viewModel.url },
         snapshotProvider = { viewModel.snapshot() },
-        onDismiss = { showSave = false }
+        onDismiss = { showSave = false },
+        onSaved = viewModel::markSaved
     )
     ExportFormatDialog(show = showExport, viewModel = viewModel, onDismiss = { showExport = false })
 
@@ -755,15 +760,19 @@ private fun ResponseCard(viewModel: HttpViewModel) {
                         modifier = Modifier.padding(top = 12.dp)
                     )
                 }
-                val headersText = outcome.headers.joinToString("\n") { "${it.key}: ${it.value}" }
-                if (headersText.isNotBlank()) {
-                    AppText(
-                        text = stringResource(R.string.http_response_headers),
-                        modifier = Modifier.padding(top = 14.dp, bottom = 2.dp),
-                        fontSize = 13.sp
-                    )
-                    MonospaceBlock(headersText, selectable = true)
-                }
+                // 真实请求头默认折叠：多数场景只关心响应，需要排查时再展开逐条核对
+                CollapsibleKeyValueTable(
+                    title = stringResource(R.string.history_request_headers),
+                    items = outcome.requestHeaders.map { it.key to it.value },
+                    modifier = Modifier.padding(top = 12.dp)
+                )
+                // 响应头与请求头用同一套表格，字段对齐、长值换行；默认展开
+                CollapsibleKeyValueTable(
+                    title = stringResource(R.string.http_response_headers),
+                    items = outcome.headers.map { it.key to it.value },
+                    modifier = Modifier.padding(top = 12.dp),
+                    initiallyExpanded = true
+                )
                 AppText(
                     text = stringResource(R.string.http_response_body),
                     modifier = Modifier.padding(top = 14.dp, bottom = 8.dp),

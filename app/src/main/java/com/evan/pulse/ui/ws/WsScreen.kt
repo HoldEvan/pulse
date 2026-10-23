@@ -92,7 +92,7 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
                     label = stateLabel(state)
                 )
             },
-            onSaveClick = { showSave = true }
+            onSaveClick = { if (!viewModel.saveOverLoaded()) showSave = true }
         )
         AppCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(12.dp)) {
@@ -278,7 +278,8 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
         type = RequestType.WS,
         defaultName = viewModel.url.pathOnly().ifEmpty { viewModel.url },
         snapshotProvider = { viewModel.snapshot() },
-        onDismiss = { showSave = false }
+        onDismiss = { showSave = false },
+        onSaved = viewModel::markSaved
     )
 }
 

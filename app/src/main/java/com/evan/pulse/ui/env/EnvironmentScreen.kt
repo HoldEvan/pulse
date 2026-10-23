@@ -24,7 +24,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.evan.pulse.R
 import com.evan.pulse.data.model.EnvironmentInfo
 import com.evan.pulse.ui.common.BottomBarClearance
@@ -41,7 +40,6 @@ import com.evan.pulse.ui.design.AppText
 import com.evan.pulse.ui.design.AppTextButton
 import com.evan.pulse.ui.design.AppTextField
 import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.extended.Add
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Edit
 import top.yukonga.miuix.kmp.icon.extended.More
@@ -52,7 +50,7 @@ import com.evan.pulse.ui.design.AppIconDropdownMenu
 fun EnvironmentScreen(
     modifier: Modifier = Modifier,
     onOpenVars: (Long) -> Unit = {},
-    viewModel: EnvViewModel = viewModel()
+    viewModel: EnvViewModel
 ) {
     val projectId by viewModel.currentProjectId.collectAsState()
     val environments by viewModel.environments.collectAsState()
@@ -157,17 +155,6 @@ fun EnvironmentScreen(
                         )
                     }
                 }
-                AppInfoRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { viewModel.openCreate() },
-                    title = stringResource(R.string.env_create_title),
-                    startAction = {
-                        AppIcon(
-imageVector = MiuixIcons.Light.Add,
-                            contentDescription = stringResource(R.string.cd_add)
-                        )
-                    }
-                )
             }
         }
         BottomBarClearance()

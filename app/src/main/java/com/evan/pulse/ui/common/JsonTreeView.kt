@@ -109,10 +109,10 @@ private fun JsonNodeRow(
         )
         JsonName(name)
         AppText(
-            text = preview(element, isCollapsed),
+            text = if (isCollapsed) preview(element) else openBracket(element),
             fontFamily = FontFamily.Monospace,
             fontSize = 12.sp,
-            color = AppTheme.colors.onSurface
+            color = if (isCollapsed) AppTheme.colors.onSurface else AppTheme.colors.onSurfaceSummary
         )
     }
 
@@ -127,6 +127,30 @@ private fun JsonNodeRow(
             JsonNodeRow("$path[$index]", "[$index]", value, depth + 1, collapsed)
         }
     }
+    JsonCloseRow(element, depth)
+}
+
+/** 容器展开时在键名后显示的左括号，让层级边界可见 */
+private fun openBracket(element: JsonElement): String = when (element) {
+    is JsonObject -> "{"
+    is JsonArray -> "["
+    else -> ""
+}
+
+/** 容器展开后的右括号，缩进与左括号对齐 */
+@Composable
+private fun JsonCloseRow(element: JsonElement, depth: Int) {
+    AppText(
+        text = when (element) {
+            is JsonObject -> "}"
+            is JsonArray -> "]"
+            else -> return
+        },
+        modifier = Modifier.padding(start = (depth * 14 + 26).dp),
+        fontFamily = FontFamily.Monospace,
+        fontSize = 12.sp,
+        color = AppTheme.colors.onSurfaceSummary
+    )
 }
 
 @Composable
@@ -154,8 +178,7 @@ private fun JsonName(name: String?) {
 }
 
 @Composable
-private fun preview(element: JsonElement, isCollapsed: Boolean): String {
-    if (!isCollapsed) return ""
+private fun preview(element: JsonElement): String {
     return when (element) {
         is JsonObject -> "{…} ${stringResource(R.string.json_tree_items, element.size)}"
         is JsonArray -> "[…] ${stringResource(R.string.json_tree_items, element.size)}"

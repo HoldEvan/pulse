@@ -73,7 +73,9 @@ sealed interface HttpCallOutcome {
         val responseSizeBytes: Long,
         val timeline: HttpTimeline = HttpTimeline(),
         /** 响应原始字节，供媒体（image/audio/video）预览；文本响应可为空 */
-        val bodyBytes: ByteArray? = null
+        val bodyBytes: ByteArray? = null,
+        /** 实际发出的请求头（含引擎补充的默认头），用于结果页展示真实请求 */
+        val requestHeaders: List<KeyValue> = emptyList()
     ) : HttpCallOutcome
 
     data class Failure(

@@ -36,6 +36,7 @@ fun SaveRequestDialog(
     defaultName: String,
     snapshotProvider: () -> String,
     onDismiss: () -> Unit,
+    onSaved: (Long) -> Unit = {},
     viewModel: CollectionsViewModel = viewModel()
 ) {
     if (!show) return
@@ -98,13 +99,14 @@ fun SaveRequestDialog(
                     text = stringResource(R.string.action_save),
                     primary = true,
                     onClick = {
-                        viewModel.saveRequest(
+                        val id = viewModel.saveRequest(
                             collectionId = projectCollections.getOrNull(selectedIndex)?.id ?: -1L,
                             type = type,
                             name = nameInput.ifBlank { defaultName },
                             data = snapshotProvider(),
                             fallbackCollectionName = fallbackCollectionName
                         )
+                        onSaved(id)
                         onDismiss()
                     },
                     modifier = Modifier.weight(1f)

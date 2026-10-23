@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Android 11 及更早版本的兜底蓝；Android 12+ 用 values-v31 里的系统莫奈动态强调色覆盖 -->
     <color name="ic_launcher_background">#3482FF</color>
 </resources>

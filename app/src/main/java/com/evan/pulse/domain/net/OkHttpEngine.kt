@@ -30,6 +30,7 @@ import io.ktor.client.request.setBody
 import io.ktor.client.request.url
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsBytes
+import io.ktor.client.statement.request
 import io.ktor.http.ContentType
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.HttpMethod as KtorHttpMethod
@@ -166,7 +167,10 @@ class OkHttpEngine(private val appContextProvider: () -> Context? = { null }) : 
                 durationMs = elapsed,
                 responseSizeBytes = bytes.size.toLong(),
                 timeline = snap,
-                bodyBytes = bytes
+                bodyBytes = bytes,
+                // 取 Ktor 最终组装出的请求头，包含引擎自动补的 Host/Accept/Content-Type 等
+                requestHeaders = response.request.headers.flattenEntries()
+                    .map { KeyValue(it.first, it.second) }
             )
             timelines.remove(config.url)
             outcome

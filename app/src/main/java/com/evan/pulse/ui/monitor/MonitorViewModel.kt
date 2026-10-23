@@ -84,6 +84,25 @@ class MonitorViewModel : ViewModel() {
     /** 记录二级页的类型筛选；null 表示不限类型 */
     var recordTypeFilter by mutableStateOf<MonitorType?>(null)
 
+    /** 记录二级页的目标限定；null 表示看全部目标的记录 */
+    var recordTargetId by mutableStateOf<Long?>(null)
+
+    /** 从某个拨测项进入记录页：只看该目标的记录，类型固定因此清空类型筛选 */
+    fun openRecordsForTarget(target: MonitorTarget) {
+        recordTargetId = target.id
+        recordTypeFilter = null
+    }
+
+    /** 从「更多」进入记录页：清除目标限定，恢复全量列表 */
+    fun openAllRecords() {
+        recordTargetId = null
+    }
+
+    /** 清除目标限定，保留其余筛选条件 */
+    fun clearRecordTarget() {
+        recordTargetId = null
+    }
+
     /** 全部拨测目标按 id 索引，供未通记录页按目标地址检索 */
     val targetsById: StateFlow<Map<Long, MonitorTarget>> =
         store.targets

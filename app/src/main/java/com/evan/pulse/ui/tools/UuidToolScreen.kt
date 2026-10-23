@@ -3,7 +3,6 @@ package com.evan.pulse.ui.tools
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -49,7 +48,19 @@ fun UuidToolScreen(modifier: Modifier = Modifier) {
             .padding(start = 12.dp, top = LocalTopBarInset.current, end = 12.dp)
             .padding(bottom = 12.dp)
     ) {
-        CardSectionTitle(text = stringResource(R.string.uuid_generate_label))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            CardSectionTitle(
+                text = stringResource(R.string.uuid_generate_label),
+                modifier = Modifier.weight(1f)
+            )
+            CopyIconButton(
+                text = if (compact) generated.replace("-", "") else generated,
+                label = stringResource(R.string.action_copy)
+            )
+        }
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -65,22 +76,10 @@ fun UuidToolScreen(modifier: Modifier = Modifier) {
                 modifier = Modifier.weight(1f)
             )
         }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            MonospaceBlock(
-                text = if (compact) generated.replace("-", "") else generated,
-                modifier = Modifier.weight(1f)
-            )
-            Spacer(modifier = Modifier.padding(horizontal = 4.dp))
-            CopyIconButton(
-                text = if (compact) generated.replace("-", "") else generated,
-                label = stringResource(R.string.action_copy)
-            )
-        }
+        MonospaceBlock(
+            text = if (compact) generated.replace("-", "") else generated,
+            modifier = Modifier.padding(top = 8.dp)
+        )
 
         CardSectionTitle(text = stringResource(R.string.uuid_check_label), modifier = Modifier.padding(top = 16.dp))
         AppTextField(

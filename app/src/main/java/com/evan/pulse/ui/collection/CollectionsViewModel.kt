@@ -80,13 +80,14 @@ class CollectionsViewModel : ViewModel() {
         onSwitchTab(tabIndex(request.type))
     }
 
+    /** 保存新接口并返回其 id，供调用方后续原地覆盖 */
     fun saveRequest(
         collectionId: Long,
         type: RequestType,
         name: String,
         data: String,
         fallbackCollectionName: String
-    ) = store.saveRequest(
+    ): Long = store.saveRequest(
         currentProjectId.value,
         collectionId,
         type,

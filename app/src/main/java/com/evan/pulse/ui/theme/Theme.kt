@@ -47,6 +47,13 @@ val ThemeModeEntries: List<Pair<Int, ColorSchemeMode>> = listOf(
 
 val ThemeModeLabels: List<Int> = ThemeModeEntries.map { it.first }
 
+/**
+ * 外观模式在下拉里的展示顺序：跟随系统、浅色、深色。
+ *
+ * 这里只调整展示位置，[ThemeModeEntries] 的下标即持久化值，保持不变以免已存设置被改写。
+ */
+val ThemeModeDisplayOrder: List<Int> = listOf(0, 2, 1)
+
 /** 自定义主题色，下标 1 起对应；index 0 表示跟随系统取色 */
 val ThemeKeyColors: List<Pair<Int, Color>> = listOf(
     R.string.color_blue to Color(0xFF3482FF),

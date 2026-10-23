@@ -14,6 +14,7 @@ import com.evan.pulse.data.model.RequestType
 import com.evan.pulse.data.model.snapshotJson
 import com.evan.pulse.di.ServiceLocator
 import com.evan.pulse.di.StoredCookie
+import com.evan.pulse.ui.collection.LoadedRequestTracker
 import com.evan.pulse.R
 import com.evan.pulse.domain.PlaceholderResolver
 import com.evan.pulse.domain.http.HttpExportFormat
@@ -100,16 +101,26 @@ class HttpViewModel : ViewModel() {
 
     private val collectionStore = ServiceLocator.collectionStore
 
+    /** 与集合条目的绑定：从集合加载或保存过一次后，再保存即原地覆盖 */
+    private val loadedRequest = LoadedRequestTracker(collectionStore)
+
     init {
         viewModelScope.launch {
             collectionStore.pendingLoad.collect { req ->
                 if (req?.type == RequestType.HTTP) {
                     restore(req.data)
+                    loadedRequest.track(req.id)
                     collectionStore.consumePending(req)
                 }
             }
         }
     }
+
+    /** 已绑定集合条目时原地覆盖；返回 false 表示需要弹出保存对话框 */
+    fun saveOverLoaded(): Boolean = loadedRequest.saveOver { snapshot() }
+
+    /** 保存对话框新建成功后绑定新条目，避免下次保存再建一条 */
+    fun markSaved(id: Long) = loadedRequest.track(id)
 
     /** 导出当前配置为可恢复快照 */
     fun snapshot(): String = snapshotJson.encodeToString(
@@ -391,7 +402,10 @@ class HttpViewModel : ViewModel() {
                             success = result.statusCode in 200..399,
                             createdAt = System.currentTimeMillis(),
                             responseSizeBytes = result.responseSizeBytes,
-                            requestHeaders = built.config.headers.map { "${it.key}: ${it.value}" },
+                            requestHeaders = (
+                                result.requestHeaders.takeIf { it.isNotEmpty() }
+                                    ?: built.config.headers
+                                ).map { "${it.key}: ${it.value}" },
                             requestBody = requestBody.text,
                             requestBodyTruncated = requestBody.truncated,
                             responseHeaders = result.headers.map { "${it.key}: ${it.value}" },

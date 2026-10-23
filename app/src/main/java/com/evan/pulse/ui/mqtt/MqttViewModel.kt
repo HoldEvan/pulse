@@ -17,6 +17,7 @@ import com.evan.pulse.domain.model.MqttConnectionState
 import com.evan.pulse.domain.model.MqttEvent
 import com.evan.pulse.domain.model.ProxyConfig
 import com.evan.pulse.ui.history.UiEventLine
+import com.evan.pulse.ui.collection.LoadedRequestTracker
 import com.evan.pulse.ui.l10n.L10n
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -73,11 +74,21 @@ class MqttViewModel : ViewModel() {
             ServiceLocator.collectionStore.pendingLoad.collect { req ->
                 if (req?.type == RequestType.MQTT) {
                     restore(req.data)
+                    loadedRequest.track(req.id)
                     ServiceLocator.collectionStore.consumePending(req)
                 }
             }
         }
     }
+
+    /** 与集合条目的绑定：从集合加载或保存过一次后，再保存即原地覆盖 */
+    private val loadedRequest = LoadedRequestTracker(ServiceLocator.collectionStore)
+
+    /** 已绑定集合条目时原地覆盖；返回 false 表示需要弹出保存对话框 */
+    fun saveOverLoaded(): Boolean = loadedRequest.saveOver { snapshot() }
+
+    /** 保存对话框新建成功后绑定新条目，避免下次保存再建一条 */
+    fun markSaved(id: Long) = loadedRequest.track(id)
 
     /** 导出当前配置为可恢复快照 */
     fun snapshot(): String = snapshotJson.encodeToString(

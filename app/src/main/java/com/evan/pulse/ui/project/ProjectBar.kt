@@ -51,6 +51,7 @@ fun ProjectBar(
     showEnvSelector: Boolean = false,
     onAddMonitor: (() -> Unit)? = null,
     onAddProject: (() -> Unit)? = null,
+    onAddEnv: (() -> Unit)? = null,
     behavior: AppTopBarBehavior? = null,
     backdrop: LayerBackdrop? = null,
     isBlurActive: Boolean = false,
@@ -132,6 +133,14 @@ fun ProjectBar(
                     AppIcon(
                         imageVector = MiuixIcons.Light.Add,
                         contentDescription = stringResource(R.string.project_new_title)
+                    )
+                }
+            }
+            if (onAddEnv != null) {
+                AppIconButton(onClick = onAddEnv) {
+                    AppIcon(
+                        imageVector = MiuixIcons.Light.Add,
+                        contentDescription = stringResource(R.string.env_create_title)
                     )
                 }
             }

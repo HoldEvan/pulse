@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -35,13 +36,14 @@ import com.evan.pulse.ui.design.AppTextField
 import top.yukonga.miuix.kmp.squircle.squircleBackground
 import top.yukonga.miuix.kmp.squircle.squircleClip
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import java.util.Locale
 
-private enum class TimestampDirection { TS_TO_DATE, DATE_TO_TS }
+private enum class TimestampDirection { TS_TO_DATE, DATE_TO_TS, FORMAT }
 
 private enum class TimestampUnit { SECONDS, MILLIS }
 
@@ -53,11 +55,31 @@ private val dateTimeInputFormatters = listOf(
     DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.US)
 )
 
+/** 时间格式化页的默认格式 */
+private const val DEFAULT_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss"
+
+/** 格式说明：模式字母与含义，按常用顺序排列 */
+private val formatLegendTokens = listOf(
+    "yyyy" to R.string.timestamp_fmt_legend_year,
+    "MM" to R.string.timestamp_fmt_legend_month,
+    "dd" to R.string.timestamp_fmt_legend_day,
+    "HH" to R.string.timestamp_fmt_legend_hour24,
+    "mm" to R.string.timestamp_fmt_legend_minute,
+    "ss" to R.string.timestamp_fmt_legend_second,
+    "SSS" to R.string.timestamp_fmt_legend_millis,
+    "E" to R.string.timestamp_fmt_legend_weekday,
+    "a" to R.string.timestamp_fmt_legend_ampm,
+    "hh" to R.string.timestamp_fmt_legend_hour12,
+    "Z" to R.string.timestamp_fmt_legend_zone
+)
+
 @Composable
 fun TimestampToolScreen(modifier: Modifier = Modifier) {
     var direction by remember { mutableStateOf(TimestampDirection.TS_TO_DATE) }
     var input by remember { mutableStateOf("") }
     var unit by remember { mutableStateOf(TimestampUnit.SECONDS) }
+    var formatInput by remember { mutableStateOf(formatMillis(System.currentTimeMillis())) }
+    var formatPattern by remember { mutableStateOf(DEFAULT_TIME_PATTERN) }
 
     Column(
         modifier = modifier
@@ -69,7 +91,8 @@ fun TimestampToolScreen(modifier: Modifier = Modifier) {
     ) {
         val directionLabels = listOf(
             stringResource(R.string.timestamp_tool_dir_ts_date),
-            stringResource(R.string.timestamp_tool_dir_date_ts)
+            stringResource(R.string.timestamp_tool_dir_date_ts),
+            stringResource(R.string.timestamp_tool_dir_format)
         )
         AppTabRow(
             tabs = directionLabels,
@@ -80,20 +103,28 @@ fun TimestampToolScreen(modifier: Modifier = Modifier) {
                     input = ""
                 }
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            scrollable = true
         )
 
-        if (direction == TimestampDirection.TS_TO_DATE) {
-            TimestampToDateSection(
+        when (direction) {
+            TimestampDirection.TS_TO_DATE -> TimestampToDateSection(
                 input = input,
                 unit = unit,
                 onInputChange = { input = it },
                 onUnitChange = { unit = it }
             )
-        } else {
-            DateToTimestampSection(
+
+            TimestampDirection.DATE_TO_TS -> DateToTimestampSection(
                 input = input,
                 onInputChange = { input = it }
+            )
+
+            TimestampDirection.FORMAT -> TimeFormatSection(
+                input = formatInput,
+                pattern = formatPattern,
+                onInputChange = { formatInput = it },
+                onPatternChange = { formatPattern = it }
             )
         }
     }
@@ -121,28 +152,33 @@ private fun TimestampToDateSection(
         modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
     )
 
-    AppTextField(
-        value = input,
-        onValueChange = onInputChange,
-        label = stringResource(R.string.timestamp_tool_input_label),
-        modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
-    )
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AppTextField(
+            value = input,
+            onValueChange = onInputChange,
+            label = stringResource(R.string.timestamp_tool_input_label),
+            modifier = Modifier.weight(1f)
+        )
+        AppTextButton(
+            text = stringResource(R.string.timestamp_tool_now),
+            onClick = {
+                val now = System.currentTimeMillis()
+                onInputChange(
+                    if (unit == TimestampUnit.SECONDS) (now / 1000).toString() else now.toString()
+                )
+            },
+            modifier = Modifier.padding(start = 8.dp)
+        )
+    }
 
     AppText(
         text = stringResource(R.string.timestamp_tool_now_tip),
         modifier = Modifier.padding(top = 6.dp),
         fontSize = 12.sp,
         color = AppTheme.colors.onSurfaceSummary
-    )
-    AppTextButton(
-        text = stringResource(R.string.timestamp_tool_now),
-        onClick = {
-            val now = System.currentTimeMillis()
-            onInputChange(
-                if (unit == TimestampUnit.SECONDS) (now / 1000).toString() else now.toString()
-            )
-        },
-        modifier = Modifier.padding(top = 2.dp)
     )
 
     Row(
@@ -205,23 +241,28 @@ private fun DateToTimestampSection(
     val valid = input.isBlank() || millis != null
     val copy = rememberCopyToClipboard()
 
-    AppTextField(
-        value = input,
-        onValueChange = onInputChange,
-        label = stringResource(R.string.timestamp_tool_date_input_label),
-        modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
-    )
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AppTextField(
+            value = input,
+            onValueChange = onInputChange,
+            label = stringResource(R.string.timestamp_tool_date_input_label),
+            modifier = Modifier.weight(1f)
+        )
+        AppTextButton(
+            text = stringResource(R.string.timestamp_tool_now),
+            onClick = { onInputChange(formatMillis(System.currentTimeMillis())) },
+            modifier = Modifier.padding(start = 8.dp)
+        )
+    }
 
     AppText(
         text = stringResource(R.string.timestamp_tool_date_hint),
         modifier = Modifier.padding(top = 6.dp),
         fontSize = 12.sp,
         color = AppTheme.colors.onSurfaceSummary
-    )
-    AppTextButton(
-        text = stringResource(R.string.timestamp_tool_now),
-        onClick = { onInputChange(formatMillis(System.currentTimeMillis())) },
-        modifier = Modifier.padding(top = 2.dp)
     )
 
     Row(
@@ -275,6 +316,125 @@ private fun DateToTimestampSection(
     }
 }
 
+/** 时间格式化：时间 + 格式两行输入，下方给出模式字母说明 */
+@Composable
+private fun TimeFormatSection(
+    input: String,
+    pattern: String,
+    onInputChange: (String) -> Unit,
+    onPatternChange: (String) -> Unit
+) {
+    val copy = rememberCopyToClipboard()
+    val formatter = remember(pattern) { patternFormatter(pattern) }
+    val millis = parseTimeInput(input, pattern)
+    val formatted = millis
+        ?.takeIf { formatter != null }
+        ?.let { formatter!!.format(Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault())) }
+
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AppTextField(
+            value = input,
+            onValueChange = onInputChange,
+            label = stringResource(R.string.timestamp_fmt_input_label),
+            modifier = Modifier.weight(1f)
+        )
+        AppTextButton(
+            text = stringResource(R.string.timestamp_tool_now),
+            onClick = { onInputChange(formatMillis(System.currentTimeMillis())) },
+            modifier = Modifier.padding(start = 8.dp)
+        )
+    }
+    AppTextField(
+        value = pattern,
+        onValueChange = onPatternChange,
+        label = stringResource(R.string.timestamp_fmt_pattern_label),
+        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+    )
+
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        CardSectionTitle(text = stringResource(R.string.timestamp_fmt_output))
+        CopyIconButton(
+            text = formatted.orEmpty(),
+            label = stringResource(R.string.action_copy)
+        )
+    }
+    when {
+        formatter == null -> AppText(
+            text = stringResource(R.string.timestamp_fmt_invalid_pattern),
+            modifier = Modifier.padding(vertical = 4.dp),
+            fontSize = 13.sp,
+            color = AppTheme.colors.error
+        )
+
+        input.isBlank() -> AppText(
+            text = stringResource(R.string.base64_empty_hint),
+            modifier = Modifier.padding(vertical = 4.dp),
+            fontSize = 13.sp,
+            color = AppTheme.colors.onSurfaceSummary
+        )
+
+        millis == null -> AppText(
+            text = stringResource(R.string.timestamp_fmt_invalid_time),
+            modifier = Modifier.padding(vertical = 4.dp),
+            fontSize = 13.sp,
+            color = AppTheme.colors.error
+        )
+
+        else -> {
+            TimestampFieldRow(
+                label = pattern,
+                value = formatted.orEmpty(),
+                copy = copy
+            )
+            AppText(
+                text = stringResource(R.string.timestamp_tool_long_press_tip),
+                modifier = Modifier.padding(top = 6.dp),
+                fontSize = 12.sp,
+                color = AppTheme.colors.onSurfaceSummary
+            )
+        }
+    }
+
+    CardSectionTitle(
+        text = stringResource(R.string.timestamp_fmt_legend_title),
+        modifier = Modifier.padding(top = 16.dp)
+    )
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        formatLegendTokens.forEach { (token, descriptionRes) ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                AppText(
+                    text = token,
+                    modifier = Modifier.widthIn(min = 46.dp),
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 12.sp,
+                    color = AppTheme.colors.onSurface
+                )
+                AppText(
+                    text = stringResource(descriptionRes),
+                    modifier = Modifier.padding(start = 8.dp),
+                    fontSize = 12.sp,
+                    color = AppTheme.colors.onSurfaceSummary
+                )
+            }
+        }
+    }
+    AppText(
+        text = stringResource(R.string.timestamp_fmt_quote_tip),
+        modifier = Modifier.padding(top = 8.dp),
+        fontSize = 12.sp,
+        color = AppTheme.colors.onSurfaceSummary
+    )
+}
+
 /** 单项结果行：长按复制该值，底色与 MonospaceBlock 保持一致 */
 @Composable
 private fun TimestampFieldRow(label: String, value: String, copy: (String) -> Unit) {
@@ -307,6 +467,33 @@ private fun parseMillis(input: String, unit: TimestampUnit): Long? {
     return when (unit) {
         TimestampUnit.SECONDS -> raw * 1000
         TimestampUnit.MILLIS -> raw
+    }
+}
+
+/** 按给定格式解析时间；格式不适用时回退到内置的几种常见格式 */
+private fun parseTimeInput(input: String, pattern: String): Long? {
+    if (input.isBlank()) return null
+    val text = input.trim()
+    val zone = ZoneId.systemDefault()
+    val formatter = patternFormatter(pattern)
+    if (formatter != null) {
+        runCatching { LocalDateTime.parse(text, formatter) }.getOrNull()?.let {
+            return it.atZone(zone).toInstant().toEpochMilli()
+        }
+        runCatching { LocalDate.parse(text, formatter) }.getOrNull()?.let {
+            return it.atStartOfDay(zone).toInstant().toEpochMilli()
+        }
+    }
+    return parseDateToMillis(text)
+}
+
+/** 解析用户输入的格式串，非法返回 null */
+private fun patternFormatter(pattern: String): DateTimeFormatter? {
+    if (pattern.isBlank()) return null
+    return try {
+        DateTimeFormatter.ofPattern(pattern, Locale.getDefault())
+    } catch (_: IllegalArgumentException) {
+        null
     }
 }
 

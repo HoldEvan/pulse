@@ -57,6 +57,7 @@ import com.evan.pulse.ui.history.HistoryViewModel
 import com.evan.pulse.ui.history.ResponseDiffScreen
 import com.evan.pulse.ui.collection.CollectionRunnerScreen
 import com.evan.pulse.ui.collection.CollectionRunnerViewModel
+import com.evan.pulse.ui.http.CookieDeleteRequest
 import com.evan.pulse.ui.http.CookieScreen
 import com.evan.pulse.ui.http.CookieViewModel
 import com.evan.pulse.ui.http.HttpViewModel
@@ -326,6 +327,12 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                                     } else {
                                         null
                                     },
+                                    // 资源页-环境 tab 时顶栏显示"新建环境"
+                                    onAddEnv = if (tabState.resourceTab == 2) {
+                                        { envViewModel.openCreate() }
+                                    } else {
+                                        null
+                                    },
                                     viewModel = projectViewModel,
                                     behavior = pageBehavior,
                                     backdrop = pageBackdrop,
@@ -398,13 +405,21 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                                         onTabChange = { settingsViewModel.selectResourceTab(it) },
                                         onSwitchTab = { settingsViewModel.openHomeProtocol(it) },
                                         projectViewModel = projectViewModel,
+                                        envViewModel = envViewModel,
                                         onOpenEnvVars = { navController.pushRoute(PulseRoute.EnvVars(it)) },
                                         onRunCollection = { navController.pushRoute(PulseRoute.CollectionRunner(it)) }
                                     )
                                     3 -> MonitorScreen(
                                         modifier = Modifier.fillMaxSize(),
                                         viewModel = monitorViewModel,
-                                        onOpenRecordsList = { navController.pushRoute(PulseRoute.MonitorRecords) },
+                                        onOpenRecordsList = {
+                                            monitorViewModel.openAllRecords()
+                                            navController.pushRoute(PulseRoute.MonitorRecords)
+                                        },
+                                        onOpenTargetRecords = { target ->
+                                            monitorViewModel.openRecordsForTarget(target)
+                                            navController.pushRoute(PulseRoute.MonitorRecords)
+                                        },
                                         onOpenTrend = { target ->
                                         monitorViewModel.openTrend(target)
                                         navController.pushRoute(PulseRoute.MonitorTrend(target.id))
@@ -676,7 +691,7 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                     }
                     AppIconButton(
                         onClick = {
-                            cookieViewModel.currentProjectId.value.let { cookieViewModel.clearProject(it) }
+                            cookieViewModel.requestDelete(CookieDeleteRequest.Project)
                         }
                     ) {
                         AppIcon(

@@ -80,11 +80,35 @@ class CookieViewModel : ViewModel() {
         closeAdd()
     }
 
-    fun remove(projectId: Long, domain: String, name: String) = store.remove(projectId, domain, name)
+    /** 待确认的删除动作；非空时弹出确认对话框 */
+    var deleteRequest by mutableStateOf<CookieDeleteRequest?>(null)
 
-    fun clearHost(projectId: Long, domain: String) = store.clearHost(projectId, domain)
+    fun requestDelete(request: CookieDeleteRequest) {
+        deleteRequest = request
+    }
 
-    fun clearProject(projectId: Long) = store.clearProject(projectId)
+    fun cancelDelete() {
+        deleteRequest = null
+    }
+
+    /** 用户确认后才真正落地删除，避免误触直接清掉 Cookie */
+    fun confirmDelete() {
+        val request = deleteRequest ?: return
+        val projectId = currentProjectId.value
+        when (request) {
+            is CookieDeleteRequest.Single -> store.remove(projectId, request.domain, request.name)
+            is CookieDeleteRequest.Host -> store.clearHost(projectId, request.domain)
+            CookieDeleteRequest.Project -> store.clearProject(projectId)
+        }
+        deleteRequest = null
+    }
+}
+
+/** Cookie 删除范围：单条、某个域名下的全部、或当前项目的全部 */
+sealed interface CookieDeleteRequest {
+    data class Single(val domain: String, val name: String) : CookieDeleteRequest
+    data class Host(val domain: String, val count: Int) : CookieDeleteRequest
+    data object Project : CookieDeleteRequest
 }
 
 @Composable
@@ -112,7 +136,11 @@ fun CookieScreen(
                         summary = stringResource(R.string.cookie_domain_summary, list.size),
                         endActions = {
                             AppIconButton(
-                                onClick = { viewModel.clearHost(projectId, domain) },
+                                onClick = {
+                                    viewModel.requestDelete(
+                                        CookieDeleteRequest.Host(domain, list.size)
+                                    )
+                                },
                                 modifier = Modifier.size(28.dp)
                             ) {
                                 AppIcon(
@@ -136,7 +164,11 @@ fun CookieScreen(
                             },
                             endActions = {
                                 AppIconButton(
-                                    onClick = { viewModel.remove(projectId, domain, cookie.name) },
+                                    onClick = {
+                                        viewModel.requestDelete(
+                                            CookieDeleteRequest.Single(domain, cookie.name)
+                                        )
+                                    },
                                     modifier = Modifier.size(28.dp)
                                 ) {
                                     AppIcon(
@@ -175,6 +207,39 @@ fun CookieScreen(
             }
         }
         BottomBarClearance()
+    }
+
+    viewModel.deleteRequest?.let { request ->
+        AppDialog(
+            show = true,
+            title = stringResource(R.string.cookie_delete_title),
+            onDismissRequest = { viewModel.cancelDelete() }
+        ) {
+            Column {
+                AppText(
+                    text = when (request) {
+                        is CookieDeleteRequest.Single -> stringResource(
+                            R.string.cookie_delete_confirm_single,
+                            request.name,
+                            request.domain
+                        )
+                        is CookieDeleteRequest.Host -> stringResource(
+                            R.string.cookie_delete_confirm_host,
+                            request.domain,
+                            request.count
+                        )
+                        CookieDeleteRequest.Project -> stringResource(
+                            R.string.cookie_delete_confirm_project
+                        )
+                    }
+                )
+                DialogActions(
+                    onCancel = { viewModel.cancelDelete() },
+                    confirmText = stringResource(R.string.action_delete),
+                    onConfirm = { viewModel.confirmDelete() }
+                )
+            }
+        }
     }
 
     if (viewModel.showAdd) {

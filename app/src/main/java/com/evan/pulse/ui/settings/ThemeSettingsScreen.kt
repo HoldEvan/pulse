@@ -43,6 +43,7 @@ import com.evan.pulse.ui.theme.BarBlurStyleLabels
 import com.evan.pulse.ui.theme.ColorSpecLabels
 import com.evan.pulse.ui.theme.PaletteStyleLabels
 import com.evan.pulse.ui.theme.ThemeKeyColors
+import com.evan.pulse.ui.theme.ThemeModeDisplayOrder
 import com.evan.pulse.ui.theme.ThemeModeLabels
 import kotlin.math.roundToInt
 
@@ -104,9 +105,12 @@ private fun ThemeSettingsContent(
                 AppDropdown(
                     title = stringResource(R.string.theme_mode_label),
                     summary = stringResource(R.string.theme_mode_summary),
-                    items = ThemeModeLabels.localizedLabels(),
-                    selectedIndex = settings.themeModeIndex,
-                    onSelectedIndexChange = { viewModel.setThemeMode(it) }
+                    items = ThemeModeDisplayOrder.map { ThemeModeLabels[it] }.localizedLabels(),
+                    selectedIndex = ThemeModeDisplayOrder
+                        .indexOf(settings.themeModeIndex)
+                        .coerceAtLeast(0),
+                    // 展示顺序与持久化下标解耦：只交换浅色/深色的显示位置，已存设置不受影响
+                    onSelectedIndexChange = { viewModel.setThemeMode(ThemeModeDisplayOrder[it]) }
                 )
             }
             if (miuix) {
@@ -141,33 +145,6 @@ private fun ThemeSettingsContent(
             }
         }
 
-        if (miuix) {
-            SectionTitle(text = stringResource(R.string.settings_blur_section))
-
-            AppPreferenceGroup(modifier = Modifier.fillMaxWidth()) {
-                item {
-                    AppSwitchRow(
-                        title = stringResource(R.string.blur_effect_label),
-                        summary = stringResource(R.string.blur_effect_summary),
-                        checked = settings.blurEnabled,
-                        onCheckedChange = { viewModel.setBlurEnabled(it) }
-                    )
-                }
-
-                if (settings.blurEnabled) {
-                    item {
-                        AppDropdown(
-                            title = stringResource(R.string.blur_style_label),
-                            summary = stringResource(R.string.blur_style_summary),
-                            items = BarBlurStyleLabels.localizedLabels(),
-                            selectedIndex = settings.barBlurStyleIndex,
-                            onSelectedIndexChange = { viewModel.setBarBlurStyle(it) }
-                        )
-                    }
-                }
-            }
-        }
-
         if (showPalette) {
             SectionTitle(text = stringResource(R.string.theme_key_color_section))
 
@@ -198,6 +175,33 @@ private fun ThemeSettingsContent(
                         selectedIndex = settings.colorSpecIndex,
                         onSelectedIndexChange = { viewModel.setColorSpec(it) }
                     )
+                }
+            }
+        }
+
+        if (miuix) {
+            SectionTitle(text = stringResource(R.string.settings_blur_section))
+
+            AppPreferenceGroup(modifier = Modifier.fillMaxWidth()) {
+                item {
+                    AppSwitchRow(
+                        title = stringResource(R.string.blur_effect_label),
+                        summary = stringResource(R.string.blur_effect_summary),
+                        checked = settings.blurEnabled,
+                        onCheckedChange = { viewModel.setBlurEnabled(it) }
+                    )
+                }
+
+                if (settings.blurEnabled) {
+                    item {
+                        AppDropdown(
+                            title = stringResource(R.string.blur_style_label),
+                            summary = stringResource(R.string.blur_style_summary),
+                            items = BarBlurStyleLabels.localizedLabels(),
+                            selectedIndex = settings.barBlurStyleIndex,
+                            onSelectedIndexChange = { viewModel.setBarBlurStyle(it) }
+                        )
+                    }
                 }
             }
         }

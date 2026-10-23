@@ -1,5 +1,6 @@
 package com.evan.pulse.ui.monitor
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -38,7 +39,7 @@ import com.evan.pulse.data.model.addressText
 import com.evan.pulse.data.model.MONITOR_INTERVAL_PRESETS
 import com.evan.pulse.data.monitor.TargetValidation
 import com.evan.pulse.ui.common.BottomBarClearance
-import com.evan.pulse.ui.common.CardSectionTitle
+import com.evan.pulse.ui.common.CollapsibleSection
 import com.evan.pulse.ui.common.ConnectionStateIndicator
 import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.SectionTitleRow
@@ -93,6 +94,7 @@ fun MonitorScreen(
     modifier: Modifier = Modifier,
     viewModel: MonitorViewModel = viewModel(),
     onOpenRecordsList: () -> Unit = {},
+    onOpenTargetRecords: (MonitorTarget) -> Unit = {},
     onOpenTrend: (MonitorTarget) -> Unit = {}
 ) {
     val targets by viewModel.targets.collectAsState()
@@ -152,7 +154,8 @@ fun MonitorScreen(
                 .fillMaxWidth()
                 .padding(top = 12.dp)
         ) {
-            Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)) {
+            // 横向内边距交给分组标题与行内容，卡片本身不再留边，分组标题的水波纹才能贴住左右边缘
+            Column(modifier = Modifier.padding(vertical = 8.dp)) {
                 if (targets.isNotEmpty()) {
                     val grouped = targets.groupBy { it.group }
                     val groups: List<Pair<String, List<MonitorTarget>>> = buildList {
@@ -162,28 +165,30 @@ fun MonitorScreen(
                         }
                     }
                     groups.forEach { (groupName, groupTargets) ->
-                        CardSectionTitle(
-                            text = if (groupName.isBlank()) {
+                        CollapsibleSection(
+                            title = if (groupName.isBlank()) {
                                 stringResource(R.string.monitor_group_ungrouped)
                             } else {
                                 groupName
                             },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 4.dp, bottom = 2.dp)
-                        )
-                        groupTargets.forEach { target ->
-                            MonitorTargetRow(
-                                target = target,
-                                run = runs[target.id],
-                                onToggleEnabled = { viewModel.toggleEnabled(target) },
-                                onEdit = { viewModel.openEdit(target) },
-                                onDelete = { viewModel.requestDelete(target) },
-                                onTrend = { onOpenTrend(target) },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 2.dp)
-                            )
+                            itemCount = groupTargets.size,
+                            modifier = Modifier.padding(top = 2.dp),
+                            horizontalPadding = 8.dp
+                        ) {
+                            groupTargets.forEach { target ->
+                                MonitorTargetRow(
+                                    target = target,
+                                    run = runs[target.id],
+                                    onToggleEnabled = { viewModel.toggleEnabled(target) },
+                                    onEdit = { viewModel.openEdit(target) },
+                                    onDelete = { viewModel.requestDelete(target) },
+                                    onTrend = { onOpenTrend(target) },
+                                    onOpenRecords = { onOpenTargetRecords(target) },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 2.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -191,7 +196,7 @@ fun MonitorScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 20.dp),
+                            .padding(horizontal = 8.dp, vertical = 20.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         AppIcon(
@@ -425,6 +430,7 @@ private fun MonitorTargetRow(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onTrend: () -> Unit,
+    onOpenRecords: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val stateColor = when {
@@ -439,7 +445,7 @@ private fun MonitorTargetRow(
         run.ok -> stringResource(R.string.monitor_state_ok)
         else -> stringResource(R.string.monitor_state_down)
     }
-    Column(modifier = modifier) {
+    Column(modifier = modifier.clickable(onClick = onOpenRecords)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -495,17 +501,6 @@ private fun MonitorTargetRow(
                     DropdownEntry(
                         items = listOf(
                             DropdownItem(
-                                text = stringResource(R.string.cd_edit),
-                                icon = { m ->
-                                    AppIcon(
-                                        imageVector = MiuixIcons.Light.Edit,
-                                        contentDescription = null,
-                                        modifier = m
-                                    )
-                                },
-                                onClick = onEdit
-                            ),
-                            DropdownItem(
                                 text = stringResource(R.string.monitor_trend),
                                 icon = { m ->
                                     AppIcon(
@@ -515,6 +510,17 @@ private fun MonitorTargetRow(
                                     )
                                 },
                                 onClick = onTrend
+                            ),
+                            DropdownItem(
+                                text = stringResource(R.string.cd_edit),
+                                icon = { m ->
+                                    AppIcon(
+                                        imageVector = MiuixIcons.Light.Edit,
+                                        contentDescription = null,
+                                        modifier = m
+                                    )
+                                },
+                                onClick = onEdit
                             ),
                             DropdownItem(
                                 text = stringResource(R.string.action_delete),

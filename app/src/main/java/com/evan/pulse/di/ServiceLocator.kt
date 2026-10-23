@@ -457,7 +457,11 @@ class CollectionStore(private val persist: PersistenceHandle) {
         persist.save()
     }
 
-    /** 保存请求；目标集合缺失时在当前项目下自动建默认集合 */
+    /**
+     * 保存请求；目标集合缺失时在当前项目下自动建默认集合。
+     *
+     * 返回新建条目的 id（名称为空时返回 -1），调用方据此把后续保存切换为原地覆盖。
+     */
     fun saveRequest(
         projectId: Long,
         collectionId: Long,
@@ -465,17 +469,40 @@ class CollectionStore(private val persist: PersistenceHandle) {
         name: String,
         data: String,
         fallbackCollectionName: String
-    ) {
-        if (name.isBlank()) return
+    ): Long {
+        if (name.isBlank()) return -1L
         val collection = _collections.value.firstOrNull { it.id == collectionId }
             ?: _collections.value.firstOrNull { it.projectId == projectId }
             ?: CollectionInfo(nextCollectionId++, projectId, null, fallbackCollectionName).also {
                 _collections.value = _collections.value + it
             }
-        _requests.value = listOf(
-            SavedRequest(nextRequestId++, collection.id, type, name, data, System.currentTimeMillis())
-        ) + _requests.value
+        val created = SavedRequest(
+            nextRequestId++,
+            collection.id,
+            type,
+            name,
+            data,
+            System.currentTimeMillis()
+        )
+        _requests.value = listOf(created) + _requests.value
         persist.save()
+        return created.id
+    }
+
+    /** 原地覆盖已保存接口的快照，保持条目位置与名称不变；条目已不存在时返回 false */
+    fun updateRequest(id: Long, data: String): Boolean {
+        var found = false
+        _requests.value = _requests.value.map { request ->
+            if (request.id == id) {
+                found = true
+                request.copy(data = data)
+            } else {
+                request
+            }
+        }
+        if (!found) return false
+        persist.save()
+        return true
     }
 
     /**

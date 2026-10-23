@@ -29,7 +29,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -44,7 +43,6 @@ import com.evan.pulse.data.model.targetUrl
 import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.DialogActions
 import com.evan.pulse.ui.common.MethodBadge
-import com.evan.pulse.ui.common.roundedPressable
 import com.evan.pulse.ui.common.subPageScrollState
 import com.evan.pulse.ui.spec.SpecImportScreen
 import com.evan.pulse.ui.common.subPageOverScroll
@@ -151,33 +149,84 @@ fun CollectionScreen(
                     modifier = Modifier.weight(1f),
                     highlightIndex = stack.size
                 )
-                RowAction(
-                    label = stringResource(R.string.runner_run),
-                    icon = MiuixIcons.Light.Play,
-                    onClick = { onRunCollection(current?.id) }
-                )
-                current?.let { folder ->
-                    RowAction(
-                        label = stringResource(R.string.collection_move_to),
-                        icon = Icons.Filled.DragIndicator,
-                        onClick = {
-                            moveFolderId = folder.id
-                            moveSelected = null
-                            moveFailed = false
-                        }
-                    )
-                    RowAction(
-                        label = stringResource(R.string.cd_rename),
-icon = MiuixIcons.Light.Edit,
-                        onClick = {
-                            renameName = folder.name
-                            renameOpen = true
-                        }
-                    )
-                    RowAction(
-                        label = stringResource(R.string.cd_delete),
-                        icon = MiuixIcons.Light.Delete,
-                        onClick = { deleteOpen = true }
+                AppIconDropdownMenu(
+                    entries = listOf(
+                        DropdownEntry(
+                            items = buildList {
+                                add(
+                                    DropdownItem(
+                                        text = stringResource(R.string.runner_run),
+                                        icon = { m ->
+                                            AppIcon(
+                                                imageVector = MiuixIcons.Light.Play,
+                                                contentDescription = null,
+                                                modifier = m
+                                            )
+                                        },
+                                        onClick = { onRunCollection(current?.id) }
+                                    )
+                                )
+                                current?.let { folder ->
+                                    add(
+                                        DropdownItem(
+                                            text = stringResource(R.string.collection_move_to),
+                                            icon = { m ->
+                                                AppIcon(
+                                                    imageVector = Icons.Filled.DragIndicator,
+                                                    contentDescription = null,
+                                                    modifier = m
+                                                )
+                                            },
+                                            onClick = {
+                                                moveFolderId = folder.id
+                                                moveSelected = null
+                                                moveFailed = false
+                                            }
+                                        )
+                                    )
+                                    add(
+                                        DropdownItem(
+                                            text = stringResource(R.string.cd_rename),
+                                            icon = { m ->
+                                                AppIcon(
+                                                    imageVector = MiuixIcons.Light.Edit,
+                                                    contentDescription = null,
+                                                    modifier = m
+                                                )
+                                            },
+                                            onClick = {
+                                                renameName = folder.name
+                                                renameOpen = true
+                                            }
+                                        )
+                                    )
+                                    add(
+                                        DropdownItem(
+                                            text = stringResource(R.string.cd_delete),
+                                            icon = { m ->
+                                                AppIcon(
+                                                    imageVector = MiuixIcons.Light.Delete,
+                                                    contentDescription = null,
+                                                    modifier = m
+                                                )
+                                            },
+                                            onClick = { deleteOpen = true }
+                                        )
+                                    )
+                                }
+                            }
+                        )
+                    ),
+                    minWidth = 28.dp,
+                    minHeight = 28.dp,
+                    modifier = Modifier
+                        .padding(start = 4.dp)
+                        .size(28.dp)
+                ) {
+                    AppIcon(
+                        imageVector = MiuixIcons.Light.More,
+                        contentDescription = stringResource(R.string.cd_more),
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }
@@ -652,22 +701,6 @@ private fun RequestRow(
             )
         }
     }
-}
-
-/** 小图标按钮：图标加无障碍文案，配圆角按压反馈 */
-@Composable
-private fun RowAction(
-    label: String,
-    icon: ImageVector,
-    onClick: () -> Unit
-) {
-    AppIcon(
-        imageVector = icon,
-        contentDescription = label,
-        modifier = Modifier
-            .roundedPressable(onClick = onClick)
-            .padding(4.dp)
-    )
 }
 
 /** 移动候选：父级 id、展示用的完整路径名链、层级深度 */

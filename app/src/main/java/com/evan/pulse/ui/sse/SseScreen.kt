@@ -130,7 +130,7 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                     label = stateLabel(state)
                 )
             },
-            onSaveClick = { showSave = true }
+            onSaveClick = { if (!viewModel.saveOverLoaded()) showSave = true }
         )
         Column(modifier = Modifier.fillMaxWidth()) {
             AppCard(modifier = Modifier.fillMaxWidth()) {
@@ -395,7 +395,8 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
         type = RequestType.SSE,
         defaultName = viewModel.url.pathOnly().ifEmpty { viewModel.url },
         snapshotProvider = { viewModel.snapshot() },
-        onDismiss = { showSave = false }
+        onDismiss = { showSave = false },
+        onSaved = viewModel::markSaved
     )
 }
 

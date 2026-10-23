@@ -37,7 +37,7 @@ Pulse 是一款 Android 原生 API 调试工具，覆盖 HTTP / SSE / WebSocket 
 - **JSON**：树形查看器（可折叠）、JSONPath 查询、格式化
 - **编解码**：Base64、URL、Unicode 编解码与进制转换、JWT 解析、Hash（MD5 / SHA 系列）
 - **生成与校验**：UUID、正则测试
-- **时间**：时间戳互转（本地 / UTC 双时区）、cron 表达式解析
+- **时间**：时间戳互转（本地 / UTC 双时区）、时间格式化、cron 表达式解析与生成（Linux / Spring / Quartz 三种方言）
 - **局域网扫描**：探测当前网段存活主机（ICMP + 常用端口），显示 IP、主机名、延迟与探测方式，可一键加入拨测
 
 ### 其他
@@ -48,7 +48,7 @@ Pulse 是一款 Android 原生 API 调试工具，覆盖 HTTP / SSE / WebSocket 
 
 ## 下载
 
-前往 [Releases](https://github.com/HoldEvan/pulse/releases) 下载最新 APK（如 `Pulse-v0.2.0-release.apk`），Android 8.0（API 26）及以上可安装。
+前往 [Releases](https://github.com/HoldEvan/pulse/releases) 下载最新 APK（如 `Pulse-v0.2.1-release.apk`），Android 8.0（API 26）及以上可安装。
 
 ## 构建
 
