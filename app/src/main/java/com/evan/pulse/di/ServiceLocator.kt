@@ -22,6 +22,7 @@ import com.evan.pulse.data.model.SavedRequest
 import com.evan.pulse.data.monitor.MonitorChecker
 import com.evan.pulse.data.monitor.MonitorNotifier
 import com.evan.pulse.data.monitor.MonitorScheduler
+import com.evan.pulse.data.monitor.WorkManagerMonitorScheduler
 import com.evan.pulse.data.settings.SettingsStore
 import com.evan.pulse.data.persistence.AppStatePersistence
 import com.evan.pulse.domain.AuthApplier
@@ -858,9 +859,13 @@ object ServiceLocator {
 
     /** 初始化拨测调度：建通知通道并按已启用目标启动定时检查。必须在 init 之后调用 */
     fun initMonitor(context: Context) {
-        val notifier = MonitorNotifier(context.applicationContext).also { _monitorNotifier = it }
+        val appContext = context.applicationContext
+        val notifier = MonitorNotifier(appContext).also { _monitorNotifier = it }
         notifier.ensureChannel()
-        _monitorScheduler = MonitorScheduler(notifier = notifier).also { it.sync() }
+        _monitorScheduler = MonitorScheduler(
+            notifier = notifier,
+            background = WorkManagerMonitorScheduler(appContext)
+        ).also { it.sync() }
     }
 
     /** 立即把当前状态写盘，作为进程退出前的兜底 */

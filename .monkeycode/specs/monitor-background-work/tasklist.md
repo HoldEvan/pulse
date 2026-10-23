@@ -1,0 +1,21 @@
+# 需求实施计划
+
+- [x] 1. 拆分检查流程（需求 3.1-3.3）
+  - 新增 `MonitorCheckRunner`：检查、落库、告警状态机
+  - 上一轮状态取自持久化历史，重启不重复告警
+- [x] 2. 到期判断（需求 2.3-2.4）
+  - `monitorDelayMs` 钳制频率到 15 秒 ~ 6 小时
+  - `isCheckDue` 带 20% 提前量
+  - 补对应单测
+- [x] 3. WorkManager 接入（需求 1.1-1.4、3.4）
+  - 新增 `MonitorBackgroundScheduler` 接口与 WorkManager 实现
+  - 周期取 max(15 分钟, 最短频率)，无启用目标时取消
+  - `MonitorWorker` 调用 `runDueChecks`，异常返回重试
+  - Worker 加 keep 混淆规则
+- [x] 4. 并发去重与状态回填（需求 2.1-2.2、4.1-4.2）
+  - `inFlight` 集合保证同一目标不并发检查
+  - 初始化时用历史回填最近状态
+  - 前台循环同样走到期判断
+- [x] 5. 检查点 - 确保所有测试通过
+  - 全量单测
+  - Release 打包并覆盖根目录 APK

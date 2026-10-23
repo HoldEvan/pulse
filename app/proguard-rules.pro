@@ -26,3 +26,6 @@
 -dontwarn org.mozilla.javascript.**
 -dontwarn org.ow2.asm.**
 
+
+# WorkManager 按类名反射实例化 Worker，R8 不能收缩或改名这个类
+-keep class com.evan.pulse.data.monitor.MonitorWorker { *; }
