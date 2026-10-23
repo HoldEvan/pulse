@@ -32,10 +32,13 @@ import com.evan.pulse.domain.model.WsConnectionState
 import com.evan.pulse.domain.pathOnly
 import com.evan.pulse.ui.collection.SaveRequestDialog
 import com.evan.pulse.ui.common.BottomBarClearance
+import com.evan.pulse.ui.common.CollapsibleSection
 import com.evan.pulse.ui.common.ConnectionStateIndicator
 import com.evan.pulse.ui.common.connectionStateColor
 import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.EventLine
+import com.evan.pulse.ui.common.KeyValueEditor
+import com.evan.pulse.ui.common.ValueHints
 import com.evan.pulse.ui.common.eventLogText
 import com.evan.pulse.ui.common.roundedPressable
 import com.evan.pulse.ui.common.subPageLazyListState
@@ -102,6 +105,7 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
                     label = stringResource(R.string.ws_url_label),
                     modifier = Modifier.fillMaxWidth()
                 )
+                ValueHints(hints = viewModel.placeholderHints(viewModel.url))
                 Row(modifier = Modifier.padding(top = 8.dp)) {
                     AppTextField(
                         value = viewModel.pingIntervalSec,
@@ -116,6 +120,33 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
                         modifier = Modifier
                             .weight(1f)
                             .padding(start = 8.dp)
+                    )
+                }
+                AppTextField(
+                    value = viewModel.subprotocols,
+                    onValueChange = { viewModel.subprotocols = it },
+                    label = stringResource(R.string.ws_subprotocols_label),
+                    useLabelAsPlaceholder = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                )
+                ValueHints(hints = viewModel.placeholderHints(viewModel.subprotocols))
+                // 握手请求头默认折叠，鉴权头等按需展开
+                CollapsibleSection(
+                    title = stringResource(R.string.tab_headers),
+                    itemCount = viewModel.headers.count { it.key.isNotBlank() },
+                    initiallyExpanded = false,
+                    modifier = Modifier.padding(top = 10.dp)
+                ) {
+                    KeyValueEditor(
+                        items = viewModel.headers,
+                        keyLabel = stringResource(R.string.kv_header_key),
+                        valueLabel = stringResource(R.string.kv_value_label),
+                        onChange = viewModel::updateHeaders,
+                        onAdd = viewModel::addHeader,
+                        onRemove = viewModel::removeHeader,
+                        valueHintProvider = viewModel::placeholderHints
                     )
                 }
                 // 是否套用设置页的全局代理

@@ -630,6 +630,7 @@
     <string name="apikey_name_label">Header 名（默认 X-API-Key）</string>
     <string name="apikey_value_label">Key 值</string>
     <string name="ws_heartbeat_interval_label">心跳间隔（秒）</string>
+    <string name="ws_subprotocols_label">子协议（逗号分隔）</string>
     <string name="ws_heartbeat_payload_label">心跳内容</string>
     <string name="ws_auto_reconnect_label">断线自动重连</string>
     <string name="ws_reconnect_base_label">初始延迟（秒）</string>

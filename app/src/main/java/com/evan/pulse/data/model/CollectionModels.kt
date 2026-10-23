@@ -86,6 +86,10 @@ data class WsSnapshot(
     val url: String = "",
     val pingIntervalSec: Int = 0,
     val pingPayload: String = "ping",
+    /** 握手时附带的额外请求头，用于鉴权等场景 */
+    val headers: List<KeyValueEntry> = emptyList(),
+    /** Sec-WebSocket-Protocol 子协议，逗号分隔后按顺序协商 */
+    val subprotocols: List<String> = emptyList(),
     /** 是否使用设置页的全局代理 */
     val useProxy: Boolean = true,
     val autoReconnect: Boolean = false,

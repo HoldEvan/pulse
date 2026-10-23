@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.evan.pulse.data.model.KeyValueEntry
 import com.evan.pulse.data.model.RequestType
 import com.evan.pulse.data.model.WsSnapshot
 import com.evan.pulse.data.model.WsReconnectSettings
@@ -12,6 +13,7 @@ import com.evan.pulse.data.model.snapshotJson
 import com.evan.pulse.di.ServiceLocator
 import com.evan.pulse.R
 import com.evan.pulse.domain.PlaceholderResolver
+import com.evan.pulse.domain.model.KeyValue
 import com.evan.pulse.domain.model.ProxyConfig
 import com.evan.pulse.domain.model.WsConnectionState
 import com.evan.pulse.domain.model.WsEvent
@@ -53,6 +55,12 @@ class WsViewModel : ViewModel() {
     var input by mutableStateOf("")
     var pingIntervalSec by mutableStateOf("0")
     var pingPayload by mutableStateOf("ping")
+
+    /** 握手请求头；列表始终以一个空行结尾，由 KeyValueEditor 维护 */
+    var headers by mutableStateOf(listOf(KeyValue()))
+
+    /** Sec-WebSocket-Protocol 子协议，逗号分隔 */
+    var subprotocols by mutableStateOf("")
     var autoReconnect by mutableStateOf(sessions.wsReconnectSettings.value.enabled)
         private set
     var reconnectBaseDelaySec by mutableStateOf(sessions.wsReconnectSettings.value.baseDelaySec.toString())
@@ -131,6 +139,8 @@ class WsViewModel : ViewModel() {
             url = url,
             pingIntervalSec = pingIntervalSec.toIntOrNull() ?: 0,
             pingPayload = pingPayload.ifBlank { "ping" },
+            headers = headers.map { KeyValueEntry(it.key, it.value, it.enabled) },
+            subprotocols = parseSubprotocols(subprotocols),
             useProxy = useProxy,
             autoReconnect = autoReconnect,
             reconnectBaseDelaySec = sessions.wsReconnectSettings.value.baseDelaySec,
@@ -147,10 +157,37 @@ class WsViewModel : ViewModel() {
         url = snap.url
         pingIntervalSec = snap.pingIntervalSec.toString()
         pingPayload = snap.pingPayload
+        headers = snap.headers.map { KeyValue(it.key, it.value, it.enabled) }.ifEmpty { listOf(KeyValue()) }
+        subprotocols = snap.subprotocols.joinToString(", ")
         useProxy = snap.useProxy
         updateReconnectBase(snap.reconnectBaseDelaySec.toString())
         updateReconnectMax(snap.reconnectMaxDelaySec.toString())
         updateAutoReconnect(snap.autoReconnect)
+    }
+
+    fun updateHeaders(index: Int, value: KeyValue) {
+        headers = headers.mapIndexed { i, kv -> if (i == index) value else kv }
+    }
+
+    fun addHeader() {
+        headers = headers + KeyValue()
+    }
+
+    fun removeHeader(index: Int) {
+        headers = headers.filterIndexed { i, _ -> i != index }
+        if (headers.isEmpty()) headers = listOf(KeyValue())
+    }
+
+    /** 当前页里出现的 {{变量}} 及取值，用于输入框下方提示 */
+    fun placeholderHints(text: String): List<Pair<String, String?>> {
+        if (text.isBlank()) return emptyList()
+        val vars = ServiceLocator.envStore.activeVars()
+        val seen = LinkedHashMap<String, String?>()
+        for (m in PlaceholderResolver.PLACEHOLDER_REGEX.findAll(text)) {
+            val key = m.groupValues[1]
+            seen.putIfAbsent(key, vars[key])
+        }
+        return seen.map { (k, v) -> k to v }
     }
 
     private fun add(text: String, isSystem: Boolean, timestamp: Long = System.currentTimeMillis()) {
@@ -198,23 +235,41 @@ class WsViewModel : ViewModel() {
             lastError = null
             val proxy = if (useProxy) settingsStore.settings.value.toProxyConfig() else ProxyConfig()
             val vars = ServiceLocator.envStore.activeVars()
-            when (val r = resolver.resolve(url, vars)) {
-                is PlaceholderResolver.ResolveResult.Ok -> {
-                    activeEndpoint = r.resolved
-                    activeConfig = WsConfig(
-                        url = r.resolved,
-                        proxy = proxy,
-                        pingIntervalSec = pingIntervalSec.toIntOrNull() ?: 0,
-                        pingPayload = pingPayload.ifBlank { "ping" }
-                    )
-                    allowReconnect = true
-                    add(L10n.t(R.string.proxy_in_use, proxy.summary.ifEmpty { L10n.t(R.string.proxy_summary_direct) }), true)
-                    engine.connect(activeConfig!!)
-                    if (state.value == WsConnectionState.FAILED) scheduleRetry()
-                }
 
-                is PlaceholderResolver.ResolveResult.Missing -> missingVars = r.keys
+            // 地址、请求头与子协议里的占位符共用一次解析：任一缺失就整体中止
+            val missing = mutableSetOf<String>()
+            fun res(text: String): String = when (val r = resolver.resolve(text, vars)) {
+                is PlaceholderResolver.ResolveResult.Ok -> r.resolved
+                is PlaceholderResolver.ResolveResult.Missing -> {
+                    missing += r.keys
+                    text
+                }
             }
+
+            val resolvedUrl = res(url)
+            val resolvedHeaders = headers
+                .filter { it.enabled && it.key.isNotBlank() }
+                .map { it.copy(key = res(it.key), value = res(it.value)) }
+            val resolvedSubprotocols = parseSubprotocols(subprotocols).map { res(it) }
+
+            if (missing.isNotEmpty()) {
+                missingVars = missing.sorted()
+                return@launch
+            }
+
+            activeEndpoint = resolvedUrl
+            activeConfig = WsConfig(
+                url = resolvedUrl,
+                headers = resolvedHeaders,
+                subprotocols = resolvedSubprotocols,
+                proxy = proxy,
+                pingIntervalSec = pingIntervalSec.toIntOrNull() ?: 0,
+                pingPayload = pingPayload.ifBlank { "ping" }
+            )
+            allowReconnect = true
+            add(L10n.t(R.string.proxy_in_use, proxy.summary.ifEmpty { L10n.t(R.string.proxy_summary_direct) }), true)
+            engine.connect(activeConfig!!)
+            if (state.value == WsConnectionState.FAILED) scheduleRetry()
         }
     }
 
@@ -257,3 +312,15 @@ class WsViewModel : ViewModel() {
         missingVars = null
     }
 }
+
+/**
+ * 把逗号分隔的子协议输入拆成握手要发送的顺序列表。
+ *
+ * 空串返回空列表（不发送该头），重复项只保留第一次出现，避免服务端
+ * 按顺序匹配时因重复而拒绝握手。
+ */
+internal fun parseSubprotocols(raw: String): List<String> =
+    raw.split(',')
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .distinct()

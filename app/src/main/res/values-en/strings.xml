@@ -630,6 +630,7 @@
     <string name="apikey_name_label">Header name (defaults to X-API-Key)</string>
     <string name="apikey_value_label">Key value</string>
     <string name="ws_heartbeat_interval_label">Heartbeat interval (sec)</string>
+    <string name="ws_subprotocols_label">Subprotocols (comma separated)</string>
     <string name="ws_heartbeat_payload_label">Heartbeat payload</string>
     <string name="ws_auto_reconnect_label">Auto reconnect on drop</string>
     <string name="ws_reconnect_base_label">Initial delay (sec)</string>
