@@ -32,6 +32,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.evan.pulse.BuildConfig
 import com.evan.pulse.R
 import com.evan.pulse.data.backup.RemoteBackupEntry
+import com.evan.pulse.data.settings.AUTO_BACKUP_INTERVAL_HOURS
+import com.evan.pulse.data.settings.MAX_AUTO_BACKUP_KEEP
+import com.evan.pulse.data.settings.MIN_AUTO_BACKUP_KEEP
 import com.evan.pulse.data.backup.WebDavStage
 import com.evan.pulse.data.cache.CacheCleaner
 import com.evan.pulse.di.ServiceLocator
@@ -67,6 +70,15 @@ private val LanguageLabels: List<Int> = listOf(
 )
 
 private val backupDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+
+/** 自动备份周期下拉项，下标与 AUTO_BACKUP_INTERVAL_HOURS 对齐 */
+private val AutoBackupIntervalLabels: List<Int> = listOf(
+    R.string.auto_backup_interval_6h,
+    R.string.auto_backup_interval_12h,
+    R.string.auto_backup_interval_24h,
+    R.string.auto_backup_interval_72h,
+    R.string.auto_backup_interval_168h
+)
 
 // 页面内间距统一走这三个值，避免各区块之间的间距和卡片内容内边距不一致
 private val SectionTopGap = 12.dp
@@ -364,6 +376,63 @@ fun SettingsScreen(
                     ) {
                         AppText(stringResource(R.string.backup_import_local))
                     }
+                }
+            }
+        }
+        }
+
+        item(key = "backup_auto_card") {
+        AppCard(modifier = Modifier.fillMaxWidth().padding(top = CardGap)) {
+            Column(modifier = Modifier.padding(CardContentPadding)) {
+                AppSwitchRow(
+                    title = stringResource(R.string.auto_backup_title),
+                    summary = if (webdavConfigured) {
+                        stringResource(R.string.auto_backup_summary)
+                    } else {
+                        stringResource(R.string.auto_backup_need_webdav)
+                    },
+                    checked = settings.autoBackupEnabled,
+                    enabled = webdavConfigured,
+                    onCheckedChange = { viewModel.setAutoBackupEnabled(it) }
+                )
+                if (settings.autoBackupEnabled) {
+                    AppDropdown(
+                        items = AutoBackupIntervalLabels.localizedLabels(),
+                        selectedIndex = settings.autoBackupIntervalIndex
+                            .coerceIn(0, AUTO_BACKUP_INTERVAL_HOURS.lastIndex),
+                        title = stringResource(R.string.auto_backup_interval_label),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        showValue = true,
+                        onSelectedIndexChange = { viewModel.setAutoBackupIntervalIndex(it) }
+                    )
+                    AppTextField(
+                        value = settings.autoBackupKeepCount.toString(),
+                        onValueChange = { raw ->
+                            raw.filter(Char::isDigit)
+                                .take(2)
+                                .toIntOrNull()
+                                ?.let { viewModel.setAutoBackupKeepCount(it) }
+                        },
+                        label = stringResource(
+                            R.string.auto_backup_keep_label,
+                            MIN_AUTO_BACKUP_KEEP,
+                            MAX_AUTO_BACKUP_KEEP
+                        ),
+                        useLabelAsPlaceholder = true,
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                    )
+                    AppText(
+                        text = stringResource(R.string.auto_backup_hint),
+                        fontSize = 12.sp,
+                        color = Color(0xFF8A8F98),
+                        modifier = Modifier.padding(top = 6.dp)
+                    )
                 }
             }
         }

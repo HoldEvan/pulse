@@ -1,0 +1,23 @@
+# 需求实施计划
+
+- [x] 1. 集合搜索（需求 1.1-1.7）
+  - `CollectionsViewModel` 增加关键词状态与 `searchRequests`
+  - 结果带所在文件夹路径与主地址
+  - 集合页顶部搜索框，命中时切换为结果列表
+  - 点击结果复用 `load()`，无结果给出提示与清除入口
+- [x] 2. 自动备份配置（需求 2.1-2.5、4.1-4.3）
+  - `AppSettings` 增加开关、周期下标、保留份数
+  - 周期选项与越界回落、份数收敛
+  - 设置页新增自动备份卡片，未配置 WebDAV 时禁用
+- [x] 3. 自动备份执行（需求 3.1-3.6）
+  - `AutoBackupRunner`：导出与按份数裁剪
+  - `BackupService.listRemote` 支持自定义上限
+  - `WorkManagerBackupScheduler` 注册唯一周期任务
+  - `AutoBackupScheduler` 订阅设置变化并推送
+  - `AutoBackupWorker` 执行时重读配置，失败重试
+  - Worker keep 规则
+- [x] 4. 三语文案
+  - 搜索、自动备份与周期选项文案
+- [x] 5. 检查点 - 确保所有测试通过
+  - 全量单测 322 项
+  - Release 打包并覆盖根目录 APK

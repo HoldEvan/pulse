@@ -1,5 +1,8 @@
 package com.evan.pulse.ui.collection
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.evan.pulse.data.model.CollectionInfo
 import com.evan.pulse.data.model.CollectionTree
@@ -7,6 +10,7 @@ import com.evan.pulse.data.model.ImportGroup
 import com.evan.pulse.data.model.ImportResult
 import com.evan.pulse.data.model.RequestType
 import com.evan.pulse.data.model.SavedRequest
+import com.evan.pulse.data.model.targetUrl
 import com.evan.pulse.di.ServiceLocator
 
 class CollectionsViewModel : ViewModel() {
@@ -18,6 +22,18 @@ class CollectionsViewModel : ViewModel() {
     val requests = store.requests
     val currentProjectId = projectStore.currentProjectId
     val projects = projectStore.projects
+
+    /** 搜索关键词：非空时列表切换为跨文件夹的搜索结果 */
+    var keyword by mutableStateOf("")
+        private set
+
+    fun updateKeyword(value: String) {
+        keyword = value
+    }
+
+    fun clearKeyword() {
+        keyword = ""
+    }
 
     /** 指定父文件夹下的同级文件夹；parentId 为空表示根文件夹 */
     fun childrenOf(parentId: Long?): List<CollectionInfo> =
@@ -64,6 +80,31 @@ class CollectionsViewModel : ViewModel() {
             .map { it.id }
     }
 
+    /**
+     * 跨文件夹搜索结果：当前项目内名称或地址命中关键词的接口。
+     *
+     * 地址取自快照（HTTP/WS/SSE 的 url、MQTT 的主题），因此搜「订单」既能命中
+     * 命名，也能命中 URL 里的路径；结果带上所在文件夹路径，便于判断来源。
+     */
+    fun searchRequests(keyword: String): List<CollectionSearchHit> {
+        val kw = keyword.trim()
+        if (kw.isEmpty()) return emptyList()
+        return requests.value
+            .filter { it.collectionId in projectCollections().map { folder -> folder.id } }
+            .mapNotNull { request ->
+                val nameHit = request.name.contains(kw, ignoreCase = true)
+                val url = request.targetUrl()
+                val urlHit = url.contains(kw, ignoreCase = true)
+                if (!nameHit && !urlHit) return@mapNotNull null
+                CollectionSearchHit(
+                    request = request,
+                    folderPath = CollectionTree.pathOf(collections.value, request.collectionId)
+                        .joinToString(" / "),
+                    url = url
+                )
+            }
+    }
+
     fun deleteRequest(id: Long) = store.deleteRequest(id)
 
     fun renameRequest(id: Long, name: String) = store.renameRequest(id, name)
@@ -94,6 +135,13 @@ class CollectionsViewModel : ViewModel() {
         name,
         data,
         fallbackCollectionName
+    )
+
+    /** 搜索结果条目：接口本体、所在文件夹路径与主地址 */
+    data class CollectionSearchHit(
+        val request: SavedRequest,
+        val folderPath: String,
+        val url: String
     )
 
     private fun tabIndex(type: RequestType): Int = when (type) {

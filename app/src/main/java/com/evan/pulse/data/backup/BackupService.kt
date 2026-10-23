@@ -75,9 +75,9 @@ class BackupService(context: Context) {
         WebDavClient(config).deleteUrl(fileUrl)
     }
 
-    /** 列出 WebDAV 根目录下的备份文件（最近 10 个） */
-    suspend fun listRemote(config: WebDavConfig): List<RemoteBackupEntry> =
-        WebDavClient(config).list()
+    /** 列出 WebDAV 根目录下的备份文件，默认最近 10 个；自动备份清理时需要更长的列表 */
+    suspend fun listRemote(config: WebDavConfig, limit: Int = 10): List<RemoteBackupEntry> =
+        WebDavClient(config).list(limit)
 
     /** 测试 WebDAV 连接：先做只读探测，探测通过后再验证目录是否可写入 */
     suspend fun testWebDav(config: WebDavConfig): WebDavTestResult {
@@ -205,8 +205,8 @@ class WebDavClient(
         }
     }
 
-    /** 列出远程备份目录下的 JSON 文件（PROPFIND） */
-    suspend fun list(): List<RemoteBackupEntry> = withContext(Dispatchers.IO) {
+    /** 列出远程备份目录下的 JSON 文件（PROPFIND），按修改时间倒序取前 [limit] 条 */
+    suspend fun list(limit: Int = 10): List<RemoteBackupEntry> = withContext(Dispatchers.IO) {
         val body = execute(
             "PROPFIND",
             config.dirUrl(),
@@ -250,7 +250,7 @@ class WebDavClient(
                 ?: Date(0)
             entries.add(RemoteBackupEntry(config.entryUrl(href), size, lastModified))
         }
-        entries.sortedByDescending { it.lastModified }.take(10)
+        entries.sortedByDescending { it.lastModified }.take(limit.coerceAtLeast(1))
     }
 
     /** 只读探测：对目标目录发起 PROPFIND，校验连通性与认证

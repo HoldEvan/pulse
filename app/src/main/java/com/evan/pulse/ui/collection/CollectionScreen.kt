@@ -123,6 +123,12 @@ fun CollectionScreen(
     val children = viewModel.childrenOf(current?.id)
     val ownRequests = requests.filter { it.collectionId == current?.id }
 
+    // 关键词非空时整页切换为跨文件夹搜索结果，面包屑只作为返回正常浏览的入口
+    val searching = viewModel.keyword.isNotBlank()
+    val hits = remember(requests, own, viewModel.keyword) {
+        viewModel.searchRequests(viewModel.keyword)
+    }
+
     val rootLabel = projects.firstOrNull { it.id == currentProjectId }?.name
         ?: stringResource(R.string.tab_collection)
     val items = remember(stack, rootLabel) {
@@ -139,6 +145,25 @@ fun CollectionScreen(
             .verticalScroll(subPageScrollState())
             .padding(horizontal = 12.dp)
     ) {
+        AppTextField(
+            value = viewModel.keyword,
+            onValueChange = viewModel::updateKeyword,
+            label = stringResource(R.string.collection_search_label),
+            useLabelAsPlaceholder = true,
+            singleLine = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp, bottom = 6.dp)
+        )
+
+        if (searching) {
+            SearchResults(
+                hits = hits,
+                onLoad = { hit -> viewModel.load(hit.request, onSwitchTab) },
+                onClear = viewModel::clearKeyword
+            )
+            BottomBarClearance()
+        } else {
         Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 BreadcrumbBar(
@@ -294,6 +319,7 @@ fun CollectionScreen(
             )
         }
         BottomBarClearance()
+        }
     }
 
     if (showCreate) {
@@ -524,6 +550,79 @@ fun CollectionScreen(
 
     if (showImport) {
         SpecImportScreen(onDismiss = { showImport = false })
+    }
+}
+
+/**
+ * 跨文件夹搜索结果列表。
+ *
+ * 每条显示接口名、所在文件夹路径与主地址，点击即加载并切到对应协议页；
+ * 无结果时给出提示与清除入口。
+ */
+@Composable
+private fun SearchResults(
+    hits: List<CollectionsViewModel.CollectionSearchHit>,
+    onLoad: (CollectionsViewModel.CollectionSearchHit) -> Unit,
+    onClear: () -> Unit
+) {
+    AppCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            if (hits.isEmpty()) {
+                AppText(
+                    text = stringResource(R.string.collection_search_empty),
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+                AppTextButton(
+                    text = stringResource(R.string.collection_search_clear),
+                    onClick = onClear,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                return@Column
+            }
+            AppText(
+                text = stringResource(R.string.collection_search_count, hits.size),
+                fontSize = 12.sp,
+                modifier = Modifier.padding(bottom = 6.dp)
+            )
+            hits.forEach { hit ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onLoad(hit) }
+                        .padding(vertical = 8.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        AppText(
+                            text = hit.request.type.name,
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                        AppText(
+                            text = hit.request.name,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    AppText(
+                        text = hit.folderPath,
+                        fontSize = 11.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                    if (hit.url.isNotEmpty()) {
+                        AppText(
+                            text = hit.url,
+                            fontSize = 11.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

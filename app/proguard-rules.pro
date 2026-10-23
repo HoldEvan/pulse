@@ -29,3 +29,5 @@
 
 # WorkManager 按类名反射实例化 Worker，R8 不能收缩或改名这个类
 -keep class com.evan.pulse.data.monitor.MonitorWorker { *; }
+# 同上，自动备份 Worker 也由 WorkManager 反射实例化
+-keep class com.evan.pulse.data.backup.AutoBackupWorker { *; }

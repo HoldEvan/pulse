@@ -3,6 +3,19 @@ package com.evan.pulse.data.settings
 import com.evan.pulse.domain.model.ProxyConfig
 import com.evan.pulse.domain.model.ProxyType
 
+/** 自动备份可选的周期（小时），下标与 [AppSettings.autoBackupIntervalIndex] 对应 */
+val AUTO_BACKUP_INTERVAL_HOURS: List<Int> = listOf(6, 12, 24, 72, 168)
+
+/** 自动备份默认周期：每天一次 */
+const val DEFAULT_AUTO_BACKUP_INTERVAL_INDEX = 2
+
+/** 远程保留份数的可选范围 */
+const val MIN_AUTO_BACKUP_KEEP = 1
+const val MAX_AUTO_BACKUP_KEEP = 30
+
+/** 默认保留份数 */
+const val DEFAULT_AUTO_BACKUP_KEEP = 7
+
 /**
  * 设置页持久化的全部状态。
  *
@@ -54,6 +67,12 @@ data class AppSettings(
     val pureBlackInDark: Boolean = false,
     /** 界面缩放百分比，80..120，100 为原始大小 */
     val uiScalePercent: Int = 100,
+    /** 是否启用定时自动备份到 WebDAV */
+    val autoBackupEnabled: Boolean = false,
+    /** 自动备份周期下标，对应 data.backup.BackupIntervalEntries */
+    val autoBackupIntervalIndex: Int = DEFAULT_AUTO_BACKUP_INTERVAL_INDEX,
+    /** 远程保留的自动备份份数，超出后删除最旧的 */
+    val autoBackupKeepCount: Int = DEFAULT_AUTO_BACKUP_KEEP,
 ) {
     /** 转换为引擎使用的代理配置，端口非法或地址为空时返回未生效配置 */
     fun toProxyConfig(): ProxyConfig = ProxyConfig(

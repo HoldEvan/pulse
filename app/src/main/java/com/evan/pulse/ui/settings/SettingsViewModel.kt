@@ -10,7 +10,10 @@ import com.evan.pulse.data.backup.WebDavStage
 import com.evan.pulse.data.backup.WebDavTestResult
 import com.evan.pulse.data.cache.CacheCleaner
 import com.evan.pulse.data.cache.CacheStats
+import com.evan.pulse.data.settings.AUTO_BACKUP_INTERVAL_HOURS
 import com.evan.pulse.data.settings.AppSettings
+import com.evan.pulse.data.settings.MAX_AUTO_BACKUP_KEEP
+import com.evan.pulse.data.settings.MIN_AUTO_BACKUP_KEEP
 import com.evan.pulse.data.settings.SettingsStore
 import com.evan.pulse.R
 import com.evan.pulse.ui.common.AppToast
@@ -228,6 +231,22 @@ class SettingsViewModel(
 
     fun setWebdavPassword(value: String) {
         viewModelScope.launch { store.update { it.copy(webdavPassword = value) } }
+    }
+
+    fun setAutoBackupEnabled(enabled: Boolean) {
+        viewModelScope.launch { store.update { it.copy(autoBackupEnabled = enabled) } }
+    }
+
+    fun setAutoBackupIntervalIndex(index: Int) {
+        viewModelScope.launch {
+            store.update { it.copy(autoBackupIntervalIndex = index.coerceIn(0, AUTO_BACKUP_INTERVAL_HOURS.lastIndex)) }
+        }
+    }
+
+    fun setAutoBackupKeepCount(count: Int) {
+        viewModelScope.launch {
+            store.update { it.copy(autoBackupKeepCount = count.coerceIn(MIN_AUTO_BACKUP_KEEP, MAX_AUTO_BACKUP_KEEP)) }
+        }
     }
 
     /** WebDAV 地址是否已填写 */

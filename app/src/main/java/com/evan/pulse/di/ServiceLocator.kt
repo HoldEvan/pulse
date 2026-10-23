@@ -23,6 +23,8 @@ import com.evan.pulse.data.monitor.MonitorChecker
 import com.evan.pulse.data.monitor.MonitorNotifier
 import com.evan.pulse.data.monitor.MonitorScheduler
 import com.evan.pulse.data.monitor.WorkManagerMonitorScheduler
+import com.evan.pulse.data.backup.AutoBackupScheduler
+import com.evan.pulse.data.backup.WorkManagerBackupScheduler
 import com.evan.pulse.data.settings.SettingsStore
 import com.evan.pulse.data.persistence.AppStatePersistence
 import com.evan.pulse.domain.AuthApplier

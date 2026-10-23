@@ -47,6 +47,9 @@ private val KEY_BLUR_ENABLED = booleanPreferencesKey("blur_enabled")
 private val KEY_BAR_BLUR_STYLE = intPreferencesKey("bar_blur_style_index")
 private val KEY_PURE_BLACK_IN_DARK = booleanPreferencesKey("pure_black_in_dark")
 private val KEY_UI_SCALE_PERCENT = intPreferencesKey("ui_scale_percent")
+private val KEY_AUTO_BACKUP_ENABLED = booleanPreferencesKey("auto_backup_enabled")
+private val KEY_AUTO_BACKUP_INTERVAL = intPreferencesKey("auto_backup_interval_index")
+private val KEY_AUTO_BACKUP_KEEP = intPreferencesKey("auto_backup_keep_count")
 
 internal fun Preferences.toAppSettings(): AppSettings = AppSettings(
     uiStyleIndex = (get(KEY_UI_STYLE) ?: 0).coerceAtLeast(0),
@@ -78,6 +81,11 @@ internal fun Preferences.toAppSettings(): AppSettings = AppSettings(
     barBlurStyleIndex = (get(KEY_BAR_BLUR_STYLE) ?: 0).coerceAtLeast(0),
     pureBlackInDark = get(KEY_PURE_BLACK_IN_DARK) ?: false,
     uiScalePercent = (get(KEY_UI_SCALE_PERCENT) ?: 100).coerceIn(80, 120),
+    autoBackupEnabled = get(KEY_AUTO_BACKUP_ENABLED) ?: false,
+    autoBackupIntervalIndex = (get(KEY_AUTO_BACKUP_INTERVAL) ?: DEFAULT_AUTO_BACKUP_INTERVAL_INDEX)
+        .coerceIn(0, AUTO_BACKUP_INTERVAL_HOURS.lastIndex),
+    autoBackupKeepCount = (get(KEY_AUTO_BACKUP_KEEP) ?: DEFAULT_AUTO_BACKUP_KEEP)
+        .coerceIn(MIN_AUTO_BACKUP_KEEP, MAX_AUTO_BACKUP_KEEP),
 )
 
 class SettingsStore(context: Context) {
@@ -121,6 +129,11 @@ class SettingsStore(context: Context) {
             prefs[KEY_BAR_BLUR_STYLE] = next.barBlurStyleIndex
             prefs[KEY_PURE_BLACK_IN_DARK] = next.pureBlackInDark
             prefs[KEY_UI_SCALE_PERCENT] = next.uiScalePercent.coerceIn(80, 120)
+            prefs[KEY_AUTO_BACKUP_ENABLED] = next.autoBackupEnabled
+            prefs[KEY_AUTO_BACKUP_INTERVAL] = next.autoBackupIntervalIndex
+                .coerceIn(0, AUTO_BACKUP_INTERVAL_HOURS.lastIndex)
+            prefs[KEY_AUTO_BACKUP_KEEP] = next.autoBackupKeepCount
+                .coerceIn(MIN_AUTO_BACKUP_KEEP, MAX_AUTO_BACKUP_KEEP)
         }
     }
 }
