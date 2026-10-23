@@ -119,7 +119,12 @@ fun HistoryDetailScreen(
                     )
                 }
                 if (entry.responseBody.isNotEmpty()) {
-                    ResponseBody(entry.responseBody, entry.url, onOpenDiff = { onOpenDiff(entry.id) })
+                    ResponseBody(
+                        body = entry.responseBody,
+                        url = entry.url,
+                        contentType = contentTypeOf(entry.responseHeaders),
+                        onOpenDiff = { onOpenDiff(entry.id) }
+                    )
                     TruncatedHint(entry.responseBodyTruncated)
                 }
             }
@@ -211,6 +216,7 @@ private fun HistorySummary(entry: HistoryEntry, projectName: String) {
 private fun ResponseBody(
     body: String,
     url: String,
+    contentType: String?,
     onOpenDiff: () -> Unit
 ) {
     Row(
@@ -227,5 +233,11 @@ private fun ResponseBody(
         )
         CopyIconButton(text = body, label = stringResource(R.string.cd_copy_response))
     }
-    ResponseBodyView(body, url)
+    ResponseBodyView(body, url, contentType = contentType)
 }
+
+/** 历史里的响应头以 "key: value" 行存储，取 Content-Type 供导出与预览推断 MIME */
+private fun contentTypeOf(headers: List<String>): String? =
+    headers.firstOrNull { it.substringBefore(':').equals("Content-Type", ignoreCase = true) }
+        ?.substringAfter(':', "")
+        ?.trim()

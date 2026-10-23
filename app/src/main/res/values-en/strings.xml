@@ -353,6 +353,12 @@
     <string name="resp_view_b64">Base64</string>
     <string name="resp_view_preview">Preview</string>
     <string name="resp_preview_unavailable">Media preview is only available for live responses</string>
+    <string name="resp_export_saved">Saved to the selected location</string>
+    <string name="resp_export_failed">Save failed, please try another location</string>
+    <string name="resp_share_failed">Share failed, no app can receive this file</string>
+    <string name="resp_export_size">Full content %1$s</string>
+    <string name="cd_save_response">Save response body</string>
+    <string name="cd_share_response">Share response body</string>
     <string name="resp_truncated">Truncated (full body %1$s)</string>
 
     <!-- WebSocket screen -->

@@ -353,6 +353,12 @@
     <string name="resp_view_b64">Base64</string>
     <string name="resp_view_preview">预览</string>
     <string name="resp_preview_unavailable">仅实时响应的媒体内容可预览</string>
+    <string name="resp_export_saved">已保存到所选位置</string>
+    <string name="resp_export_failed">保存失败，请换一个位置重试</string>
+    <string name="resp_share_failed">分享失败，未找到可用的接收应用</string>
+    <string name="resp_export_size">完整内容 %1$s</string>
+    <string name="cd_save_response">保存响应体</string>
+    <string name="cd_share_response">分享响应体</string>
     <string name="resp_truncated">已截断显示（完整 %1$s）</string>
 
     <!-- WebSocket 页 -->

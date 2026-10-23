@@ -23,6 +23,7 @@ import com.evan.pulse.ui.design.AppTextButton
  * 响应体多格式查看：RAW/JSON/XML/HTML/HEX/BASE64 六种视图，JSON 时展示树形，
  * HTML 时展示静态预览；提供 PREVIEW 媒体预览（image/audio/video）。
  * 媒体预览需要实时响应的原始字节 [bodyBytes]；历史详情无字节时该标签提示不可预览。
+ * 底部提供保存与分享，导出的是完整字节而不是展示层的截断文本。
  */
 @Composable
 fun ResponseBodyView(
@@ -88,6 +89,12 @@ fun ResponseBodyView(
                 )
             }
         }
+        ResponseExportActions(
+            body = body,
+            bodyBytes = bodyBytes,
+            contentType = contentType,
+            modifier = Modifier.padding(top = 6.dp)
+        )
     }
 }
 
