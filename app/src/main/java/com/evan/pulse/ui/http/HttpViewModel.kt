@@ -82,6 +82,9 @@ class HttpViewModel : ViewModel() {
     /** 是否套用设置页里的全局代理；关闭则本次请求强制直连 */
     var useProxy by mutableStateOf(true)
 
+    /** 跳过 TLS 证书校验；仅用于调试自签名或内网 HTTPS 服务 */
+    var insecureTls by mutableStateOf(false)
+
     /** 弱网模拟档位；NONE 即关闭，FORCE_TIMEOUT 配合秒数生效 */
     var throttlePreset by mutableStateOf(NetworkPreset.NONE)
 
@@ -145,7 +148,8 @@ class HttpViewModel : ViewModel() {
             timeoutSec = timeoutSec,
             useProxy = useProxy,
             throttlePreset = throttlePreset.name,
-            forceTimeoutSec = forceTimeoutSec
+            forceTimeoutSec = forceTimeoutSec,
+            insecureTls = insecureTls
         )
     )
 
@@ -177,6 +181,7 @@ class HttpViewModel : ViewModel() {
         useProxy = snap.useProxy
         throttlePreset = NetworkPreset.entries.firstOrNull { it.name == snap.throttlePreset } ?: NetworkPreset.NONE
         forceTimeoutSec = snap.forceTimeoutSec
+        insecureTls = snap.insecureTls
     }
 
     fun activeEnvVars(): Map<String, String> {
@@ -296,7 +301,8 @@ class HttpViewModel : ViewModel() {
             throttle = NetworkThrottleConfig(
                 preset = throttlePreset,
                 forceTimeoutSec = forceTimeoutSec.toIntOrNull()?.coerceIn(0, 300) ?: 0
-            )
+            ),
+            insecureTls = insecureTls
         )
     }
 

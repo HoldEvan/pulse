@@ -52,6 +52,7 @@ import javax.net.ssl.SSLException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.io.asOutputStream
+import com.evan.pulse.domain.net.InsecureTls.applyInsecureTls
 import okhttp3.Credentials
 
 /**
@@ -66,7 +67,10 @@ import okhttp3.Credentials
  */
 class OkHttpEngine(private val appContextProvider: () -> Context? = { null }) : HttpEngine {
 
-    private val clients = ConcurrentHashMap<ProxyConfig, HttpClient>()
+    /** 代理与 TLS 策略都是引擎级配置，按两者组合缓存客户端 */
+    private data class ClientKey(val proxy: ProxyConfig, val insecureTls: Boolean)
+
+    private val clients = ConcurrentHashMap<ClientKey, HttpClient>()
     private val throttleRandom = Random.Default
 
     /** 按完整 URL 关联本次请求的时间线采集器；OkHttp 事件在分发线程回调，map 需线程安全 */
@@ -136,7 +140,7 @@ class OkHttpEngine(private val appContextProvider: () -> Context? = { null }) : 
             delay(NetworkThrottle.uploadDelayMs(uploadSize, throttle, throttleRandom))
         }
         return try {
-            val response = clientFor(config.proxy).request {
+            val response = clientFor(config.proxy, config.insecureTls).request {
                 method = ktorMethod(config.method)
                 url {
                     takeFrom(config.url)
@@ -183,15 +187,16 @@ class OkHttpEngine(private val appContextProvider: () -> Context? = { null }) : 
         }
     }
 
-    private fun clientFor(proxyConfig: ProxyConfig): HttpClient {
-        clients[proxyConfig]?.let { return it }
+    private fun clientFor(proxyConfig: ProxyConfig, insecureTls: Boolean): HttpClient {
+        val key = ClientKey(proxyConfig, insecureTls)
+        clients[key]?.let { return it }
         if (clients.size >= MAX_CACHED_CLIENTS) {
             clients.keys.firstOrNull()?.let { clients.remove(it) }
         }
-        return clients.getOrPut(proxyConfig) { buildClient(proxyConfig) }
+        return clients.getOrPut(key) { buildClient(proxyConfig, insecureTls) }
     }
 
-    private fun buildClient(proxyConfig: ProxyConfig): HttpClient = HttpClient(OkHttp) {
+    private fun buildClient(proxyConfig: ProxyConfig, insecureTls: Boolean): HttpClient = HttpClient(OkHttp) {
         install(HttpTimeout)
         engine {
             config {
@@ -199,6 +204,7 @@ class OkHttpEngine(private val appContextProvider: () -> Context? = { null }) : 
                 connectTimeout(0, TimeUnit.MILLISECONDS)
                 readTimeout(0, TimeUnit.MILLISECONDS)
                 writeTimeout(0, TimeUnit.MILLISECONDS)
+                applyInsecureTls(insecureTls)
                 if (proxyConfig.enabled) {
                     proxy(
                         Proxy(

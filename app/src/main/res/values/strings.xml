@@ -604,6 +604,9 @@
     <string name="graphql_query_label">GraphQL 查询</string>
     <string name="graphql_variables_label">Variables（JSON）</string>
     <string name="timeout_sec_label">超时（秒）</string>
+    <string name="insecure_tls_label">跳过 TLS 证书校验</string>
+    <string name="insecure_tls_hint">仅用于自签名或内网证书，默认保持校验</string>
+    <string name="insecure_tls_warning_on">已关闭证书校验，连接无法防中间人攻击，调试完请关闭</string>
     <string name="use_proxy_label">使用代理</string>
     <string name="auth_type_label">认证类型</string>
     <string name="kv_param_value">参数值</string>

@@ -77,6 +77,9 @@ class WsViewModel : ViewModel() {
     /** 是否套用设置页里的全局代理；关闭则本次连接强制直连 */
     var useProxy by mutableStateOf(true)
 
+    /** 跳过 TLS 证书校验；仅用于调试自签名或内网 WSS 服务 */
+    var insecureTls by mutableStateOf(false)
+
     val state = engine.state
     val events = engine.events
     val history = sessions.wsHistory
@@ -144,7 +147,8 @@ class WsViewModel : ViewModel() {
             useProxy = useProxy,
             autoReconnect = autoReconnect,
             reconnectBaseDelaySec = sessions.wsReconnectSettings.value.baseDelaySec,
-            reconnectMaxDelaySec = sessions.wsReconnectSettings.value.maxDelaySec
+            reconnectMaxDelaySec = sessions.wsReconnectSettings.value.maxDelaySec,
+            insecureTls = insecureTls
         )
     )
 
@@ -160,6 +164,7 @@ class WsViewModel : ViewModel() {
         headers = snap.headers.map { KeyValue(it.key, it.value, it.enabled) }.ifEmpty { listOf(KeyValue()) }
         subprotocols = snap.subprotocols.joinToString(", ")
         useProxy = snap.useProxy
+        insecureTls = snap.insecureTls
         updateReconnectBase(snap.reconnectBaseDelaySec.toString())
         updateReconnectMax(snap.reconnectMaxDelaySec.toString())
         updateAutoReconnect(snap.autoReconnect)
@@ -264,7 +269,8 @@ class WsViewModel : ViewModel() {
                 subprotocols = resolvedSubprotocols,
                 proxy = proxy,
                 pingIntervalSec = pingIntervalSec.toIntOrNull() ?: 0,
-                pingPayload = pingPayload.ifBlank { "ping" }
+                pingPayload = pingPayload.ifBlank { "ping" },
+                insecureTls = insecureTls
             )
             allowReconnect = true
             add(L10n.t(R.string.proxy_in_use, proxy.summary.ifEmpty { L10n.t(R.string.proxy_summary_direct) }), true)

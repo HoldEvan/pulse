@@ -604,6 +604,9 @@
     <string name="graphql_query_label">GraphQL query</string>
     <string name="graphql_variables_label">Variables (JSON)</string>
     <string name="timeout_sec_label">Timeout (s)</string>
+    <string name="insecure_tls_label">Skip TLS certificate checks</string>
+    <string name="insecure_tls_hint">Only for self-signed or internal certificates</string>
+    <string name="insecure_tls_warning_on">Certificate checks are off; connections are open to interception. Turn this back off after debugging</string>
     <string name="use_proxy_label">Use proxy</string>
     <string name="auth_type_label">Auth type</string>
     <string name="kv_param_value">Param value</string>

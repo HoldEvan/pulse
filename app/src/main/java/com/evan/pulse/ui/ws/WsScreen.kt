@@ -37,6 +37,7 @@ import com.evan.pulse.ui.common.ConnectionStateIndicator
 import com.evan.pulse.ui.common.connectionStateColor
 import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.EventLine
+import com.evan.pulse.ui.common.InsecureTlsRow
 import com.evan.pulse.ui.common.KeyValueEditor
 import com.evan.pulse.ui.common.ValueHints
 import com.evan.pulse.ui.common.eventLogText
@@ -165,6 +166,11 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
                         onCheckedChange = { viewModel.useProxy = it }
                     )
                 }
+                InsecureTlsRow(
+                    checked = viewModel.insecureTls,
+                    onCheckedChange = { viewModel.insecureTls = it },
+                    modifier = Modifier.padding(top = 10.dp)
+                )
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                     verticalAlignment = Alignment.CenterVertically

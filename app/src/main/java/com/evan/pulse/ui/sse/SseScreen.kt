@@ -46,6 +46,7 @@ import com.evan.pulse.ui.common.ConnectionStateIndicator
 import com.evan.pulse.ui.common.connectionStateColor
 import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.EventLine
+import com.evan.pulse.ui.common.InsecureTlsRow
 import com.evan.pulse.ui.common.KeyValueEditor
 import com.evan.pulse.ui.common.MarkdownBlock
 import com.evan.pulse.ui.common.ValueHints
@@ -234,6 +235,11 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                                     onCheckedChange = { viewModel.useProxy = it }
                                 )
                             }
+                            InsecureTlsRow(
+                                checked = viewModel.insecureTls,
+                                onCheckedChange = { viewModel.insecureTls = it },
+                                modifier = Modifier.padding(top = 10.dp)
+                            )
                         }
                     }
                 }

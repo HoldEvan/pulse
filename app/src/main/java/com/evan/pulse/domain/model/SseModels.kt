@@ -22,7 +22,9 @@ data class SseConfig(
     /** 事件名过滤：非空时只保留该 event 类型的帧，空串表示接收全部 */
     val eventFilter: String = "",
     val autoReconnect: Boolean = false,
-    val reconnectDelaySec: Int = 3
+    val reconnectDelaySec: Int = 3,
+    /** 跳过 TLS 证书校验：仅用于自签名/内网证书调试 */
+    val insecureTls: Boolean = false
 )
 
 enum class SseConnectionState {

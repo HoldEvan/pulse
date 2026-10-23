@@ -78,7 +78,9 @@ data class HttpSnapshot(
     /** 弱网模拟档位名（FIVE_G/FOUR_G/THREE_G/TWO_G/FORCE_TIMEOUT），NONE 表示关闭 */
     val throttlePreset: String = "NONE",
     /** 强制超时秒数，0 表示不启用 */
-    val forceTimeoutSec: String = ""
+    val forceTimeoutSec: String = "",
+    /** 跳过 TLS 证书校验：仅用于自签名/内网证书调试 */
+    val insecureTls: Boolean = false
 )
 
 @Serializable
@@ -94,7 +96,9 @@ data class WsSnapshot(
     val useProxy: Boolean = true,
     val autoReconnect: Boolean = false,
     val reconnectBaseDelaySec: Int = 3,
-    val reconnectMaxDelaySec: Int = 60
+    val reconnectMaxDelaySec: Int = 60,
+    /** 跳过 TLS 证书校验：仅用于自签名/内网证书调试 */
+    val insecureTls: Boolean = false
 )
 
 @Serializable
@@ -128,7 +132,9 @@ data class SseSnapshot(
     /** 连接建立超时秒数 */
     val timeoutSec: Int = 15,
     /** 是否使用设置页的全局代理 */
-    val useProxy: Boolean = true
+    val useProxy: Boolean = true,
+    /** 跳过 TLS 证书校验：仅用于自签名/内网证书调试 */
+    val insecureTls: Boolean = false
 )
 
 /** 快照统一序列化配置：字段只增不减，旧快照缺字段时用默认值兜底 */

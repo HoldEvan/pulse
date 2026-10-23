@@ -56,6 +56,9 @@ class SseViewModel : ViewModel() {
     /** 是否套用设置页里的全局代理；关闭则本次连接强制直连 */
     var useProxy by mutableStateOf(true)
 
+    /** 跳过 TLS 证书校验；仅用于调试自签名或内网 HTTPS 服务 */
+    var insecureTls by mutableStateOf(false)
+
     var activeTab by mutableIntStateOf(0)
 
     /** 拼接预览：表达式 + 累计文本；previewTab 0=原始 1=Markdown */
@@ -129,7 +132,8 @@ class SseViewModel : ViewModel() {
             reconnectDelaySec = reconnectDelaySec.toIntOrNull() ?: 3,
             previewPath = previewPath,
             timeoutSec = timeoutSec.toIntOrNull() ?: 15,
-            useProxy = useProxy
+            useProxy = useProxy,
+            insecureTls = insecureTls
         )
     )
 
@@ -150,6 +154,7 @@ class SseViewModel : ViewModel() {
         reconnectDelaySec = snap.reconnectDelaySec.toString()
         timeoutSec = snap.timeoutSec.toString()
         useProxy = snap.useProxy
+        insecureTls = snap.insecureTls
         previewPath = snap.previewPath
     }
 
@@ -239,7 +244,8 @@ class SseViewModel : ViewModel() {
                     proxy = proxy,
                     eventFilter = eventFilter.trim(),
                     autoReconnect = autoReconnect,
-                    reconnectDelaySec = reconnectDelaySec.toIntOrNull() ?: 3
+                    reconnectDelaySec = reconnectDelaySec.toIntOrNull() ?: 3,
+                    insecureTls = insecureTls
                 )
             )
         }

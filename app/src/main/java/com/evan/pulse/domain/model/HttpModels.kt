@@ -60,7 +60,9 @@ data class HttpCallConfig(
     val timeoutMs: Long = 30_000L,
     val proxy: ProxyConfig = ProxyConfig(),
     /** 弱网模拟：默认关闭，零开销直发 */
-    val throttle: NetworkThrottleConfig = NetworkThrottleConfig()
+    val throttle: NetworkThrottleConfig = NetworkThrottleConfig(),
+    /** 跳过 TLS 证书校验：仅用于自签名/内网证书调试 */
+    val insecureTls: Boolean = false
 )
 
 sealed interface HttpCallOutcome {

@@ -40,6 +40,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import com.evan.pulse.domain.net.InsecureTls.applyInsecureTls
 import kotlinx.coroutines.withContext
 
 /**
@@ -52,7 +53,10 @@ class KtorSseEngine : SseEngine {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val lock = Mutex()
-    private val clients = ConcurrentHashMap<ProxyConfig, HttpClient>()
+    /** 代理与 TLS 策略都是引擎级配置，按两者组合缓存客户端 */
+    private data class ClientKey(val proxy: ProxyConfig, val insecureTls: Boolean)
+
+    private val clients = ConcurrentHashMap<ClientKey, HttpClient>()
 
     private val _state = MutableStateFlow(SseConnectionState.IDLE)
     override val state: StateFlow<SseConnectionState> = _state.asStateFlow()
@@ -85,7 +89,7 @@ class KtorSseEngine : SseEngine {
             try {
                 // 超时只约束到响应头到达为止；流建立后 parseStream 不再受影响
                 val response = withTimeout(config.timeoutMs) {
-                    clientFor(config.proxy).request(config.url) {
+                    clientFor(config.proxy, config.insecureTls).request(config.url) {
                         method = ktorMethod(config.method)
                         header("Accept", "text/event-stream")
                         config.queryParams
@@ -177,20 +181,22 @@ class KtorSseEngine : SseEngine {
         flush()
     }
 
-    private fun clientFor(proxyConfig: ProxyConfig): HttpClient {
-        clients[proxyConfig]?.let { return it }
+    private fun clientFor(proxyConfig: ProxyConfig, insecureTls: Boolean): HttpClient {
+        val key = ClientKey(proxyConfig, insecureTls)
+        clients[key]?.let { return it }
         if (clients.size >= MAX_CACHED_CLIENTS) {
             clients.keys.firstOrNull()?.let { clients.remove(it) }
         }
-        return clients.getOrPut(proxyConfig) { buildClient(proxyConfig) }
+        return clients.getOrPut(key) { buildClient(proxyConfig, insecureTls) }
     }
 
-    private fun buildClient(proxyConfig: ProxyConfig): HttpClient = HttpClient(OkHttp) {
+    private fun buildClient(proxyConfig: ProxyConfig, insecureTls: Boolean): HttpClient = HttpClient(OkHttp) {
         engine {
             config {
                 connectTimeout(0, TimeUnit.MILLISECONDS)
                 readTimeout(0, TimeUnit.MILLISECONDS)
                 writeTimeout(0, TimeUnit.MILLISECONDS)
+                applyInsecureTls(insecureTls)
                 if (proxyConfig.enabled) {
                     proxy(
                         Proxy(

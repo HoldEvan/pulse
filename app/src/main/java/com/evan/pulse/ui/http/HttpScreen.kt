@@ -59,6 +59,7 @@ import com.evan.pulse.ui.collection.SaveRequestDialog
 import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.CollapsibleKeyValueTable
 import com.evan.pulse.ui.common.CopyIconButton
+import com.evan.pulse.ui.common.InsecureTlsRow
 import com.evan.pulse.ui.common.KeyValueEditor
 import com.evan.pulse.ui.common.MonospaceBlock
 import com.evan.pulse.ui.common.SectionTitleRow
@@ -417,6 +418,10 @@ private fun NetworkEditor(viewModel: HttpViewModel) {
                     onCheckedChange = { viewModel.useProxy = it }
                 )
             }
+            InsecureTlsRow(
+                checked = viewModel.insecureTls,
+                onCheckedChange = { viewModel.insecureTls = it }
+            )
         }
     }
 }
