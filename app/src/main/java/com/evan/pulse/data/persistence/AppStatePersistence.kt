@@ -468,6 +468,24 @@ class AppStatePersistence(context: Context) {
                         put("enabled", m.enabled)
                         put("group", m.group)
                         put("createdAt", m.createdAt)
+                        put("method", m.method)
+                        put("headers", buildJsonArray {
+                            m.headers.forEach { h ->
+                                add(buildJsonObject {
+                                    put("key", h.key)
+                                    put("value", h.value)
+                                    put("enabled", h.enabled)
+                                })
+                            }
+                        })
+                        put("bodyType", m.bodyType)
+                        put("bodyText", m.bodyText)
+                        put("authType", m.authType)
+                        put("bearerToken", m.bearerToken)
+                        put("basicUsername", m.basicUsername)
+                        put("basicPassword", m.basicPassword)
+                        put("apiKeyName", m.apiKeyName)
+                        put("apiKeyValue", m.apiKeyValue)
                     })
                 }
             })
@@ -630,7 +648,24 @@ class AppStatePersistence(context: Context) {
             latencyThresholdMs = o.longValue("latencyThresholdMs", 0L),
             enabled = o.booleanValue("enabled", true),
             group = o.stringValue("group"),
-            createdAt = o.longValue("createdAt", 0L)
+            createdAt = o.longValue("createdAt", 0L),
+            method = o.stringValue("method", "GET"),
+            headers = o.arrayValue("headers")?.mapNotNull { h ->
+                val ho = h.jsonObject
+                KeyValueEntry(
+                    key = ho.stringValue("key"),
+                    value = ho.stringValue("value"),
+                    enabled = ho.booleanValue("enabled", true)
+                )
+            } ?: emptyList(),
+            bodyType = o.stringValue("bodyType", "NONE"),
+            bodyText = o.stringValue("bodyText"),
+            authType = o.stringValue("authType", "NONE"),
+            bearerToken = o.stringValue("bearerToken"),
+            basicUsername = o.stringValue("basicUsername"),
+            basicPassword = o.stringValue("basicPassword"),
+            apiKeyName = o.stringValue("apiKeyName"),
+            apiKeyValue = o.stringValue("apiKeyValue")
         ).takeIf { it.id >= 0 }
     }
 

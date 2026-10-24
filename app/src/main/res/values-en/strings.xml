@@ -787,7 +787,11 @@
     <string name="monitor_host_required">Enter a host</string>
     <string name="monitor_port_label">Port</string>
     <string name="monitor_port_invalid">Port must be between 1 and 65535</string>
-    <string name="monitor_url_label">URL (GET without parameters only)</string>
+    <string name="monitor_url_label">Endpoint URL, supports {{vars}}</string>
+    <string name="monitor_method_label">Method</string>
+    <string name="monitor_headers_label">Headers</string>
+    <string name="monitor_body_label">Body</string>
+    <string name="monitor_auth_label">Authentication</string>
     <string name="monitor_url_required">Enter a URL</string>
     <string name="monitor_url_scheme">URL must start with http:// or https://</string>
     <string name="monitor_status_min_label">Minimum status</string>

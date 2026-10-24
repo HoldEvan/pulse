@@ -787,7 +787,11 @@
     <string name="monitor_host_required">请填写主机</string>
     <string name="monitor_port_label">端口</string>
     <string name="monitor_port_invalid">端口需在 1-65535 之间</string>
-    <string name="monitor_url_label">地址（只支持不带参数的 GET）</string>
+    <string name="monitor_url_label">接口地址，支持 {{变量}}</string>
+    <string name="monitor_method_label">请求方法</string>
+    <string name="monitor_headers_label">请求头</string>
+    <string name="monitor_body_label">请求体</string>
+    <string name="monitor_auth_label">鉴权</string>
     <string name="monitor_url_required">请填写地址</string>
     <string name="monitor_url_scheme">地址需以 http:// 或 https:// 开头</string>
     <string name="monitor_status_min_label">起始状态码</string>

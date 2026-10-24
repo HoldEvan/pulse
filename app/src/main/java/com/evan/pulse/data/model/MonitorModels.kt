@@ -28,7 +28,22 @@ data class MonitorTarget(
     val enabled: Boolean = true,
     /** 一级分组名，空字符串表示未分组 */
     val group: String = "",
-    val createdAt: Long = 0L
+    val createdAt: Long = 0L,
+    /** HTTP 拨测方法；非 HTTP 类型忽略 */
+    val method: String = "GET",
+    /** HTTP 拨测请求头（键非空才生效） */
+    val headers: List<KeyValueEntry> = emptyList(),
+    /** HTTP 拨测请求体类型：NONE / JSON / RAW */
+    val bodyType: String = "NONE",
+    /** HTTP 拨测请求体文本 */
+    val bodyText: String = "",
+    /** HTTP 拨测鉴权：NONE / BEARER / BASIC / APIKEY */
+    val authType: String = "NONE",
+    val bearerToken: String = "",
+    val basicUsername: String = "",
+    val basicPassword: String = "",
+    val apiKeyName: String = "",
+    val apiKeyValue: String = ""
 )
 
 /** 一次拨测的运行结果，只保存在内存里用于界面展示 */

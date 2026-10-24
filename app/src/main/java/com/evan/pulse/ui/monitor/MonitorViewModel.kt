@@ -8,6 +8,8 @@ import androidx.lifecycle.viewModelScope
 import com.evan.pulse.data.model.MonitorRecord
 import com.evan.pulse.data.model.MonitorRun
 import com.evan.pulse.data.model.MonitorTarget
+import com.evan.pulse.data.model.KeyValueEntry
+import com.evan.pulse.domain.model.KeyValue
 import com.evan.pulse.data.model.MonitorType
 import com.evan.pulse.data.monitor.MonitorChecker
 import com.evan.pulse.data.monitor.MonitorScheduler
@@ -72,6 +74,21 @@ class MonitorViewModel : ViewModel() {
     var statusMaxInput by mutableStateOf("399")
     var latencyInput by mutableStateOf("0")
     var enabled by mutableStateOf(true)
+    /** HTTP 拨测方法，默认 GET */
+    var method by mutableStateOf("GET")
+    /** HTTP 拨测请求头 */
+    var headers by mutableStateOf(listOf<KeyValue>())
+    /** HTTP 拨测请求体类型：NONE / JSON / RAW */
+    var bodyType by mutableStateOf("NONE")
+    /** HTTP 拨测请求体文本 */
+    var bodyText by mutableStateOf("")
+    /** HTTP 拨测鉴权：NONE / BEARER / BASIC / APIKEY */
+    var authType by mutableStateOf("NONE")
+    var bearerToken by mutableStateOf("")
+    var basicUsername by mutableStateOf("")
+    var basicPassword by mutableStateOf("")
+    var apiKeyName by mutableStateOf("")
+    var apiKeyValue by mutableStateOf("")
     var deleteTarget by mutableStateOf<MonitorTarget?>(null)
     var clearRecordsAsked by mutableStateOf(false)
 
@@ -146,6 +163,16 @@ class MonitorViewModel : ViewModel() {
         statusMaxInput = "399"
         latencyInput = "0"
         enabled = true
+        method = "GET"
+        headers = emptyList()
+        bodyType = "NONE"
+        bodyText = ""
+        authType = "NONE"
+        bearerToken = ""
+        basicUsername = ""
+        basicPassword = ""
+        apiKeyName = ""
+        apiKeyValue = ""
         showEditor = true
     }
 
@@ -171,6 +198,16 @@ class MonitorViewModel : ViewModel() {
         statusMaxInput = target.statusMax.toString()
         latencyInput = target.latencyThresholdMs.toString()
         enabled = target.enabled
+        method = target.method
+        headers = target.headers.map { KeyValue(it.key, it.value, it.enabled) }
+        bodyType = target.bodyType
+        bodyText = target.bodyText
+        authType = target.authType
+        bearerToken = target.bearerToken
+        basicUsername = target.basicUsername
+        basicPassword = target.basicPassword
+        apiKeyName = target.apiKeyName
+        apiKeyValue = target.apiKeyValue
         showEditor = true
     }
 
@@ -250,7 +287,18 @@ class MonitorViewModel : ViewModel() {
             statusMax = statusMaxInput.trim().toIntOrNull() ?: 0,
             latencyThresholdMs = latencyInput.trim().toLongOrNull()?.coerceAtLeast(0L) ?: 0L,
             enabled = enabled,
-            createdAt = existing?.createdAt ?: 0L
+            createdAt = existing?.createdAt ?: 0L,
+            method = method.trim().uppercase(),
+            headers = headers.filter { it.key.isNotBlank() }
+                .map { KeyValueEntry(it.key, it.value, it.enabled) },
+            bodyType = bodyType,
+            bodyText = bodyText,
+            authType = authType,
+            bearerToken = bearerToken.trim(),
+            basicUsername = basicUsername.trim(),
+            basicPassword = basicPassword,
+            apiKeyName = apiKeyName.trim(),
+            apiKeyValue = apiKeyValue.trim()
         )
     }
 }

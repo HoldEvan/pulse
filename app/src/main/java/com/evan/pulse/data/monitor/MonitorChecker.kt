@@ -8,9 +8,13 @@ import com.evan.pulse.data.model.MonitorTarget
 import com.evan.pulse.data.model.MonitorType
 import com.evan.pulse.di.ServiceLocator
 import com.evan.pulse.domain.PlaceholderResolver
+import com.evan.pulse.domain.model.AuthConfig
+import com.evan.pulse.domain.model.AuthType
+import com.evan.pulse.domain.model.BodyType
 import com.evan.pulse.domain.model.HttpCallConfig
 import com.evan.pulse.domain.model.HttpCallOutcome
 import com.evan.pulse.domain.model.HttpMethod
+import com.evan.pulse.domain.model.KeyValue
 import com.evan.pulse.domain.model.ProxyConfig
 import com.evan.pulse.domain.net.HttpEngine
 import com.evan.pulse.ui.l10n.L10n
@@ -140,17 +144,67 @@ class MonitorChecker(
         proxy: ProxyConfig,
         start: Long,
     ): MonitorRun {
-        val probeUrl = when (val resolved = resolveUrl(target.url, vars)) {
-            is ResolvedUrl.Done -> resolved.url
-            is ResolvedUrl.Missing -> return failed(
+        val probeUrl = when (val resolved = resolveText(target.url, vars)) {
+            is ResolvedText.Done -> resolved.text
+            is ResolvedText.Missing -> return failed(
                 L10n.t(R.string.monitor_missing_vars, resolved.keys.joinToString(", ")),
                 start
             )
         }
+        val httpMethod = HttpMethod.parse(target.method)
+        val bodyType = parseBodyType(target.bodyType)
+        val sendBody = bodyType != BodyType.NONE &&
+            target.bodyText.isNotBlank() &&
+            httpMethod != HttpMethod("GET") &&
+            httpMethod != HttpMethod("HEAD")
+        val headers = buildList {
+            for (entry in target.headers) {
+                if (!entry.enabled || entry.key.isBlank()) continue
+                val key = when (val r = resolveText(entry.key, vars)) {
+                    is ResolvedText.Done -> r.text
+                    is ResolvedText.Missing -> return failed(
+                        L10n.t(R.string.monitor_missing_vars, r.keys.joinToString(", ")),
+                        start
+                    )
+                }
+                val value = when (val r = resolveText(entry.value, vars)) {
+                    is ResolvedText.Done -> r.text
+                    is ResolvedText.Missing -> return failed(
+                        L10n.t(R.string.monitor_missing_vars, r.keys.joinToString(", ")),
+                        start
+                    )
+                }
+                add(KeyValue(key, value))
+            }
+            addAll(
+                ServiceLocator.authApplier.apply(
+                    AuthConfig(
+                        type = parseAuthType(target.authType),
+                        bearerToken = target.bearerToken,
+                        basicUsername = target.basicUsername,
+                        basicPassword = target.basicPassword,
+                        apiKeyName = target.apiKeyName,
+                        apiKeyValue = target.apiKeyValue
+                    )
+                )
+            )
+        }
+        val body = if (sendBody) {
+            when (val r = resolveText(target.bodyText, vars)) {
+                is ResolvedText.Done -> r.text
+                is ResolvedText.Missing -> return failed(
+                    L10n.t(R.string.monitor_missing_vars, r.keys.joinToString(", ")),
+                    start
+                )
+            }
+        } else ""
         val outcome = httpEngine.execute(
             HttpCallConfig(
-                method = HttpMethod.GET,
+                method = httpMethod,
                 url = probeUrl,
+                headers = headers,
+                bodyType = if (sendBody) bodyType else BodyType.NONE,
+                body = body,
                 timeoutMs = clampTimeout(target.timeoutMs),
                 proxy = proxy
             )
@@ -213,11 +267,24 @@ class MonitorChecker(
     private fun failed(detail: String, start: Long) =
         MonitorRun(false, detail, elapsed(start), start)
 
-    private fun resolveUrl(url: String, vars: Map<String, String>): ResolvedUrl =
-        when (val result = resolver.resolve(url, vars)) {
-            is PlaceholderResolver.ResolveResult.Ok -> ResolvedUrl.Done(result.resolved)
-            is PlaceholderResolver.ResolveResult.Missing -> ResolvedUrl.Missing(result.keys)
+    private fun resolveText(text: String, vars: Map<String, String>): ResolvedText =
+        when (val result = resolver.resolve(text, vars)) {
+            is PlaceholderResolver.ResolveResult.Ok -> ResolvedText.Done(result.resolved)
+            is PlaceholderResolver.ResolveResult.Missing -> ResolvedText.Missing(result.keys)
         }
+
+    private fun parseBodyType(raw: String): BodyType = when (raw.uppercase()) {
+        "JSON" -> BodyType.JSON
+        "RAW" -> BodyType.RAW
+        else -> BodyType.NONE
+    }
+
+    private fun parseAuthType(raw: String): AuthType = when (raw.uppercase()) {
+        "BEARER" -> AuthType.BEARER
+        "BASIC" -> AuthType.BASIC
+        "APIKEY" -> AuthType.APIKEY
+        else -> AuthType.NONE
+    }
 
     private fun toProxy(config: ProxyConfig): Proxy? {
         if (!config.enabled) return null
@@ -282,7 +349,7 @@ class MonitorChecker(
 internal data class ConnectResult(val open: Boolean, val durationMs: Long, val reason: String)
 
 /** 占位符替换结果 */
-internal sealed interface ResolvedUrl {
-    data class Done(val url: String) : ResolvedUrl
-    data class Missing(val keys: List<String>) : ResolvedUrl
+internal sealed interface ResolvedText {
+    data class Done(val text: String) : ResolvedText
+    data class Missing(val keys: List<String>) : ResolvedText
 }

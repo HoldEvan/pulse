@@ -787,7 +787,11 @@
     <string name="monitor_host_required">請填寫主機</string>
     <string name="monitor_port_label">埠號</string>
     <string name="monitor_port_invalid">埠號需在 1-65535 之間</string>
-    <string name="monitor_url_label">位址（只支援不帶參數的 GET）</string>
+    <string name="monitor_url_label">介面位址，支援 {{變數}}</string>
+    <string name="monitor_method_label">請求方法</string>
+    <string name="monitor_headers_label">請求頭</string>
+    <string name="monitor_body_label">請求體</string>
+    <string name="monitor_auth_label">鑑權</string>
     <string name="monitor_url_required">請填寫位址</string>
     <string name="monitor_url_scheme">位址需以 http:// 或 https:// 開頭</string>
     <string name="monitor_status_min_label">起始狀態碼</string>

@@ -39,6 +39,10 @@ import com.evan.pulse.data.model.addressText
 import com.evan.pulse.data.model.MONITOR_INTERVAL_PRESETS
 import com.evan.pulse.data.monitor.TargetValidation
 import com.evan.pulse.ui.common.BottomBarClearance
+import com.evan.pulse.domain.model.HttpMethod
+import com.evan.pulse.domain.model.KeyValue
+import com.evan.pulse.ui.common.KeyValueEditor
+import com.evan.pulse.ui.common.MethodPicker
 import com.evan.pulse.ui.common.CollapsibleSection
 import com.evan.pulse.ui.common.ConnectionStateIndicator
 import com.evan.pulse.ui.common.LocalTopBarInset
@@ -318,6 +322,148 @@ fun MonitorScreen(
                                 .weight(0.45f)
                                 .padding(start = 6.dp)
                         )
+                    }
+                    MethodPicker(
+                        method = HttpMethod(viewModel.method),
+                        onMethodChange = { viewModel.method = it.value },
+                        title = stringResource(R.string.monitor_method_label),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                    )
+                    CollapsibleSection(
+                        title = stringResource(R.string.monitor_headers_label),
+                        itemCount = viewModel.headers.count { it.key.isNotBlank() },
+                        modifier = Modifier.padding(top = 8.dp)
+                    ) {
+                        KeyValueEditor(
+                            items = viewModel.headers,
+                            keyLabel = stringResource(R.string.kv_header_key),
+                            valueLabel = stringResource(R.string.kv_header_value),
+                            onChange = { index, entry ->
+                                viewModel.headers = viewModel.headers.mapIndexed { i, e ->
+                                    if (i == index) entry else e
+                                }
+                            },
+                            onAdd = { viewModel.headers = viewModel.headers + KeyValue() },
+                            onRemove = { index ->
+                                viewModel.headers =
+                                    viewModel.headers.filterIndexed { i, _ -> i != index }
+                            }
+                        )
+                    }
+                    AppDropdown(
+                        title = stringResource(R.string.body_type_label),
+                        items = listOf(
+                            stringResource(R.string.body_none),
+                            stringResource(R.string.body_json),
+                            stringResource(R.string.body_raw)
+                        ),
+                        selectedIndex = when (viewModel.bodyType.uppercase()) {
+                            "JSON" -> 1
+                            "RAW" -> 2
+                            else -> 0
+                        },
+                        showValue = true,
+                        filled = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        onSelectedIndexChange = {
+                            viewModel.bodyType = when (it) {
+                                1 -> "JSON"
+                                2 -> "RAW"
+                                else -> "NONE"
+                            }
+                        }
+                    )
+                    if (viewModel.bodyType != "NONE") {
+                        AppTextField(
+                            value = viewModel.bodyText,
+                            onValueChange = { viewModel.bodyText = it },
+                            label = stringResource(R.string.monitor_body_label),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp)
+                        )
+                    }
+                    AppDropdown(
+                        title = stringResource(R.string.monitor_auth_label),
+                        items = listOf(
+                            stringResource(R.string.auth_none),
+                            stringResource(R.string.auth_bearer),
+                            stringResource(R.string.auth_basic),
+                            stringResource(R.string.auth_apikey)
+                        ),
+                        selectedIndex = when (viewModel.authType.uppercase()) {
+                            "BEARER" -> 1
+                            "BASIC" -> 2
+                            "APIKEY" -> 3
+                            else -> 0
+                        },
+                        showValue = true,
+                        filled = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        onSelectedIndexChange = {
+                            viewModel.authType = when (it) {
+                                1 -> "BEARER"
+                                2 -> "BASIC"
+                                3 -> "APIKEY"
+                                else -> "NONE"
+                            }
+                        }
+                    )
+                    when (viewModel.authType.uppercase()) {
+                        "BEARER" -> AppTextField(
+                            value = viewModel.bearerToken,
+                            onValueChange = { viewModel.bearerToken = it },
+                            label = stringResource(R.string.bearer_token_label),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp)
+                        )
+
+                        "BASIC" -> Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            AppTextField(
+                                value = viewModel.basicUsername,
+                                onValueChange = { viewModel.basicUsername = it },
+                                label = stringResource(R.string.username_label),
+                                modifier = Modifier.weight(0.5f)
+                            )
+                            AppTextField(
+                                value = viewModel.basicPassword,
+                                onValueChange = { viewModel.basicPassword = it },
+                                label = stringResource(R.string.password_label),
+                                modifier = Modifier.weight(0.5f)
+                            )
+                        }
+
+                        "APIKEY" -> Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            AppTextField(
+                                value = viewModel.apiKeyName,
+                                onValueChange = { viewModel.apiKeyName = it },
+                                label = stringResource(R.string.apikey_name_label),
+                                modifier = Modifier.weight(0.5f)
+                            )
+                            AppTextField(
+                                value = viewModel.apiKeyValue,
+                                onValueChange = { viewModel.apiKeyValue = it },
+                                label = stringResource(R.string.apikey_value_label),
+                                modifier = Modifier.weight(0.5f)
+                            )
+                        }
                     }
                 }
                 AppDropdown(

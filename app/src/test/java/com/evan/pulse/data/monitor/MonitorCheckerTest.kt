@@ -228,6 +228,36 @@ class MonitorCheckerTest {
         socketFactory = { throw IllegalStateException("HTTP probe should not touch socket") }
     )
 
+    private class CapturingEngine : HttpEngine {
+        var captured: HttpCallConfig? = null
+        override suspend fun execute(config: HttpCallConfig): HttpCallOutcome {
+            captured = config
+            return HttpCallOutcome.Success(
+                statusCode = 200,
+                statusText = "OK",
+                headers = emptyList(),
+                body = "",
+                durationMs = 10L,
+                responseSizeBytes = 0
+            )
+        }
+    }
+
+    private val substitutingResolver = object : com.evan.pulse.domain.PlaceholderResolver {
+        override fun resolve(text: String, vars: Map<String, String>):
+            com.evan.pulse.domain.PlaceholderResolver.ResolveResult {
+            var out = text
+            for ((k, v) in vars) out = out.replace("{{$k}}", v)
+            val missing = Regex("\\{\\{([A-Za-z0-9_]+)\\}\\}").findAll(out)
+                .map { it.groupValues[1] }.toList()
+            return if (missing.isEmpty()) {
+                com.evan.pulse.domain.PlaceholderResolver.ResolveResult.Ok(out)
+            } else {
+                com.evan.pulse.domain.PlaceholderResolver.ResolveResult.Missing(missing)
+            }
+        }
+    }
+
     @Test
     fun `check marks slow when latency exceeds threshold`() = runBlocking {
         val t = target(MonitorType.HTTP, url = "https://example.com/ping").copy(latencyThresholdMs = 500)
@@ -251,5 +281,66 @@ class MonitorCheckerTest {
         val run = httpChecker(5000).check(t, emptyMap(), ProxyConfig())
         assertTrue(run.ok)
         assertFalse(run.slow)
+    }
+
+    @Test
+    fun `check sends method headers body and auth`() = runBlocking {
+        val engine = CapturingEngine()
+        val checker = MonitorChecker(
+            httpEngine = engine,
+            resolver = substitutingResolver,
+            socketFactory = { throw IllegalStateException() }
+        )
+        val t = target(MonitorType.HTTP, url = "https://example.com/api").copy(
+            method = "POST",
+            headers = listOf(
+                com.evan.pulse.data.model.KeyValueEntry("X-Trace", "{{traceId}}"),
+                com.evan.pulse.data.model.KeyValueEntry("", "ignored"),
+                com.evan.pulse.data.model.KeyValueEntry("X-Off", "v", enabled = false)
+            ),
+            bodyType = "JSON",
+            bodyText = "{\"k\":\"{{name}}\"}",
+            authType = "BEARER",
+            bearerToken = "tk1"
+        )
+        val run = checker.check(t, mapOf("traceId" to "t-9", "name" to "v"), ProxyConfig())
+        assertTrue(run.ok)
+        val cfg = engine.captured!!
+        assertEquals("POST", cfg.method.value)
+        assertEquals("https://example.com/api", cfg.url)
+        assertEquals("t-9", cfg.headers.first { it.key == "X-Trace" }.value)
+        assertEquals("Bearer tk1", cfg.headers.first { it.key == "Authorization" }.value)
+        assertEquals(2, cfg.headers.size)
+        assertEquals(com.evan.pulse.domain.model.BodyType.JSON, cfg.bodyType)
+        assertEquals("{\"k\":\"v\"}", cfg.body)
+    }
+
+    @Test
+    fun `check skips body for GET`() = runBlocking {
+        val engine = CapturingEngine()
+        val checker = MonitorChecker(
+            httpEngine = engine,
+            resolver = substitutingResolver,
+            socketFactory = { throw IllegalStateException() }
+        )
+        val t = target(MonitorType.HTTP).copy(bodyType = "JSON", bodyText = "{\"a\":1}")
+        val run = checker.check(t, emptyMap(), ProxyConfig())
+        assertTrue(run.ok)
+        assertEquals(com.evan.pulse.domain.model.BodyType.NONE, engine.captured!!.bodyType)
+        assertEquals("", engine.captured!!.body)
+    }
+
+    @Test
+    fun `check fails when placeholder missing in body`() = runBlocking {
+        val engine = CapturingEngine()
+        val checker = MonitorChecker(
+            httpEngine = engine,
+            resolver = substitutingResolver,
+            socketFactory = { throw IllegalStateException() }
+        )
+        val t = target(MonitorType.HTTP).copy(method = "POST", bodyType = "RAW", bodyText = "token={{token}}")
+        val run = checker.check(t, emptyMap(), ProxyConfig())
+        assertFalse(run.ok)
+        assertTrue(engine.captured == null)
     }
 }
