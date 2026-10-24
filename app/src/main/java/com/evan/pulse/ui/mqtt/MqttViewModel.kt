@@ -44,6 +44,9 @@ class MqttViewModel : ViewModel() {
     /** 是否套用设置页里的全局代理；关闭则本次连接强制直连 */
     var useProxy by mutableStateOf(true)
 
+    /** 当前请求所属文件夹，用于合并文件夹变量 */
+    private var activeCollectionId: Long? = null
+
     /** 持久化订阅集合，来自 ProtocolSessionStore，启动时随 app_data.json 恢复 */
     val subscriptions: StateFlow<List<MqttSubscriptionEntry>> = sessions.mqttSubscriptions
 
@@ -75,6 +78,7 @@ class MqttViewModel : ViewModel() {
                 if (req?.type == RequestType.MQTT) {
                     restore(req.data)
                     loadedRequest.track(req.id)
+                    activeCollectionId = req.collectionId
                     ServiceLocator.collectionStore.consumePending(req)
                 }
             }
@@ -88,7 +92,11 @@ class MqttViewModel : ViewModel() {
     fun saveOverLoaded(): Boolean = loadedRequest.saveOver { snapshot() }
 
     /** 保存对话框新建成功后绑定新条目，避免下次保存再建一条 */
-    fun markSaved(id: Long) = loadedRequest.track(id)
+    fun markSaved(id: Long) {
+        loadedRequest.track(id)
+        activeCollectionId = ServiceLocator.collectionStore.requests.value
+            .firstOrNull { it.id == id }?.collectionId
+    }
 
     /** 导出当前配置为可恢复快照 */
     fun snapshot(): String = snapshotJson.encodeToString(
@@ -131,7 +139,7 @@ class MqttViewModel : ViewModel() {
     }
 
     private fun resolve(text: String, onOk: (String) -> Unit) {
-        val vars = ServiceLocator.envStore.activeVars()
+        val vars = ServiceLocator.varsForCollection(activeCollectionId)
         when (val r = resolver.resolve(text, vars)) {
             is PlaceholderResolver.ResolveResult.Ok -> onOk(r.resolved)
             is PlaceholderResolver.ResolveResult.Missing -> missingVars = r.keys

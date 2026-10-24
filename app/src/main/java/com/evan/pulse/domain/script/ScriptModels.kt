@@ -162,7 +162,11 @@ interface ScriptSandbox {
 }
 
 /** 每次执行脚本创建一个新的会话 */
-class ScriptSession(override val scope: VariableScope) : ScriptSandbox {
+class ScriptSession(
+    override val scope: VariableScope,
+    /** 文件夹变量作用域；为空时脚本里没有 pm.collectionVariables */
+    val collectionScope: VariableScope? = null
+) : ScriptSandbox {
 
     override val console = mutableListOf<String>()
     override val tests = mutableListOf<TestRecord>()

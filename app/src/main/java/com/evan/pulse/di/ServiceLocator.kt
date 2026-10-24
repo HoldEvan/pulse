@@ -7,6 +7,7 @@ import com.evan.pulse.data.model.EnvironmentInfo
 import com.evan.pulse.data.model.HistoryEntry
 import com.evan.pulse.data.model.ImportGroup
 import com.evan.pulse.data.model.ImportResult
+import com.evan.pulse.data.model.KeyValueEntry
 import com.evan.pulse.data.model.MONITOR_HISTORY_LIMIT
 import com.evan.pulse.data.model.MonitorHistoryEntry
 import com.evan.pulse.data.model.MonitorRecord
@@ -380,6 +381,10 @@ class CollectionStore(private val persist: PersistenceHandle) {
     private val _requests = MutableStateFlow(emptyList<SavedRequest>())
     val requests: StateFlow<List<SavedRequest>> = _requests.asStateFlow()
 
+    /** 文件夹变量：按文件夹 id 保存，解析时按祖先链合并 */
+    private val _variables = MutableStateFlow<Map<Long, List<KeyValueEntry>>>(emptyMap())
+    val variables: StateFlow<Map<Long, List<KeyValueEntry>>> = _variables.asStateFlow()
+
     private var nextCollectionId = 2L
     private var nextRequestId = 1L
 
@@ -408,6 +413,38 @@ class CollectionStore(private val persist: PersistenceHandle) {
         val doomed = CollectionTree.descendantsOf(_collections.value, id) + id
         _collections.value = _collections.value.filter { it.id !in doomed }
         _requests.value = _requests.value.filter { it.collectionId !in doomed }
+        _variables.value = _variables.value.filterKeys { it !in doomed }
+        persist.save()
+    }
+
+    /** 某个文件夹自身的变量（不含继承） */
+    fun varsOf(collectionId: Long): List<KeyValueEntry> =
+        _variables.value[collectionId].orEmpty()
+
+    /**
+     * 合并自身与祖先的变量：根在前、自身在后，同名时子级覆盖父级。
+     *
+     * 只取启用且键非空的条目；[collectionId] 为空时返回空表。
+     */
+    fun resolvedVars(collectionId: Long?): Map<String, String> {
+        if (collectionId == null) return emptyMap()
+        val result = LinkedHashMap<String, String>()
+        for (id in CollectionTree.idPathOf(_collections.value, collectionId)) {
+            _variables.value[id].orEmpty()
+                .filter { it.enabled && it.key.isNotBlank() }
+                .forEach { result[it.key] = it.value }
+        }
+        return result
+    }
+
+    /** 覆盖某个文件夹自身的变量；空列表表示清空该文件夹的变量 */
+    fun setVars(collectionId: Long, entries: List<KeyValueEntry>) {
+        val cleaned = entries.filter { it.key.isNotBlank() }
+        _variables.value = if (cleaned.isEmpty()) {
+            _variables.value - collectionId
+        } else {
+            _variables.value + (collectionId to cleaned)
+        }
         persist.save()
     }
 
@@ -577,7 +614,8 @@ class CollectionStore(private val persist: PersistenceHandle) {
         _collections.value,
         _requests.value,
         nextCollectionId,
-        nextRequestId
+        nextRequestId,
+        _variables.value
     )
 
     fun restore(state: CollectionStoreSnapshot) {
@@ -587,6 +625,8 @@ class CollectionStore(private val persist: PersistenceHandle) {
         }
         _collections.value = collections
         _requests.value = requests
+        // 只保留仍存在的文件夹的变量，避免恢复出指向已删文件夹的配置
+        _variables.value = state.variables.filterKeys { id -> collections.any { it.id == id } }
         nextCollectionId = state.nextCollectionId.coerceAtLeast(
             (collections.maxOfOrNull { it.id } ?: 0L) + 1
         )
@@ -600,7 +640,8 @@ class CollectionStoreSnapshot(
     val collections: List<CollectionInfo>,
     val requests: List<SavedRequest>,
     val nextCollectionId: Long,
-    val nextRequestId: Long
+    val nextRequestId: Long,
+    val variables: Map<Long, List<KeyValueEntry>> = emptyMap()
 )
 
 class MonitorStore(private val persist: PersistenceHandle) {
@@ -868,6 +909,13 @@ object ServiceLocator {
     /** 由 Application 注入，供各协议页面读取代理等全局设置 */
     fun bindSettingsStore(store: SettingsStore) {
         _settingsStore = store
+    }
+
+    /** 环境变量与文件夹变量合并；同名时文件夹变量优先 */
+    fun varsForCollection(collectionId: Long?): Map<String, String> {
+        val merged = LinkedHashMap<String, String>(envStore.activeVars())
+        merged.putAll(collectionStore.resolvedVars(collectionId))
+        return merged
     }
 
     /** 初始化数据持久化：注册写盘回调并读回已有数据。必须在 Application.onCreate 中调用 */

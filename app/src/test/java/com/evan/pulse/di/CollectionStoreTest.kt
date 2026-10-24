@@ -1,5 +1,6 @@
 package com.evan.pulse.di
 
+import com.evan.pulse.data.model.KeyValueEntry
 import com.evan.pulse.data.model.RequestType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -101,5 +102,63 @@ class CollectionStoreTest {
         val id = s.save("one")
         assertNull(s.duplicateRequest(id, "  "))
         assertEquals(1, s.requests.value.size)
+    }
+
+    @Test
+    fun `folder variables override ancestors and can be cleared`() {
+        val (s, _) = store()
+        val root = s.collections.value.first().id
+        s.create(1L, "child", root)
+        val child = s.collections.value.first { it.name == "child" }.id
+        s.setVars(root, listOf(KeyValueEntry("host", "root"), KeyValueEntry("token", "t1")))
+        s.setVars(child, listOf(KeyValueEntry("host", "child")))
+
+        val resolved = s.resolvedVars(child)
+        assertEquals("child", resolved["host"])
+        assertEquals("t1", resolved["token"])
+        assertEquals("root", s.resolvedVars(root)["host"])
+
+        s.setVars(child, emptyList())
+        assertEquals("root", s.resolvedVars(child)["host"])
+    }
+
+    @Test
+    fun `disabled and blank variables are ignored`() {
+        val (s, _) = store()
+        val root = s.collections.value.first().id
+        s.setVars(
+            root,
+            listOf(
+                KeyValueEntry("a", "1", enabled = false),
+                KeyValueEntry(" ", "2"),
+                KeyValueEntry("b", "3")
+            )
+        )
+        val resolved = s.resolvedVars(root)
+        assertFalse(resolved.containsKey("a"))
+        assertFalse(resolved.containsKey(" "))
+        assertEquals("3", resolved["b"])
+    }
+
+    @Test
+    fun `deleting a folder drops its variables`() {
+        val (s, _) = store()
+        val root = s.collections.value.first().id
+        s.create(1L, "child", root)
+        val child = s.collections.value.first { it.name == "child" }.id
+        s.setVars(child, listOf(KeyValueEntry("k", "v")))
+        s.deleteRecursive(child)
+        assertTrue(s.varsOf(child).isEmpty())
+        assertTrue(s.resolvedVars(child).isEmpty())
+    }
+
+    @Test
+    fun `snapshot round trip keeps folder variables`() {
+        val (s, _) = store()
+        val root = s.collections.value.first().id
+        s.setVars(root, listOf(KeyValueEntry("k", "v")))
+        val (restored, _) = store()
+        restored.restore(s.snapshot())
+        assertEquals("v", restored.resolvedVars(root)["k"])
     }
 }

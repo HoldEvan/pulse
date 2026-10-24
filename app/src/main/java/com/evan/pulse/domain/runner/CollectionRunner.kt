@@ -20,6 +20,7 @@ import com.evan.pulse.domain.script.MutableRequest
 import com.evan.pulse.domain.script.ScriptForm
 import com.evan.pulse.domain.script.ScriptKv
 import com.evan.pulse.domain.script.ScriptRunResult
+import com.evan.pulse.domain.script.CollectionVarWriter
 import com.evan.pulse.domain.script.ScriptSession
 import com.evan.pulse.domain.script.TestRecord
 import com.evan.pulse.domain.script.VariableScope
@@ -75,9 +76,19 @@ object CollectionRunner {
         onStep: ((Step) -> Unit)? = null
     ): RunResult {
         // 整链共享一个作用域：前置/后置脚本设的变量在后续请求里都可见
-        val scope = VariableScope(::activeEnvVars, ServiceLocator.scriptEnvWriter)
+        // 当前请求所属文件夹：变量查找要带上它，链路内每条请求可能来自不同文件夹
+        var activeCollectionId: Long? = null
+        val scope = VariableScope(
+            envLookup = {
+                LinkedHashMap(activeEnvVars()).apply {
+                    putAll(ServiceLocator.collectionStore.resolvedVars(activeCollectionId))
+                }
+            },
+            envWriter = ServiceLocator.scriptEnvWriter
+        )
         val steps = ArrayList<Step>(requests.size)
         for (request in requests) {
+            activeCollectionId = request.collectionId
             val step = runOne(request, projectId, scope, withHistory)
             steps += step
             // 每步完成就回调，界面可以边跑边显示，不必等整条链结束
@@ -116,7 +127,7 @@ object CollectionRunner {
             return failed(request, "请求配置已损坏，无法解析")
         }
 
-        val config = buildConfig(snapshot, projectId, scope)
+        val config = buildConfig(snapshot, projectId, scope, request.collectionId)
             ?: return failed(request, "存在未解析的变量（{{var}}），已跳过")
         val result = try {
             ServiceLocator.httpEngine.execute(withCookies(config, projectId))
@@ -130,8 +141,14 @@ object CollectionRunner {
             }
         }
 
+        val collectionScope = collectionScopeOf(request.collectionId)
         val post = if (snapshot.postScript.isNotBlank()) {
-            ServiceLocator.scriptExecutor.runPost(snapshot.postScript, config, result, ScriptSession(scope))
+            ServiceLocator.scriptExecutor.runPost(
+                snapshot.postScript,
+                config,
+                result,
+                ScriptSession(scope, collectionScope)
+            )
         } else {
             ScriptRunResult.Skipped
         }
@@ -172,7 +189,8 @@ object CollectionRunner {
     private fun buildConfig(
         snapshot: HttpSnapshot,
         projectId: Long,
-        scope: VariableScope
+        scope: VariableScope,
+        collectionId: Long
     ): HttpCallConfig? {
         val method = HttpMethod.parse(snapshot.method)
         val appliedAuth = ServiceLocator.authApplier.apply(
@@ -221,7 +239,11 @@ object CollectionRunner {
             formFields = base.formFields.map { ScriptForm(it.name, it.value) }.toMutableList()
         )
         if (snapshot.preScript.isNotBlank()) {
-            ServiceLocator.scriptExecutor.runPre(snapshot.preScript, mutable, ScriptSession(scope))
+            ServiceLocator.scriptExecutor.runPre(
+                snapshot.preScript,
+                mutable,
+                ScriptSession(scope, collectionScopeOf(collectionId))
+            )
         }
 
         val config = mutable.toCallConfig(base.proxy).copy(
@@ -348,6 +370,16 @@ object CollectionRunner {
         val separator = if ('?' in config.url) '&' else '?'
         return config.url + separator + qs.joinToString("&") { "${it.key}=${it.value}" }
     }
+
+    /** 文件夹变量作用域：只读写该文件夹自身的变量 */
+    private fun collectionScopeOf(collectionId: Long): VariableScope = VariableScope(
+        envLookup = {
+            ServiceLocator.collectionStore.varsOf(collectionId)
+                .filter { it.enabled && it.key.isNotBlank() }
+                .associate { it.key to it.value }
+        },
+        envWriter = CollectionVarWriter(collectionId)
+    )
 
     private fun activeEnvVars(): Map<String, String> {
         val pid = ServiceLocator.projectStore.currentProjectId.value

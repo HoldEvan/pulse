@@ -120,11 +120,15 @@ class WsViewModel : ViewModel() {
                 if (req?.type == RequestType.WS) {
                     restore(req.data)
                     loadedRequest.track(req.id)
+                    activeCollectionId = req.collectionId
                     ServiceLocator.collectionStore.consumePending(req)
                 }
             }
         }
     }
+
+    /** 当前请求所属文件夹，用于合并文件夹变量 */
+    private var activeCollectionId: Long? = null
 
     /** 与集合条目的绑定：从集合加载或保存过一次后，再保存即原地覆盖 */
     private val loadedRequest = LoadedRequestTracker(ServiceLocator.collectionStore)
@@ -133,7 +137,11 @@ class WsViewModel : ViewModel() {
     fun saveOverLoaded(): Boolean = loadedRequest.saveOver { snapshot() }
 
     /** 保存对话框新建成功后绑定新条目，避免下次保存再建一条 */
-    fun markSaved(id: Long) = loadedRequest.track(id)
+    fun markSaved(id: Long) {
+        loadedRequest.track(id)
+        activeCollectionId = ServiceLocator.collectionStore.requests.value
+            .firstOrNull { it.id == id }?.collectionId
+    }
 
     /** 导出当前配置为可恢复快照 */
     fun snapshot(): String = snapshotJson.encodeToString(
@@ -186,7 +194,7 @@ class WsViewModel : ViewModel() {
     /** 当前页里出现的 {{变量}} 及取值，用于输入框下方提示 */
     fun placeholderHints(text: String): List<Pair<String, String?>> {
         if (text.isBlank()) return emptyList()
-        val vars = ServiceLocator.envStore.activeVars()
+        val vars = ServiceLocator.varsForCollection(activeCollectionId)
         val seen = LinkedHashMap<String, String?>()
         for (m in PlaceholderResolver.PLACEHOLDER_REGEX.findAll(text)) {
             val key = m.groupValues[1]
@@ -239,7 +247,7 @@ class WsViewModel : ViewModel() {
         connectJob = viewModelScope.launch {
             lastError = null
             val proxy = if (useProxy) settingsStore.settings.value.toProxyConfig() else ProxyConfig()
-            val vars = ServiceLocator.envStore.activeVars()
+            val vars = ServiceLocator.varsForCollection(activeCollectionId)
 
             // 地址、请求头与子协议里的占位符共用一次解析：任一缺失就整体中止
             val missing = mutableSetOf<String>()
@@ -283,7 +291,7 @@ class WsViewModel : ViewModel() {
         val text = input
         if (text.isBlank()) return
         viewModelScope.launch {
-            val vars = ServiceLocator.envStore.activeVars()
+            val vars = ServiceLocator.varsForCollection(activeCollectionId)
             when (val r = resolver.resolve(text, vars)) {
                 is PlaceholderResolver.ResolveResult.Ok -> {
                     engine.send(r.resolved)

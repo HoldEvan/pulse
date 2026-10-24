@@ -105,6 +105,21 @@ class CollectionsViewModel : ViewModel() {
             }
     }
 
+    /** 文件夹自身变量（不含继承），供编辑对话框回显 */
+    fun varsOf(collectionId: Long): List<com.evan.pulse.domain.model.KeyValue> =
+        store.varsOf(collectionId).map {
+            com.evan.pulse.domain.model.KeyValue(it.key, it.value, it.enabled)
+        }.ifEmpty { listOf(com.evan.pulse.domain.model.KeyValue()) }
+
+    /** 覆盖文件夹自身变量 */
+    fun saveVars(collectionId: Long, entries: List<com.evan.pulse.domain.model.KeyValue>) {
+        store.setVars(
+            collectionId,
+            entries.filter { it.key.isNotBlank() }
+                .map { com.evan.pulse.data.model.KeyValueEntry(it.key, it.value, it.enabled) }
+        )
+    }
+
     /** 复制接口到同文件夹，名称由界面传入以跟随当前语言 */
     fun duplicateRequest(id: Long, name: String): Long? = store.duplicateRequest(id, name)
 

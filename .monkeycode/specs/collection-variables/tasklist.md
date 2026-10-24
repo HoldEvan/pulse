@@ -1,0 +1,21 @@
+# 需求实施计划
+
+- [x] 1. 存储与继承（需求 2.1-2.5、5.1-5.3）
+  - `CollectionStore` 增加变量表与 `varsOf` / `resolvedVars` / `setVars`
+  - `CollectionTree.idPathOf` 提供根到叶的 id 链
+  - 删除文件夹清理变量；快照读写变量
+  - 持久化 `collectionVars` 段，兼容旧数据
+  - 4 项单测
+- [x] 2. 解析优先级（需求 3.1-3.5）
+  - `ServiceLocator.varsForCollection` 合并环境与文件夹变量
+  - HTTP / WS / SSE / MQTT 在加载与保存时记录文件夹
+- [x] 3. 脚本与运行器（需求 4.1-4.5）
+  - `ScriptSession` 增加 `collectionScope`
+  - `pm.collectionVariables` 读写当前文件夹自身变量
+  - 集合运行器按每条请求的文件夹构造作用域
+- [x] 4. 界面（需求 1.1-1.4）
+  - 集合页菜单「变量」与编辑对话框
+  - 三语文案
+- [x] 5. 检查点 - 确保所有测试通过
+  - 全量单测 354 项
+  - Release 打包并覆盖根目录 APK

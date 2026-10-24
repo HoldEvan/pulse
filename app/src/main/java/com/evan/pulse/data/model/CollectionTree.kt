@@ -30,6 +30,19 @@ object CollectionTree {
         return names.asReversed()
     }
 
+    /** 从根到自身的 id 链，用于按层级合并变量（后者覆盖前者） */
+    fun idPathOf(collections: List<CollectionInfo>, id: Long): List<Long> {
+        val byId = collections.associateBy { it.id }
+        val ids = mutableListOf<Long>()
+        val visited = mutableSetOf<Long>()
+        var cursor = byId[id]
+        while (cursor != null && visited.add(cursor.id)) {
+            ids.add(cursor.id)
+            cursor = cursor.parentId?.let { byId[it] }
+        }
+        return ids.asReversed()
+    }
+
     /** 自身之下的全部后代 id，不含自身 */
     fun descendantsOf(collections: List<CollectionInfo>, id: Long): Set<Long> {
         val root = collections.firstOrNull { it.id == id } ?: return emptySet()

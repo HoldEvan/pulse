@@ -683,6 +683,10 @@
     <string name="collection_search_empty">No matching requests</string>
     <string name="collection_search_clear">Clear search</string>
     <string name="collection_search_count">%1$d results</string>
+    <string name="collection_vars_menu">Variables</string>
+    <string name="collection_vars_title">Folder variables</string>
+    <string name="collection_vars_hint">Variables here override environment values with the same name and are inherited by subfolders; scripts read and write them via pm.collectionVariables</string>
+    <string name="collection_vars_key">Name</string>
     <string name="collection_root_level">Top level</string>
     <string name="cd_save_request">Save to collection</string>
     <string name="save_request_title">Save to collection</string>

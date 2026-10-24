@@ -683,6 +683,10 @@
     <string name="collection_search_empty">沒有符合的介面</string>
     <string name="collection_search_clear">清除搜尋</string>
     <string name="collection_search_count">共 %1$d 筆結果</string>
+    <string name="collection_vars_menu">變數</string>
+    <string name="collection_vars_title">資料夾變數</string>
+    <string name="collection_vars_hint">目前資料夾的變數會覆蓋同名環境變數，子資料夾自動繼承；指令碼裡用 pm.collectionVariables 讀寫</string>
+    <string name="collection_vars_key">變數名稱</string>
     <string name="collection_root_level">根層級</string>
     <string name="cd_save_request">儲存到集合</string>
     <string name="save_request_title">儲存到集合</string>

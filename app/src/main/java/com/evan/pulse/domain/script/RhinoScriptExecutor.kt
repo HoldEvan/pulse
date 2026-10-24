@@ -689,9 +689,10 @@ private fun requestObject(
 
 private fun variableObject(
     b: PmBuilder,
-    sandbox: ScriptSession
+    sandbox: ScriptSession,
+    scope: VariableScope = sandbox.scope
 ): ScriptableObject {
-    val vars = sandbox.scope
+    val vars = scope
     val n = b.node()
     n.prop("count") { vars.all().size }
     n.method("get") { args -> vars.get(toStr(arg(args, 0))) }
@@ -784,6 +785,9 @@ private fun buildPm(
     n.prop("variables") { variableObject(b, sandbox) }
     n.prop("environment") { variableObject(b, sandbox) }
     n.prop("globals") { variableObject(b, sandbox) }
+    sandbox.collectionScope?.let { vars ->
+        n.prop("collectionVariables") { variableObject(b, sandbox, vars) }
+    }
     n.prop("console") { consoleObject(b, sandbox) }
     n.value("iteration") { 0 }
     n.value("iterationCount") { 1 }

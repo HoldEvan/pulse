@@ -36,6 +36,7 @@ import com.evan.pulse.domain.net.NetworkThrottleConfig
 import com.evan.pulse.domain.script.MutableRequest
 import com.evan.pulse.domain.script.ScriptExecutor
 import com.evan.pulse.domain.script.ScriptRunResult
+import com.evan.pulse.domain.script.CollectionVarWriter
 import com.evan.pulse.domain.script.ScriptSession
 import com.evan.pulse.domain.script.ScriptForm
 import com.evan.pulse.domain.script.ScriptKv
@@ -110,6 +111,9 @@ class HttpViewModel : ViewModel() {
 
     private val collectionStore = ServiceLocator.collectionStore
 
+    /** 当前请求所属文件夹；为空时没有文件夹变量可用 */
+    private var activeCollectionId: Long? = null
+
     /** 与集合条目的绑定：从集合加载或保存过一次后，再保存即原地覆盖 */
     private val loadedRequest = LoadedRequestTracker(collectionStore)
 
@@ -119,6 +123,7 @@ class HttpViewModel : ViewModel() {
                 if (req?.type == RequestType.HTTP) {
                     restore(req.data)
                     loadedRequest.track(req.id)
+                    activeCollectionId = req.collectionId
                     collectionStore.consumePending(req)
                 }
             }
@@ -129,7 +134,10 @@ class HttpViewModel : ViewModel() {
     fun saveOverLoaded(): Boolean = loadedRequest.saveOver { snapshot() }
 
     /** 保存对话框新建成功后绑定新条目，避免下次保存再建一条 */
-    fun markSaved(id: Long) = loadedRequest.track(id)
+    fun markSaved(id: Long) {
+        loadedRequest.track(id)
+        activeCollectionId = collectionStore.requests.value.firstOrNull { it.id == id }?.collectionId
+    }
 
     /** 导出当前配置为可恢复快照 */
     fun snapshot(): String = snapshotJson.encodeToString(
@@ -194,10 +202,14 @@ class HttpViewModel : ViewModel() {
         maxRedirects = snap.maxRedirects.toString()
     }
 
+    /** 活动环境变量与文件夹变量合并；文件夹变量优先，便于按集合覆盖环境默认值 */
     fun activeEnvVars(): Map<String, String> {
         val pid = currentProjectId.value
         val env = envStore.environments.value.firstOrNull { it.projectId == pid && it.isActive }
-        return env?.variables?.toMap() ?: emptyMap()
+        val base = LinkedHashMap<String, String>()
+        env?.variables?.forEach { (key, value) -> base[key] = value }
+        base.putAll(collectionStore.resolvedVars(activeCollectionId))
+        return base
     }
 
     /** 供输入框下方提示：把文本里的 {{var}} 逐项解析成“名字 → 解析值”，缺失的 value 为 null */
@@ -365,7 +377,7 @@ class HttpViewModel : ViewModel() {
         )
 
         val preResult = if (runScripts && preScript.isNotBlank()) {
-            val sandbox = ScriptSession(scope)
+            val sandbox = ScriptSession(scope, collectionScope())
             executor.runPre(preScript, mutable, sandbox)
         } else {
             ScriptRunResult.Skipped
@@ -374,6 +386,16 @@ class HttpViewModel : ViewModel() {
         val missing = mutableSetOf<String>()
         val config = resolveConfig(mutable.toCallConfig(raw.proxy), scope.all(), missing)
         return BuiltCall(config, missing.sorted(), preResult)
+    }
+
+    /** 文件夹变量作用域：只读写当前文件夹自身的变量 */
+    private fun collectionScope(): VariableScope? {
+        val id = activeCollectionId ?: return null
+        return VariableScope(
+            envLookup = { collectionStore.varsOf(id).filter { it.enabled && it.key.isNotBlank() }
+                .associate { it.key to it.value } },
+            envWriter = CollectionVarWriter(id)
+        )
     }
 
     /** 导出当前请求为 [format] 格式文本；不跑脚本，先看原始内容 */
@@ -434,7 +456,7 @@ class HttpViewModel : ViewModel() {
                 }
 
                 val postResult = if (postScript.isNotBlank()) {
-                    executor.runPost(postScript, built.config, result, ScriptSession(scope))
+                    executor.runPost(postScript, built.config, result, ScriptSession(scope, collectionScope()))
                 } else {
                     ScriptRunResult.Skipped
                 }

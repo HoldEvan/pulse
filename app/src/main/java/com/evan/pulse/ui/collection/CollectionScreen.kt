@@ -44,6 +44,7 @@ import com.evan.pulse.data.model.httpMethod
 import com.evan.pulse.data.model.targetUrl
 import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.DialogActions
+import com.evan.pulse.ui.common.KeyValueEditor
 import com.evan.pulse.ui.common.MethodBadge
 import com.evan.pulse.ui.common.subPageScrollState
 import com.evan.pulse.ui.spec.SpecImportScreen
@@ -99,6 +100,8 @@ fun CollectionScreen(
     var showCreate by remember { mutableStateOf(false) }
     var showImport by remember { mutableStateOf(false) }
     var showCurlImport by remember { mutableStateOf(false) }
+    var showVars by remember { mutableStateOf(false) }
+    var varsDraft by remember { mutableStateOf(listOf(com.evan.pulse.domain.model.KeyValue())) }
     var createName by remember { mutableStateOf("") }
     var renameOpen by remember { mutableStateOf(false) }
     var renameName by remember { mutableStateOf("") }
@@ -194,6 +197,24 @@ fun CollectionScreen(
                                         onClick = { onRunCollection(current?.id) }
                                     )
                                 )
+                                current?.let { folder ->
+                                    add(
+                                        DropdownItem(
+                                            text = stringResource(R.string.collection_vars_menu),
+                                            icon = { m ->
+                                                AppIcon(
+                                                    imageVector = MiuixIcons.Light.Edit,
+                                                    contentDescription = null,
+                                                    modifier = m
+                                                )
+                                            },
+                                            onClick = {
+                                                varsDraft = viewModel.varsOf(folder.id)
+                                                showVars = true
+                                            }
+                                        )
+                                    )
+                                }
                                 add(
                                     DropdownItem(
                                         text = stringResource(R.string.curl_import_menu),
@@ -567,6 +588,51 @@ fun CollectionScreen(
 
     if (showImport) {
         SpecImportScreen(onDismiss = { showImport = false })
+    }
+
+    if (showVars) {
+        val folder = current
+        AppDialog(
+            show = true,
+            title = stringResource(R.string.collection_vars_title),
+            onDismissRequest = { showVars = false }
+        ) {
+            Column {
+                AppText(
+                    text = stringResource(R.string.collection_vars_hint),
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 300.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    KeyValueEditor(
+                        items = varsDraft,
+                        keyLabel = stringResource(R.string.collection_vars_key),
+                        valueLabel = stringResource(R.string.kv_value_label),
+                        onChange = { index, value ->
+                            varsDraft = varsDraft.mapIndexed { i, kv -> if (i == index) value else kv }
+                        },
+                        onAdd = { varsDraft = varsDraft + com.evan.pulse.domain.model.KeyValue() },
+                        onRemove = { index ->
+                            varsDraft = varsDraft.filterIndexed { i, _ -> i != index }
+                                .ifEmpty { listOf(com.evan.pulse.domain.model.KeyValue()) }
+                        }
+                    )
+                }
+                DialogActions(
+                    onCancel = { showVars = false },
+                    confirmText = stringResource(R.string.action_save),
+                    onConfirm = {
+                        folder?.let { viewModel.saveVars(it.id, varsDraft) }
+                        showVars = false
+                    }
+                )
+            }
+        }
     }
 
     CurlImportDialog(

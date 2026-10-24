@@ -61,6 +61,9 @@ class SseViewModel : ViewModel() {
 
     var activeTab by mutableIntStateOf(0)
 
+    /** 当前请求所属文件夹，用于合并文件夹变量 */
+    private var activeCollectionId: Long? = null
+
     /** 拼接预览：表达式 + 累计文本；previewTab 0=原始 1=Markdown */
     var previewPath by mutableStateOf("$.choices[0].delta.content")
     var previewText by mutableStateOf("")
@@ -102,6 +105,7 @@ class SseViewModel : ViewModel() {
                 if (req?.type == RequestType.SSE) {
                     restore(req.data)
                     loadedRequest.track(req.id)
+                    activeCollectionId = req.collectionId
                     collectionStore.consumePending(req)
                 }
             }
@@ -115,7 +119,11 @@ class SseViewModel : ViewModel() {
     fun saveOverLoaded(): Boolean = loadedRequest.saveOver { snapshot() }
 
     /** 保存对话框新建成功后绑定新条目，避免下次保存再建一条 */
-    fun markSaved(id: Long) = loadedRequest.track(id)
+    fun markSaved(id: Long) {
+        loadedRequest.track(id)
+        activeCollectionId = collectionStore.requests.value
+            .firstOrNull { it.id == id }?.collectionId
+    }
 
     /** 导出当前配置为可恢复快照 */
     fun snapshot(): String = snapshotJson.encodeToString(
@@ -211,7 +219,7 @@ class SseViewModel : ViewModel() {
             lastError = null
             val proxy = if (useProxy) settingsStore.settings.value.toProxyConfig() else ProxyConfig()
             add(L10n.t(R.string.proxy_in_use, proxy.summary.ifEmpty { L10n.t(R.string.proxy_summary_direct) }), true)
-            val vars = envStore.activeVars()
+            val vars = ServiceLocator.varsForCollection(activeCollectionId)
 
             val missing = mutableSetOf<String>()
             fun res(text: String): String = when (val r = resolver.resolve(text, vars)) {

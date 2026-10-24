@@ -4,6 +4,7 @@ import android.content.Context
 import com.evan.pulse.data.model.CollectionInfo
 import com.evan.pulse.data.model.EnvironmentInfo
 import com.evan.pulse.data.model.HistoryEntry
+import com.evan.pulse.data.model.KeyValueEntry
 import com.evan.pulse.data.model.MonitorHistoryEntry
 import com.evan.pulse.data.model.MonitorRecord
 import com.evan.pulse.data.model.MonitorTarget
@@ -134,7 +135,8 @@ class AppStatePersistence(context: Context) {
                     ).takeIf { it.id >= 0 }
                 } ?: emptyList(),
                 nextCollectionId = root.longValue("collectionNextId", 2L),
-                nextRequestId = root.longValue("requestNextId", 1L)
+                nextRequestId = root.longValue("requestNextId", 1L),
+                variables = parseCollectionVars(root)
             )
         )
 
@@ -230,7 +232,8 @@ class AppStatePersistence(context: Context) {
                     ).takeIf { it.id >= 0 }
                 } ?: emptyList(),
                 nextCollectionId = root.longValue("collectionNextId", 2L),
-                nextRequestId = root.longValue("requestNextId", 1L)
+                nextRequestId = root.longValue("requestNextId", 1L),
+                variables = parseCollectionVars(root)
             )
         )
 
@@ -255,6 +258,24 @@ class AppStatePersistence(context: Context) {
 
         restoreCookies(root)
         save()
+    }
+
+    /** 文件夹变量：按文件夹 id 读回键值列表，旧备份没有该段时返回空表 */
+    private fun parseCollectionVars(root: JsonObject): Map<Long, List<KeyValueEntry>> {
+        val result = LinkedHashMap<Long, List<KeyValueEntry>>()
+        root.arrayValue("collectionVars")?.forEach { item ->
+            val o = item.jsonObject
+            val id = o.longValue("collectionId", -1L)
+            if (id < 0) return@forEach
+            val entries = o.arrayValue("vars")?.mapNotNull { varItem ->
+                val kv = varItem.jsonObject
+                val key = kv.stringValue("key")
+                if (key.isBlank()) null
+                else KeyValueEntry(key, kv.stringValue("value"), kv.booleanValue("enabled", true))
+            } ?: emptyList()
+            if (entries.isNotEmpty()) result[id] = entries
+        }
+        return result
     }
 
     /** Cookie 库恢复：按项目 + 域名分桶结构原样读回 */
@@ -411,6 +432,23 @@ class AppStatePersistence(context: Context) {
                 }
             })
             put("requestNextId", collection.nextRequestId)
+
+            put("collectionVars", buildJsonArray {
+                collection.variables.forEach { (collectionId, entries) ->
+                    add(buildJsonObject {
+                        put("collectionId", collectionId)
+                        put("vars", buildJsonArray {
+                            entries.forEach { kv ->
+                                add(buildJsonObject {
+                                    put("key", kv.key)
+                                    put("value", kv.value)
+                                    put("enabled", kv.enabled)
+                                })
+                            }
+                        })
+                    })
+                }
+            })
 
             put("monitors", buildJsonArray {
                 monitor.targets.forEach { m ->
