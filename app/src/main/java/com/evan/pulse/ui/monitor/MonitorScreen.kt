@@ -1,6 +1,8 @@
 package com.evan.pulse.ui.monitor
 
 import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -40,6 +42,7 @@ import com.evan.pulse.data.model.MONITOR_INTERVAL_PRESETS
 import com.evan.pulse.data.monitor.TargetValidation
 import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.domain.model.HttpMethod
+import com.evan.pulse.data.model.MonitorAssertion
 import com.evan.pulse.domain.model.KeyValue
 import com.evan.pulse.ui.common.KeyValueEditor
 import com.evan.pulse.ui.common.MethodPicker
@@ -464,6 +467,102 @@ fun MonitorScreen(
                                 modifier = Modifier.weight(0.5f)
                             )
                         }
+                    }
+                    CollapsibleSection(
+                        title = stringResource(R.string.monitor_assertions_label),
+                        itemCount = viewModel.assertions.size,
+                        modifier = Modifier.padding(top = 8.dp)
+                    ) {
+                        viewModel.assertions.forEachIndexed { index, assertion ->
+                            val isJsonPath = assertion.type.equals("JSON_PATH", ignoreCase = true)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                AppDropdown(
+                                    title = "",
+                                    items = listOf(
+                                        stringResource(R.string.monitor_assert_contains),
+                                        stringResource(R.string.monitor_assert_not_contains),
+                                        stringResource(R.string.monitor_assert_jsonpath)
+                                    ),
+                                    selectedIndex = when (assertion.type.uppercase()) {
+                                        "NOT_CONTAINS" -> 1
+                                        "JSON_PATH" -> 2
+                                        else -> 0
+                                    },
+                                    showValue = false,
+                                    filled = true,
+                                    modifier = Modifier.weight(1f),
+                                    onSelectedIndexChange = {
+                                        viewModel.assertions = viewModel.assertions.mapIndexed { i, a ->
+                                            if (i == index) {
+                                                a.copy(
+                                                    type = when (it) {
+                                                        1 -> "NOT_CONTAINS"
+                                                        2 -> "JSON_PATH"
+                                                        else -> "CONTAINS"
+                                                    }
+                                                )
+                                            } else a
+                                        }
+                                    }
+                                )
+                                AppIconButton(
+                                    onClick = {
+                                        viewModel.assertions =
+                                            viewModel.assertions.filterIndexed { i, _ -> i != index }
+                                    },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    AppIcon(
+                                        imageVector = Icons.Filled.Delete,
+                                        contentDescription = stringResource(R.string.action_delete)
+                                    )
+                                }
+                            }
+                            AppTextField(
+                                value = assertion.expression,
+                                onValueChange = { text ->
+                                    viewModel.assertions = viewModel.assertions.mapIndexed { i, a ->
+                                        if (i == index) a.copy(expression = text) else a
+                                    }
+                                },
+                                label = stringResource(
+                                    if (isJsonPath) R.string.monitor_assert_path
+                                    else R.string.monitor_assert_keyword
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 6.dp)
+                            )
+                            if (isJsonPath) {
+                                AppTextField(
+                                    value = assertion.expected,
+                                    onValueChange = { text ->
+                                        viewModel.assertions =
+                                            viewModel.assertions.mapIndexed { i, a ->
+                                                if (i == index) a.copy(expected = text) else a
+                                            }
+                                    },
+                                    label = stringResource(R.string.monitor_assert_expected),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 6.dp)
+                                )
+                            }
+                        }
+                        AppTextButton(
+                            text = stringResource(R.string.monitor_assert_add),
+                            onClick = {
+                                viewModel.assertions =
+                                    viewModel.assertions + MonitorAssertion()
+                            },
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
                     }
                 }
                 AppDropdown(

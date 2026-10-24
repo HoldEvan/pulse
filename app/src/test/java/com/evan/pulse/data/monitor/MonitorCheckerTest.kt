@@ -331,6 +331,68 @@ class MonitorCheckerTest {
     }
 
     @Test
+    fun `evaluateAssertions passes contains and not_contains`() {
+        val checker = MonitorChecker(socketFactory = { throw IllegalStateException() })
+        val asserts = listOf(
+            com.evan.pulse.data.model.MonitorAssertion("CONTAINS", "ok"),
+            com.evan.pulse.data.model.MonitorAssertion("NOT_CONTAINS", "error")
+        )
+        assertEquals(null, checker.evaluateAssertions("{\"status\":\"ok\"}", asserts, emptyMap()))
+        assertTrue(checker.evaluateAssertions("has error inside", asserts, emptyMap()) != null)
+        assertTrue(checker.evaluateAssertions("plain text", asserts, emptyMap()) != null)
+    }
+
+    @Test
+    fun `evaluateAssertions jsonpath compares extracted value`() {
+        val checker = MonitorChecker(socketFactory = { throw IllegalStateException() })
+        val asserts = listOf(
+            com.evan.pulse.data.model.MonitorAssertion("JSON_PATH", "$.data.code", "0")
+        )
+        assertEquals(null, checker.evaluateAssertions("{\"data\":{\"code\":\"0\"}}", asserts, emptyMap()))
+        assertTrue(checker.evaluateAssertions("{\"data\":{\"code\":\"500\"}}", asserts, emptyMap()) != null)
+        assertTrue(checker.evaluateAssertions("{\"other\":1}", asserts, emptyMap()) != null)
+        assertTrue(checker.evaluateAssertions("not json", asserts, emptyMap()) != null)
+    }
+
+    @Test
+    fun `evaluateAssertions resolves vars and reports missing`() {
+        val checker = MonitorChecker(socketFactory = { throw IllegalStateException() })
+        val asserts = listOf(
+            com.evan.pulse.data.model.MonitorAssertion("CONTAINS", "{{token}}")
+        )
+        assertEquals(null, checker.evaluateAssertions("bearer abc", asserts, mapOf("token" to "abc")))
+        assertTrue(checker.evaluateAssertions("bearer abc", asserts, emptyMap()) != null)
+    }
+
+    @Test
+    fun `check fails on assertion even with passing status`() = runBlocking {
+        val engine = object : HttpEngine {
+            override suspend fun execute(config: HttpCallConfig): HttpCallOutcome =
+                HttpCallOutcome.Success(
+                    statusCode = 200,
+                    statusText = "OK",
+                    headers = emptyList(),
+                    body = "{\"code\":\"E999\"}",
+                    durationMs = 10L,
+                    responseSizeBytes = 0
+                )
+        }
+        val checker = MonitorChecker(
+            httpEngine = engine,
+            resolver = substitutingResolver,
+            socketFactory = { throw IllegalStateException() }
+        )
+        val t = target(MonitorType.HTTP).copy(
+            assertions = listOf(
+                com.evan.pulse.data.model.MonitorAssertion("JSON_PATH", "$.code", "0")
+            )
+        )
+        val run = checker.check(t, emptyMap(), ProxyConfig())
+        assertFalse(run.ok)
+        assertEquals(10L, run.durationMs)
+    }
+
+    @Test
     fun `check fails when placeholder missing in body`() = runBlocking {
         val engine = CapturingEngine()
         val checker = MonitorChecker(

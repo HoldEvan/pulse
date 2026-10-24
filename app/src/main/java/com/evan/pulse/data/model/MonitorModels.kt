@@ -43,7 +43,24 @@ data class MonitorTarget(
     val basicUsername: String = "",
     val basicPassword: String = "",
     val apiKeyName: String = "",
-    val apiKeyValue: String = ""
+    val apiKeyValue: String = "",
+    /** HTTP 拨测响应断言；状态码之外的内容级判定 */
+    val assertions: List<MonitorAssertion> = emptyList()
+)
+
+/**
+ * HTTP 拨测响应断言。
+ *
+ * - CONTAINS：响应体包含 [expression]；
+ * - NOT_CONTAINS：响应体不包含 [expression]；
+ * - JSON_PATH：JSONPath [expression] 取值等于 [expected]。
+ */
+data class MonitorAssertion(
+    val type: String = "CONTAINS",
+    /** CONTAINS/NOT_CONTAINS 为关键字；JSON_PATH 为路径表达式，支持 {{变量}} */
+    val expression: String = "",
+    /** 仅 JSON_PATH 使用：期望值 */
+    val expected: String = ""
 )
 
 /** 一次拨测的运行结果，只保存在内存里用于界面展示 */

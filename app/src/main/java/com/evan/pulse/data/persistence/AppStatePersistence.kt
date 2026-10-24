@@ -5,6 +5,7 @@ import com.evan.pulse.data.model.CollectionInfo
 import com.evan.pulse.data.model.EnvironmentInfo
 import com.evan.pulse.data.model.HistoryEntry
 import com.evan.pulse.data.model.KeyValueEntry
+import com.evan.pulse.data.model.MonitorAssertion
 import com.evan.pulse.data.model.MonitorHistoryEntry
 import com.evan.pulse.data.model.MonitorRecord
 import com.evan.pulse.data.model.MonitorTarget
@@ -486,6 +487,15 @@ class AppStatePersistence(context: Context) {
                         put("basicPassword", m.basicPassword)
                         put("apiKeyName", m.apiKeyName)
                         put("apiKeyValue", m.apiKeyValue)
+                        put("assertions", buildJsonArray {
+                            m.assertions.forEach { a ->
+                                add(buildJsonObject {
+                                    put("type", a.type)
+                                    put("expression", a.expression)
+                                    put("expected", a.expected)
+                                })
+                            }
+                        })
                     })
                 }
             })
@@ -665,7 +675,15 @@ class AppStatePersistence(context: Context) {
             basicUsername = o.stringValue("basicUsername"),
             basicPassword = o.stringValue("basicPassword"),
             apiKeyName = o.stringValue("apiKeyName"),
-            apiKeyValue = o.stringValue("apiKeyValue")
+            apiKeyValue = o.stringValue("apiKeyValue"),
+            assertions = o.arrayValue("assertions")?.mapNotNull { a ->
+                val ao = a.jsonObject
+                MonitorAssertion(
+                    type = ao.stringValue("type", "CONTAINS"),
+                    expression = ao.stringValue("expression"),
+                    expected = ao.stringValue("expected")
+                )
+            } ?: emptyList()
         ).takeIf { it.id >= 0 }
     }
 

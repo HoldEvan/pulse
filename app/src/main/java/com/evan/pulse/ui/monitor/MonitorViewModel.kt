@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.evan.pulse.data.model.MonitorRecord
 import com.evan.pulse.data.model.MonitorRun
 import com.evan.pulse.data.model.MonitorTarget
+import com.evan.pulse.data.model.MonitorAssertion
 import com.evan.pulse.data.model.KeyValueEntry
 import com.evan.pulse.domain.model.KeyValue
 import com.evan.pulse.data.model.MonitorType
@@ -89,6 +90,8 @@ class MonitorViewModel : ViewModel() {
     var basicPassword by mutableStateOf("")
     var apiKeyName by mutableStateOf("")
     var apiKeyValue by mutableStateOf("")
+    /** HTTP 拨测响应断言 */
+    var assertions by mutableStateOf(listOf<MonitorAssertion>())
     var deleteTarget by mutableStateOf<MonitorTarget?>(null)
     var clearRecordsAsked by mutableStateOf(false)
 
@@ -173,6 +176,7 @@ class MonitorViewModel : ViewModel() {
         basicPassword = ""
         apiKeyName = ""
         apiKeyValue = ""
+        assertions = emptyList()
         showEditor = true
     }
 
@@ -208,6 +212,7 @@ class MonitorViewModel : ViewModel() {
         basicPassword = target.basicPassword
         apiKeyName = target.apiKeyName
         apiKeyValue = target.apiKeyValue
+        assertions = target.assertions
         showEditor = true
     }
 
@@ -298,7 +303,8 @@ class MonitorViewModel : ViewModel() {
             basicUsername = basicUsername.trim(),
             basicPassword = basicPassword,
             apiKeyName = apiKeyName.trim(),
-            apiKeyValue = apiKeyValue.trim()
+            apiKeyValue = apiKeyValue.trim(),
+            assertions = assertions.filter { it.expression.isNotBlank() }
         )
     }
 }

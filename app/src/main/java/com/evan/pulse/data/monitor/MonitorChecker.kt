@@ -3,11 +3,14 @@ package com.evan.pulse.data.monitor
 import androidx.annotation.StringRes
 import com.evan.pulse.R
 import com.evan.pulse.data.model.MONITOR_IP_PROBE_PORTS
+import com.evan.pulse.data.model.MonitorAssertion
 import com.evan.pulse.data.model.MonitorRun
 import com.evan.pulse.data.model.MonitorTarget
 import com.evan.pulse.data.model.MonitorType
 import com.evan.pulse.di.ServiceLocator
+import com.evan.pulse.domain.JsonPath
 import com.evan.pulse.domain.PlaceholderResolver
+import com.evan.pulse.domain.extractString
 import com.evan.pulse.domain.model.AuthConfig
 import com.evan.pulse.domain.model.AuthType
 import com.evan.pulse.domain.model.BodyType
@@ -210,12 +213,17 @@ class MonitorChecker(
             )
         )
         return when (outcome) {
-            is HttpCallOutcome.Success -> MonitorRun(
-                ok = statusPasses(outcome.statusCode, target.statusMin, target.statusMax),
-                detail = L10n.t(R.string.monitor_http_result, outcome.statusCode),
-                durationMs = outcome.durationMs,
-                checkedAt = start
-            )
+            is HttpCallOutcome.Success -> {
+                val statusOk = statusPasses(outcome.statusCode, target.statusMin, target.statusMax)
+                val assertFail = if (statusOk) evaluateAssertions(outcome.body, target.assertions, vars) else null
+                MonitorRun(
+                    ok = statusOk && assertFail == null,
+                    detail = assertFail?.takeIf { statusOk }
+                        ?: L10n.t(R.string.monitor_http_result, outcome.statusCode),
+                    durationMs = outcome.durationMs,
+                    checkedAt = start
+                )
+            }
             is HttpCallOutcome.Failure -> failed(
                 L10n.t(R.string.monitor_http_error, outcome.message),
                 start
@@ -284,6 +292,66 @@ class MonitorChecker(
         "BASIC" -> AuthType.BASIC
         "APIKEY" -> AuthType.APIKEY
         else -> AuthType.NONE
+    }
+
+    /**
+     * 逐条求值响应断言，返回第一条失败的说明；全部通过返回 null。
+     * 断言的关键字与期望值先做变量解析，存在未定义变量按失败处理。
+     */
+    internal fun evaluateAssertions(
+        body: String,
+        assertions: List<MonitorAssertion>,
+        vars: Map<String, String>
+    ): String? {
+        for ((index, assertion) in assertions.withIndex()) {
+            val position = (index + 1).toString()
+            val expression = when (val r = resolveText(assertion.expression, vars)) {
+                is ResolvedText.Done -> r.text
+                is ResolvedText.Missing -> return L10n.t(
+                    R.string.monitor_assert_vars_missing, position, r.keys.joinToString(", ")
+                )
+            }
+            val expected = when (val r = resolveText(assertion.expected, vars)) {
+                is ResolvedText.Done -> r.text
+                is ResolvedText.Missing -> return L10n.t(
+                    R.string.monitor_assert_vars_missing, position, r.keys.joinToString(", ")
+                )
+            }
+            var pathMiss = false
+            val passed = when (assertion.type.uppercase()) {
+                "NOT_CONTAINS" -> !body.contains(expression)
+                "JSON_PATH" -> {
+                    val hits = JsonPath.eval(body, expression)
+                    if (hits == null || hits.isEmpty()) {
+                        pathMiss = true
+                        false
+                    } else {
+                        hits.first().extractString() == expected
+                    }
+                }
+
+                else -> body.contains(expression)
+            }
+            if (!passed) {
+                return when {
+                    assertion.type.equals("NOT_CONTAINS", ignoreCase = true) ->
+                        L10n.t(R.string.monitor_assert_not_contains_failed, expression)
+                    assertion.type.equals("JSON_PATH", ignoreCase = true) && pathMiss ->
+                        L10n.t(R.string.monitor_assert_jsonpath_missing, expression)
+                    assertion.type.equals("JSON_PATH", ignoreCase = true) ->
+                        L10n.t(
+                            R.string.monitor_assert_jsonpath_failed,
+                            expression,
+                            expected,
+                            JsonPath.eval(body, expression).orEmpty()
+                                .firstOrNull()?.extractString()?.take(120) ?: ""
+                        )
+
+                    else -> L10n.t(R.string.monitor_assert_contains_failed, expression)
+                }
+            }
+        }
+        return null
     }
 
     private fun toProxy(config: ProxyConfig): Proxy? {
