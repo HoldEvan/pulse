@@ -30,7 +30,7 @@ import com.evan.pulse.ui.design.AppTheme
  * 可折叠的分组区块：标题行点击展开/收起，标题右侧显示条目数。
  *
  * 与 [CollapsibleKeyValueTable] 共用同一套折叠标题样式，折叠状态按标题记忆，
- * 分组增删后不会串到别的分组上。
+ * 分组增删后不会串到别的分组上。[trailing] 用于在标题行右侧放分组级操作按钮。
  */
 @Composable
 fun CollapsibleSection(
@@ -39,6 +39,7 @@ fun CollapsibleSection(
     modifier: Modifier = Modifier,
     initiallyExpanded: Boolean = true,
     horizontalPadding: Dp = 0.dp,
+    trailing: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
     var expanded by remember(title) { mutableStateOf(initiallyExpanded) }
@@ -58,6 +59,7 @@ fun CollapsibleSection(
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium
             )
+            trailing?.invoke()
             AppText(
                 text = stringResource(R.string.kv_table_count, itemCount),
                 fontSize = 12.sp,

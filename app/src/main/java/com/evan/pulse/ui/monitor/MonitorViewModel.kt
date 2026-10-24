@@ -240,6 +240,18 @@ class MonitorViewModel : ViewModel() {
         scheduler.sync()
     }
 
+    /** 按分组批量启用/暂停；group 为空串表示未分组 */
+    fun setGroupEnabled(group: String, enabled: Boolean) {
+        if (store.setEnabledForGroup(group, enabled) == 0) return
+        scheduler.sync()
+    }
+
+    /** 全部启用或全部暂停 */
+    fun setAllEnabled(enabled: Boolean) {
+        if (store.setEnabledForGroup(null, enabled) == 0) return
+        scheduler.sync()
+    }
+
     fun requestDelete(target: MonitorTarget) {
         deleteTarget = target
     }

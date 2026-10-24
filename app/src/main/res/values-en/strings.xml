@@ -778,6 +778,12 @@
     <string name="monitor_name_label">Name</string>
     <string name="monitor_group_label">Group</string>
     <string name="monitor_group_ungrouped">Ungrouped</string>
+    <string name="monitor_targets_title">Targets</string>
+    <string name="monitor_targets_more">Target actions</string>
+    <string name="monitor_enable_all">Enable all</string>
+    <string name="monitor_pause_all">Pause all</string>
+    <string name="monitor_group_enable">Enable group</string>
+    <string name="monitor_group_pause">Pause group</string>
     <string name="monitor_name_required">Enter a name</string>
     <string name="monitor_type_label">Check type</string>
     <string name="monitor_type_ip">IP reachability</string>

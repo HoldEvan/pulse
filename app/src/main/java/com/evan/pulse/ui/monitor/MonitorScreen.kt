@@ -43,6 +43,8 @@ import com.evan.pulse.data.monitor.TargetValidation
 import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.domain.model.HttpMethod
 import com.evan.pulse.data.model.MonitorAssertion
+import com.evan.pulse.data.monitor.isAllEnabled
+import com.evan.pulse.data.monitor.isGroupFullyEnabled
 import com.evan.pulse.domain.model.KeyValue
 import com.evan.pulse.ui.common.KeyValueEditor
 import com.evan.pulse.ui.common.MethodPicker
@@ -155,6 +157,39 @@ fun MonitorScreen(
         }
         }
 
+        item(key = "targets_title") {
+            Spacer(modifier = Modifier.height(12.dp))
+            SectionTitleRow(
+                label = stringResource(R.string.monitor_targets_title),
+                actions = {
+                    if (targets.isNotEmpty()) {
+                        AppIconDropdownMenu(
+                            entries = listOf(
+                                DropdownEntry(
+                                    items = listOf(
+                                        DropdownItem(
+                                            text = stringResource(R.string.monitor_enable_all),
+                                            enabled = !isAllEnabled(targets),
+                                            onClick = { viewModel.setAllEnabled(true) }
+                                        ),
+                                        DropdownItem(
+                                            text = stringResource(R.string.monitor_pause_all),
+                                            enabled = targets.any { it.enabled },
+                                            onClick = { viewModel.setAllEnabled(false) }
+                                        )
+                                    )
+                                )
+                            )
+                        ) {
+                            AppIcon(
+                                imageVector = MiuixIcons.Light.More,
+                                contentDescription = stringResource(R.string.monitor_targets_more)
+                            )
+                        }
+                    }
+                }
+            )
+        }
         item(key = "targets_card") {
         AppCard(
             modifier = Modifier
@@ -172,6 +207,7 @@ fun MonitorScreen(
                         }
                     }
                     groups.forEach { (groupName, groupTargets) ->
+                        val groupEnabled = isGroupFullyEnabled(targets, groupName)
                         CollapsibleSection(
                             title = if (groupName.isBlank()) {
                                 stringResource(R.string.monitor_group_ungrouped)
@@ -180,7 +216,28 @@ fun MonitorScreen(
                             },
                             itemCount = groupTargets.size,
                             modifier = Modifier.padding(top = 2.dp),
-                            horizontalPadding = 8.dp
+                            horizontalPadding = 8.dp,
+                            trailing = {
+                                AppIconButton(
+                                    onClick = {
+                                        viewModel.setGroupEnabled(groupName, !groupEnabled)
+                                    },
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    AppIcon(
+                                        imageVector = if (groupEnabled) {
+                                            MiuixIcons.Light.Pause
+                                        } else {
+                                            MiuixIcons.Light.Play
+                                        },
+                                        contentDescription = stringResource(
+                                            if (groupEnabled) R.string.monitor_group_pause
+                                            else R.string.monitor_group_enable
+                                        ),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
                         ) {
                             groupTargets.forEach { target ->
                                 MonitorTargetRow(

@@ -736,6 +736,20 @@ class MonitorStore(private val persist: PersistenceHandle) {
         persist.save()
     }
 
+    /**
+     * 按分组批量设置开关：group 为 null 表示全部目标，空串表示未分组。
+     * 返回实际发生变更的条数，无变更时不落盘。
+     */
+    fun setEnabledForGroup(group: String?, enabled: Boolean): Int {
+        val before = _targets.value
+        val after = com.evan.pulse.data.monitor.applyEnabledByGroup(before, group, enabled)
+        val changed = before.indices.count { before[it] != after[it] }
+        if (changed == 0) return 0
+        _targets.value = after
+        persist.save()
+        return changed
+    }
+
     fun delete(id: Long) {
         _targets.value = _targets.value.filter { it.id != id }
         val recordsBefore = _records.value

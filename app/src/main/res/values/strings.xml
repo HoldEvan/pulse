@@ -778,6 +778,12 @@
     <string name="monitor_name_label">名称</string>
     <string name="monitor_group_label">分组</string>
     <string name="monitor_group_ungrouped">未分组</string>
+    <string name="monitor_targets_title">拨测目标</string>
+    <string name="monitor_targets_more">目标操作</string>
+    <string name="monitor_enable_all">全部启用</string>
+    <string name="monitor_pause_all">全部暂停</string>
+    <string name="monitor_group_enable">启用本组</string>
+    <string name="monitor_group_pause">暂停本组</string>
     <string name="monitor_name_required">请填写名称</string>
     <string name="monitor_type_label">检查类型</string>
     <string name="monitor_type_ip">IP 连通</string>
