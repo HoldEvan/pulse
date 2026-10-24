@@ -704,6 +704,14 @@
     <string name="cd_copy_preview">复制拼接结果</string>
     <string name="cd_clear_preview">清空拼接结果</string>
 
+    <string name="curl_import_menu">从 cURL 导入</string>
+    <string name="curl_import_title">从 cURL 导入</string>
+    <string name="curl_import_label">粘贴 curl 命令</string>
+    <string name="curl_import_hint">支持方法、请求头、请求体、表单、Basic 认证、Cookie、-L 与 -k；-d @文件 会按文本导入</string>
+    <string name="curl_import_action">导入到当前文件夹</string>
+    <string name="curl_import_done">已导入</string>
+    <string name="curl_import_failed">导入失败，请检查命令格式</string>
+    <string name="curl_import_collection">cURL 导入</string>
     <string name="collection_import_spec">导入规范</string>
     <string name="spec_import_title">导入 API 规范</string>
     <string name="spec_import_source_label">规范文件 URL 或原始文本</string>

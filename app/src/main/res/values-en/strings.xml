@@ -704,6 +704,14 @@
     <string name="cd_copy_preview">Copy assembled output</string>
     <string name="cd_clear_preview">Clear assembled output</string>
 
+    <string name="curl_import_menu">Import from cURL</string>
+    <string name="curl_import_title">Import from cURL</string>
+    <string name="curl_import_label">Paste a curl command</string>
+    <string name="curl_import_hint">Supports method, headers, body, form fields, basic auth, cookies, -L and -k; -d @file is imported as plain text</string>
+    <string name="curl_import_action">Import into current folder</string>
+    <string name="curl_import_done">Imported</string>
+    <string name="curl_import_failed">Import failed, please check the command</string>
+    <string name="curl_import_collection">cURL imports</string>
     <string name="collection_import_spec">Import Spec</string>
     <string name="collection_import_postman">Import Postman Collection</string>
     <string name="collection_import_har">Import HAR Capture</string>

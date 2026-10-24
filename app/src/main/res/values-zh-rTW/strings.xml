@@ -704,6 +704,14 @@
     <string name="cd_copy_preview">複製拼接結果</string>
     <string name="cd_clear_preview">清除拼接結果</string>
 
+    <string name="curl_import_menu">從 cURL 匯入</string>
+    <string name="curl_import_title">從 cURL 匯入</string>
+    <string name="curl_import_label">貼上 curl 指令</string>
+    <string name="curl_import_hint">支援方法、請求標頭、請求本體、表單、Basic 認證、Cookie、-L 與 -k；-d @檔案 會以文字匯入</string>
+    <string name="curl_import_action">匯入到目前資料夾</string>
+    <string name="curl_import_done">已匯入</string>
+    <string name="curl_import_failed">匯入失敗，請檢查指令格式</string>
+    <string name="curl_import_collection">cURL 匯入</string>
     <string name="collection_import_spec">匯入規範</string>
     <string name="collection_import_postman">匯入 Postman 集合</string>
     <string name="collection_import_har">匯入 HAR 抓包</string>

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.DragIndicator
 import androidx.compose.material.icons.filled.RadioButtonChecked
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
@@ -96,6 +97,7 @@ fun CollectionScreen(
     var moveFailed by remember { mutableStateOf(false) }
     var showCreate by remember { mutableStateOf(false) }
     var showImport by remember { mutableStateOf(false) }
+    var showCurlImport by remember { mutableStateOf(false) }
     var createName by remember { mutableStateOf("") }
     var renameOpen by remember { mutableStateOf(false) }
     var renameName by remember { mutableStateOf("") }
@@ -189,6 +191,19 @@ fun CollectionScreen(
                                             )
                                         },
                                         onClick = { onRunCollection(current?.id) }
+                                    )
+                                )
+                                add(
+                                    DropdownItem(
+                                        text = stringResource(R.string.curl_import_menu),
+                                        icon = { m ->
+                                            AppIcon(
+                                                imageVector = Icons.Filled.Code,
+                                                contentDescription = null,
+                                                modifier = m
+                                            )
+                                        },
+                                        onClick = { showCurlImport = true }
                                     )
                                 )
                                 current?.let { folder ->
@@ -551,6 +566,13 @@ fun CollectionScreen(
     if (showImport) {
         SpecImportScreen(onDismiss = { showImport = false })
     }
+
+    CurlImportDialog(
+        show = showCurlImport,
+        collectionId = current?.id,
+        onDismiss = { showCurlImport = false },
+        viewModel = viewModel
+    )
 }
 
 /**
