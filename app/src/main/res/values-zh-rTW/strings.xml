@@ -619,6 +619,9 @@
     <string name="graphql_query_label">GraphQL 查詢</string>
     <string name="graphql_variables_label">Variables（JSON）</string>
     <string name="timeout_sec_label">逾時（秒）</string>
+    <string name="follow_redirects_label">跟隨重新導向</string>
+    <string name="max_redirects_label">最大跳數（0–20）</string>
+    <string name="max_redirects_hint">超過跳數或關閉跟隨時，直接顯示 3xx 回應與 Location 標頭</string>
     <string name="insecure_tls_label">略過 TLS 憑證檢查</string>
     <string name="insecure_tls_hint">僅用於自簽章或內網憑證，預設維持檢查</string>
     <string name="insecure_tls_warning_on">已關閉憑證檢查，連線無法防中間人攻擊，除錯完請關閉</string>

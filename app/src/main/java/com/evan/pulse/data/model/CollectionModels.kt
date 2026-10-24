@@ -80,7 +80,11 @@ data class HttpSnapshot(
     /** 强制超时秒数，0 表示不启用 */
     val forceTimeoutSec: String = "",
     /** 跳过 TLS 证书校验：仅用于自签名/内网证书调试 */
-    val insecureTls: Boolean = false
+    val insecureTls: Boolean = false,
+    /** 是否自动跟随 3xx 重定向 */
+    val followRedirects: Boolean = true,
+    /** 最大跟随跳数 */
+    val maxRedirects: Int = 10
 )
 
 @Serializable

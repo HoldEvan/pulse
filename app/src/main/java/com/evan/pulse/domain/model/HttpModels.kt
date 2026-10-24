@@ -91,7 +91,11 @@ data class HttpCallConfig(
     /** 弱网模拟：默认关闭，零开销直发 */
     val throttle: NetworkThrottleConfig = NetworkThrottleConfig(),
     /** 跳过 TLS 证书校验：仅用于自签名/内网证书调试 */
-    val insecureTls: Boolean = false
+    val insecureTls: Boolean = false,
+    /** 是否自动跟随 3xx 重定向 */
+    val followRedirects: Boolean = true,
+    /** 最大跟随跳数，0 表示不跟随（即使 [followRedirects] 为 true） */
+    val maxRedirects: Int = 10
 )
 
 sealed interface HttpCallOutcome {

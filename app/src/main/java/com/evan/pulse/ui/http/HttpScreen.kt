@@ -419,6 +419,33 @@ private fun NetworkEditor(viewModel: HttpViewModel) {
                 checked = viewModel.insecureTls,
                 onCheckedChange = { viewModel.insecureTls = it }
             )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                AppText(
+                    text = stringResource(R.string.follow_redirects_label),
+                    modifier = Modifier.weight(1f)
+                )
+                AppSwitch(
+                    checked = viewModel.followRedirects,
+                    onCheckedChange = { viewModel.followRedirects = it }
+                )
+            }
+            if (viewModel.followRedirects) {
+                AppTextField(
+                    value = viewModel.maxRedirects,
+                    onValueChange = { viewModel.maxRedirects = it.filter(Char::isDigit).take(2) },
+                    label = stringResource(R.string.max_redirects_label),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                AppText(
+                    text = stringResource(R.string.max_redirects_hint),
+                    fontSize = 12.sp,
+                    color = AppTheme.colors.onSurfaceSummary
+                )
+            }
         }
     }
 }

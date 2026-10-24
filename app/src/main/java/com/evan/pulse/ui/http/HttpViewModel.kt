@@ -85,6 +85,12 @@ class HttpViewModel : ViewModel() {
     /** 跳过 TLS 证书校验；仅用于调试自签名或内网 HTTPS 服务 */
     var insecureTls by mutableStateOf(false)
 
+    /** 是否自动跟随 3xx 重定向；关闭后直接展示 3xx 与 Location */
+    var followRedirects by mutableStateOf(true)
+
+    /** 最大跟随跳数，输入框直接绑文本 */
+    var maxRedirects by mutableStateOf("10")
+
     /** 弱网模拟档位；NONE 即关闭，FORCE_TIMEOUT 配合秒数生效 */
     var throttlePreset by mutableStateOf(NetworkPreset.NONE)
 
@@ -149,7 +155,9 @@ class HttpViewModel : ViewModel() {
             useProxy = useProxy,
             throttlePreset = throttlePreset.name,
             forceTimeoutSec = forceTimeoutSec,
-            insecureTls = insecureTls
+            insecureTls = insecureTls,
+            followRedirects = followRedirects,
+            maxRedirects = maxRedirects.toIntOrNull()?.coerceIn(0, 20) ?: 10
         )
     )
 
@@ -182,6 +190,8 @@ class HttpViewModel : ViewModel() {
         throttlePreset = NetworkPreset.entries.firstOrNull { it.name == snap.throttlePreset } ?: NetworkPreset.NONE
         forceTimeoutSec = snap.forceTimeoutSec
         insecureTls = snap.insecureTls
+        followRedirects = snap.followRedirects
+        maxRedirects = snap.maxRedirects.toString()
     }
 
     fun activeEnvVars(): Map<String, String> {
@@ -302,7 +312,9 @@ class HttpViewModel : ViewModel() {
                 preset = throttlePreset,
                 forceTimeoutSec = forceTimeoutSec.toIntOrNull()?.coerceIn(0, 300) ?: 0
             ),
-            insecureTls = insecureTls
+            insecureTls = insecureTls,
+            followRedirects = followRedirects,
+            maxRedirects = maxRedirects.toIntOrNull()?.coerceIn(0, 20) ?: 10
         )
     }
 

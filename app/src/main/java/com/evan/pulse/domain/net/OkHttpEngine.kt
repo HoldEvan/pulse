@@ -52,6 +52,7 @@ import javax.net.ssl.SSLException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.io.asOutputStream
+import com.evan.pulse.domain.http.RedirectPolicy
 import com.evan.pulse.domain.net.InsecureTls.applyInsecureTls
 import okhttp3.Credentials
 
@@ -120,71 +121,109 @@ class OkHttpEngine(private val appContextProvider: () -> Context? = { null }) : 
             )
         }
 
-        val body = requestBody(config)
         // 网络模拟：强制超时档阻塞指定秒数后按超时失败返回；弱网档位分两段——
         // 请求前随机 RTT + 请求体上行耗时，响应后按响应体大小估算下行耗时
         val throttle = config.throttle
         val start = System.currentTimeMillis()
         val timeline = MutableTimeline()
-        timelines[config.url] = timeline
+        val registered = mutableListOf<String>()
+        val maxHops = config.maxRedirects.coerceIn(0, MAX_REDIRECTS)
+
+        fun register(url: String) {
+            timelines[url] = timeline
+            registered += url
+        }
+
         if (throttle.isActive) {
             if (throttle.preset == NetworkPreset.FORCE_TIMEOUT) {
                 delay(throttle.forceTimeoutSec * 1000L)
-                timelines.remove(config.url)
                 return HttpCallOutcome.Failure(
                     HttpErrorType.TIMEOUT,
                     "网络配置强制超时（${throttle.forceTimeoutSec}s）"
                 )
             }
-            val uploadSize = (body as? OutgoingContent)?.contentLength ?: 0
+            val uploadSize = (requestBody(config) as? OutgoingContent)?.contentLength ?: 0
             delay(NetworkThrottle.uploadDelayMs(uploadSize, throttle, throttleRandom))
         }
-        return try {
-            val response = clientFor(config.proxy, config.insecureTls).request {
-                method = ktorMethod(config.method)
-                url {
-                    takeFrom(config.url)
-                    config.sendableQueryParams().forEach { encodedParameters.append(it.key, it.value) }
+
+        var currentUrl = config.url
+        var currentMethod = config.method
+        var dropBody = false
+        var dropAuth = false
+        var firstHop = true
+        var hops = 0
+        var outcome: HttpCallOutcome? = null
+        try {
+            // 重定向由本层显式跟随：OkHttp 自身的跟随无法限制跳数，也拿不到中间响应
+            while (outcome == null) {
+                val body = if (dropBody) null else requestBody(config)
+                register(currentUrl)
+                val response = clientFor(config.proxy, config.insecureTls).request {
+                    method = ktorMethod(currentMethod)
+                    url {
+                        takeFrom(currentUrl)
+                        // 查询参数只拼在首跳，重定向地址自带完整 query
+                        if (firstHop) {
+                            config.sendableQueryParams().forEach { encodedParameters.append(it.key, it.value) }
+                        }
+                    }
+                    sendableHeaders(config, hasBody = body != null)
+                        .filterNot { dropAuth && it.key.equals("Authorization", ignoreCase = true) }
+                        .forEach { header(it.key, it.value) }
+                    config.proxy.sendCredentials()
+                        ?.let { credential -> header("Proxy-Authorization", credential) }
+                    timeout {
+                        requestTimeoutMillis = config.timeoutMs
+                        connectTimeoutMillis = config.timeoutMs
+                        socketTimeoutMillis = config.timeoutMs
+                    }
+                    if (body != null) setBody(body)
                 }
-                sendableHeaders(config, hasBody = body != null).forEach { header(it.key, it.value) }
-                config.proxy.sendCredentials()
-                    ?.let { credential -> header("Proxy-Authorization", credential) }
-                timeout {
-                    requestTimeoutMillis = config.timeoutMs
-                    connectTimeoutMillis = config.timeoutMs
-                    socketTimeoutMillis = config.timeoutMs
+                val bytes = response.bodyAsBytes()
+                val location = response.headers["Location"]
+                val next = if (config.followRedirects && hops < maxHops && location != null) {
+                    RedirectPolicy.next(currentUrl, location, currentMethod, response.status.value)
+                } else {
+                    null
                 }
-                if (body != null) setBody(body)
+                if (next != null) {
+                    currentUrl = next.url
+                    currentMethod = next.method
+                    dropBody = dropBody || next.dropBody
+                    dropAuth = dropAuth || next.dropAuthorization
+                    firstHop = false
+                    hops++
+                    continue
+                }
+
+                // 下行模拟在读完响应后补延迟，总耗时与真实慢速下载一致
+                NetworkThrottle.downloadDelayMs(bytes.size.toLong(), throttle)
+                    .takeIf { it > 0 }
+                    ?.let { delay(it) }
+                val elapsed = System.currentTimeMillis() - start
+                val snap = timeline.snapshot(elapsed)
+                outcome = HttpCallOutcome.Success(
+                    statusCode = response.status.value,
+                    statusText = response.status.description,
+                    headers = responseHeaders(response),
+                    body = String(bytes, charsetOf(response.headers["Content-Type"])),
+                    durationMs = elapsed,
+                    responseSizeBytes = bytes.size.toLong(),
+                    timeline = snap,
+                    bodyBytes = bytes,
+                    // 取 Ktor 最终组装出的请求头，包含引擎自动补的 Host/Accept/Content-Type 等
+                    requestHeaders = response.request.headers.flattenEntries()
+                        .map { KeyValue(it.first, it.second) }
+                )
             }
-            val bytes = response.bodyAsBytes()
-            // 下行模拟在读完响应后补延迟，总耗时与真实慢速下载一致
-            NetworkThrottle.downloadDelayMs(bytes.size.toLong(), throttle)
-                .takeIf { it > 0 }
-                ?.let { delay(it) }
-            val elapsed = System.currentTimeMillis() - start
-            val snap = timeline.snapshot(elapsed)
-            val outcome = HttpCallOutcome.Success(
-                statusCode = response.status.value,
-                statusText = response.status.description,
-                headers = responseHeaders(response),
-                body = String(bytes, charsetOf(response.headers["Content-Type"])),
-                durationMs = elapsed,
-                responseSizeBytes = bytes.size.toLong(),
-                timeline = snap,
-                bodyBytes = bytes,
-                // 取 Ktor 最终组装出的请求头，包含引擎自动补的 Host/Accept/Content-Type 等
-                requestHeaders = response.request.headers.flattenEntries()
-                    .map { KeyValue(it.first, it.second) }
-            )
-            timelines.remove(config.url)
-            outcome
         } catch (e: CancellationException) {
-            timelines.remove(config.url)
             throw e
         } catch (e: Throwable) {
-            timelines.remove(config.url)
-            HttpCallOutcome.Failure(classify(e), describe(e))
+            outcome = HttpCallOutcome.Failure(classify(e), describe(e))
+        } finally {
+            registered.forEach { timelines.remove(it) }
         }
+        return outcome
     }
 
     private fun clientFor(proxyConfig: ProxyConfig, insecureTls: Boolean): HttpClient {
@@ -205,6 +244,9 @@ class OkHttpEngine(private val appContextProvider: () -> Context? = { null }) : 
                 readTimeout(0, TimeUnit.MILLISECONDS)
                 writeTimeout(0, TimeUnit.MILLISECONDS)
                 applyInsecureTls(insecureTls)
+                // 重定向由 execute() 显式跟随，便于限制跳数并展示中间 3xx
+                followRedirects(false)
+                followSslRedirects(false)
                 if (proxyConfig.enabled) {
                     proxy(
                         Proxy(
@@ -365,6 +407,9 @@ class OkHttpEngine(private val appContextProvider: () -> Context? = { null }) : 
 
     private companion object {
         const val MAX_CACHED_CLIENTS = 8
+
+        /** 允许用户设置的最大跳数上限，防止误填导致长链路 */
+        const val MAX_REDIRECTS = 20
         val BODY_RESERVED_HEADERS = setOf("content-type", "content-length")
     }
 }

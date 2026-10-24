@@ -205,7 +205,10 @@ object CollectionRunner {
                 preset = NetworkPreset.entries.firstOrNull { it.name == snapshot.throttlePreset }
                     ?: NetworkPreset.NONE,
                 forceTimeoutSec = snapshot.forceTimeoutSec.toIntOrNull()?.coerceIn(0, 300) ?: 0
-            )
+            ),
+            insecureTls = snapshot.insecureTls,
+            followRedirects = snapshot.followRedirects,
+            maxRedirects = snapshot.maxRedirects
         )
 
         val mutable = MutableRequest(
