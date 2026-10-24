@@ -674,6 +674,8 @@
     <string name="collection_rename">Rename</string>
     <string name="collection_delete_confirm">Delete %1$d folders and %2$d requests</string>
     <string name="collection_move_to">Move to</string>
+    <string name="request_duplicate">Duplicate</string>
+    <string name="request_copy_name">%1$s copy</string>
     <string name="cd_move_request">Move request</string>
     <string name="collection_move_forbidden">Cannot move a folder into itself</string>
     <string name="collection_folder_empty">Empty</string>

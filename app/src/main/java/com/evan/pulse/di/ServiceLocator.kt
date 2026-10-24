@@ -442,6 +442,26 @@ class CollectionStore(private val persist: PersistenceHandle) {
         persist.save()
     }
 
+    /**
+     * 复制接口到同文件夹，紧跟在原条目之后。
+     *
+     * 只复制快照与协议类型，名称由调用方按界面语言生成；条目不存在或名称空白时返回 null。
+     */
+    fun duplicateRequest(id: Long, name: String): Long? {
+        if (name.isBlank()) return null
+        val index = _requests.value.indexOfFirst { it.id == id }
+        if (index < 0) return null
+        val original = _requests.value[index]
+        val copy = original.copy(
+            id = nextRequestId++,
+            name = name.trim(),
+            createdAt = System.currentTimeMillis()
+        )
+        _requests.value = _requests.value.toMutableList().apply { add(index + 1, copy) }
+        persist.save()
+        return copy.id
+    }
+
     /** 重命名接口；空白名称视为无效，保留原名称 */
     fun renameRequest(id: Long, name: String) {
         if (name.isBlank()) return

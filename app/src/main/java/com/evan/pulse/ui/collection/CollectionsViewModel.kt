@@ -105,6 +105,9 @@ class CollectionsViewModel : ViewModel() {
             }
     }
 
+    /** 复制接口到同文件夹，名称由界面传入以跟随当前语言 */
+    fun duplicateRequest(id: Long, name: String): Long? = store.duplicateRequest(id, name)
+
     fun deleteRequest(id: Long) = store.deleteRequest(id)
 
     fun renameRequest(id: Long, name: String) = store.renameRequest(id, name)

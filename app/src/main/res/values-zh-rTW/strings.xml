@@ -674,6 +674,8 @@
     <string name="collection_rename">重新命名</string>
     <string name="collection_delete_confirm">將刪除 %1$d 個集合和 %2$d 個接口</string>
     <string name="collection_move_to">移動到</string>
+    <string name="request_duplicate">複製</string>
+    <string name="request_copy_name">%1$s 副本</string>
     <string name="cd_move_request">移動介面</string>
     <string name="collection_move_forbidden">不能移動到自身或其子資料夾</string>
     <string name="collection_folder_empty">尚無內容</string>

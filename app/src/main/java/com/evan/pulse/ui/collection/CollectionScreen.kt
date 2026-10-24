@@ -18,6 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DragIndicator
 import androidx.compose.material.icons.filled.RadioButtonChecked
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
@@ -306,6 +307,7 @@ fun CollectionScreen(
                             moveRequestSelected = current?.id
                             moveRequestId = request.id
                         },
+                        onDuplicate = { name -> viewModel.duplicateRequest(request.id, name) },
                         onDelete = { viewModel.deleteRequest(request.id) }
                     )
                 }
@@ -731,10 +733,13 @@ private fun RequestRow(
     onLoad: () -> Unit,
     onRename: () -> Unit,
     onMove: () -> Unit,
+    onDuplicate: (String) -> Unit,
     onDelete: () -> Unit
 ) {
     val url = remember(request.data) { request.targetUrl() }
     val method = remember(request.type, request.data) { request.httpMethod() }
+    // 复制后的名称跟随界面语言，在组合期算好，点击回调里不再读资源
+    val copyName = stringResource(R.string.request_copy_name, request.name)
 
     Row(
         modifier = Modifier
@@ -783,6 +788,17 @@ private fun RequestRow(
                                 )
                             },
                             onClick = onRename
+                        ),
+                        DropdownItem(
+                            text = stringResource(R.string.request_duplicate),
+                            icon = { m ->
+                                AppIcon(
+                                    imageVector = Icons.Filled.ContentCopy,
+                                    contentDescription = null,
+                                    modifier = m
+                                )
+                            },
+                            onClick = { onDuplicate(copyName) }
                         ),
                         DropdownItem(
                             text = stringResource(R.string.cd_move_request),

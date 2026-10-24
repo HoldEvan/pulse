@@ -3,6 +3,7 @@ package com.evan.pulse.di
 import com.evan.pulse.data.model.RequestType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -68,5 +69,37 @@ class CollectionStoreTest {
         val (s, _) = store()
         assertEquals(-1L, s.saveRequest(1L, -1L, RequestType.HTTP, " ", "{}", "Default"))
         assertTrue(s.requests.value.isEmpty())
+    }
+
+    @Test
+    fun `duplicate inserts a copy right after the original`() {
+        val (s, _) = store()
+        val first = s.save("one", """{"url":"a"}""")
+        s.save("two", """{"url":"b"}""")
+
+        val copyId = s.duplicateRequest(first, "one copy")
+
+        assertEquals(listOf("two", "one", "one copy"), s.requests.value.map { it.name })
+        val copy = s.requests.value.first { it.id == copyId }
+        assertEquals("""{"url":"a"}""", copy.data)
+        assertEquals(s.requests.value.first { it.id == first }.collectionId, copy.collectionId)
+    }
+
+    @Test
+    fun `duplicate missing request returns null and does not save`() {
+        val (s, saves) = store()
+        s.save("one")
+        val before = saves.size
+        assertNull(s.duplicateRequest(999L, "copy"))
+        assertEquals(before, saves.size)
+        assertEquals(1, s.requests.value.size)
+    }
+
+    @Test
+    fun `duplicate rejects blank names`() {
+        val (s, _) = store()
+        val id = s.save("one")
+        assertNull(s.duplicateRequest(id, "  "))
+        assertEquals(1, s.requests.value.size)
     }
 }
