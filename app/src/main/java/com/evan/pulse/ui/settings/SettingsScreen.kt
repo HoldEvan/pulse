@@ -261,6 +261,93 @@ fun SettingsScreen(
                         }
                     )
                 }
+                item {
+                    AppSwitchRow(
+                        checked = settings.webhookEnabled,
+                        onCheckedChange = { viewModel.setWebhookEnabled(it) },
+                        title = stringResource(R.string.settings_webhook),
+                        summary = stringResource(R.string.settings_webhook_summary)
+                    )
+                }
+                if (settings.webhookEnabled) {
+                    item {
+                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+                            var webhookUrl by remember(settings.webhookUrl) {
+                                mutableStateOf(settings.webhookUrl)
+                            }
+                            AppTextField(
+                                value = webhookUrl,
+                                onValueChange = {
+                                    webhookUrl = it
+                                    viewModel.setWebhookUrl(it)
+                                },
+                                label = stringResource(R.string.settings_webhook_url),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            AppDropdown(
+                                title = stringResource(R.string.settings_webhook_format),
+                                items = listOf(
+                                    stringResource(R.string.webhook_format_generic),
+                                    stringResource(R.string.webhook_format_wecom),
+                                    stringResource(R.string.webhook_format_dingtalk),
+                                    stringResource(R.string.webhook_format_feishu),
+                                    stringResource(R.string.webhook_format_slack)
+                                ),
+                                selectedIndex = settings.webhookFormatIndex.coerceIn(
+                                    0,
+                                    com.evan.pulse.domain.webhook.WebhookFormat.entries.lastIndex
+                                ),
+                                modifier = Modifier.padding(top = 8.dp),
+                                onSelectedIndexChange = { viewModel.setWebhookFormatIndex(it) }
+                            )
+                            var webhookTemplate by remember(settings.webhookTemplate) {
+                                mutableStateOf(settings.webhookTemplate)
+                            }
+                            AppTextField(
+                                value = webhookTemplate,
+                                onValueChange = {
+                                    webhookTemplate = it
+                                    viewModel.setWebhookTemplate(it)
+                                },
+                                label = stringResource(R.string.settings_webhook_template),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp)
+                            )
+                            AppText(
+                                text = stringResource(R.string.settings_webhook_template_hint),
+                                fontSize = 12.sp,
+                                color = AppTheme.colors.onSurfaceSummary,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                            val testState by viewModel.webhookTest.collectAsStateWithLifecycle()
+                            AppTextButton(
+                                text = stringResource(R.string.settings_webhook_test),
+                                onClick = { viewModel.sendWebhookTest() },
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                            testState?.let { state ->
+                                AppText(
+                                    text = stringResource(
+                                        if (state == WebhookTestState.Ok) {
+                                            R.string.settings_webhook_test_ok
+                                        } else {
+                                            R.string.settings_webhook_test_failed
+                                        }
+                                    ),
+                                    fontSize = 12.sp,
+                                    color = if (state == WebhookTestState.Ok) {
+                                        AppTheme.colors.onSurfaceSummary
+                                    } else {
+                                        AppTheme.colors.error
+                                    },
+                                    modifier = Modifier.padding(top = 2.dp)
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
 

@@ -16,6 +16,7 @@ import com.evan.pulse.data.settings.MAX_AUTO_BACKUP_KEEP
 import com.evan.pulse.data.settings.MIN_AUTO_BACKUP_KEEP
 import com.evan.pulse.data.settings.SettingsStore
 import com.evan.pulse.R
+import com.evan.pulse.di.ServiceLocator
 import com.evan.pulse.ui.common.AppToast
 import com.evan.pulse.ui.l10n.L10n
 import kotlinx.coroutines.Dispatchers
@@ -55,6 +56,9 @@ data class TabState(
     /** 资源页内的子页：0=项目、1=集合、2=环境 */
     val resourceTab: Int = 1,
 )
+
+/** Webhook 测试发送结果 */
+enum class WebhookTestState { Ok, Failed }
 
 class SettingsViewModel(
     private val store: SettingsStore,
@@ -246,6 +250,50 @@ class SettingsViewModel(
     fun setAutoBackupKeepCount(count: Int) {
         viewModelScope.launch {
             store.update { it.copy(autoBackupKeepCount = count.coerceIn(MIN_AUTO_BACKUP_KEEP, MAX_AUTO_BACKUP_KEEP)) }
+        }
+    }
+
+    fun setWebhookEnabled(enabled: Boolean) {
+        viewModelScope.launch { store.update { it.copy(webhookEnabled = enabled) } }
+    }
+
+    fun setWebhookUrl(url: String) {
+        viewModelScope.launch { store.update { it.copy(webhookUrl = url) } }
+    }
+
+    fun setWebhookFormatIndex(index: Int) {
+        viewModelScope.launch {
+            store.update {
+                it.copy(
+                    webhookFormatIndex = index.coerceIn(
+                        0,
+                        com.evan.pulse.domain.webhook.WebhookFormat.entries.lastIndex
+                    )
+                )
+            }
+        }
+    }
+
+    fun setWebhookTemplate(template: String) {
+        viewModelScope.launch { store.update { it.copy(webhookTemplate = template) } }
+    }
+
+    private val _webhookTest = MutableStateFlow<WebhookTestState?>(null)
+
+    /** Webhook 测试发送结果；null 表示未测试或正在发送 */
+    val webhookTest: StateFlow<WebhookTestState?> = _webhookTest.asStateFlow()
+
+    /** 发送一条测试 Webhook，仅用于验证地址与格式 */
+    fun sendWebhookTest() {
+        val current = settings.value
+        if (current.webhookUrl.isBlank()) {
+            _webhookTest.value = WebhookTestState.Failed
+            return
+        }
+        _webhookTest.value = null
+        viewModelScope.launch {
+            val ok = ServiceLocator.webhookSender.sendTest(current)
+            _webhookTest.value = if (ok) WebhookTestState.Ok else WebhookTestState.Failed
         }
     }
 

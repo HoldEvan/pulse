@@ -50,6 +50,10 @@ private val KEY_UI_SCALE_PERCENT = intPreferencesKey("ui_scale_percent")
 private val KEY_AUTO_BACKUP_ENABLED = booleanPreferencesKey("auto_backup_enabled")
 private val KEY_AUTO_BACKUP_INTERVAL = intPreferencesKey("auto_backup_interval_index")
 private val KEY_AUTO_BACKUP_KEEP = intPreferencesKey("auto_backup_keep_count")
+private val KEY_WEBHOOK_ENABLED = booleanPreferencesKey("webhook_enabled")
+private val KEY_WEBHOOK_URL = stringPreferencesKey("webhook_url")
+private val KEY_WEBHOOK_FORMAT = intPreferencesKey("webhook_format_index")
+private val KEY_WEBHOOK_TEMPLATE = stringPreferencesKey("webhook_template")
 
 internal fun Preferences.toAppSettings(): AppSettings = AppSettings(
     uiStyleIndex = (get(KEY_UI_STYLE) ?: 0).coerceAtLeast(0),
@@ -86,6 +90,10 @@ internal fun Preferences.toAppSettings(): AppSettings = AppSettings(
         .coerceIn(0, AUTO_BACKUP_INTERVAL_HOURS.lastIndex),
     autoBackupKeepCount = (get(KEY_AUTO_BACKUP_KEEP) ?: DEFAULT_AUTO_BACKUP_KEEP)
         .coerceIn(MIN_AUTO_BACKUP_KEEP, MAX_AUTO_BACKUP_KEEP),
+    webhookEnabled = get(KEY_WEBHOOK_ENABLED) ?: false,
+    webhookUrl = get(KEY_WEBHOOK_URL) ?: "",
+    webhookFormatIndex = (get(KEY_WEBHOOK_FORMAT) ?: 0).coerceAtLeast(0),
+    webhookTemplate = get(KEY_WEBHOOK_TEMPLATE) ?: "",
 )
 
 class SettingsStore(context: Context) {
@@ -134,6 +142,10 @@ class SettingsStore(context: Context) {
                 .coerceIn(0, AUTO_BACKUP_INTERVAL_HOURS.lastIndex)
             prefs[KEY_AUTO_BACKUP_KEEP] = next.autoBackupKeepCount
                 .coerceIn(MIN_AUTO_BACKUP_KEEP, MAX_AUTO_BACKUP_KEEP)
+            prefs[KEY_WEBHOOK_ENABLED] = next.webhookEnabled
+            prefs[KEY_WEBHOOK_URL] = next.webhookUrl
+            prefs[KEY_WEBHOOK_FORMAT] = next.webhookFormatIndex.coerceAtLeast(0)
+            prefs[KEY_WEBHOOK_TEMPLATE] = next.webhookTemplate
         }
     }
 }

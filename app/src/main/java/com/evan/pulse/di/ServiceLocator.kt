@@ -944,6 +944,11 @@ object ServiceLocator {
     // provider 走私有函数直读可空字段，避免 R8/编译器把 lambda 内私有字段 accessor 合并成公共
     // checkNotNull getter。
     val httpEngine: HttpEngine by lazy { OkHttpEngine(::appContextOrNull) }
+
+    /** 拨测告警 Webhook 发送器，复用统一引擎所以走同一套代理设置 */
+    val webhookSender: com.evan.pulse.data.webhook.WebhookSender by lazy {
+        com.evan.pulse.data.webhook.WebhookSender(httpEngine)
+    }
     val wsEngine: WsEngine = KtorWsEngine()
     val mqttEngine: MqttEngine = PahoMqttEngine()
     val sseEngine: SseEngine = KtorSseEngine()

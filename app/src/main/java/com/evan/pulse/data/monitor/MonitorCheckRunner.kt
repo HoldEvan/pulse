@@ -1,10 +1,15 @@
 package com.evan.pulse.data.monitor
 
+import com.evan.pulse.R
 import com.evan.pulse.data.model.MonitorRun
 import com.evan.pulse.data.model.MonitorTarget
+import com.evan.pulse.data.model.addressText
 import com.evan.pulse.data.settings.SettingsStore
+import com.evan.pulse.data.webhook.WebhookSender
 import com.evan.pulse.di.EnvStore
 import com.evan.pulse.di.MonitorStore
+import com.evan.pulse.domain.webhook.WebhookEvent
+import com.evan.pulse.ui.l10n.L10n
 
 /**
  * 单个目标的「检查 → 落库 → 告警」流程。
@@ -18,6 +23,7 @@ class MonitorCheckRunner(
     private val settingsStore: SettingsStore,
     private val checker: MonitorChecker,
     private val notifier: MonitorNotifier,
+    private val webhook: WebhookSender,
 ) {
 
     /** 最近一次检查的结果；没有历史样本时返回 null（视为从未检查） */
@@ -52,14 +58,42 @@ class MonitorCheckRunner(
      * - 慢：连通但延迟超阈值，上一轮慢则静默，其余发"响应过慢"；
      * - 通：从断或慢恢复时发恢复通知。
      */
-    private fun report(target: MonitorTarget, run: MonitorRun, previous: MonitorRun?) {
+    private suspend fun report(target: MonitorTarget, run: MonitorRun, previous: MonitorRun?) {
         val previousDown = previous != null && !previous.ok
         val previousSlow = previous?.slow == true
         when {
-            run.slow -> if (!previousSlow) notifySlow(target, run.detail)
-            run.ok -> if (previousDown || previousSlow) notifyRecovered(target)
-            else -> if (!previousDown) notifyDown(target, run.detail)
+            run.slow -> if (!previousSlow) {
+                notifySlow(target, run.detail)
+                sendWebhook(target, run, R.string.webhook_status_slow)
+            }
+
+            run.ok -> if (previousDown || previousSlow) {
+                notifyRecovered(target)
+                sendWebhook(target, run, R.string.webhook_status_recover)
+            }
+
+            else -> if (!previousDown) {
+                notifyDown(target, run.detail)
+                sendWebhook(target, run, R.string.webhook_status_down)
+            }
         }
+    }
+
+    /** 状态变化时推送一次 Webhook；失败静默，不影响记录写入 */
+    private suspend fun sendWebhook(target: MonitorTarget, run: MonitorRun, statusRes: Int) {
+        if (!settingsStore.settings.value.webhookEnabled) return
+        webhook.send(
+            settings = settingsStore.settings.value,
+            event = WebhookEvent(
+                name = target.name,
+                status = L10n.t(statusRes),
+                detail = run.detail,
+                durationMs = run.durationMs,
+                checkedAt = run.checkedAt,
+                type = target.type.name,
+                address = target.addressText()
+            )
+        )
     }
 
     private fun notifyDown(target: MonitorTarget, detail: String) {

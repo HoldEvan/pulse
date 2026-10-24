@@ -41,7 +41,14 @@ class MonitorScheduler(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    private val runner = MonitorCheckRunner(store, envStore, settingsStore, checker, notifier)
+    private val runner = MonitorCheckRunner(
+        store = store,
+        envStore = envStore,
+        settingsStore = settingsStore,
+        checker = checker,
+        notifier = notifier,
+        webhook = ServiceLocator.webhookSender
+    )
 
     /** 目标 id 到循环协程，synchronized 包装以便在 IO 线程池上并发增删 */
     private val jobs = Collections.synchronizedMap(LinkedHashMap<Long, Job>())

@@ -73,6 +73,13 @@ data class AppSettings(
     val autoBackupIntervalIndex: Int = DEFAULT_AUTO_BACKUP_INTERVAL_INDEX,
     /** 远程保留的自动备份份数，超出后删除最旧的 */
     val autoBackupKeepCount: Int = DEFAULT_AUTO_BACKUP_KEEP,
+    /** 拨测状态变化时是否 POST 到 Webhook */
+    val webhookEnabled: Boolean = false,
+    val webhookUrl: String = "",
+    /** 平台格式下标，对应 domain.webhook.WebhookFormat.ordinal */
+    val webhookFormatIndex: Int = 0,
+    /** 自定义模板；空则用格式对应的默认模板 */
+    val webhookTemplate: String = "",
 ) {
     /** 转换为引擎使用的代理配置，端口非法或地址为空时返回未生效配置 */
     fun toProxyConfig(): ProxyConfig = ProxyConfig(
