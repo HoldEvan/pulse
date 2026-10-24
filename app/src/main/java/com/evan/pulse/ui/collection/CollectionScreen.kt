@@ -17,7 +17,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.VerticalAlignTop
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DragIndicator
 import androidx.compose.material.icons.filled.RadioButtonChecked
@@ -316,9 +319,14 @@ fun CollectionScreen(
                         }
                     )
                 }
-                ownRequests.forEach { request ->
+                ownRequests.forEachIndexed { index, request ->
                     RequestRow(
                         request = request,
+                        canMoveUp = index > 0,
+                        canMoveDown = index < ownRequests.lastIndex,
+                        onMoveUp = { viewModel.moveRequest(request.id, -1) },
+                        onMoveDown = { viewModel.moveRequest(request.id, 1) },
+                        onPin = { viewModel.pinRequest(request.id) },
                         onLoad = { viewModel.load(request, onSwitchTab) },
                         onRename = {
                             renameRequestName = request.name
@@ -796,6 +804,11 @@ private fun FolderRow(
 @Composable
 private fun RequestRow(
     request: SavedRequest,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
+    onPin: () -> Unit,
     onLoad: () -> Unit,
     onRename: () -> Unit,
     onMove: () -> Unit,
@@ -844,6 +857,42 @@ private fun RequestRow(
             entries = listOf(
                 DropdownEntry(
                     items = listOf(
+                        DropdownItem(
+                            text = stringResource(R.string.request_pin),
+                            enabled = canMoveUp,
+                            icon = { m ->
+                                AppIcon(
+                                    imageVector = Icons.Filled.VerticalAlignTop,
+                                    contentDescription = null,
+                                    modifier = m
+                                )
+                            },
+                            onClick = onPin
+                        ),
+                        DropdownItem(
+                            text = stringResource(R.string.request_move_up),
+                            enabled = canMoveUp,
+                            icon = { m ->
+                                AppIcon(
+                                    imageVector = Icons.Filled.ArrowUpward,
+                                    contentDescription = null,
+                                    modifier = m
+                                )
+                            },
+                            onClick = onMoveUp
+                        ),
+                        DropdownItem(
+                            text = stringResource(R.string.request_move_down),
+                            enabled = canMoveDown,
+                            icon = { m ->
+                                AppIcon(
+                                    imageVector = Icons.Filled.ArrowDownward,
+                                    contentDescription = null,
+                                    modifier = m
+                                )
+                            },
+                            onClick = onMoveDown
+                        ),
                         DropdownItem(
                             text = stringResource(R.string.cd_rename),
                             icon = { m ->

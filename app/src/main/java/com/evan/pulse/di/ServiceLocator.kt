@@ -508,6 +508,48 @@ class CollectionStore(private val persist: PersistenceHandle) {
         persist.save()
     }
 
+    /**
+     * 在同一文件夹内上移或下移接口，[offset] 为 -1 或 1。
+     *
+     * 同级顺序就是请求在扁平列表里的相对顺序，因此与相邻的同文件夹条目交换位置即可；
+     * 已在边界或找不到条目时返回 false，不触发落盘。
+     */
+    fun moveRequest(id: Long, offset: Int): Boolean {
+        if (offset == 0) return false
+        val list = _requests.value
+        val currentIndex = list.indexOfFirst { it.id == id }
+        if (currentIndex < 0) return false
+        val collectionId = list[currentIndex].collectionId
+        val siblings = list.withIndex().filter { it.value.collectionId == collectionId }
+        val position = siblings.indexOfFirst { it.index == currentIndex }
+        val targetPosition = position + if (offset < 0) -1 else 1
+        if (position < 0 || targetPosition !in siblings.indices) return false
+        val targetIndex = siblings[targetPosition].index
+        _requests.value = list.toMutableList().apply {
+            val moved = this[currentIndex]
+            this[currentIndex] = this[targetIndex]
+            this[targetIndex] = moved
+        }
+        persist.save()
+        return true
+    }
+
+    /** 把接口置顶到所在文件夹的最前面；已在首位时返回 false */
+    fun pinRequest(id: Long): Boolean {
+        val list = _requests.value
+        val currentIndex = list.indexOfFirst { it.id == id }
+        if (currentIndex < 0) return false
+        val collectionId = list[currentIndex].collectionId
+        val firstIndex = list.indexOfFirst { it.collectionId == collectionId }
+        if (firstIndex < 0 || firstIndex == currentIndex) return false
+        _requests.value = list.toMutableList().apply {
+            val moved = removeAt(currentIndex)
+            add(firstIndex, moved)
+        }
+        persist.save()
+        return true
+    }
+
     /** 移动接口到目标集合；目标集合不存在时不动 */
     fun moveRequest(id: Long, collectionId: Long) {
         if (_collections.value.none { it.id == collectionId }) return

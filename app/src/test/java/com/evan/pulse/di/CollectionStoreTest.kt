@@ -161,4 +161,54 @@ class CollectionStoreTest {
         restored.restore(s.snapshot())
         assertEquals("v", restored.resolvedVars(root)["k"])
     }
+
+    @Test
+    fun `move up and down swaps neighbours inside a folder`() {
+        val (s, _) = store()
+        val a = s.save("a")
+        s.save("b")
+        s.save("c")
+        // 新条目在列表头部，展示顺序为 c、b、a
+        assertTrue(s.moveRequest(a, -1))
+        assertEquals(listOf("c", "a", "b"), s.requests.value.map { it.name })
+        assertTrue(s.moveRequest(a, 1))
+        assertEquals(listOf("c", "b", "a"), s.requests.value.map { it.name })
+    }
+
+    @Test
+    fun `move stops at the folder boundaries`() {
+        val (s, saves) = store()
+        val first = s.save("a")
+        val last = s.save("b")
+        val before = saves.size
+        assertFalse(s.moveRequest(first, 1))
+        assertFalse(s.moveRequest(last, -1))
+        assertEquals(before, saves.size)
+        assertEquals(listOf("b", "a"), s.requests.value.map { it.name })
+    }
+
+    @Test
+    fun `pin moves a request to the front of its own folder only`() {
+        val (s, _) = store()
+        s.create(1L, "other")
+        val otherId = s.collections.value.first { it.name == "other" }.id
+        val a = s.save("a")
+        s.save("b")
+        s.saveRequest(1L, otherId, RequestType.HTTP, "x", "{}", "Default")
+        s.saveRequest(1L, otherId, RequestType.HTTP, "y", "{}", "Default")
+
+        assertTrue(s.pinRequest(a))
+        assertEquals(listOf("a", "b"), s.requests.value.filter { it.collectionId != otherId }.map { it.name })
+        assertEquals(listOf("y", "x"), s.requests.value.filter { it.collectionId == otherId }.map { it.name })
+    }
+
+    @Test
+    fun `pin on the first item does nothing`() {
+        val (s, saves) = store()
+        s.save("a")
+        val top = s.save("b")
+        val before = saves.size
+        assertFalse(s.pinRequest(top))
+        assertEquals(before, saves.size)
+    }
 }

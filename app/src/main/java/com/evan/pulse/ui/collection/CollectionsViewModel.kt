@@ -129,6 +129,12 @@ class CollectionsViewModel : ViewModel() {
 
     fun moveRequest(id: Long, collectionId: Long) = store.moveRequest(id, collectionId)
 
+    /** 同文件夹内上移/下移，返回是否真的移动了 */
+    fun moveRequest(id: Long, offset: Int): Boolean = store.moveRequest(id, offset)
+
+    /** 置顶到所在文件夹最前 */
+    fun pinRequest(id: Long): Boolean = store.pinRequest(id)
+
     /** 批量导入规范解析结果，在当前项目根下新建集合；标签多于一组时按标签建子集合 */
     fun importBatch(collectionName: String, groups: List<ImportGroup>): ImportResult =
         store.importBatch(currentProjectId.value, collectionName, groups)
