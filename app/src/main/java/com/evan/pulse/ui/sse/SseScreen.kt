@@ -36,7 +36,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.evan.pulse.R
 import com.evan.pulse.data.model.RequestType
 import com.evan.pulse.domain.model.BodyType
-import com.evan.pulse.domain.model.HttpMethod
 import com.evan.pulse.domain.model.SseConnectionState
 import com.evan.pulse.domain.pathOnly
 import com.evan.pulse.ui.collection.SaveRequestDialog
@@ -48,6 +47,7 @@ import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.EventLine
 import com.evan.pulse.ui.common.InsecureTlsRow
 import com.evan.pulse.ui.common.KeyValueEditor
+import com.evan.pulse.ui.common.MethodPicker
 import com.evan.pulse.ui.common.MarkdownBlock
 import com.evan.pulse.ui.common.ValueHints
 import com.evan.pulse.ui.common.eventLogText
@@ -72,7 +72,6 @@ import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Link
 import com.evan.pulse.ui.design.AppButton
 
-private val sseMethods = HttpMethod.entries.toList()
 private val sseBodyTypes = listOf(BodyType.NONE, BodyType.JSON, BodyType.RAW)
 private val sseBodyTypeLabels = listOf(
     R.string.body_none,
@@ -135,13 +134,11 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
         )
         Column(modifier = Modifier.fillMaxWidth()) {
             AppCard(modifier = Modifier.fillMaxWidth()) {
-                AppDropdown(
-                    items = sseMethods.map { it.name },
-                    selectedIndex = sseMethods.indexOf(viewModel.method),
+                MethodPicker(
+                    method = viewModel.method,
+                    onMethodChange = { viewModel.method = it },
                     title = stringResource(R.string.sse_method_label),
-                    modifier = Modifier.fillMaxWidth(),
-                    showValue = true,
-                    onSelectedIndexChange = { viewModel.method = sseMethods[it] }
+                    modifier = Modifier.fillMaxWidth()
                 )
                 Column(modifier = Modifier.padding(12.dp)) {
                     AppTextField(

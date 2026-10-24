@@ -122,7 +122,7 @@ class SseViewModel : ViewModel() {
         SseSnapshot.serializer(),
         SseSnapshot(
             url = url,
-            method = method.name,
+            method = method.value,
             params = params.map { KeyValueEntry(it.key, it.value, it.enabled) },
             headers = headers.map { KeyValueEntry(it.key, it.value, it.enabled) },
             bodyType = bodyType.name,
@@ -144,7 +144,7 @@ class SseViewModel : ViewModel() {
             return
         }
         url = snap.url
-        method = HttpMethod.entries.firstOrNull { it.name == snap.method } ?: HttpMethod.POST
+        method = HttpMethod.parse(snap.method)
         params = snap.params.map { KeyValue(it.key, it.value, it.enabled) }.ifEmpty { listOf(KeyValue()) }
         headers = snap.headers.map { KeyValue(it.key, it.value, it.enabled) }.ifEmpty { listOf(KeyValue()) }
         bodyType = BodyType.entries.firstOrNull { it.name == snap.bodyType } ?: BodyType.JSON

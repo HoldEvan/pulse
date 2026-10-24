@@ -603,6 +603,10 @@
     <string name="cd_add">添加</string>
     <string name="cd_delete">删除</string>
     <string name="action_got_it">知道了</string>
+    <string name="http_method_custom">自定义…</string>
+    <string name="http_method_custom_title">自定义请求方法</string>
+    <string name="http_method_custom_label">方法名，如 PROPFIND</string>
+    <string name="http_method_custom_invalid">只能包含字母与连字符</string>
     <string name="http_method_label">请求方法</string>
     <string name="http_send_button">发送请求</string>
     <string name="body_type_label">请求体类型</string>

@@ -119,7 +119,7 @@ private fun HttpCallConfig.buildCurl(program: String, quote: (String) -> String)
     val fields = formFieldsToSend()
     return buildList {
         add(program)
-        add("-X ${method.name}")
+        add("-X ${method.value}")
         add(quote(urlInfo().full))
         exportHeaders().forEach { add("-H ${quote("${it.key}: ${it.value}")}") }
         when (bodyType) {
@@ -139,7 +139,7 @@ private fun HttpCallConfig.buildCurl(program: String, quote: (String) -> String)
 private fun HttpCallConfig.buildRawHttp(): String {
     val info = urlInfo()
     val fields = formFieldsToSend()
-    val sb = StringBuilder("${method.name} ${info.target} HTTP/1.1\n")
+    val sb = StringBuilder("${method.value} ${info.target} HTTP/1.1\n")
     info.host?.let { sb.append("Host: $it\n") }
 
     if (bodyType == BodyType.FORM_DATA && fields.isNotEmpty()) {
@@ -189,7 +189,7 @@ private fun HttpCallConfig.buildPythonRequests(): String {
     }
 
     sb.append("\nresponse = requests.request(\n")
-    sb.append("    ${codeString(method.name)},\n")
+    sb.append("    ${codeString(method.value)},\n")
     sb.append("    url,\n")
     if (params.isNotEmpty()) sb.append("    params=params,\n")
     if (headers.isNotEmpty()) sb.append("    headers=headers,\n")
@@ -227,7 +227,7 @@ private fun HttpCallConfig.buildJsFetch(): String {
     }
 
     sb.append("const response = await fetch(${jsString(info.full)}, {\n")
-    sb.append("  method: ${jsString(method.name)},\n")
+    sb.append("  method: ${jsString(method.value)},\n")
     if (headers.isNotEmpty()) {
         sb.append("  headers: {\n")
         headers.forEach { sb.append("    ${jsString(it.key)}: ${jsString(it.value)},\n") }

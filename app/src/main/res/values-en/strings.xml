@@ -603,6 +603,10 @@
     <string name="cd_add">Add</string>
     <string name="cd_delete">Delete</string>
     <string name="action_got_it">Got it</string>
+    <string name="http_method_custom">Custom…</string>
+    <string name="http_method_custom_title">Custom request method</string>
+    <string name="http_method_custom_label">Method name, e.g. PROPFIND</string>
+    <string name="http_method_custom_invalid">Letters and hyphens only</string>
     <string name="http_method_label">Method</string>
     <string name="http_send_button">Send request</string>
     <string name="body_type_label">Body type</string>

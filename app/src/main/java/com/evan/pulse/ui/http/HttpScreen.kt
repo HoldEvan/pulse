@@ -52,7 +52,6 @@ import com.evan.pulse.domain.model.AuthType
 import com.evan.pulse.domain.model.BodyType
 import com.evan.pulse.domain.model.FormField
 import com.evan.pulse.domain.model.HttpCallOutcome
-import com.evan.pulse.domain.model.HttpMethod
 import com.evan.pulse.domain.model.KeyValue
 import com.evan.pulse.domain.pathOnly
 import com.evan.pulse.ui.collection.SaveRequestDialog
@@ -61,6 +60,7 @@ import com.evan.pulse.ui.common.CollapsibleKeyValueTable
 import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.InsecureTlsRow
 import com.evan.pulse.ui.common.KeyValueEditor
+import com.evan.pulse.ui.common.MethodPicker
 import com.evan.pulse.ui.common.MonospaceBlock
 import com.evan.pulse.ui.common.SectionTitleRow
 import com.evan.pulse.ui.common.StatusBadge
@@ -89,7 +89,6 @@ import top.yukonga.miuix.kmp.icon.extended.Send
 import top.yukonga.miuix.kmp.squircle.squircleSurface
 import com.evan.pulse.ui.design.AppButton
 
-private val httpMethods = HttpMethod.entries.toList()
 private val bodyTypes = listOf(BodyType.NONE, BodyType.JSON, BodyType.RAW, BodyType.FORM_URLENCODED, BodyType.FORM_DATA, BodyType.GRAPHQL)
 private val bodyTypeLabels = listOf(
     R.string.body_none,
@@ -230,13 +229,11 @@ fun HttpScreen(
 @Composable
 private fun RequestEditorCard(viewModel: HttpViewModel) {
     AppCard(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
-        AppDropdown(
-            items = httpMethods.map { it.name },
-            selectedIndex = httpMethods.indexOf(viewModel.method),
+        MethodPicker(
+            method = viewModel.method,
+            onMethodChange = { viewModel.method = it },
             title = stringResource(R.string.http_method_label),
-            modifier = Modifier.fillMaxWidth(),
-            showValue = true,
-            onSelectedIndexChange = { viewModel.method = httpMethods[it] }
+            modifier = Modifier.fillMaxWidth()
         )
         Column(modifier = Modifier.padding(12.dp)) {
             AppTextField(

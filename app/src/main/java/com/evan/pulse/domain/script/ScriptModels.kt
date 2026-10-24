@@ -29,9 +29,7 @@ class MutableRequest(
     var formFields: MutableList<ScriptForm>
 ) {
     fun toCallConfig(proxy: ProxyConfig): HttpCallConfig = HttpCallConfig(
-        method = HttpMethod.entries
-            .firstOrNull { it.name.equals(method.trim(), ignoreCase = true) }
-            ?: HttpMethod.GET,
+        method = HttpMethod.parse(method),
         url = url,
         headers = headers.map { KeyValue(it.key, it.value, true) },
         queryParams = params.map { KeyValue(it.key, it.value, true) },

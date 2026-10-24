@@ -319,4 +319,14 @@ class RequestExportersTest {
         assertTrue(out.contains("--form 'note=1'"))
         assertFalse(out.contains("upload"))
     }
+
+    @Test
+    fun customMethodIsExportedVerbatim() {
+        val out = config(method = HttpMethod.parse("PROPFIND"), bodyType = BodyType.NONE)
+            .exportTo(HttpExportFormat.CURL_BASH)
+        assertTrue(out.startsWith("curl -X PROPFIND "))
+        val raw = config(method = HttpMethod.parse("PROPFIND"), bodyType = BodyType.NONE)
+            .exportTo(HttpExportFormat.HTTP_RAW)
+        assertTrue(raw.startsWith("PROPFIND /v1/users HTTP/1.1"))
+    }
 }

@@ -141,7 +141,7 @@ object CollectionRunner {
                 requestId = request.id,
                 name = request.name,
                 type = request.type,
-                method = config.method.name,
+                method = config.method.value,
                 url = urlWithQuery(config),
                 statusCode = result.statusCode,
                 durationMs = result.durationMs,
@@ -155,7 +155,7 @@ object CollectionRunner {
                 requestId = request.id,
                 name = request.name,
                 type = request.type,
-                method = config.method.name,
+                method = config.method.value,
                 url = urlWithQuery(config),
                 statusCode = null,
                 durationMs = null,
@@ -174,7 +174,7 @@ object CollectionRunner {
         projectId: Long,
         scope: VariableScope
     ): HttpCallConfig? {
-        val method = HttpMethod.entries.firstOrNull { it.name == snapshot.method } ?: HttpMethod.GET
+        val method = HttpMethod.parse(snapshot.method)
         val appliedAuth = ServiceLocator.authApplier.apply(
             AuthConfig(
                 type = com.evan.pulse.domain.model.AuthType.entries
@@ -209,7 +209,7 @@ object CollectionRunner {
         )
 
         val mutable = MutableRequest(
-            method = base.method.name,
+            method = base.method.value,
             url = base.url,
             headers = base.headers.map { ScriptKv(it.key, it.value) }.toMutableList(),
             params = base.queryParams.map { ScriptKv(it.key, it.value) }.toMutableList(),
@@ -302,7 +302,7 @@ object CollectionRunner {
             HistoryEntry(
                 id = 0,
                 projectId = projectId,
-                method = config.method.name,
+                method = config.method.value,
                 url = urlWithQuery(config),
                 statusCode = result.statusCode,
                 statusText = result.statusText,

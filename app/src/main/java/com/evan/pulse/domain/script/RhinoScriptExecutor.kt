@@ -93,7 +93,7 @@ class RhinoScriptExecutor : ScriptExecutor {
         sandbox: ScriptSession
     ): ScriptRunResult = run(script, sandbox) { cx, scope ->
         val mutable = MutableRequest(
-            method = request.method.name,
+            method = request.method.value,
             url = request.url,
             headers = request.headers.map { ScriptKv(it.key, it.value) }.toMutableList(),
             params = request.queryParams.map { ScriptKv(it.key, it.value) }.toMutableList(),

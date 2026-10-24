@@ -6,8 +6,37 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
-enum class HttpMethod {
-    GET, POST, PUT, DELETE, PATCH, HEAD
+/**
+ * HTTP 方法。
+ *
+ * 用值类而非枚举承载：调试时常遇到 WebDAV 的 PROPFIND、MKCOL 等扩展方法，
+ * 固定枚举会把这类请求挡在门外。常用方法以伴生常量提供，界面下拉仍按固定顺序展示。
+ */
+@JvmInline
+value class HttpMethod(val value: String) {
+    override fun toString(): String = value
+
+    companion object {
+        val GET = HttpMethod("GET")
+        val POST = HttpMethod("POST")
+        val PUT = HttpMethod("PUT")
+        val DELETE = HttpMethod("DELETE")
+        val PATCH = HttpMethod("PATCH")
+        val HEAD = HttpMethod("HEAD")
+        val OPTIONS = HttpMethod("OPTIONS")
+        val TRACE = HttpMethod("TRACE")
+
+        /** 下拉里展示的常用方法，顺序即界面顺序 */
+        val COMMON: List<HttpMethod> = listOf(GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS, TRACE)
+
+        /** 解析用户输入或快照里的方法名；空串回落到 GET，其余统一大写 */
+        fun parse(raw: String): HttpMethod =
+            HttpMethod(raw.trim().uppercase().ifEmpty { GET.value })
+
+        /** 方法名只允许字母与连字符，避免把空格等字符发到请求行里 */
+        fun isValid(raw: String): Boolean =
+            raw.isNotBlank() && raw.all { it.isLetter() || it == '-' }
+    }
 }
 
 enum class BodyType {

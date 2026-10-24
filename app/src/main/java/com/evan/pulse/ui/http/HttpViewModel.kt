@@ -129,7 +129,7 @@ class HttpViewModel : ViewModel() {
     fun snapshot(): String = snapshotJson.encodeToString(
         HttpSnapshot.serializer(),
         HttpSnapshot(
-            method = method.name,
+            method = method.value,
             url = url,
             params = params.map { KeyValueEntry(it.key, it.value, it.enabled) },
             headers = headers.map { KeyValueEntry(it.key, it.value, it.enabled) },
@@ -159,7 +159,7 @@ class HttpViewModel : ViewModel() {
         } catch (_: Exception) {
             return
         }
-        method = HttpMethod.entries.firstOrNull { it.name == snap.method } ?: HttpMethod.GET
+        method = HttpMethod.parse(snap.method)
         url = snap.url
         params = snap.params.map { KeyValue(it.key, it.value, it.enabled) }.ifEmpty { listOf(KeyValue()) }
         headers = snap.headers.map { KeyValue(it.key, it.value, it.enabled) }.ifEmpty { listOf(KeyValue()) }
@@ -343,7 +343,7 @@ class HttpViewModel : ViewModel() {
     private fun buildCall(scope: VariableScope, runScripts: Boolean): BuiltCall {
         val raw = rawConfig()
         val mutable = MutableRequest(
-            method = raw.method.name,
+            method = raw.method.value,
             url = raw.url,
             headers = raw.headers.map { ScriptKv(it.key, it.value) }.toMutableList(),
             params = raw.queryParams.map { ScriptKv(it.key, it.value) }.toMutableList(),
@@ -400,7 +400,7 @@ class HttpViewModel : ViewModel() {
                         HistoryEntry(
                             id = 0,
                             projectId = currentProjectId.value,
-                            method = built.config.method.name,
+                            method = built.config.method.value,
                             url = historyUrl(built.config),
                             statusCode = result.statusCode,
                             statusText = result.statusText,

@@ -224,11 +224,5 @@ class KtorSseEngine : SseEngine {
     }
 }
 
-private fun ktorMethod(method: HttpMethod): KtorHttpMethod = when (method) {
-    HttpMethod.GET -> KtorHttpMethod.Get
-    HttpMethod.POST -> KtorHttpMethod.Post
-    HttpMethod.PUT -> KtorHttpMethod.Put
-    HttpMethod.DELETE -> KtorHttpMethod.Delete
-    HttpMethod.PATCH -> KtorHttpMethod.Patch
-    HttpMethod.HEAD -> KtorHttpMethod.Head
-}
+/** Ktor 的 HttpMethod 本身接受任意字符串，自定义方法直接透传 */
+private fun ktorMethod(method: HttpMethod): KtorHttpMethod = KtorHttpMethod(method.value)
