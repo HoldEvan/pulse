@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.VerticalAlignTop
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DragIndicator
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.RadioButtonChecked
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.runtime.Composable
@@ -104,6 +105,7 @@ fun CollectionScreen(
     var showImport by remember { mutableStateOf(false) }
     var showCurlImport by remember { mutableStateOf(false) }
     var showVars by remember { mutableStateOf(false) }
+    var showExport by remember { mutableStateOf(false) }
     var varsDraft by remember { mutableStateOf(listOf(com.evan.pulse.domain.model.KeyValue())) }
     var createName by remember { mutableStateOf("") }
     var renameOpen by remember { mutableStateOf(false) }
@@ -201,6 +203,19 @@ fun CollectionScreen(
                                     )
                                 )
                                 current?.let { folder ->
+                                    add(
+                                        DropdownItem(
+                                            text = stringResource(R.string.collection_export_menu),
+                                            icon = { m ->
+                                                AppIcon(
+                                                    imageVector = Icons.Filled.Save,
+                                                    contentDescription = null,
+                                                    modifier = m
+                                                )
+                                            },
+                                            onClick = { showExport = true }
+                                        )
+                                    )
                                     add(
                                         DropdownItem(
                                             text = stringResource(R.string.collection_vars_menu),
@@ -642,6 +657,13 @@ fun CollectionScreen(
             }
         }
     }
+
+    CollectionExportDialog(
+        show = showExport,
+        collectionId = current?.id,
+        onDismiss = { showExport = false },
+        viewModel = viewModel
+    )
 
     CurlImportDialog(
         show = showCurlImport,

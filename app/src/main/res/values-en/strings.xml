@@ -721,6 +721,13 @@
     <string name="curl_import_done">Imported</string>
     <string name="curl_import_failed">Import failed, please check the command</string>
     <string name="curl_import_collection">cURL imports</string>
+    <string name="collection_export_menu">Export collection</string>
+    <string name="collection_export_title">Export current folder</string>
+    <string name="collection_export_hint">Exports HTTP requests in this folder and its subfolders; WS, SSE and MQTT are skipped</string>
+    <string name="collection_export_postman">Export as Postman Collection</string>
+    <string name="collection_export_openapi">Export as OpenAPI 3</string>
+    <string name="collection_export_done">Exported</string>
+    <string name="collection_export_failed">Export failed, please try another location</string>
     <string name="collection_import_spec">Import Spec</string>
     <string name="collection_import_postman">Import Postman Collection</string>
     <string name="collection_import_har">Import HAR Capture</string>

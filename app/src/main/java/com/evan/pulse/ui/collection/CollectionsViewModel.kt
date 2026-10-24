@@ -120,6 +120,27 @@ class CollectionsViewModel : ViewModel() {
         )
     }
 
+    /**
+     * 导出某个文件夹（含子树）为指定格式。
+     *
+     * 返回文本、建议文件名与实际/跳过数量；文件夹不存在时返回 null。
+     */
+    fun exportCollection(
+        collectionId: Long,
+        format: com.evan.pulse.domain.spec.CollectionExportFormat
+    ): Pair<String, com.evan.pulse.domain.spec.CollectionExportResult>? {
+        val root = collections.value.firstOrNull { it.id == collectionId } ?: return null
+        val result = com.evan.pulse.domain.spec.CollectionExporter.export(
+            root = root,
+            folders = collections.value.filter { it.projectId == root.projectId },
+            requests = requests.value,
+            variables = store.resolvedVars(collectionId),
+            format = format
+        )
+        val fileName = com.evan.pulse.domain.spec.CollectionExporter.fileName(root, format)
+        return fileName to result
+    }
+
     /** 复制接口到同文件夹，名称由界面传入以跟随当前语言 */
     fun duplicateRequest(id: Long, name: String): Long? = store.duplicateRequest(id, name)
 

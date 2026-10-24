@@ -721,6 +721,13 @@
     <string name="curl_import_done">已匯入</string>
     <string name="curl_import_failed">匯入失敗，請檢查指令格式</string>
     <string name="curl_import_collection">cURL 匯入</string>
+    <string name="collection_export_menu">匯出集合</string>
+    <string name="collection_export_title">匯出目前資料夾</string>
+    <string name="collection_export_hint">匯出此資料夾及其子資料夾中的 HTTP 請求；WS、SSE、MQTT 會被略過</string>
+    <string name="collection_export_postman">匯出為 Postman Collection</string>
+    <string name="collection_export_openapi">匯出為 OpenAPI 3</string>
+    <string name="collection_export_done">已匯出</string>
+    <string name="collection_export_failed">匯出失敗，請換一個位置重試</string>
     <string name="collection_import_spec">匯入規範</string>
     <string name="collection_import_postman">匯入 Postman 集合</string>
     <string name="collection_import_har">匯入 HAR 抓包</string>
