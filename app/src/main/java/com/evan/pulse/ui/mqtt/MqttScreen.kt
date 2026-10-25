@@ -41,6 +41,7 @@ import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.ConnectionStateIndicator
 import com.evan.pulse.ui.common.connectionStateColor
 import com.evan.pulse.ui.common.CopyIconButton
+import com.evan.pulse.ui.common.InsecureTlsRow
 import com.evan.pulse.ui.common.eventLogText
 import com.evan.pulse.ui.common.roundedPressable
 import com.evan.pulse.ui.common.subPageScrollState
@@ -166,6 +167,11 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                         onCheckedChange = { viewModel.useProxy = it }
                     )
                 }
+                InsecureTlsRow(
+                    checked = viewModel.insecureTls,
+                    onCheckedChange = { viewModel.insecureTls = it },
+                    modifier = Modifier.padding(top = 10.dp)
+                )
                 Row(
                     modifier = Modifier.padding(top = 10.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)

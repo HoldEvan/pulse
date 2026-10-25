@@ -45,6 +45,9 @@ class MqttViewModel : ViewModel() {
     /** 发布时是否让 Broker 保留消息 */
     var pubRetain by mutableStateOf(false)
 
+    /** 跳过 TLS 证书校验；仅对 ssl:// 生效，用于调试自签名或内网 Broker */
+    var insecureTls by mutableStateOf(false)
+
     /** 是否套用设置页里的全局代理；关闭则本次连接强制直连 */
     var useProxy by mutableStateOf(true)
 
@@ -123,7 +126,8 @@ class MqttViewModel : ViewModel() {
             pubTopic = pubTopic,
             pubQos = pubQos,
             pubRetain = pubRetain,
-            useProxy = useProxy
+            useProxy = useProxy,
+            insecureTls = insecureTls
         )
     )
 
@@ -144,6 +148,7 @@ class MqttViewModel : ViewModel() {
         pubQos = snap.pubQos
         pubRetain = snap.pubRetain
         useProxy = snap.useProxy
+        insecureTls = snap.insecureTls
     }
 
     private fun add(text: String, isSystem: Boolean) {
@@ -173,7 +178,8 @@ class MqttViewModel : ViewModel() {
                             username = username.ifBlank { null },
                             password = password.ifBlank { null },
                             keepAliveSec = keepAliveSec.toIntOrNull() ?: 60,
-                            proxy = proxy
+                            proxy = proxy,
+                            insecureTls = insecureTls
                         )
                     )
                     // 连接建立或恢复后，对保存的订阅逐一按存储的 QoS 重新订阅（需求 3.3）

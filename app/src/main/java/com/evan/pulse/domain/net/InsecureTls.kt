@@ -26,7 +26,7 @@ object InsecureTls {
     }
 
     /** 复用同一个 SocketFactory，避免每次建连都初始化 SSLContext */
-    private val socketFactory: SSLSocketFactory by lazy {
+    val insecureSocketFactory: SSLSocketFactory by lazy {
         SSLContext.getInstance("TLS").apply {
             init(null, arrayOf(trustManager), SecureRandom())
         }.socketFactory
@@ -35,7 +35,7 @@ object InsecureTls {
     /** 按开关把跳过校验的套接字工厂与主机名校验器挂到 OkHttp 构建器上 */
     fun OkHttpClient.Builder.applyInsecureTls(enabled: Boolean): OkHttpClient.Builder {
         if (!enabled) return this
-        sslSocketFactory(socketFactory, trustManager)
+        sslSocketFactory(insecureSocketFactory, trustManager)
         hostnameVerifier { _, _ -> true }
         return this
     }

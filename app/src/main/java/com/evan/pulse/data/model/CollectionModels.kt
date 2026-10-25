@@ -119,7 +119,9 @@ data class MqttSnapshot(
     /** 发布时是否带 retain 标志 */
     val pubRetain: Boolean = false,
     /** 是否使用设置页的全局代理 */
-    val useProxy: Boolean = true
+    val useProxy: Boolean = true,
+    /** 跳过 TLS 证书校验：仅对 ssl:// 生效，用于自签名/内网 Broker 调试 */
+    val insecureTls: Boolean = false
 )
 
 @Serializable

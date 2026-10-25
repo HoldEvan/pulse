@@ -7,7 +7,9 @@ data class MqttConfig(
     val password: String? = null,
     val keepAliveSec: Int = 60,
     val connectTimeoutSec: Int = 15,
-    val proxy: ProxyConfig = ProxyConfig()
+    val proxy: ProxyConfig = ProxyConfig(),
+    /** 跳过 TLS 证书校验：仅用于自签名/内网 Broker，只对 ssl:// 生效 */
+    val insecureTls: Boolean = false
 )
 
 enum class MqttConnectionState {
