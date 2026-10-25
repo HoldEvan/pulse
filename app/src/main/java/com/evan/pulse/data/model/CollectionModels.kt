@@ -138,7 +138,9 @@ data class SseSnapshot(
     /** 是否使用设置页的全局代理 */
     val useProxy: Boolean = true,
     /** 跳过 TLS 证书校验：仅用于自签名/内网证书调试 */
-    val insecureTls: Boolean = false
+    val insecureTls: Boolean = false,
+    /** 断点续连起点：首次连接作为 Last-Event-ID 发送 */
+    val lastEventId: String = ""
 )
 
 /** 快照统一序列化配置：字段只增不减，旧快照缺字段时用默认值兜底 */

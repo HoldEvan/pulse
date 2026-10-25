@@ -41,6 +41,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import com.evan.pulse.domain.net.InsecureTls.applyInsecureTls
+import com.evan.pulse.domain.sse.SseResume
 import kotlinx.coroutines.withContext
 
 /**
@@ -85,8 +86,14 @@ class KtorSseEngine : SseEngine {
     }
 
     private suspend fun runStream(config: SseConfig) {
+        // 跨重连保留最后收到的事件 id，作为下一次请求的断点
+        var resumeId: String? = null
         while (true) {
             try {
+                val resumeHeader = SseResume.lastEventId(config.lastEventId, resumeId)
+                val explicitResume = config.headers.any {
+                    it.enabled && it.key.trim().equals(SseResume.HEADER, ignoreCase = true)
+                }
                 // 超时只约束到响应头到达为止；流建立后 parseStream 不再受影响
                 val response = withTimeout(config.timeoutMs) {
                     clientFor(config.proxy, config.insecureTls).request(config.url) {
@@ -98,6 +105,10 @@ class KtorSseEngine : SseEngine {
                         config.headers
                             .filter { it.enabled && it.key.isNotBlank() }
                             .forEach { header(it.key, it.value) }
+                        // 用户显式配置了同名头时以其为准，避免重复发送
+                        if (resumeHeader != null && !explicitResume) {
+                            header(SseResume.HEADER, resumeHeader)
+                        }
                         requestBody(config)?.let { setBody(it) }
                     }
                 }
@@ -106,7 +117,7 @@ class KtorSseEngine : SseEngine {
                 }
                 _state.value = SseConnectionState.CONNECTED
                 _events.tryEmit(SseEvent.Connected(System.currentTimeMillis()))
-                parseStream(response.bodyAsChannel(), config)
+                parseStream(response.bodyAsChannel(), config) { resumeId = it }
                 _state.value = SseConnectionState.CLOSED
                 _events.tryEmit(SseEvent.Closed("连接已关闭", System.currentTimeMillis()))
                 if (!config.autoReconnect) return
@@ -136,13 +147,18 @@ class KtorSseEngine : SseEngine {
         else -> TextContent(config.body, ContentType.Text.Plain)
     }
 
-    /** 读取响应体直到 EOF，按 SSE 帧语法解析出事件与注释 */
-    private suspend fun parseStream(channel: io.ktor.utils.io.ByteReadChannel, config: SseConfig) {
+    /** 读取响应体直到 EOF，按 SSE 帧语法解析出事件与注释；每收到一个带 id 的帧回调一次 */
+    private suspend fun parseStream(
+        channel: io.ktor.utils.io.ByteReadChannel,
+        config: SseConfig,
+        onEventId: (String) -> Unit
+    ) {
         var id: String? = null
         var event = ""
         val data = StringBuilder()
 
         fun flush() {
+            id?.takeIf { it.isNotBlank() }?.let(onEventId)
             if (data.isNotEmpty()) {
                 val name = event.ifEmpty { "message" }
                 if (config.eventFilter.isBlank() || name == config.eventFilter) {

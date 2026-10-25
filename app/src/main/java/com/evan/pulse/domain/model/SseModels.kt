@@ -23,6 +23,8 @@ data class SseConfig(
     val eventFilter: String = "",
     val autoReconnect: Boolean = false,
     val reconnectDelaySec: Int = 3,
+    /** 手动指定的断点：首次连接时作为 Last-Event-ID 请求头发送，重连时被最后收到的 id 取代 */
+    val lastEventId: String = "",
     /** 跳过 TLS 证书校验：仅用于自签名/内网证书调试 */
     val insecureTls: Boolean = false
 )

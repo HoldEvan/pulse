@@ -713,6 +713,14 @@
     <!-- SSE panel -->
     <string name="sse_url_label">http:// or https:// URL, supports {{var}}</string>
     <string name="sse_event_filter_label">Event name filter (empty = all)</string>
+    <string name="sse_last_event_id_label">Resume from Last-Event-ID (first connect)</string>
+    <string name="sse_stats_title">Event stats</string>
+    <string name="sse_stats_total">%1$d frames</string>
+    <string name="sse_stats_count">%1$d</string>
+    <string name="sse_stats_empty">No events received yet</string>
+    <string name="sse_resume_current">Current resume id: %1$s</string>
+    <string name="sse_resume_none">none</string>
+    <string name="sse_resume_adopt">Use as resume id</string>
     <string name="sse_reconnect_delay_label">Reconnect delay (sec)</string>
     <string name="sse_auto_reconnect_label">Auto reconnect on drop</string>
     <string name="sse_direction_recv">recv</string>

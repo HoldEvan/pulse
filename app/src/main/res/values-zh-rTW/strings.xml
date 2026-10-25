@@ -713,6 +713,14 @@
     <!-- SSE 面板 -->
     <string name="sse_url_label">http:// 或 https:// 位址，支援 {{var}}</string>
     <string name="sse_event_filter_label">事件名稱過濾（留空接收全部）</string>
+    <string name="sse_last_event_id_label">斷點 Last-Event-ID（首次連線使用）</string>
+    <string name="sse_stats_title">事件統計</string>
+    <string name="sse_stats_total">共 %1$d 幀</string>
+    <string name="sse_stats_count">%1$d 次</string>
+    <string name="sse_stats_empty">尚未收到事件</string>
+    <string name="sse_resume_current">目前斷點：%1$s</string>
+    <string name="sse_resume_none">無</string>
+    <string name="sse_resume_adopt">回填斷點</string>
     <string name="sse_reconnect_delay_label">重連延遲（秒）</string>
     <string name="sse_auto_reconnect_label">斷線自動重連</string>
     <string name="sse_direction_recv">收</string>

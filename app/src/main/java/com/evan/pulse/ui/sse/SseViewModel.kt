@@ -22,6 +22,7 @@ import com.evan.pulse.domain.model.KeyValue
 import com.evan.pulse.domain.model.ProxyConfig
 import com.evan.pulse.domain.model.SseConfig
 import com.evan.pulse.domain.model.SseEvent
+import com.evan.pulse.domain.sse.SseStreamStats
 import com.evan.pulse.ui.history.UiEventLine
 import com.evan.pulse.ui.collection.LoadedRequestTracker
 import com.evan.pulse.ui.l10n.L10n
@@ -49,6 +50,13 @@ class SseViewModel : ViewModel() {
     var eventFilter by mutableStateOf("")
     var autoReconnect by mutableStateOf(false)
     var reconnectDelaySec by mutableStateOf("3")
+
+    /** 手动断点：首次连接时作为 Last-Event-ID 发送 */
+    var lastEventIdInput by mutableStateOf("")
+
+    /** 事件流统计：总帧数、按事件名计数、当前断点 */
+    var stats by mutableStateOf(SseStreamStats())
+        private set
 
     /** 连接建立超时（秒）：只约束握手与响应头到达，流建立后不受影响 */
     var timeoutSec by mutableStateOf("15")
@@ -80,6 +88,7 @@ class SseViewModel : ViewModel() {
                 when (event) {
                     is SseEvent.Connected -> add(L10n.t(R.string.state_opened), true)
                     is SseEvent.FrameReceived -> {
+                        stats = stats.record(event.event, event.id)
                         appendPreview(event.data)
                         add(frameText(event), false)
                     }
@@ -138,6 +147,7 @@ class SseViewModel : ViewModel() {
             eventFilter = eventFilter,
             autoReconnect = autoReconnect,
             reconnectDelaySec = reconnectDelaySec.toIntOrNull() ?: 3,
+            lastEventId = lastEventIdInput.trim(),
             previewPath = previewPath,
             timeoutSec = timeoutSec.toIntOrNull() ?: 15,
             useProxy = useProxy,
@@ -160,6 +170,7 @@ class SseViewModel : ViewModel() {
         eventFilter = snap.eventFilter
         autoReconnect = snap.autoReconnect
         reconnectDelaySec = snap.reconnectDelaySec.toString()
+        lastEventIdInput = snap.lastEventId
         timeoutSec = snap.timeoutSec.toString()
         useProxy = snap.useProxy
         insecureTls = snap.insecureTls
@@ -236,6 +247,7 @@ class SseViewModel : ViewModel() {
             }
 
             previewText = ""
+            stats = stats.reset()
             engine.connect(
                 SseConfig(
                     url = res(url),
@@ -251,6 +263,7 @@ class SseViewModel : ViewModel() {
                     timeoutMs = (timeoutSec.toIntOrNull()?.coerceAtLeast(1) ?: 15) * 1000L,
                     proxy = proxy,
                     eventFilter = eventFilter.trim(),
+                    lastEventId = lastEventIdInput.trim(),
                     autoReconnect = autoReconnect,
                     reconnectDelaySec = reconnectDelaySec.toIntOrNull() ?: 3,
                     insecureTls = insecureTls
@@ -265,6 +278,12 @@ class SseViewModel : ViewModel() {
 
     fun clearLog() {
         lines.clear()
+        stats = stats.reset()
+    }
+
+    /** 把当前断点写回输入框，便于下次连接从同一位置续传 */
+    fun adoptLastEventId() {
+        stats.lastEventId?.let { lastEventIdInput = it }
     }
 
     /** 只清拼接预览，不清事件流 */

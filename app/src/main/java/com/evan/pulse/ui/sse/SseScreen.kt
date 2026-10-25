@@ -67,6 +67,7 @@ import com.evan.pulse.ui.design.AppTabRow
 import com.evan.pulse.ui.design.AppText
 import com.evan.pulse.ui.design.AppTextButton
 import com.evan.pulse.ui.design.AppTextField
+import com.evan.pulse.ui.design.AppTheme
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Link
@@ -165,6 +166,18 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 8.dp)
+                    )
+                    AppTextField(
+                        value = viewModel.lastEventIdInput,
+                        onValueChange = { viewModel.lastEventIdInput = it },
+                        label = stringResource(R.string.sse_last_event_id_label),
+                        useLabelAsPlaceholder = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                    )
+                    ValueHints(
+                        hints = viewModel.placeholderHints(viewModel.lastEventIdInput)
                     )
                     AppCheckboxRow(
                         title = stringResource(R.string.sse_auto_reconnect_label),
@@ -336,6 +349,66 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                                 )
                             }
                         }
+                    }
+                }
+            }
+
+            // 事件统计：总帧数与按事件名分组计数，断点可一键回填到输入框
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                AppSmallTitle(text = stringResource(R.string.sse_stats_title), modifier = Modifier.weight(1f))
+                AppText(
+                    text = stringResource(R.string.sse_stats_total, viewModel.stats.total),
+                    fontSize = 12.sp,
+                    color = AppTheme.colors.onSurfaceSummary
+                )
+            }
+            AppCard(modifier = Modifier.fillMaxWidth().padding(top = 6.dp)) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    val breakdown = viewModel.stats.breakdown()
+                    if (breakdown.isEmpty()) {
+                        AppText(
+                            text = stringResource(R.string.sse_stats_empty),
+                            color = Color.Gray,
+                            fontSize = 13.sp
+                        )
+                    } else {
+                        breakdown.forEach { (name, count) ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                AppText(text = name, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                                AppText(
+                                    text = stringResource(R.string.sse_stats_count, count),
+                                    fontSize = 13.sp,
+                                    color = AppTheme.colors.onSurfaceSummary
+                                )
+                            }
+                        }
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        AppText(
+                            text = stringResource(
+                                R.string.sse_resume_current,
+                                viewModel.stats.lastEventId ?: stringResource(R.string.sse_resume_none)
+                            ),
+                            fontSize = 12.sp,
+                            color = AppTheme.colors.onSurfaceSummary,
+                            modifier = Modifier.weight(1f)
+                        )
+                        AppTextButton(
+                            text = stringResource(R.string.sse_resume_adopt),
+                            onClick = { viewModel.adoptLastEventId() },
+                            enabled = viewModel.stats.lastEventId != null
+                        )
                     }
                 }
             }
