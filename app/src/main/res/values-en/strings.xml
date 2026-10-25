@@ -372,6 +372,13 @@
     <string name="ws_binary_input_label">Hex or Base64 content</string>
     <string name="ws_binary_invalid">Content is not valid Hex or Base64</string>
     <string name="ws_log_binary_sent">[binary sent %1$d B] %2$s</string>
+    <string name="ws_templates_title">Message templates</string>
+    <string name="ws_template_save">Save as template</string>
+    <string name="ws_template_name_label">Template name</string>
+    <string name="ws_template_hint">Saves the current input (%1$d characters)</string>
+    <string name="ws_template_invalid">Name and content are required, or the template limit is reached</string>
+    <string name="ws_template_delete">Delete template</string>
+    <string name="ws_template_binary_badge">%1$s · %2$s</string>
     <string name="ws_log_binary_received">[binary received %1$d B] %2$s</string>
 
     <!-- MQTT screen -->

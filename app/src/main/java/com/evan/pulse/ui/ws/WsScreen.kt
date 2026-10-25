@@ -1,5 +1,6 @@
 package com.evan.pulse.ui.ws
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.evan.pulse.R
 import com.evan.pulse.data.model.RequestType
+import com.evan.pulse.data.model.WsMessageTemplate
 import com.evan.pulse.domain.model.WsConnectionState
 import com.evan.pulse.domain.pathOnly
 import com.evan.pulse.ui.collection.SaveRequestDialog
@@ -90,6 +92,10 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
     val systemLabel = stringResource(R.string.ws_direction_system)
     val recvLabel = stringResource(R.string.ws_direction_recv)
     var showSave by remember { mutableStateOf(false) }
+    val templates by viewModel.templates.collectAsState()
+    var showTemplateDialog by remember { mutableStateOf(false) }
+    var templateName by remember { mutableStateOf("") }
+    var templateNameError by remember { mutableStateOf(false) }
 
     Column(modifier = modifier.fillMaxSize().padding(horizontal = 12.dp)) {
         SectionTitleRow(
@@ -272,6 +278,31 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
         }
 
         Column(modifier = Modifier.padding(vertical = 10.dp)) {
+            // 常用消息模板：折叠展示，点击填充输入框，右上角保存当前输入
+            CollapsibleSection(
+                title = stringResource(R.string.ws_templates_title),
+                itemCount = templates.size,
+                initiallyExpanded = false,
+                modifier = Modifier.padding(bottom = 6.dp)
+            ) {
+                templates.forEach { template ->
+                    WsTemplateRow(
+                        template = template,
+                        onApply = { viewModel.applyTemplate(template) },
+                        onDelete = { viewModel.deleteTemplate(template.id) }
+                    )
+                }
+                AppTextButton(
+                    text = stringResource(R.string.ws_template_save),
+                    onClick = {
+                        templateName = ""
+                        templateNameError = false
+                        showTemplateDialog = true
+                    },
+                    enabled = !viewModel.templateLimitReached,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -364,6 +395,58 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
         }
     }
 
+    AppDialog(
+        show = showTemplateDialog,
+        title = stringResource(R.string.ws_template_save),
+        onDismissRequest = { showTemplateDialog = false }
+    ) {
+        Column {
+            AppTextField(
+                value = templateName,
+                onValueChange = {
+                    templateName = it
+                    templateNameError = false
+                },
+                label = stringResource(R.string.ws_template_name_label),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+            AppText(
+                text = stringResource(R.string.ws_template_hint, viewModel.input.length),
+                fontSize = 12.sp,
+                color = AppTheme.colors.onSurfaceSummary,
+                modifier = Modifier.padding(top = 6.dp)
+            )
+            if (templateNameError) {
+                AppText(
+                    text = stringResource(R.string.ws_template_invalid),
+                    color = AppTheme.colors.error,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(top = 6.dp)
+                )
+            }
+            Row(modifier = Modifier.padding(top = 10.dp)) {
+                AppTextButton(
+                    text = stringResource(R.string.action_cancel),
+                    onClick = { showTemplateDialog = false },
+                    modifier = Modifier.weight(1f)
+                )
+                AppTextButton(
+                    text = stringResource(R.string.action_save),
+                    onClick = {
+                        if (viewModel.saveTemplate(templateName, viewModel.input)) {
+                            showTemplateDialog = false
+                        } else {
+                            templateNameError = true
+                        }
+                    },
+                    primary = true,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+
     SaveRequestDialog(
         show = showSave,
         type = RequestType.WS,
@@ -372,6 +455,44 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
         onDismiss = { showSave = false },
         onSaved = viewModel::markSaved
     )
+}
+
+/** 模板行：左侧名称与内容预览点击填充，右侧删除 */
+@Composable
+private fun WsTemplateRow(
+    template: WsMessageTemplate,
+    onApply: () -> Unit,
+    onDelete: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .clickable(onClick = onApply)
+                .padding(vertical = 6.dp)
+        ) {
+            AppText(template.name)
+            AppText(
+                text = if (template.binary) {
+                    stringResource(R.string.ws_template_binary_badge, template.encoding, template.content)
+                } else {
+                    template.content
+                },
+                fontSize = 12.sp,
+                color = AppTheme.colors.onSurfaceSummary,
+                maxLines = 1
+            )
+        }
+        AppIconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
+            AppIcon(
+                imageVector = MiuixIcons.Light.Delete,
+                contentDescription = stringResource(R.string.ws_template_delete)
+            )
+        }
+    }
 }
 
 @Composable

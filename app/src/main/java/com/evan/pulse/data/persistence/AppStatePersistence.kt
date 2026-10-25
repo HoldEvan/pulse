@@ -15,6 +15,7 @@ import com.evan.pulse.data.model.ProjectInfo
 import com.evan.pulse.data.model.RequestType
 import com.evan.pulse.data.model.SavedRequest
 import com.evan.pulse.data.model.WsSessionEntry
+import com.evan.pulse.data.model.WsMessageTemplate
 import com.evan.pulse.data.model.WsReconnectSettings
 import com.evan.pulse.di.CollectionStoreSnapshot
 import com.evan.pulse.di.CookieStoreSnapshot
@@ -333,7 +334,20 @@ class AppStatePersistence(context: Context) {
                     enabled = root.booleanValue("wsAutoReconnect", false),
                     baseDelaySec = root.intValue("wsReconnectBaseDelaySec", 3),
                     maxDelaySec = root.intValue("wsReconnectMaxDelaySec", 60)
-                )
+                ),
+                wsTemplates = root.arrayValue("wsTemplates")?.mapNotNull { item ->
+                    val o = item.jsonObject
+                    val name = o.stringValue("name")
+                    WsMessageTemplate(
+                        id = o.longValue("id", -1L),
+                        name = name,
+                        content = o.stringValue("content"),
+                        binary = o.booleanValue("binary", false),
+                        encoding = o.stringValue("encoding", "HEX"),
+                        createdAt = o.longValue("createdAt", 0L)
+                    ).takeIf { it.id >= 0 && name.isNotBlank() }
+                } ?: emptyList(),
+                nextTemplateId = root.longValue("wsTemplateNextId", 1L)
             )
         )
     }
@@ -547,6 +561,19 @@ class AppStatePersistence(context: Context) {
             put("wsAutoReconnect", protocolSessions.wsReconnectSettings.enabled)
             put("wsReconnectBaseDelaySec", protocolSessions.wsReconnectSettings.baseDelaySec)
             put("wsReconnectMaxDelaySec", protocolSessions.wsReconnectSettings.maxDelaySec)
+            put("wsTemplates", buildJsonArray {
+                protocolSessions.wsTemplates.forEach { template ->
+                    add(buildJsonObject {
+                        put("id", template.id)
+                        put("name", template.name)
+                        put("content", template.content)
+                        put("binary", template.binary)
+                        put("encoding", template.encoding)
+                        put("createdAt", template.createdAt)
+                    })
+                }
+            })
+            put("wsTemplateNextId", protocolSessions.nextTemplateId)
             put("mqttSubscriptions", buildJsonArray {
                 protocolSessions.mqttSubscriptions.forEach { subscription ->
                     add(buildJsonObject {

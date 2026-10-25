@@ -6,6 +6,8 @@ import com.evan.pulse.data.model.CollectionTree
 import com.evan.pulse.data.model.EnvironmentInfo
 import com.evan.pulse.data.model.HistoryEntry
 import com.evan.pulse.data.model.ImportGroup
+import com.evan.pulse.data.model.WS_TEMPLATE_LIMIT
+import com.evan.pulse.data.model.WsMessageTemplate
 import com.evan.pulse.data.model.ImportResult
 import com.evan.pulse.data.model.KeyValueEntry
 import com.evan.pulse.data.model.MONITOR_HISTORY_LIMIT
@@ -841,7 +843,11 @@ class ProtocolSessionStore(private val persist: PersistenceHandle) {
     private val _wsReconnectSettings = MutableStateFlow(WsReconnectSettings())
     val wsReconnectSettings: StateFlow<WsReconnectSettings> = _wsReconnectSettings.asStateFlow()
 
+    private val _wsTemplates = MutableStateFlow<List<WsMessageTemplate>>(emptyList())
+    val wsTemplates: StateFlow<List<WsMessageTemplate>> = _wsTemplates.asStateFlow()
+
     private var nextWsId = 1L
+    private var nextTemplateId = 1L
 
     fun appendWs(endpoint: String, text: String, isSystem: Boolean, timestamp: Long): WsSessionEntry {
         val entry = WsSessionEntry(nextWsId++, endpoint, text, isSystem, timestamp)
@@ -853,6 +859,36 @@ class ProtocolSessionStore(private val persist: PersistenceHandle) {
     fun clearWsHistory() {
         if (_wsHistory.value.isEmpty()) return
         _wsHistory.value = emptyList()
+        persist.save()
+    }
+
+    /** 新增模板：同名模板覆盖内容并保留原 id；超出上限时淘汰最旧的一条 */
+    fun saveWsTemplate(name: String, content: String, binary: Boolean, encoding: String): WsMessageTemplate {
+        val trimmed = name.trim()
+        val existing = _wsTemplates.value.firstOrNull { it.name == trimmed }
+        val entry = WsMessageTemplate(
+            id = existing?.id ?: nextTemplateId++,
+            name = trimmed,
+            content = content,
+            binary = binary,
+            encoding = encoding,
+            createdAt = existing?.createdAt ?: System.currentTimeMillis()
+        )
+        val updated = if (existing == null) {
+            (_wsTemplates.value + entry).takeLast(WS_TEMPLATE_LIMIT)
+        } else {
+            _wsTemplates.value.map { if (it.id == existing.id) entry else it }
+        }
+        _wsTemplates.value = updated
+        persist.save()
+        return entry
+    }
+
+    fun deleteWsTemplate(id: Long) {
+        val before = _wsTemplates.value
+        val after = before.filter { it.id != id }
+        if (after == before) return
+        _wsTemplates.value = after
         persist.save()
     }
 
@@ -876,7 +912,9 @@ class ProtocolSessionStore(private val persist: PersistenceHandle) {
         _wsHistory.value,
         _mqttSubscriptions.value,
         nextWsId,
-        _wsReconnectSettings.value
+        _wsReconnectSettings.value,
+        _wsTemplates.value,
+        nextTemplateId
     )
 
     fun restore(snapshot: ProtocolSessionStoreSnapshot) {
@@ -888,6 +926,11 @@ class ProtocolSessionStore(private val persist: PersistenceHandle) {
             maxDelaySec = settings.maxDelaySec.coerceIn(settings.baseDelaySec.coerceIn(1, 3600), 3600)
         )
         nextWsId = maxOf(snapshot.nextWsId, (_wsHistory.value.maxOfOrNull { it.id } ?: 0L) + 1L)
+        _wsTemplates.value = snapshot.wsTemplates.takeLast(WS_TEMPLATE_LIMIT)
+        nextTemplateId = maxOf(
+            snapshot.nextTemplateId,
+            (_wsTemplates.value.maxOfOrNull { it.id } ?: 0L) + 1L
+        )
     }
 }
 
@@ -895,7 +938,9 @@ class ProtocolSessionStoreSnapshot(
     val wsHistory: List<WsSessionEntry>,
     val mqttSubscriptions: List<MqttSubscriptionEntry>,
     val nextWsId: Long,
-    val wsReconnectSettings: WsReconnectSettings = WsReconnectSettings()
+    val wsReconnectSettings: WsReconnectSettings = WsReconnectSettings(),
+    val wsTemplates: List<WsMessageTemplate> = emptyList(),
+    val nextTemplateId: Long = 1L
 )
 
 class MonitorStoreSnapshot(

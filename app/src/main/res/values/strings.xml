@@ -372,6 +372,13 @@
     <string name="ws_binary_input_label">Hex 或 Base64 内容</string>
     <string name="ws_binary_invalid">内容不是合法的 Hex 或 Base64</string>
     <string name="ws_log_binary_sent">[发出二进制 %1$d B] %2$s</string>
+    <string name="ws_templates_title">消息模板</string>
+    <string name="ws_template_save">保存为模板</string>
+    <string name="ws_template_name_label">模板名称</string>
+    <string name="ws_template_hint">将保存输入框内容（%1$d 字符）</string>
+    <string name="ws_template_invalid">名称与内容不能为空，或模板数量已达上限</string>
+    <string name="ws_template_delete">删除模板</string>
+    <string name="ws_template_binary_badge">%1$s · %2$s</string>
     <string name="ws_log_binary_received">[收到二进制 %1$d B] %2$s</string>
 
     <!-- MQTT 页 -->

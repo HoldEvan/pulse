@@ -8,6 +8,8 @@ import androidx.lifecycle.viewModelScope
 import com.evan.pulse.data.model.KeyValueEntry
 import com.evan.pulse.data.model.RequestType
 import com.evan.pulse.data.model.WsSnapshot
+import com.evan.pulse.data.model.WS_TEMPLATE_LIMIT
+import com.evan.pulse.data.model.WsMessageTemplate
 import com.evan.pulse.data.model.WsReconnectSettings
 import com.evan.pulse.data.model.snapshotJson
 import com.evan.pulse.di.ServiceLocator
@@ -94,6 +96,13 @@ class WsViewModel : ViewModel() {
     val state = engine.state
     val events = engine.events
     val history = sessions.wsHistory
+
+    /** 已保存的消息模板，按保存顺序排列 */
+    val templates = sessions.wsTemplates
+
+    /** 模板列表是否已达上限，用于禁用新建 */
+    val templateLimitReached: Boolean
+        get() = templates.value.size >= WS_TEMPLATE_LIMIT
     var missingVars by mutableStateOf<List<String>?>(null)
     var lastError by mutableStateOf<String?>(null)
 
@@ -343,6 +352,37 @@ class WsViewModel : ViewModel() {
     }
 
     fun dismissBinaryError() {
+        binaryError = null
+    }
+
+    /**
+     * 把当前输入保存为模板：名称重复时覆盖同名模板内容，编码与二进制开关一并记录。
+     * 名称或内容为空时返回 false，由界面提示。
+     */
+    fun saveTemplate(name: String, content: String): Boolean {
+        if (name.isBlank() || content.isBlank()) return false
+        if (templates.value.none { it.name == name.trim() } && templateLimitReached) return false
+        sessions.saveWsTemplate(
+            name = name,
+            content = content,
+            binary = binaryMode,
+            encoding = binaryEncoding.name
+        )
+        return true
+    }
+
+    fun deleteTemplate(id: Long) {
+        sessions.deleteWsTemplate(id)
+    }
+
+    /** 一键填充：文本模板写入输入框，二进制模板同时切到对应模式与编码 */
+    fun applyTemplate(template: WsMessageTemplate) {
+        input = template.content
+        binaryMode = template.binary
+        if (template.binary) {
+            binaryEncoding = BinaryEncoding.entries.firstOrNull { it.name == template.encoding }
+                ?: BinaryEncoding.HEX
+        }
         binaryError = null
     }
 
