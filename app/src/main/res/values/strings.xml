@@ -473,7 +473,12 @@
     <string name="resp_export_size">完整内容 %1$s</string>
     <string name="cd_save_response">保存响应体</string>
     <string name="cd_share_response">分享响应体</string>
-    <string name="resp_truncated">已截断显示（完整 %1$s）</string>
+    <string name="paged_view_previous">上一页</string>
+    <string name="paged_view_next">下一页</string>
+    <string name="paged_view_position">第 %1$d / %2$d 页</string>
+    <string name="paged_view_text_summary">共 %1$d 行 · %2$d 页</string>
+    <string name="paged_view_hex_summary">共 %1$s · %2$d 页</string>
+    <string name="json_tree_too_large">内容较大（%1$d 字符），已切换为分页文本</string>
 
     <!-- WebSocket 页 -->
     <string name="ws_url_label">ws:// 或 wss:// 地址，支持 {{var}}</string>

@@ -473,7 +473,12 @@
     <string name="resp_export_size">Full content %1$s</string>
     <string name="cd_save_response">Save response body</string>
     <string name="cd_share_response">Share response body</string>
-    <string name="resp_truncated">Truncated (full body %1$s)</string>
+    <string name="paged_view_previous">Previous</string>
+    <string name="paged_view_next">Next</string>
+    <string name="paged_view_position">Page %1$d of %2$d</string>
+    <string name="paged_view_text_summary">%1$d lines · %2$d pages</string>
+    <string name="paged_view_hex_summary">%1$s total · %2$d pages</string>
+    <string name="json_tree_too_large">Large content (%1$d chars), showing as paginated text</string>
 
     <!-- WebSocket screen -->
     <string name="ws_url_label">ws:// or wss:// URL (supports {{var}})</string>

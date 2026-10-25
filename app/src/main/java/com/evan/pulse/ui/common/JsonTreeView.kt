@@ -32,6 +32,9 @@ import top.yukonga.miuix.kmp.squircle.squircleBackground
 
 private val jsonTreeJson = Json { ignoreUnknownKeys = true }
 
+/** 树形视图的字符上限：超过后改用分页文本，避免一次展开出上万行 */
+private const val MAX_TREE_CHARS = 60_000
+
 private val JsonKeyColor = Color(0xFF6A5ACD)
 private val JsonStringColor = Color(0xFF43A047)
 private val JsonNumberColor = Color(0xFFEF6C00)
@@ -61,7 +64,24 @@ fun JsonTreeView(
     }
 
     if (element == null) {
-        MonospaceBlock(jsonText, modifier = modifier, selectable = selectable)
+        PagedTextBlock(text = jsonText, modifier = modifier)
+        return
+    }
+
+    // 树形渲染会为每个节点建一个 Composable，几十万字符的 JSON 展开后行数上万，
+    // 首次显示就要几秒且内存翻倍；超过阈值直接退化为分页文本，内容仍然完整可查
+    if (jsonText.length > MAX_TREE_CHARS) {
+        Column(modifier = blockModifier) {
+            AppText(
+                text = stringResource(R.string.json_tree_too_large, jsonText.length),
+                fontSize = 11.sp,
+                color = AppTheme.colors.onSurfaceSummary
+            )
+            PagedTextBlock(
+                text = prettyBody(jsonText, true),
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
         return
     }
 

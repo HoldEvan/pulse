@@ -183,27 +183,13 @@ fun isJson(body: String): Boolean = try {
 /** 响应体的五种展示形态；顺序即界面标签顺序 */
 enum class BodyViewMode { RAW, JSON, XML, HTML, HEX, BASE64, PREVIEW }
 
-/** [text] 为渲染结果，[truncated] 表示大内容被截断，[totalBytes] 为原始响应体字节数 */
-data class RenderedBody(
-    val text: String,
-    val totalBytes: Int,
-    val truncated: Boolean,
-)
+/** 单页 hex 覆盖的字节数：64 行 × 16 列，足够一屏且单页字符量可控 */
+const val HEX_BYTES_PER_PAGE = 1024
 
-private const val MAX_TEXT_CHARS = 65536
-private const val MAX_HEX_BYTES = 4096
 private const val HEX_COLUMNS = 16
 private const val BASE64_LINE = 76
 
 private val HEX_NIBBLE = "0123456789ABCDEF"
-
-private fun clipText(text: String, totalBytes: Int): RenderedBody {
-    return if (text.length <= MAX_TEXT_CHARS) {
-        RenderedBody(text, totalBytes, false)
-    } else {
-        RenderedBody(text.substring(0, MAX_TEXT_CHARS) + "\n... [truncated]", totalBytes, true)
-    }
-}
 
 private fun base64Wrapped(bytes: ByteArray): String {
     val encoded = Base64.getEncoder().encodeToString(bytes)
@@ -237,43 +223,51 @@ fun prettyXml(xml: String): String {
     }
 }
 
-private fun hexDump(bytes: ByteArray, limit: Int): RenderedBody {
-    val shown = if (bytes.size > limit) bytes.copyOf(limit) else bytes
-    val sb = StringBuilder(shown.size * 9 + 16)
-    var offset = 0
-    while (offset < shown.size) {
-        val end = minOf(offset + HEX_COLUMNS, shown.size)
-        sb.append(String.format(Locale.US, "%08X  ", offset))
-        for (i in offset until minOf(offset + HEX_COLUMNS / 2, end)) {
-            val b = shown[i].toInt() and 0xFF
+/**
+ * 按字节区间渲染 hex dump，供分页展示。
+ *
+ * [offset] 为起始字节偏移，[byteCount] 为本页最多展示的字节数；越界自动钳到可用范围。
+ */
+fun hexDumpRange(bytes: ByteArray, offset: Int, byteCount: Int = HEX_BYTES_PER_PAGE): String {
+    if (bytes.isEmpty() || byteCount <= 0) return ""
+    val from = offset.coerceIn(0, bytes.size)
+    val end = (from + byteCount).coerceAtMost(bytes.size)
+    if (from >= end) return ""
+    val sb = StringBuilder((end - from) * 9 + 16)
+    var cursor = from
+    while (cursor < end) {
+        val lineEnd = minOf(cursor + HEX_COLUMNS, end)
+        sb.append(String.format(Locale.US, "%08X  ", cursor))
+        for (i in cursor until minOf(cursor + HEX_COLUMNS / 2, lineEnd)) {
+            val b = bytes[i].toInt() and 0xFF
             sb.append(HEX_NIBBLE[b shr 4]).append(HEX_NIBBLE[b and 0x0F]).append(' ')
         }
         sb.append(' ')
-        for (i in minOf(offset + HEX_COLUMNS / 2, end) until end) {
-            val b = shown[i].toInt() and 0xFF
+        for (i in minOf(cursor + HEX_COLUMNS / 2, lineEnd) until lineEnd) {
+            val b = bytes[i].toInt() and 0xFF
             sb.append(HEX_NIBBLE[b shr 4]).append(HEX_NIBBLE[b and 0x0F]).append(' ')
         }
         sb.append(" |")
-        for (i in offset until end) {
-            val c = shown[i].toInt() and 0xFF
+        for (i in cursor until lineEnd) {
+            val c = bytes[i].toInt() and 0xFF
             sb.append(if (c in 0x20..0x7E) c.toChar() else '.')
         }
         sb.append("|\n")
-        offset += HEX_COLUMNS
+        cursor = lineEnd
     }
-    return RenderedBody(sb.toString().trimEnd(), bytes.size, bytes.size > limit)
+    return sb.toString().trimEnd()
 }
 
-/** 按 [mode] 渲染响应体；解析失败的 JSON/XML 回退为原文 */
-fun renderBody(body: String, mode: BodyViewMode): RenderedBody {
-    val totalBytes = body.toByteArray(Charsets.UTF_8).size
-    return when (mode) {
-        BodyViewMode.RAW -> clipText(body, totalBytes)
-        BodyViewMode.JSON -> clipText(prettyBody(body, true), totalBytes)
-        BodyViewMode.XML -> clipText(prettyXml(body), totalBytes)
-        BodyViewMode.HTML -> clipText(body, totalBytes)
-        BodyViewMode.HEX -> hexDump(body.toByteArray(Charsets.UTF_8), MAX_HEX_BYTES)
-        BodyViewMode.BASE64 -> clipText(base64Wrapped(body.toByteArray(Charsets.UTF_8)), totalBytes)
-        BodyViewMode.PREVIEW -> RenderedBody("", totalBytes, false)
-    }
+/**
+ * 把响应体渲染成 [mode] 对应的完整文本，不做长度裁剪。
+ *
+ * 大文本由 [PagedTextBlock] 按页切片展示，这里返回全文即可；HEX 与媒体预览不走此函数。
+ */
+fun renderModeText(body: String, mode: BodyViewMode): String = when (mode) {
+    BodyViewMode.RAW -> body
+    BodyViewMode.JSON -> prettyBody(body, true)
+    BodyViewMode.XML -> prettyXml(body)
+    BodyViewMode.HTML -> body
+    BodyViewMode.BASE64 -> base64Wrapped(body.toByteArray(Charsets.UTF_8))
+    BodyViewMode.HEX, BodyViewMode.PREVIEW -> body
 }

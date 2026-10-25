@@ -13,10 +13,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.evan.pulse.R
-import com.evan.pulse.data.cache.CacheCleaner
+import com.evan.pulse.ui.design.AppText
 import com.evan.pulse.ui.design.AppTheme
 import com.evan.pulse.ui.design.AppTabRow
-import com.evan.pulse.ui.design.AppText
 import com.evan.pulse.ui.design.AppTextButton
 
 /**
@@ -57,37 +56,31 @@ fun ResponseBodyView(
             cornerRadius = 10.dp,
             scrollable = true
         )
+        // 解析结果随 body 缓存：大 JSON 每次重组都重新解析会明显掉帧
+        val jsonParsed = remember(body) { isJson(body) }
         if (mode == BodyViewMode.PREVIEW) {
             MediaPreview(
                 contentType = contentType,
                 bodyBytes = bodyBytes,
                 modifier = Modifier.padding(top = 8.dp)
             )
+        } else if (mode == BodyViewMode.HTML) {
+            HtmlPreview(body, baseUrl, modifier = Modifier.padding(top = 8.dp))
+            AppTextButton(
+                text = stringResource(R.string.resp_view_html_source),
+                onClick = { mode = BodyViewMode.RAW },
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        } else if (mode == BodyViewMode.JSON && jsonParsed) {
+            JsonTreeView(body)
+        } else if (mode == BodyViewMode.HEX) {
+            // HEX 按字节区间出页：几 MB 的响应体也能完整查看，不用一次性拼字符串
+            val bytes = remember(body, bodyBytes) { bodyBytes ?: body.toByteArray(Charsets.UTF_8) }
+            PagedHexBlock(bytes = bytes)
         } else {
-            val rendered = remember(body, mode) { renderBody(body, mode) }
-            if (mode == BodyViewMode.HTML) {
-                HtmlPreview(body, baseUrl, modifier = Modifier.padding(top = 8.dp))
-                AppTextButton(
-                    text = stringResource(R.string.resp_view_html_source),
-                    onClick = { mode = BodyViewMode.RAW },
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-            } else if (mode == BodyViewMode.JSON && isJson(body)) {
-                JsonTreeView(body)
-            } else {
-                MonospaceBlock(rendered.text, selectable = true)
-            }
-            if (rendered.truncated) {
-                AppText(
-                    text = stringResource(
-                        R.string.resp_truncated,
-                        CacheCleaner.formatBytes(rendered.totalBytes.toLong())
-                    ),
-                    modifier = Modifier.padding(top = 6.dp),
-                    color = AppTheme.colors.onSurfaceSummary,
-                    fontSize = 12.sp
-                )
-            }
+            // 文本视图不再截断：超过单页预算时只渲染当前页，其余内容翻页可达
+            val text = remember(body, mode) { renderModeText(body, mode) }
+            PagedTextBlock(text = text)
         }
         ResponseExportActions(
             body = body,
