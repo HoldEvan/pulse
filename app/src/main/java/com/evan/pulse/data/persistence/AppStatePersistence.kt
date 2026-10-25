@@ -17,6 +17,9 @@ import com.evan.pulse.data.model.SavedRequest
 import com.evan.pulse.data.model.WsSessionEntry
 import com.evan.pulse.data.model.WsMessageTemplate
 import com.evan.pulse.data.model.WsReconnectSettings
+import com.evan.pulse.data.crypto.KeystoreSecretBox
+import com.evan.pulse.domain.crypto.SecretBox
+import com.evan.pulse.domain.crypto.SecretField
 import com.evan.pulse.di.CollectionStoreSnapshot
 import com.evan.pulse.di.CookieStoreSnapshot
 import com.evan.pulse.di.EnvStoreSnapshot
@@ -48,11 +51,26 @@ import kotlinx.serialization.json.put
  * 策略为变更即写（同步、经临时文件原子替换），启动时读回注入各 Store，
  * 保证进程被系统杀死后数据不丢失。
  */
-class AppStatePersistence(context: Context) {
+class AppStatePersistence(
+    context: Context,
+    private val secrets: SecretBox? = runCatching { KeystoreSecretBox() }.getOrNull(),
+) {
 
     private val file = File(context.filesDir, "app_data.json")
     private val tmpFile = File(context.filesDir, "app_data.json.tmp")
     private val json = Json { prettyPrint = true }
+
+    /**
+     * 写入敏感字段：没有可用密钥、或 Keystore 在运行期失效时退回明文。
+     * 加密失败不该让整次写盘失败，否则用户会丢掉这一次的全部改动。
+     */
+    private fun seal(plain: String): String {
+        val box = secrets ?: return plain
+        return runCatching { SecretField.seal(plain, box) }.getOrDefault(plain)
+    }
+
+    /** 读回敏感字段：明文（旧数据/旧备份）原样返回，密文解不开时落到空串 */
+    private fun open(value: String): String = SecretField.open(value, secrets)
 
     /** 从磁盘恢复；文件缺失或损坏时保留各 Store 的种子数据 */
     fun load() {
@@ -71,10 +89,7 @@ class AppStatePersistence(context: Context) {
 
         ServiceLocator.projectStore.restore(
             ProjectStoreSnapshot(
-                projects = root.arrayValue("projects")?.mapNotNull { item ->
-                    val o = item.jsonObject
-                    ProjectInfo(o.longValue("id", -1L), o.stringValue("name")).takeIf { it.id >= 0 }
-                } ?: emptyList(),
+                projects = parseProjects(root),
                 currentProjectId = root.longValue("currentProjectId", 1L),
                 nextId = root.longValue("projectNextId", 2L)
             )
@@ -82,22 +97,7 @@ class AppStatePersistence(context: Context) {
 
         ServiceLocator.envStore.restore(
             EnvStoreSnapshot(
-                environments = root.arrayValue("environments")?.mapNotNull { item ->
-                    val o = item.jsonObject
-                    val variables = o.arrayValue("variables")?.mapNotNull { pair ->
-                        val p = pair.jsonArray
-                        val k = p.getOrNull(0)?.jsonPrimitive?.contentOrNull
-                        val v = p.getOrNull(1)?.jsonPrimitive?.contentOrNull
-                        if (k != null && v != null) k to v else null
-                    } ?: emptyList()
-                    EnvironmentInfo(
-                        id = o.longValue("id", -1L),
-                        projectId = o.longValue("projectId", 1L),
-                        name = o.stringValue("name"),
-                        isActive = o.booleanValue("isActive", false),
-                        variables = variables
-                    ).takeIf { it.id >= 0 }
-                } ?: emptyList(),
+                environments = parseEnvironments(root),
                 nextId = root.longValue("envNextId", 2L)
             )
         )
@@ -122,20 +122,7 @@ class AppStatePersistence(context: Context) {
                         name = o.stringValue("name")
                     ).takeIf { it.id >= 0 }
                 } ?: emptyList(),
-                requests = root.arrayValue("requests")?.mapNotNull { item ->
-                    val o = item.jsonObject
-                    val type = o.stringValue("type").let { name ->
-                        runCatching { RequestType.valueOf(name) }.getOrNull()
-                    } ?: return@mapNotNull null
-                    SavedRequest(
-                        id = o.longValue("id", -1L),
-                        collectionId = o.longValue("collectionId", -1L),
-                        type = type,
-                        name = o.stringValue("name"),
-                        data = o.stringValue("data"),
-                        createdAt = o.longValue("createdAt", 0L)
-                    ).takeIf { it.id >= 0 }
-                } ?: emptyList(),
+                requests = parseSavedRequests(root),
                 nextCollectionId = root.longValue("collectionNextId", 2L),
                 nextRequestId = root.longValue("requestNextId", 1L),
                 variables = parseCollectionVars(root)
@@ -168,10 +155,7 @@ class AppStatePersistence(context: Context) {
     fun restoreFromJsonElement(root: JsonObject) {
         ServiceLocator.projectStore.restore(
             ProjectStoreSnapshot(
-                projects = root.arrayValue("projects")?.mapNotNull { item ->
-                    val o = item.jsonObject
-                    ProjectInfo(o.longValue("id", -1L), o.stringValue("name")).takeIf { it.id >= 0 }
-                } ?: emptyList(),
+                projects = parseProjects(root),
                 currentProjectId = root.longValue("currentProjectId", 1L),
                 nextId = root.longValue("projectNextId", 2L)
             )
@@ -179,22 +163,7 @@ class AppStatePersistence(context: Context) {
 
         ServiceLocator.envStore.restore(
             EnvStoreSnapshot(
-                environments = root.arrayValue("environments")?.mapNotNull { item ->
-                    val o = item.jsonObject
-                    val variables = o.arrayValue("variables")?.mapNotNull { pair ->
-                        val p = pair.jsonArray
-                        val k = p.getOrNull(0)?.jsonPrimitive?.contentOrNull
-                        val v = p.getOrNull(1)?.jsonPrimitive?.contentOrNull
-                        if (k != null && v != null) k to v else null
-                    } ?: emptyList()
-                    EnvironmentInfo(
-                        id = o.longValue("id", -1L),
-                        projectId = o.longValue("projectId", 1L),
-                        name = o.stringValue("name"),
-                        isActive = o.booleanValue("isActive", false),
-                        variables = variables
-                    ).takeIf { it.id >= 0 }
-                } ?: emptyList(),
+                environments = parseEnvironments(root),
                 nextId = root.longValue("envNextId", 2L)
             )
         )
@@ -219,20 +188,7 @@ class AppStatePersistence(context: Context) {
                         name = o.stringValue("name")
                     ).takeIf { it.id >= 0 }
                 } ?: emptyList(),
-                requests = root.arrayValue("requests")?.mapNotNull { item ->
-                    val o = item.jsonObject
-                    val type = o.stringValue("type").let { name ->
-                        runCatching { RequestType.valueOf(name) }.getOrNull()
-                    } ?: return@mapNotNull null
-                    SavedRequest(
-                        id = o.longValue("id", -1L),
-                        collectionId = o.longValue("collectionId", -1L),
-                        type = type,
-                        name = o.stringValue("name"),
-                        data = o.stringValue("data"),
-                        createdAt = o.longValue("createdAt", 0L)
-                    ).takeIf { it.id >= 0 }
-                } ?: emptyList(),
+                requests = parseSavedRequests(root),
                 nextCollectionId = root.longValue("collectionNextId", 2L),
                 nextRequestId = root.longValue("requestNextId", 1L),
                 variables = parseCollectionVars(root)
@@ -262,6 +218,49 @@ class AppStatePersistence(context: Context) {
         save()
     }
 
+    /** 项目列表：id 缺失视为无效行 */
+    private fun parseProjects(root: JsonObject): List<ProjectInfo> =
+        root.arrayValue("projects")?.mapNotNull { item ->
+            val o = item.jsonObject
+            ProjectInfo(o.longValue("id", -1L), o.stringValue("name")).takeIf { it.id >= 0 }
+        } ?: emptyList()
+
+    /** 环境列表：变量值可能是密文，读回时统一解封 */
+    private fun parseEnvironments(root: JsonObject): List<EnvironmentInfo> =
+        root.arrayValue("environments")?.mapNotNull { item ->
+            val o = item.jsonObject
+            val variables = o.arrayValue("variables")?.mapNotNull { pair ->
+                val p = pair.jsonArray
+                val k = p.getOrNull(0)?.jsonPrimitive?.contentOrNull
+                val v = p.getOrNull(1)?.jsonPrimitive?.contentOrNull
+                if (k != null && v != null) k to open(v) else null
+            } ?: emptyList()
+            EnvironmentInfo(
+                id = o.longValue("id", -1L),
+                projectId = o.longValue("projectId", 1L),
+                name = o.stringValue("name"),
+                isActive = o.booleanValue("isActive", false),
+                variables = variables
+            ).takeIf { it.id >= 0 }
+        } ?: emptyList()
+
+    /** 集合内请求快照：data 是整段 JSON 文本，整体加密后逐条解封 */
+    private fun parseSavedRequests(root: JsonObject): List<SavedRequest> =
+        root.arrayValue("requests")?.mapNotNull { item ->
+            val o = item.jsonObject
+            val type = o.stringValue("type").let { name ->
+                runCatching { RequestType.valueOf(name) }.getOrNull()
+            } ?: return@mapNotNull null
+            SavedRequest(
+                id = o.longValue("id", -1L),
+                collectionId = o.longValue("collectionId", -1L),
+                type = type,
+                name = o.stringValue("name"),
+                data = open(o.stringValue("data")),
+                createdAt = o.longValue("createdAt", 0L)
+            ).takeIf { it.id >= 0 }
+        } ?: emptyList()
+
     /** 文件夹变量：按文件夹 id 读回键值列表，旧备份没有该段时返回空表 */
     private fun parseCollectionVars(root: JsonObject): Map<Long, List<KeyValueEntry>> {
         val result = LinkedHashMap<Long, List<KeyValueEntry>>()
@@ -273,7 +272,7 @@ class AppStatePersistence(context: Context) {
                 val kv = varItem.jsonObject
                 val key = kv.stringValue("key")
                 if (key.isBlank()) null
-                else KeyValueEntry(key, kv.stringValue("value"), kv.booleanValue("enabled", true))
+                else KeyValueEntry(key, open(kv.stringValue("value")), kv.booleanValue("enabled", true))
             } ?: emptyList()
             if (entries.isNotEmpty()) result[id] = entries
         }
@@ -297,7 +296,7 @@ class AppStatePersistence(context: Context) {
                             val name = c.stringValue("name")
                             if (name.isBlank()) null else StoredCookie(
                                 name = name,
-                                value = c.stringValue("value"),
+                                value = open(c.stringValue("value")),
                                 domain = domain,
                                 path = c.stringValue("path").ifBlank { "/" },
                                 expiresAtMs = c.longValue("expiresAtMs", Long.MAX_VALUE)
@@ -384,7 +383,7 @@ class AppStatePersistence(context: Context) {
                             e.variables.forEach { (k, v) ->
                                 add(buildJsonArray {
                                     add(JsonPrimitive(k))
-                                    add(JsonPrimitive(v))
+                                    add(JsonPrimitive(seal(v)))
                                 })
                             }
                         })
@@ -407,14 +406,14 @@ class AppStatePersistence(context: Context) {
                         put("createdAt", h.createdAt)
                         put("responseSizeBytes", h.responseSizeBytes)
                         put("requestHeaders", buildJsonArray {
-                            h.requestHeaders.forEach { add(JsonPrimitive(it)) }
+                            h.requestHeaders.forEach { add(JsonPrimitive(seal(it))) }
                         })
-                        put("requestBody", h.requestBody)
+                        put("requestBody", seal(h.requestBody))
                         put("requestBodyTruncated", h.requestBodyTruncated)
                         put("responseHeaders", buildJsonArray {
-                            h.responseHeaders.forEach { add(JsonPrimitive(it)) }
+                            h.responseHeaders.forEach { add(JsonPrimitive(seal(it))) }
                         })
-                        put("responseBody", h.responseBody)
+                        put("responseBody", seal(h.responseBody))
                         put("responseBodyTruncated", h.responseBodyTruncated)
                         put("favorite", h.favorite)
                     })
@@ -441,7 +440,7 @@ class AppStatePersistence(context: Context) {
                         put("collectionId", r.collectionId)
                         put("type", r.type.name)
                         put("name", r.name)
-                        put("data", r.data)
+                        put("data", seal(r.data))
                         put("createdAt", r.createdAt)
                     })
                 }
@@ -456,7 +455,7 @@ class AppStatePersistence(context: Context) {
                             entries.forEach { kv ->
                                 add(buildJsonObject {
                                     put("key", kv.key)
-                                    put("value", kv.value)
+                                    put("value", seal(kv.value))
                                     put("enabled", kv.enabled)
                                 })
                             }
@@ -488,7 +487,7 @@ class AppStatePersistence(context: Context) {
                             m.headers.forEach { h ->
                                 add(buildJsonObject {
                                     put("key", h.key)
-                                    put("value", h.value)
+                                    put("value", seal(h.value))
                                     put("enabled", h.enabled)
                                 })
                             }
@@ -496,11 +495,11 @@ class AppStatePersistence(context: Context) {
                         put("bodyType", m.bodyType)
                         put("bodyText", m.bodyText)
                         put("authType", m.authType)
-                        put("bearerToken", m.bearerToken)
+                        put("bearerToken", seal(m.bearerToken))
                         put("basicUsername", m.basicUsername)
-                        put("basicPassword", m.basicPassword)
+                        put("basicPassword", seal(m.basicPassword))
                         put("apiKeyName", m.apiKeyName)
-                        put("apiKeyValue", m.apiKeyValue)
+                        put("apiKeyValue", seal(m.apiKeyValue))
                         put("assertions", buildJsonArray {
                             m.assertions.forEach { a ->
                                 add(buildJsonObject {
@@ -596,7 +595,7 @@ class AppStatePersistence(context: Context) {
                                         list.forEach { c ->
                                             add(buildJsonObject {
                                                 put("name", c.name)
-                                                put("value", c.value)
+                                                put("value", seal(c.value))
                                                 put("path", c.path)
                                                 put("expiresAtMs", c.expiresAtMs)
                                             })
@@ -657,11 +656,11 @@ class AppStatePersistence(context: Context) {
         success = o.booleanValue("success", false),
         createdAt = o.longValue("createdAt", 0L),
         responseSizeBytes = o.longValue("responseSizeBytes", 0L),
-        requestHeaders = o.stringValueList("requestHeaders"),
-        requestBody = o.stringValue("requestBody"),
+        requestHeaders = o.stringValueList("requestHeaders").map(::open),
+        requestBody = open(o.stringValue("requestBody")),
         requestBodyTruncated = o.booleanValue("requestBodyTruncated", false),
-        responseHeaders = o.stringValueList("responseHeaders"),
-        responseBody = o.stringValue("responseBody"),
+        responseHeaders = o.stringValueList("responseHeaders").map(::open),
+        responseBody = open(o.stringValue("responseBody")),
         responseBodyTruncated = o.booleanValue("responseBodyTruncated", false),
         favorite = o.booleanValue("favorite", false)
     ).takeIf { it.id >= 0 }
@@ -691,18 +690,18 @@ class AppStatePersistence(context: Context) {
                 val ho = h.jsonObject
                 KeyValueEntry(
                     key = ho.stringValue("key"),
-                    value = ho.stringValue("value"),
+                    value = open(ho.stringValue("value")),
                     enabled = ho.booleanValue("enabled", true)
                 )
             } ?: emptyList(),
             bodyType = o.stringValue("bodyType", "NONE"),
             bodyText = o.stringValue("bodyText"),
             authType = o.stringValue("authType", "NONE"),
-            bearerToken = o.stringValue("bearerToken"),
+            bearerToken = open(o.stringValue("bearerToken")),
             basicUsername = o.stringValue("basicUsername"),
-            basicPassword = o.stringValue("basicPassword"),
+            basicPassword = open(o.stringValue("basicPassword")),
             apiKeyName = o.stringValue("apiKeyName"),
-            apiKeyValue = o.stringValue("apiKeyValue"),
+            apiKeyValue = open(o.stringValue("apiKeyValue")),
             assertions = o.arrayValue("assertions")?.mapNotNull { a ->
                 val ao = a.jsonObject
                 MonitorAssertion(

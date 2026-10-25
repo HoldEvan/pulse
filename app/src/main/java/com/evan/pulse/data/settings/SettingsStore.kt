@@ -8,6 +8,9 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.evan.pulse.data.crypto.KeystoreSecretBox
+import com.evan.pulse.domain.crypto.SecretBox
+import com.evan.pulse.domain.crypto.SecretField
 import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -55,7 +58,11 @@ private val KEY_WEBHOOK_URL = stringPreferencesKey("webhook_url")
 private val KEY_WEBHOOK_FORMAT = intPreferencesKey("webhook_format_index")
 private val KEY_WEBHOOK_TEMPLATE = stringPreferencesKey("webhook_template")
 
-internal fun Preferences.toAppSettings(): AppSettings = AppSettings(
+/**
+ * 读取设置。[secrets] 用于解封密码类字段；缺省（单测、无密钥环境）时按明文读回，
+ * 与引入加密之前的旧数据保持兼容。
+ */
+internal fun Preferences.toAppSettings(secrets: SecretBox? = null): AppSettings = AppSettings(
     uiStyleIndex = (get(KEY_UI_STYLE) ?: 0).coerceAtLeast(0),
     themeModeIndex = when (val index = get(KEY_THEME_MODE) ?: 0) {
         in 0..2 -> index
@@ -72,11 +79,11 @@ internal fun Preferences.toAppSettings(): AppSettings = AppSettings(
     proxyHost = get(KEY_PROXY_HOST) ?: "",
     proxyPort = get(KEY_PROXY_PORT) ?: "",
     proxyUsername = get(KEY_PROXY_USER) ?: "",
-    proxyPassword = get(KEY_PROXY_PASS) ?: "",
+    proxyPassword = SecretField.open(get(KEY_PROXY_PASS) ?: "", secrets),
     webdavUrl = get(KEY_WEBDAV_URL) ?: "",
     webdavPath = get(KEY_WEBDAV_PATH) ?: "",
     webdavUsername = get(KEY_WEBDAV_USER) ?: "",
-    webdavPassword = get(KEY_WEBDAV_PASS) ?: "",
+    webdavPassword = SecretField.open(get(KEY_WEBDAV_PASS) ?: "", secrets),
     monitorNotify = get(KEY_MONITOR_NOTIFY) ?: true,
     floatingBottomBar = get(KEY_FLOATING_BOTTOM_BAR) ?: false,
     liquidGlassBottomBar = get(KEY_LIQUID_GLASS_BOTTOM_BAR) ?: false,
@@ -100,10 +107,19 @@ class SettingsStore(context: Context) {
 
     private val dataStore = context.settingsDataStore
 
+    /** 代理与 WebDAV 密码落盘前加密；列表页、导出日志都不会出现明文 */
+    private val secrets: SecretBox? = runCatching { KeystoreSecretBox() }.getOrNull()
+
+    /** Keystore 不可用时退回明文：设置写入失败比明文落盘更难排查 */
+    private fun seal(plain: String): String {
+        val box = secrets ?: return plain
+        return runCatching { SecretField.seal(plain, box) }.getOrDefault(plain)
+    }
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     val settings: StateFlow<AppSettings> = dataStore.data
-        .map { it.toAppSettings() }
+        .map { it.toAppSettings(secrets) }
         .catch { error ->
             if (error is IOException) emit(AppSettings()) else throw error
         }
@@ -111,7 +127,7 @@ class SettingsStore(context: Context) {
 
     suspend fun update(transform: (AppSettings) -> AppSettings) {
         dataStore.edit { prefs ->
-            val next = transform(prefs.toAppSettings())
+            val next = transform(prefs.toAppSettings(secrets))
             prefs[KEY_UI_STYLE] = next.uiStyleIndex
             prefs[KEY_THEME_MODE] = next.themeModeIndex
             prefs[KEY_MONET_ENABLED] = next.monetEnabled
@@ -124,11 +140,11 @@ class SettingsStore(context: Context) {
             prefs[KEY_PROXY_HOST] = next.proxyHost
             prefs[KEY_PROXY_PORT] = next.proxyPort
             prefs[KEY_PROXY_USER] = next.proxyUsername
-            prefs[KEY_PROXY_PASS] = next.proxyPassword
+            prefs[KEY_PROXY_PASS] = seal(next.proxyPassword)
             prefs[KEY_WEBDAV_URL] = next.webdavUrl
             prefs[KEY_WEBDAV_PATH] = next.webdavPath
             prefs[KEY_WEBDAV_USER] = next.webdavUsername
-            prefs[KEY_WEBDAV_PASS] = next.webdavPassword
+            prefs[KEY_WEBDAV_PASS] = seal(next.webdavPassword)
             prefs[KEY_MONITOR_NOTIFY] = next.monitorNotify
             prefs[KEY_FLOATING_BOTTOM_BAR] = next.floatingBottomBar
             prefs[KEY_LIQUID_GLASS_BOTTOM_BAR] = next.liquidGlassBottomBar
