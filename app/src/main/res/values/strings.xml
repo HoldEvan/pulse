@@ -387,7 +387,10 @@
     <string name="mqtt_keepalive_label">KeepAlive(s)</string>
     <string name="mqtt_title_sub">订阅</string>
     <string name="mqtt_qos_label">订阅 QoS</string>
-    <string name="mqtt_topic_label">Topic，支持 + 与 # 通配符</string>
+    <string name="mqtt_message_retained">[保留] %1$s · QoS%2$d\n%3$s</string>
+    <string name="mqtt_pub_retain_label">保留消息（Retain）</string>
+    <string name="mqtt_filter_invalid_list">以下 Topic 无效已跳过：%1$s</string>
+    <string name="mqtt_topic_label">Topic，支持 + 与 # 通配符；多个用换行或逗号分隔，可用 @0/@1/@2 指定 QoS</string>
     <string name="mqtt_filter_invalid">Topic filter 无效：不能为空，+ 必须独占一层，# 只能独占最后一层</string>
     <string name="sub_item">%1$s · QoS%2$d</string>
     <string name="mqtt_title_pub">发布</string>

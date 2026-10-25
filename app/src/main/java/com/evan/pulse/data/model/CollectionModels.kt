@@ -116,6 +116,8 @@ data class MqttSnapshot(
     val subQos: Int = 0,
     val pubTopic: String = "",
     val pubQos: Int = 0,
+    /** 发布时是否带 retain 标志 */
+    val pubRetain: Boolean = false,
     /** 是否使用设置页的全局代理 */
     val useProxy: Boolean = true
 )

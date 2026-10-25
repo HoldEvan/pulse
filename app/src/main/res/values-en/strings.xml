@@ -387,7 +387,10 @@
     <string name="mqtt_keepalive_label">KeepAlive(s)</string>
     <string name="mqtt_title_sub">Subscribe</string>
     <string name="mqtt_qos_label">Subscribe QoS</string>
-    <string name="mqtt_topic_label">Topic, supports + and # wildcards</string>
+    <string name="mqtt_message_retained">[retained] %1$s · QoS %2$d\n%3$s</string>
+    <string name="mqtt_pub_retain_label">Retained message (Retain)</string>
+    <string name="mqtt_filter_invalid_list">Skipped invalid topics: %1$s</string>
+    <string name="mqtt_topic_label">Topic, supports + and #; separate multiple with newline or comma, add @0/@1/@2 for QoS</string>
     <string name="mqtt_filter_invalid">Invalid topic filter: cannot be empty, + must occupy a whole level and # only as the final level</string>
     <string name="sub_item">%1$s · QoS %2$d</string>
     <string name="mqtt_title_pub">Publish</string>

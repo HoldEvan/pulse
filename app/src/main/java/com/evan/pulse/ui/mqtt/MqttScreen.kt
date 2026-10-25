@@ -226,9 +226,12 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                         AppText(stringResource(R.string.action_subscribe))
                     }
                 }
-                if (viewModel.subFilterInvalid) {
+                if (viewModel.invalidTopics.isNotEmpty()) {
                     AppText(
-                        text = stringResource(R.string.mqtt_filter_invalid),
+                        text = stringResource(
+                            R.string.mqtt_filter_invalid_list,
+                            viewModel.invalidTopics.joinToString(", ")
+                        ),
                         color = Color(0xFFD32F2F),
                         fontSize = 13.sp,
                         modifier = Modifier.padding(top = 8.dp)
@@ -245,7 +248,8 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                         onToggle = { path ->
                             collapsed = if (path in collapsed) collapsed - path else collapsed + path
                         },
-                        onRemove = viewModel::removeSubscription
+                        onRemove = viewModel::removeSubscription,
+                        onCycleQos = viewModel::cycleSubscriptionQos
                     )
                 }
             }
@@ -268,6 +272,21 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                     label = stringResource(R.string.mqtt_pub_topic_label),
                     modifier = Modifier.fillMaxWidth()
                 )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    AppText(
+                        text = stringResource(R.string.mqtt_pub_retain_label),
+                        modifier = Modifier.weight(1f)
+                    )
+                    AppSwitch(
+                        checked = viewModel.pubRetain,
+                        onCheckedChange = { viewModel.pubRetain = it }
+                    )
+                }
                 Row(
                     modifier = Modifier.padding(top = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -358,7 +377,8 @@ private fun TopicBranch(
     depth: Int,
     collapsed: Set<String>,
     onToggle: (String) -> Unit,
-    onRemove: (String) -> Unit
+    onRemove: (String) -> Unit,
+    onCycleQos: (String) -> Unit
 ) {
     val expanded = node.path !in collapsed
     Row(
@@ -383,7 +403,9 @@ private fun TopicBranch(
                 repeat(depth + 1) { Spacer(modifier = Modifier.width(12.dp)) }
                 AppText(
                     text = stringResource(R.string.sub_item, leaf.topic, leaf.qos),
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { onCycleQos(leaf.topic) },
                     fontSize = 13.sp
                 )
                 AppIcon(
@@ -395,7 +417,7 @@ private fun TopicBranch(
                 )
             }
         }
-        node.children.forEach { TopicBranch(it, depth + 1, collapsed, onToggle, onRemove) }
+        node.children.forEach { TopicBranch(it, depth + 1, collapsed, onToggle, onRemove, onCycleQos) }
     }
 }
 

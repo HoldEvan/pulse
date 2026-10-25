@@ -1,23 +1,14 @@
 package com.evan.pulse.ui.mqtt
 
 import com.evan.pulse.data.model.MqttSubscriptionEntry
+import com.evan.pulse.domain.mqtt.MqttTopicFilters
 
 /**
  * MQTT topic filter 校验：非空；+ 必须独占一层；# 只能独占最后一层。
  * 空层级（如 a//b）在 MQTT 主题里合法，允许通过。
+ * 实现下沉到 [MqttTopicFilters]，批量订阅解析与单条校验共用同一份规则。
  */
-fun isValidMqttFilter(topic: String): Boolean {
-    val trimmed = topic.trim()
-    if (trimmed.isEmpty()) return false
-    val levels = trimmed.split('/')
-    levels.forEachIndexed { index, level ->
-        when {
-            level.contains('#') -> if (level != "#" || index != levels.lastIndex) return false
-            level.contains('+') -> if (level != "+") return false
-        }
-    }
-    return true
-}
+fun isValidMqttFilter(topic: String): Boolean = MqttTopicFilters.isValid(topic)
 
 /** Topic 树节点：segment 为单层名，path 为根到该节点的完整路径（折叠状态键），叶项挂原始 filter */
 data class MqttTopicNode(

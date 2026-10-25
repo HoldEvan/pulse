@@ -20,7 +20,9 @@ sealed interface MqttEvent {
         val topic: String,
         val payload: String,
         val qos: Int,
-        val timestamp: Long
+        val timestamp: Long,
+        /** 是否为 Broker 保留的消息（retain 标志为 1） */
+        val retained: Boolean = false
     ) : MqttEvent
 
     data class Disconnected(val reason: String, val timestamp: Long) : MqttEvent

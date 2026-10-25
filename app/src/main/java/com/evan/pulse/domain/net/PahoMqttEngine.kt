@@ -101,7 +101,8 @@ class PahoMqttEngine : MqttEngine {
                                 topic.orEmpty(),
                                 text,
                                 message?.qos ?: 0,
-                                System.currentTimeMillis()
+                                System.currentTimeMillis(),
+                                message?.isRetained ?: false
                             )
                         )
                     }
@@ -144,11 +145,11 @@ class PahoMqttEngine : MqttEngine {
         }
     }
 
-    override suspend fun publish(topic: String, payload: String, qos: Int) {
+    override suspend fun publish(topic: String, payload: String, qos: Int, retain: Boolean) {
         val c = client ?: return
         runCatching {
             withContext(Dispatchers.IO) {
-                c.publish(topic, payload.toByteArray(StandardCharsets.UTF_8), qos, false)
+                c.publish(topic, payload.toByteArray(StandardCharsets.UTF_8), qos, retain)
                     .waitForCompletion()
             }
         }.onFailure { e ->
