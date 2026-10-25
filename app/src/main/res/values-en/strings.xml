@@ -73,6 +73,7 @@
     <string name="tool_json">JSON Formatter</string>
     <string name="tool_json_schema">JSON Schema Validator</string>
     <string name="tool_yaml_json">YAML / JSON Converter</string>
+    <string name="tool_url_parser">URL Parser</string>
     <string name="json_tool_title">JSON Formatter</string>
     <string name="json_tool_input_label">JSON content</string>
     <string name="json_tool_output_label">Output</string>
@@ -126,6 +127,31 @@
     <string name="yaml_json_error_json">Cannot parse the JSON content</string>
     <string name="yaml_json_error_depth">Nested too deeply to convert</string>
     <string name="yaml_json_error_generic">Conversion failed</string>
+    <string name="url_parser_title">URL Parser</string>
+    <string name="url_parser_input_label">URL</string>
+    <string name="url_parser_empty_hint">Paste a full URL to split it automatically</string>
+    <string name="url_parser_scheme_inferred">No scheme in the input, parsed as http</string>
+    <string name="url_parser_parts_title">Parts</string>
+    <string name="url_parser_field_scheme">Scheme</string>
+    <string name="url_parser_field_user">User</string>
+    <string name="url_parser_field_password">Password</string>
+    <string name="url_parser_field_host">Host</string>
+    <string name="url_parser_field_port">Port</string>
+    <string name="url_parser_field_path">Path</string>
+    <string name="url_parser_field_fragment">Fragment</string>
+    <string name="url_parser_port_absent">Not set</string>
+    <string name="url_parser_params_title">Query parameters (%1$d)</string>
+    <string name="url_parser_decode_params">Decode parameters</string>
+    <string name="url_parser_decode_params_summary">Restore names and values from percent encoding</string>
+    <string name="url_parser_params_empty">No query parameters</string>
+    <string name="url_parser_param_blank">(empty name)</string>
+    <string name="url_parser_params_duplicate">Duplicate names found, the server may override or merge them</string>
+    <string name="url_parser_rebuild_title">Reassembled</string>
+    <string name="url_parser_rebuild_differs">Differs from the input, usually due to the added scheme or port notation</string>
+    <string name="url_parser_error_empty">Input is empty</string>
+    <string name="url_parser_error_host">Host is missing</string>
+    <string name="url_parser_error_port">Port must be an integer between 1 and 65535</string>
+    <string name="url_parser_error_invalid">Unrecognized URL format</string>
     <string name="json_tree_items">%1$d items</string>
 
     <!-- Timestamp converter tool -->
@@ -989,5 +1015,6 @@
     <string name="tool_json_summary">Format and minify JSON</string>
     <string name="tool_json_schema_summary">Validate structure against a schema and locate mismatches</string>
     <string name="tool_yaml_json_summary">Convert between YAML and JSON</string>
+    <string name="tool_url_parser_summary">Split a URL into parts and reassemble it</string>
     <string name="tool_timestamp_summary">Convert timestamps, dates and custom formats</string>
 </resources>

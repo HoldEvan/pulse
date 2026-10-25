@@ -32,6 +32,7 @@ import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.ConvertFile
 import top.yukonga.miuix.kmp.icon.extended.Folder
 import top.yukonga.miuix.kmp.icon.extended.Image
+import top.yukonga.miuix.kmp.icon.extended.Link
 import top.yukonga.miuix.kmp.icon.extended.Notes
 import top.yukonga.miuix.kmp.icon.extended.Ok
 import top.yukonga.miuix.kmp.icon.extended.Recent
@@ -52,6 +53,7 @@ fun DashboardScreen(
     onOpenJson: () -> Unit = {},
     onOpenJsonSchema: () -> Unit = {},
     onOpenYamlJson: () -> Unit = {},
+    onOpenUrlParser: () -> Unit = {},
     onOpenTimestamp: () -> Unit = {},
     onOpenJwt: () -> Unit = {},
     onOpenHash: () -> Unit = {},
@@ -186,6 +188,19 @@ fun DashboardScreen(
                         )
                     },
                     onClick = onOpenYamlJson
+                )
+            }
+            item {
+                AppArrowRow(
+                    title = stringResource(R.string.tool_url_parser),
+                    summary = stringResource(R.string.tool_url_parser_summary),
+                    startAction = {
+                        AppIcon(
+                            imageVector = MiuixIcons.Light.Link,
+                            contentDescription = null
+                        )
+                    },
+                    onClick = onOpenUrlParser
                 )
             }
             item {

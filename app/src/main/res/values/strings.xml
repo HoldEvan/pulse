@@ -73,6 +73,7 @@
     <string name="tool_json">JSON 格式化</string>
     <string name="tool_json_schema">JSON Schema 校验</string>
     <string name="tool_yaml_json">YAML 与 JSON 互转</string>
+    <string name="tool_url_parser">URL 解析</string>
     <string name="json_tool_title">JSON 格式化</string>
     <string name="json_tool_input_label">JSON 内容</string>
     <string name="json_tool_output_label">输出结果</string>
@@ -126,6 +127,31 @@
     <string name="yaml_json_error_json">无法解析 JSON 内容</string>
     <string name="yaml_json_error_depth">嵌套层级过深，无法转换</string>
     <string name="yaml_json_error_generic">转换失败</string>
+    <string name="url_parser_title">URL 解析</string>
+    <string name="url_parser_input_label">URL</string>
+    <string name="url_parser_empty_hint">填入完整地址后自动拆解</string>
+    <string name="url_parser_scheme_inferred">输入未写协议，已按 http 解析</string>
+    <string name="url_parser_parts_title">地址组成</string>
+    <string name="url_parser_field_scheme">协议</string>
+    <string name="url_parser_field_user">用户名</string>
+    <string name="url_parser_field_password">密码</string>
+    <string name="url_parser_field_host">主机</string>
+    <string name="url_parser_field_port">端口</string>
+    <string name="url_parser_field_path">路径</string>
+    <string name="url_parser_field_fragment">锚点</string>
+    <string name="url_parser_port_absent">未指定</string>
+    <string name="url_parser_params_title">查询参数（%1$d）</string>
+    <string name="url_parser_decode_params">解码参数</string>
+    <string name="url_parser_decode_params_summary">按百分号编码还原名称与取值</string>
+    <string name="url_parser_params_empty">没有查询参数</string>
+    <string name="url_parser_param_blank">（空名称）</string>
+    <string name="url_parser_params_duplicate">存在同名参数，取值可能被服务端覆盖或合并</string>
+    <string name="url_parser_rebuild_title">拼装结果</string>
+    <string name="url_parser_rebuild_differs">与输入不完全一致，通常是协议补全或端口写法差异</string>
+    <string name="url_parser_error_empty">输入为空</string>
+    <string name="url_parser_error_host">缺少主机名</string>
+    <string name="url_parser_error_port">端口应为 1-65535 的整数</string>
+    <string name="url_parser_error_invalid">地址格式无法识别</string>
     <string name="json_tree_items">%1$d 项</string>
 
     <!-- 时间转换工具 -->
@@ -989,5 +1015,6 @@
     <string name="tool_json_summary">JSON 格式化与压缩</string>
     <string name="tool_json_schema_summary">按 Schema 校验结构并定位不匹配字段</string>
     <string name="tool_yaml_json_summary">YAML 与 JSON 双向转换</string>
+    <string name="tool_url_parser_summary">拆解地址各段并反向拼装</string>
     <string name="tool_timestamp_summary">时间戳、日期与格式化互转</string>
 </resources>

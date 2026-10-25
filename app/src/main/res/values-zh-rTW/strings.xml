@@ -73,6 +73,7 @@
     <string name="tool_json">JSON 格式化</string>
     <string name="tool_json_schema">JSON Schema 校驗</string>
     <string name="tool_yaml_json">YAML 與 JSON 互轉</string>
+    <string name="tool_url_parser">URL 解析</string>
     <string name="json_tool_title">JSON 格式化</string>
     <string name="json_tool_input_label">JSON 內容</string>
     <string name="json_tool_output_label">輸出結果</string>
@@ -126,6 +127,31 @@
     <string name="yaml_json_error_json">無法解析 JSON 內容</string>
     <string name="yaml_json_error_depth">巢狀層級過深，無法轉換</string>
     <string name="yaml_json_error_generic">轉換失敗</string>
+    <string name="url_parser_title">URL 解析</string>
+    <string name="url_parser_input_label">URL</string>
+    <string name="url_parser_empty_hint">填入完整網址後自動拆解</string>
+    <string name="url_parser_scheme_inferred">輸入未寫協定，已按 http 解析</string>
+    <string name="url_parser_parts_title">網址組成</string>
+    <string name="url_parser_field_scheme">協定</string>
+    <string name="url_parser_field_user">使用者</string>
+    <string name="url_parser_field_password">密碼</string>
+    <string name="url_parser_field_host">主機</string>
+    <string name="url_parser_field_port">連接埠</string>
+    <string name="url_parser_field_path">路徑</string>
+    <string name="url_parser_field_fragment">錨點</string>
+    <string name="url_parser_port_absent">未指定</string>
+    <string name="url_parser_params_title">查詢參數（%1$d）</string>
+    <string name="url_parser_decode_params">解碼參數</string>
+    <string name="url_parser_decode_params_summary">依百分號編碼還原名稱與取值</string>
+    <string name="url_parser_params_empty">沒有查詢參數</string>
+    <string name="url_parser_param_blank">（空名稱）</string>
+    <string name="url_parser_params_duplicate">存在同名參數，取值可能被伺服端覆蓋或合併</string>
+    <string name="url_parser_rebuild_title">拼裝結果</string>
+    <string name="url_parser_rebuild_differs">與輸入不完全一致，通常是協定補全或連接埠寫法差異</string>
+    <string name="url_parser_error_empty">輸入為空</string>
+    <string name="url_parser_error_host">缺少主機名</string>
+    <string name="url_parser_error_port">連接埠應為 1-65535 的整數</string>
+    <string name="url_parser_error_invalid">網址格式無法辨識</string>
     <string name="json_tree_items">%1$d 項</string>
 
     <!-- 時間轉換工具 -->
@@ -989,5 +1015,6 @@
     <string name="tool_json_summary">JSON 格式化與壓縮</string>
     <string name="tool_json_schema_summary">依 Schema 校驗結構並定位不符欄位</string>
     <string name="tool_yaml_json_summary">YAML 與 JSON 雙向轉換</string>
+    <string name="tool_url_parser_summary">拆解網址各段並反向拼裝</string>
     <string name="tool_timestamp_summary">時間戳、日期與格式化互轉</string>
 </resources>
