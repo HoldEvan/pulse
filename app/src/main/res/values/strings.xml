@@ -364,6 +364,15 @@
     <!-- WebSocket 页 -->
     <string name="ws_url_label">ws:// 或 wss:// 地址，支持 {{var}}</string>
     <string name="ws_input_label">要发送的消息</string>
+    <string name="ws_send_text">发送文本帧</string>
+    <string name="ws_send_binary">发送二进制帧</string>
+    <string name="ws_binary_encoding">编码</string>
+    <string name="ws_binary_hex">Hex</string>
+    <string name="ws_binary_base64">Base64</string>
+    <string name="ws_binary_input_label">Hex 或 Base64 内容</string>
+    <string name="ws_binary_invalid">内容不是合法的 Hex 或 Base64</string>
+    <string name="ws_log_binary_sent">[发出二进制 %1$d B] %2$s</string>
+    <string name="ws_log_binary_received">[收到二进制 %1$d B] %2$s</string>
 
     <!-- MQTT 页 -->
     <string name="mqtt_broker_url_label">tcp:// 或 ssl:// 地址</string>

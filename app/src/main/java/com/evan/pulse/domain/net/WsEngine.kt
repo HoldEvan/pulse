@@ -15,5 +15,8 @@ interface WsEngine {
 
     suspend fun send(text: String)
 
+    /** 发送二进制帧；[bytes] 为空时按空帧发送 */
+    suspend fun sendBinary(bytes: ByteArray)
+
     suspend fun close()
 }

@@ -13,6 +13,8 @@ import com.evan.pulse.data.model.snapshotJson
 import com.evan.pulse.di.ServiceLocator
 import com.evan.pulse.R
 import com.evan.pulse.domain.PlaceholderResolver
+import com.evan.pulse.domain.net.BinaryEncoding
+import com.evan.pulse.domain.net.BinaryPayload
 import com.evan.pulse.domain.model.KeyValue
 import com.evan.pulse.domain.model.ProxyConfig
 import com.evan.pulse.domain.model.WsConnectionState
@@ -80,6 +82,15 @@ class WsViewModel : ViewModel() {
     /** 跳过 TLS 证书校验；仅用于调试自签名或内网 WSS 服务 */
     var insecureTls by mutableStateOf(false)
 
+    /** 发送模式：false 为文本帧，true 为二进制帧 */
+    var binaryMode by mutableStateOf(false)
+
+    /** 二进制帧输入的编码方式 */
+    var binaryEncoding by mutableStateOf(BinaryEncoding.HEX)
+
+    /** 二进制输入非法时的提示；null 表示无错误 */
+    var binaryError by mutableStateOf<String?>(null)
+
     val state = engine.state
     val events = engine.events
     val history = sessions.wsHistory
@@ -103,6 +114,17 @@ class WsViewModel : ViewModel() {
                     }
                     is WsEvent.Sent -> add(event.content, true, event.timestamp)
                     is WsEvent.TextReceived -> add(event.content, false, event.timestamp)
+                    is WsEvent.BinarySent -> add(
+                        L10n.t(R.string.ws_log_binary_sent, event.sizeBytes, event.preview),
+                        true,
+                        event.timestamp
+                    )
+
+                    is WsEvent.BinaryReceived -> add(
+                        L10n.t(R.string.ws_log_binary_received, event.sizeBytes, event.preview),
+                        false,
+                        event.timestamp
+                    )
                     is WsEvent.Closed -> {
                         add(L10n.t(R.string.ws_log_closed, event.reason ?: L10n.t(R.string.ws_unknown_reason)), true, event.timestamp)
                         scheduleRetry()
@@ -294,13 +316,34 @@ class WsViewModel : ViewModel() {
             val vars = ServiceLocator.varsForCollection(activeCollectionId)
             when (val r = resolver.resolve(text, vars)) {
                 is PlaceholderResolver.ResolveResult.Ok -> {
-                    engine.send(r.resolved)
-                    input = ""
+                    if (binaryMode) {
+                        sendBinary(r.resolved)
+                    } else {
+                        engine.send(r.resolved)
+                        input = ""
+                    }
                 }
 
                 is PlaceholderResolver.ResolveResult.Missing -> missingVars = r.keys
             }
         }
+    }
+
+    /** 按当前编码解码后发送二进制帧；解码失败保留输入并提示 */
+    private suspend fun sendBinary(resolved: String) {
+        val decoded = BinaryPayload.decode(resolved, binaryEncoding)
+        val bytes = decoded.getOrNull()
+        if (bytes != null) {
+            engine.sendBinary(bytes)
+            binaryError = null
+            input = ""
+        } else {
+            binaryError = L10n.t(R.string.ws_binary_invalid)
+        }
+    }
+
+    fun dismissBinaryError() {
+        binaryError = null
     }
 
     fun disconnect() {

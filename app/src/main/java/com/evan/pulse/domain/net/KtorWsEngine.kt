@@ -13,6 +13,7 @@ import io.ktor.client.plugins.websocket.webSocketSession
 import io.ktor.client.request.header
 import io.ktor.websocket.Frame
 import io.ktor.websocket.close
+import io.ktor.websocket.readBytes
 import io.ktor.websocket.readReason
 import io.ktor.websocket.readText
 import java.net.InetSocketAddress
@@ -103,6 +104,22 @@ class KtorWsEngine : WsEngine {
         }
     }
 
+    override suspend fun sendBinary(bytes: ByteArray) {
+        val s = session ?: return
+        runCatching {
+            withContext(Dispatchers.IO) { s.send(Frame.Binary(true, bytes)) }
+            _events.tryEmit(
+                WsEvent.BinarySent(
+                    preview = BinaryPayload.preview(bytes, BinaryEncoding.HEX),
+                    sizeBytes = bytes.size,
+                    timestamp = System.currentTimeMillis()
+                )
+            )
+        }.onFailure { e ->
+            _events.tryEmit(WsEvent.Failed(e.message ?: "发送失败", System.currentTimeMillis()))
+        }
+    }
+
     override suspend fun close() {
         lock.withLock {
             closeSession()
@@ -118,6 +135,17 @@ class KtorWsEngine : WsEngine {
                     is Frame.Text -> _events.tryEmit(
                         WsEvent.TextReceived(frame.readText(), System.currentTimeMillis())
                     )
+
+                    is Frame.Binary -> {
+                        val bytes = frame.readBytes()
+                        _events.tryEmit(
+                            WsEvent.BinaryReceived(
+                                preview = BinaryPayload.preview(bytes, BinaryEncoding.HEX),
+                                sizeBytes = bytes.size,
+                                timestamp = System.currentTimeMillis()
+                            )
+                        )
+                    }
 
                     is Frame.Close -> {
                         val reason = frame.readReason()

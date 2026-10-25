@@ -364,6 +364,15 @@
     <!-- WebSocket screen -->
     <string name="ws_url_label">ws:// or wss:// URL (supports {{var}})</string>
     <string name="ws_input_label">Message to send</string>
+    <string name="ws_send_text">Send text frame</string>
+    <string name="ws_send_binary">Send binary frame</string>
+    <string name="ws_binary_encoding">Encoding</string>
+    <string name="ws_binary_hex">Hex</string>
+    <string name="ws_binary_base64">Base64</string>
+    <string name="ws_binary_input_label">Hex or Base64 content</string>
+    <string name="ws_binary_invalid">Content is not valid Hex or Base64</string>
+    <string name="ws_log_binary_sent">[binary sent %1$d B] %2$s</string>
+    <string name="ws_log_binary_received">[binary received %1$d B] %2$s</string>
 
     <!-- MQTT screen -->
     <string name="mqtt_broker_url_label">tcp:// or ssl:// URL</string>

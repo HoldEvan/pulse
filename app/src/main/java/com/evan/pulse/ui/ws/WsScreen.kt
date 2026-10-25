@@ -50,6 +50,9 @@ import com.evan.pulse.ui.design.AppDialog
 import com.evan.pulse.ui.design.AppIcon
 import com.evan.pulse.ui.design.AppIconButton
 import com.evan.pulse.ui.design.AppSwitch
+import com.evan.pulse.ui.design.AppDropdown
+import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.domain.net.BinaryEncoding
 import com.evan.pulse.ui.design.AppText
 import com.evan.pulse.ui.design.AppTextButton
 import com.evan.pulse.ui.design.AppTextField
@@ -268,24 +271,75 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
             }
         }
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            AppTextField(
-                value = viewModel.input,
-                onValueChange = { viewModel.input = it },
-                label = stringResource(R.string.ws_input_label),
-                modifier = Modifier.weight(1f)
-            )
-            AppButton(
-                onClick = { viewModel.send() },
-                enabled = state == WsConnectionState.CONNECTED,
-                modifier = Modifier.padding(start = 8.dp)
+        Column(modifier = Modifier.padding(vertical = 10.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                AppIcon(MiuixIcons.Light.Send, contentDescription = stringResource(R.string.action_send))
+                AppText(
+                    text = stringResource(
+                        if (viewModel.binaryMode) R.string.ws_send_binary
+                        else R.string.ws_send_text
+                    ),
+                    fontSize = 12.sp,
+                    color = AppTheme.colors.onSurfaceSummary,
+                    modifier = Modifier.weight(1f)
+                )
+                AppSwitch(
+                    checked = viewModel.binaryMode,
+                    onCheckedChange = {
+                        viewModel.binaryMode = it
+                        viewModel.dismissBinaryError()
+                    }
+                )
+            }
+            if (viewModel.binaryMode) {
+                AppDropdown(
+                    title = stringResource(R.string.ws_binary_encoding),
+                    items = listOf(
+                        stringResource(R.string.ws_binary_hex),
+                        stringResource(R.string.ws_binary_base64)
+                    ),
+                    selectedIndex = if (viewModel.binaryEncoding == BinaryEncoding.HEX) 0 else 1,
+                    modifier = Modifier.padding(bottom = 6.dp),
+                    onSelectedIndexChange = {
+                        viewModel.binaryEncoding =
+                            if (it == 0) BinaryEncoding.HEX else BinaryEncoding.BASE64
+                        viewModel.dismissBinaryError()
+                    }
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                AppTextField(
+                    value = viewModel.input,
+                    onValueChange = { viewModel.input = it },
+                    label = stringResource(
+                        if (viewModel.binaryMode) R.string.ws_binary_input_label
+                        else R.string.ws_input_label
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+                AppButton(
+                    onClick = { viewModel.send() },
+                    enabled = state == WsConnectionState.CONNECTED,
+                    modifier = Modifier.padding(start = 8.dp)
+                ) {
+                    AppIcon(
+                        MiuixIcons.Light.Send,
+                        contentDescription = stringResource(R.string.action_send)
+                    )
+                }
+            }
+            viewModel.binaryError?.let { message ->
+                AppText(
+                    text = message,
+                    color = AppTheme.colors.error,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
             }
         }
         BottomBarClearance()
