@@ -83,7 +83,7 @@
 
 | # | 功能 | 类型 | 说明 |
 |---|------|------|------|
-| 26 | JSON Schema 校验 | 新增 | 树形查看与 JSONPath 已有，缺结构校验与错误定位 |
+| 26 | JSON Schema 校验 | 已完成 | 工具箱新增校验页：draft-07 常用子集（type/required/properties/items/enum/const/数值与长度边界/pattern/组合关键字/本地 $ref），失败项给出 JSON 路径与期望值，最多展示 100 条 |
 | 27 | YAML 与 JSON 互转 | 新增 | kaml 已在依赖内，导入链路已具备 YAML 解析能力 |
 | 28 | HMAC 与摘要扩展 | 扩展 | Hash 只有 MD5/SHA 裸摘要，补 HMAC-SHA 系列与密钥输入 |
 | 29 | URL 解析器 | 新增 | 拆协议、主机、端口、路径、query 表格化并可反向拼装 |

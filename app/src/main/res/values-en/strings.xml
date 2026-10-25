@@ -71,12 +71,48 @@
 
     <!-- JSON formatting tool -->
     <string name="tool_json">JSON Formatter</string>
+    <string name="tool_json_schema">JSON Schema Validator</string>
     <string name="json_tool_title">JSON Formatter</string>
     <string name="json_tool_input_label">JSON content</string>
     <string name="json_tool_output_label">Output</string>
     <string name="json_tool_pretty">Format</string>
     <string name="json_tool_minify">Minify</string>
     <string name="json_tool_invalid">Invalid JSON input</string>
+    <string name="json_schema_title">JSON Schema Validator</string>
+    <string name="json_schema_schema_label">Schema</string>
+    <string name="json_schema_data_label">JSON to validate</string>
+    <string name="json_schema_validate">Validate</string>
+    <string name="json_schema_sample">Load sample</string>
+    <string name="json_schema_valid">Validation passed, no mismatches</string>
+    <string name="json_schema_invalid_count">%1$d mismatch(es) found</string>
+    <string name="json_schema_truncated">Showing the first %1$d only, the rest are omitted</string>
+    <string name="json_schema_empty_hint">Fill in a schema and JSON, then tap validate</string>
+    <string name="json_schema_error_schema_invalid">Schema is not valid JSON</string>
+    <string name="json_schema_error_schema_type">Schema root must be a JSON object</string>
+    <string name="json_schema_error_data_invalid">The JSON to validate is not valid JSON</string>
+    <string name="json_schema_error_ref_not_found">$ref points to a missing definition or an external document</string>
+    <string name="json_schema_error_pattern">The schema contains an invalid regular expression</string>
+    <string name="json_schema_error_depth">Schema is nested too deeply to evaluate</string>
+    <string name="json_schema_error_generic">Schema cannot be evaluated</string>
+    <string name="json_schema_violation_type">Type should be %1$s, actual %2$s</string>
+    <string name="json_schema_violation_required">Missing required property %1$s</string>
+    <string name="json_schema_violation_enum">Value should be one of %1$s, actual %2$s</string>
+    <string name="json_schema_violation_const">Value must always be %1$s, actual %2$s</string>
+    <string name="json_schema_violation_additional">Property %1$s is not allowed</string>
+    <string name="json_schema_violation_minimum">Should be at least %1$s, actual %2$s</string>
+    <string name="json_schema_violation_maximum">Should be at most %1$s, actual %2$s</string>
+    <string name="json_schema_violation_exclusive_minimum">Should be greater than %1$s, actual %2$s</string>
+    <string name="json_schema_violation_exclusive_maximum">Should be less than %1$s, actual %2$s</string>
+    <string name="json_schema_violation_multiple_of">Should be a multiple of %1$s, actual %2$s</string>
+    <string name="json_schema_violation_min_length">Length should be at least %1$s, actual %2$s</string>
+    <string name="json_schema_violation_max_length">Length should be at most %1$s, actual %2$s</string>
+    <string name="json_schema_violation_pattern">Should match %1$s, actual %2$s</string>
+    <string name="json_schema_violation_min_items">Should contain at least %1$s item(s), actual %2$s</string>
+    <string name="json_schema_violation_max_items">Should contain at most %1$s item(s), actual %2$s</string>
+    <string name="json_schema_violation_unique_items">Items must be unique</string>
+    <string name="json_schema_violation_any_of">Should satisfy any one of %1$s branches</string>
+    <string name="json_schema_violation_one_of">Should satisfy exactly one of %1$s branches, matched %2$s</string>
+    <string name="json_schema_violation_not">Should not satisfy the excluded rule</string>
     <string name="json_tree_items">%1$d items</string>
 
     <!-- Timestamp converter tool -->
@@ -925,5 +961,6 @@
     <string name="settings_language_summary">Change the app language</string>
     <string name="tool_encoding_summary">Base64, radix, URL, Unicode, ASCII</string>
     <string name="tool_json_summary">Format and minify JSON</string>
+    <string name="tool_json_schema_summary">Validate structure against a schema and locate mismatches</string>
     <string name="tool_timestamp_summary">Convert timestamps, dates and custom formats</string>
 </resources>

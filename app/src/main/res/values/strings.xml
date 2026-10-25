@@ -71,12 +71,48 @@
 
     <!-- JSON 格式化/压缩工具 -->
     <string name="tool_json">JSON 格式化</string>
+    <string name="tool_json_schema">JSON Schema 校验</string>
     <string name="json_tool_title">JSON 格式化</string>
     <string name="json_tool_input_label">JSON 内容</string>
     <string name="json_tool_output_label">输出结果</string>
     <string name="json_tool_pretty">格式化</string>
     <string name="json_tool_minify">压缩</string>
     <string name="json_tool_invalid">无效的 JSON 输入</string>
+    <string name="json_schema_title">JSON Schema 校验</string>
+    <string name="json_schema_schema_label">Schema</string>
+    <string name="json_schema_data_label">待校验 JSON</string>
+    <string name="json_schema_validate">校验</string>
+    <string name="json_schema_sample">载入示例</string>
+    <string name="json_schema_valid">校验通过，未发现不匹配</string>
+    <string name="json_schema_invalid_count">发现 %1$d 处不匹配</string>
+    <string name="json_schema_truncated">仅显示前 %1$d 条，其余已省略</string>
+    <string name="json_schema_empty_hint">填入 Schema 与 JSON 后点击校验</string>
+    <string name="json_schema_error_schema_invalid">Schema 不是合法 JSON</string>
+    <string name="json_schema_error_schema_type">Schema 顶层必须是 JSON 对象</string>
+    <string name="json_schema_error_data_invalid">待校验内容不是合法 JSON</string>
+    <string name="json_schema_error_ref_not_found">$ref 指向的定义不存在，或引用了外部文档</string>
+    <string name="json_schema_error_pattern">Schema 中存在非法的正则表达式</string>
+    <string name="json_schema_error_depth">Schema 嵌套过深，无法继续求值</string>
+    <string name="json_schema_error_generic">Schema 无法求值</string>
+    <string name="json_schema_violation_type">类型应为 %1$s，实际为 %2$s</string>
+    <string name="json_schema_violation_required">缺少必填字段 %1$s</string>
+    <string name="json_schema_violation_enum">取值应为 %1$s 之一，实际为 %2$s</string>
+    <string name="json_schema_violation_const">取值应恒为 %1$s，实际为 %2$s</string>
+    <string name="json_schema_violation_additional">不允许出现字段 %1$s</string>
+    <string name="json_schema_violation_minimum">应不小于 %1$s，实际为 %2$s</string>
+    <string name="json_schema_violation_maximum">应不大于 %1$s，实际为 %2$s</string>
+    <string name="json_schema_violation_exclusive_minimum">应大于 %1$s，实际为 %2$s</string>
+    <string name="json_schema_violation_exclusive_maximum">应小于 %1$s，实际为 %2$s</string>
+    <string name="json_schema_violation_multiple_of">应为 %1$s 的整数倍，实际为 %2$s</string>
+    <string name="json_schema_violation_min_length">长度应不小于 %1$s，实际为 %2$s</string>
+    <string name="json_schema_violation_max_length">长度应不大于 %1$s，实际为 %2$s</string>
+    <string name="json_schema_violation_pattern">应匹配 %1$s，实际为 %2$s</string>
+    <string name="json_schema_violation_min_items">元素数应不少于 %1$s，实际为 %2$s</string>
+    <string name="json_schema_violation_max_items">元素数应不多于 %1$s，实际为 %2$s</string>
+    <string name="json_schema_violation_unique_items">元素应互不重复</string>
+    <string name="json_schema_violation_any_of">应满足 %1$s 个分支中的任意一个</string>
+    <string name="json_schema_violation_one_of">应恰好满足 %1$s 个分支之一，实际满足 %2$s 个</string>
+    <string name="json_schema_violation_not">不应满足该排除规则</string>
     <string name="json_tree_items">%1$d 项</string>
 
     <!-- 时间转换工具 -->
@@ -925,5 +961,6 @@
     <string name="settings_language_summary">切换应用语言</string>
     <string name="tool_encoding_summary">Base64、进制、URL、Unicode、ASCII 互转</string>
     <string name="tool_json_summary">JSON 格式化与压缩</string>
+    <string name="tool_json_schema_summary">按 Schema 校验结构并定位不匹配字段</string>
     <string name="tool_timestamp_summary">时间戳、日期与格式化互转</string>
 </resources>

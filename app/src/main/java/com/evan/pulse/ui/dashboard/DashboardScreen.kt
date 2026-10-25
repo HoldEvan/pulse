@@ -33,6 +33,7 @@ import top.yukonga.miuix.kmp.icon.extended.ConvertFile
 import top.yukonga.miuix.kmp.icon.extended.Folder
 import top.yukonga.miuix.kmp.icon.extended.Image
 import top.yukonga.miuix.kmp.icon.extended.Notes
+import top.yukonga.miuix.kmp.icon.extended.Ok
 import top.yukonga.miuix.kmp.icon.extended.Recent
 import top.yukonga.miuix.kmp.icon.extended.Stopwatch
 import top.yukonga.miuix.kmp.icon.extended.Lock
@@ -49,6 +50,7 @@ fun DashboardScreen(
     onOpenEncoding: () -> Unit = {},
     onOpenImageBase64: () -> Unit = {},
     onOpenJson: () -> Unit = {},
+    onOpenJsonSchema: () -> Unit = {},
     onOpenTimestamp: () -> Unit = {},
     onOpenJwt: () -> Unit = {},
     onOpenHash: () -> Unit = {},
@@ -157,6 +159,19 @@ fun DashboardScreen(
                         )
                     },
                     onClick = onOpenJson
+                )
+            }
+            item {
+                AppArrowRow(
+                    title = stringResource(R.string.tool_json_schema),
+                    summary = stringResource(R.string.tool_json_schema_summary),
+                    startAction = {
+                        AppIcon(
+                            imageVector = MiuixIcons.Light.Ok,
+                            contentDescription = null
+                        )
+                    },
+                    onClick = onOpenJsonSchema
                 )
             }
             item {

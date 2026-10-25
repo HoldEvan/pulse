@@ -62,6 +62,9 @@ sealed interface PulseRoute : NavKey {
     /** 工具二级页：JSON 格式化/压缩 */
     @Serializable data object JsonTool : PulseRoute
 
+    /** 工具二级页：JSON Schema 结构校验 */
+    @Serializable data object JsonSchemaTool : PulseRoute
+
     /** 工具二级页：时间转换 */
     @Serializable data object TimestampTool : PulseRoute
 
