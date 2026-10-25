@@ -972,12 +972,16 @@ object ServiceLocator {
     /** 直读可空字段，供引擎在对象初始化期安全取得 context（不触发 checkNotNull） */
     private fun appContextOrNull(): Context? = _appContext
 
-    private val persistHandle = PersistenceHandle()
+    // 每个 Store 一个句柄：写操作只重写自己那组表，避免全量序列化
+    private val projectPersist = PersistenceHandle()
+    private val historyPersist = PersistenceHandle()
+    private val envPersist = PersistenceHandle()
+    private val collectionPersist = PersistenceHandle()
 
-    val projectStore = ProjectStore(persistHandle)
-    val historyStore = HistoryStore(persistHandle)
-    val envStore = EnvStore(persistHandle)
-    val collectionStore = CollectionStore(persistHandle)
+    val projectStore = ProjectStore(projectPersist)
+    val historyStore = HistoryStore(historyPersist)
+    val envStore = EnvStore(envPersist)
+    val collectionStore = CollectionStore(collectionPersist)
     val placeholderResolver: PlaceholderResolver = SimplePlaceholderResolver()
     val authApplier: AuthApplier = SimpleAuthApplier()
     val scriptExecutor: com.evan.pulse.domain.script.ScriptExecutor = RhinoScriptExecutor()
@@ -998,9 +1002,13 @@ object ServiceLocator {
     val mqttEngine: MqttEngine = PahoMqttEngine()
     val sseEngine: SseEngine = KtorSseEngine()
 
-    val monitorStore = MonitorStore(persistHandle)
-    val cookieStore = CookieStore(persistHandle)
-    val protocolSessionStore = ProtocolSessionStore(persistHandle)
+    private val monitorPersist = PersistenceHandle()
+    private val cookiePersist = PersistenceHandle()
+    private val protocolPersist = PersistenceHandle()
+
+    val monitorStore = MonitorStore(monitorPersist)
+    val cookieStore = CookieStore(cookiePersist)
+    val protocolSessionStore = ProtocolSessionStore(protocolPersist)
     val monitorChecker: MonitorChecker by lazy { MonitorChecker() }
 
     private var _monitorNotifier: MonitorNotifier? = null
@@ -1029,7 +1037,13 @@ object ServiceLocator {
         _appContext = context.applicationContext
         val persistence = AppStatePersistence(context)
         _persistence = persistence
-        persistHandle.action = { persistence.save() }
+        projectPersist.action = { persistence.saveProjects() }
+        historyPersist.action = { persistence.saveHistory() }
+        envPersist.action = { persistence.saveEnvironments() }
+        collectionPersist.action = { persistence.saveCollections() }
+        monitorPersist.action = { persistence.saveMonitors() }
+        cookiePersist.action = { persistence.saveCookies() }
+        protocolPersist.action = { persistence.saveProtocols() }
         persistence.load()
     }
 
@@ -1046,8 +1060,12 @@ object ServiceLocator {
 
     /** 立即把当前状态写盘，作为进程退出前的兜底 */
     fun flush() {
-        _persistence?.save()
+        _persistence?.saveAll()
     }
+
+    /** 导出备份 JSON（本地备份与 WebDAV 共用同一份结构） */
+    fun exportBackupJson(): String =
+        checkNotNull(_persistence) { "持久化尚未初始化" }.exportJson()
 
     /** 从 JSON 备份字符串恢复各 Store（用于本地 / WebDAV 恢复） */
     fun restoreFromJson(json: String) {

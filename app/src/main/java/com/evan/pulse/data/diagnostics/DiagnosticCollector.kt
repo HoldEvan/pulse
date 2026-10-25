@@ -125,8 +125,10 @@ class DiagnosticCollector(private val context: Context) {
         "bottomBarLabelVisible" to settings.bottomBarLabelVisible.toString()
     )
 
+    /** 主数据库体积（含 WAL），作为数据量的排查基线 */
     private fun dataFileSizeMb(): String {
-        val bytes = File(context.filesDir, "app_data.json").length()
+        val dbFile = context.getDatabasePath("pulse.db")
+        val bytes = dbFile.length() + File(dbFile.path + "-wal").length() + File(dbFile.path + "-shm").length()
         return "%.2f".format(bytes / 1024.0 / 1024.0)
     }
 }

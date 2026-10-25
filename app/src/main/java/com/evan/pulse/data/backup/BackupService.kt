@@ -3,7 +3,6 @@ package com.evan.pulse.data.backup
 import android.content.Context
 import android.net.Uri
 import com.evan.pulse.di.ServiceLocator
-import java.io.File
 import java.io.IOException
 import java.net.URLDecoder
 import java.text.SimpleDateFormat
@@ -24,25 +23,21 @@ import okio.BufferedSink
 /**
  * 数据备份与恢复的统一入口。
  *
- * 本地备份：通过 SAF 把 `app_data.json` 写入用户选定的文件；
- * 本地恢复：从用户选定的备份文件读回并注入各 Store。
- * WebDAV 备份：通过 [WebDavClient] 上传/下载同一 JSON 文件。
+ * 备份文件是导出的 JSON 交换格式（结构兼容旧版的 `app_data.json`）：
+ * 本地备份通过 SAF 写出，本地恢复从 SAF 读回并注入各 Store；
+ * WebDAV 备份通过 [WebDavClient] 上传/下载同一份 JSON。
  */
 class BackupService(context: Context) {
 
     private val context = context.applicationContext
 
-    private val dataFile: File
-        get() = File(context.filesDir, "app_data.json")
-
-    /** 把当前数据直接写入用户通过 SAF 选定的 Uri（导出到本地存储） */
+    /** 把当前数据写入用户通过 SAF 选定的 Uri（导出到本地存储） */
     fun copyToUri(uri: Uri) {
-        ServiceLocator.flush()
-        val source = dataFile
+        val json = ServiceLocator.exportBackupJson()
         val output = context.contentResolver.openOutputStream(uri)
             ?: throw IOException("无法写入目标文件")
         output.use { out ->
-            source.inputStream().use { input -> input.copyTo(out) }
+            out.write(json.encodeToByteArray())
         }
     }
 
@@ -55,8 +50,7 @@ class BackupService(context: Context) {
 
     /** 导出到 WebDAV，文件名带时间戳以保留多份历史备份，返回远程文件 URL */
     suspend fun exportToWebDav(config: WebDavConfig): String {
-        ServiceLocator.flush()
-        val json = dataFile.readText()
+        val json = ServiceLocator.exportBackupJson()
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
         val fileUrl = config.timestampedFileUrl(timestamp)
         WebDavClient(config).upload(fileUrl, json)

@@ -54,7 +54,7 @@ class MqttViewModel : ViewModel() {
     /** 当前请求所属文件夹，用于合并文件夹变量 */
     private var activeCollectionId: Long? = null
 
-    /** 持久化订阅集合，来自 ProtocolSessionStore，启动时随 app_data.json 恢复 */
+    /** 持久化订阅集合，来自 ProtocolSessionStore，启动时随本地数据库恢复 */
     val subscriptions: StateFlow<List<MqttSubscriptionEntry>> = sessions.mqttSubscriptions
 
     /** 最近一次订阅输入中无法解析的条目原文，用于行内提示 */

@@ -45,11 +45,14 @@ class CacheCleaner(context: Context) {
     private fun cacheDirectories(): List<File> =
         (context.cacheDir?.let { listOf(it) } ?: emptyList()) + context.externalCacheDirs
 
-    /** 变更即写用的临时文件：正常写入会被原子替换掉，只有崩溃时才会残留 */
-    private fun staleTempFiles(): List<File> = listOf(File(context.filesDir, PERSISTENCE_TMP_FILE))
+    /**
+     * 旧版单文件存储留下的临时文件：升级到 Room 后不再产生，
+     * 但崩溃时可能残留，清理时一并带走。
+     */
+    private fun staleTempFiles(): List<File> = listOf(File(context.filesDir, LEGACY_TEMP_FILE))
 
     companion object {
-        private const val PERSISTENCE_TMP_FILE = "app_data.json.tmp"
+        private const val LEGACY_TEMP_FILE = "app_data.json.tmp"
 
         /** 纯函数：递归统计给定目录与文件中的文件数与总大小，不存在的路径按 0 计 */
         fun measure(files: List<File>): CacheStats {

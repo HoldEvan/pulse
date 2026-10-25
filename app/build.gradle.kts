@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
 }
 
 import java.util.Properties
@@ -80,6 +81,12 @@ android {
     }
 }
 
+// Room 导出的 schema 随代码提交，升级时据此手写迁移
+ksp {
+    // KSP2 的 worker 进程工作目录与项目根不一致，这里显式给绝对路径
+    arg("room.schemaLocation", layout.projectDirectory.dir("schemas").asFile.absolutePath)
+}
+
 dependencies {
     implementation(platform(libs.compose.bom))
     implementation(libs.androidx.core.ktx)
@@ -113,6 +120,10 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
 
     implementation(libs.kotlinx.serialization.json)
+
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
     implementation(libs.kaml)
     // YAML 节点树保留标量引号与类型标签，互转工具依赖它区分 "123" 与 123
     implementation(libs.snakeyaml.engine)

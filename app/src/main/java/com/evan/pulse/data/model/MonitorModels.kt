@@ -1,5 +1,7 @@
 package com.evan.pulse.data.model
 
+import kotlinx.serialization.Serializable
+
 /** 拨测类型：IP 连通 / 端口 / 接口 */
 enum class MonitorType { IP, PORT, HTTP }
 
@@ -55,6 +57,7 @@ data class MonitorTarget(
  * - NOT_CONTAINS：响应体不包含 [expression]；
  * - JSON_PATH：JSONPath [expression] 取值等于 [expected]。
  */
+@Serializable
 data class MonitorAssertion(
     val type: String = "CONTAINS",
     /** CONTAINS/NOT_CONTAINS 为关键字；JSON_PATH 为路径表达式，支持 {{变量}} */
