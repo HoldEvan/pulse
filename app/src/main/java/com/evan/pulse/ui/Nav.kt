@@ -71,6 +71,9 @@ sealed interface PulseRoute : NavKey {
     /** 工具二级页：URL 拆解与拼装 */
     @Serializable data object UrlParserTool : PulseRoute
 
+    /** 工具二级页：二维码生成与识别 */
+    @Serializable data object QrCodeTool : PulseRoute
+
     /** 工具二级页：时间转换 */
     @Serializable data object TimestampTool : PulseRoute
 

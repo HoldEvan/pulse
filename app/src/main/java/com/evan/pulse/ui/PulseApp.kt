@@ -83,6 +83,7 @@ import com.evan.pulse.ui.tools.EncodingToolScreen
 import com.evan.pulse.ui.tools.ImageBase64Screen
 import com.evan.pulse.ui.tools.JsonSchemaScreen
 import com.evan.pulse.ui.tools.JsonToolScreen
+import com.evan.pulse.ui.tools.QrCodeScreen
 import com.evan.pulse.ui.tools.UrlParserScreen
 import com.evan.pulse.ui.tools.YamlJsonScreen
 import com.evan.pulse.ui.tools.TimestampToolScreen
@@ -389,6 +390,9 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                                         },
                                         onOpenUrlParser = {
                                             navController.pushRoute(PulseRoute.UrlParserTool)
+                                        },
+                                        onOpenQrCode = {
+                                            navController.pushRoute(PulseRoute.QrCodeTool)
                                         },
                                         onOpenTimestamp = { navController.pushRoute(PulseRoute.TimestampTool) },
                                         onOpenJwt = { navController.pushRoute(PulseRoute.JwtTool) },
@@ -753,6 +757,12 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
         entry<PulseRoute.UrlParserTool> {
             SubPageScreen(title = stringResource(R.string.url_parser_title)) {
                 UrlParserScreen(modifier = Modifier.fillMaxSize())
+            }
+        }
+
+        entry<PulseRoute.QrCodeTool> {
+            SubPageScreen(title = stringResource(R.string.qr_title)) {
+                QrCodeScreen(modifier = Modifier.fillMaxSize())
             }
         }
 

@@ -74,6 +74,7 @@
     <string name="tool_json_schema">JSON Schema Validator</string>
     <string name="tool_yaml_json">YAML / JSON Converter</string>
     <string name="tool_url_parser">URL Parser</string>
+    <string name="tool_qr_code">QR Code</string>
     <string name="json_tool_title">JSON Formatter</string>
     <string name="json_tool_input_label">JSON content</string>
     <string name="json_tool_output_label">Output</string>
@@ -152,6 +153,31 @@
     <string name="url_parser_error_host">Host is missing</string>
     <string name="url_parser_error_port">Port must be an integer between 1 and 65535</string>
     <string name="url_parser_error_invalid">Unrecognized URL format</string>
+    <string name="qr_title">QR Code</string>
+    <string name="qr_tab_generate">Generate</string>
+    <string name="qr_tab_scan">Scan</string>
+    <string name="qr_input_label">QR content</string>
+    <string name="qr_correction_label">Error correction</string>
+    <string name="qr_correction_low">L (about 7%)</string>
+    <string name="qr_correction_medium">M (about 15%)</string>
+    <string name="qr_correction_quartile">Q (about 25%)</string>
+    <string name="qr_correction_high">H (about 30%)</string>
+    <string name="qr_generate_empty_hint">Enter content to generate a QR code</string>
+    <string name="qr_preview_description">QR preview</string>
+    <string name="qr_matrix_size">Matrix %1$d × %1$d</string>
+    <string name="qr_save_image">Save to gallery</string>
+    <string name="qr_save_success">Saved to gallery</string>
+    <string name="qr_save_failed">Save failed, check storage permission</string>
+    <string name="qr_pick_image">Pick an image to scan</string>
+    <string name="qr_scanning">Scanning…</string>
+    <string name="qr_scan_empty_hint">Pick an image that contains a QR code</string>
+    <string name="qr_scan_result_title">Result</string>
+    <string name="qr_scan_other_format">Detected type is %1$s</string>
+    <string name="qr_error_empty">Content must not be empty</string>
+    <string name="qr_error_too_long">Content is too long, a single QR code holds about 2953 bytes</string>
+    <string name="qr_error_not_found">No QR code found in the image</string>
+    <string name="qr_error_invalid_image">Cannot read this image</string>
+    <string name="qr_error_failed">Scan failed</string>
     <string name="json_tree_items">%1$d items</string>
 
     <!-- Timestamp converter tool -->
@@ -1016,5 +1042,6 @@
     <string name="tool_json_schema_summary">Validate structure against a schema and locate mismatches</string>
     <string name="tool_yaml_json_summary">Convert between YAML and JSON</string>
     <string name="tool_url_parser_summary">Split a URL into parts and reassemble it</string>
+    <string name="tool_qr_code_summary">Generate a QR code or read one from an image</string>
     <string name="tool_timestamp_summary">Convert timestamps, dates and custom formats</string>
 </resources>

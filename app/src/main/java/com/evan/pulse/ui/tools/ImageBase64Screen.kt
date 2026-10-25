@@ -1,11 +1,7 @@
 package com.evan.pulse.ui.tools
 
-import android.content.ContentValues
 import android.content.Context
 import android.graphics.BitmapFactory
-import android.os.Build
-import android.os.Environment
-import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -59,6 +55,7 @@ import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.MonospaceBlock
 import com.evan.pulse.ui.common.rememberCopyToClipboard
+import com.evan.pulse.ui.common.saveImageBytes
 import com.evan.pulse.ui.common.subPageOverScroll
 import com.evan.pulse.ui.common.subPageScrollState
 import kotlinx.coroutines.Dispatchers
@@ -72,10 +69,6 @@ import com.evan.pulse.ui.design.AppTabRow
 import com.evan.pulse.ui.design.AppText
 import com.evan.pulse.ui.design.AppTextButton
 import com.evan.pulse.ui.design.AppTextField
-import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 /** 图片工具顶层的方向切换 */
 private enum class ImageTool { ENCODE, DECODE }
@@ -356,55 +349,4 @@ private fun ImageViewerDialog(
             }
         }
     }
-}
-
-/** 把图片字节写入公共相册 Pictures/Pulse（API 29+），低版本写入应用私有 Pictures 目录 */
-private fun saveImageBytes(context: Context, bytes: ByteArray): Boolean {
-    val mime = detectImageMime(bytes) ?: return false
-    val ext = when (mime) {
-        "image/png" -> "png"
-        "image/jpeg" -> "jpg"
-        "image/gif" -> "gif"
-        else -> "webp"
-    }
-    val name = "Pulse_" + SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date()) + "." + ext
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        val values = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, name)
-            put(MediaStore.MediaColumns.MIME_TYPE, mime)
-            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/Pulse")
-            put(MediaStore.MediaColumns.IS_PENDING, 1)
-        }
-        val uri = context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-            ?: return false
-        val written = runCatching {
-            context.contentResolver.openOutputStream(uri)?.use { it.write(bytes) } != null
-        }.getOrDefault(false)
-        values.clear()
-        values.put(MediaStore.MediaColumns.IS_PENDING, 0)
-        context.contentResolver.update(uri, values, null, null)
-        written
-    } else {
-        val dir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES) ?: return false
-        runCatching { File(dir, name).writeBytes(bytes) }.isSuccess
-    }
-}
-
-/** 按魔数识别常见图片格式，用于确定保存的 MIME 与扩展名 */
-private fun detectImageMime(bytes: ByteArray): String? = when {
-    bytes.size >= 8 && bytes[0] == 0x89.toByte() && bytes[1] == 0x50.toByte() &&
-        bytes[2] == 0x4E.toByte() && bytes[3] == 0x47.toByte() -> "image/png"
-
-    bytes.size >= 3 && bytes[0] == 0xFF.toByte() && bytes[1] == 0xD8.toByte() &&
-        bytes[2] == 0xFF.toByte() -> "image/jpeg"
-
-    bytes.size >= 6 && bytes[0] == 'G'.code.toByte() && bytes[1] == 'I'.code.toByte() &&
-        bytes[2] == 'F'.code.toByte() -> "image/gif"
-
-    bytes.size >= 12 && bytes[0] == 'R'.code.toByte() && bytes[1] == 'I'.code.toByte() &&
-        bytes[2] == 'F'.code.toByte() && bytes[3] == 'F'.code.toByte() &&
-        bytes[8] == 'W'.code.toByte() && bytes[9] == 'E'.code.toByte() &&
-        bytes[10] == 'B'.code.toByte() && bytes[11] == 'P'.code.toByte() -> "image/webp"
-
-    else -> null
 }

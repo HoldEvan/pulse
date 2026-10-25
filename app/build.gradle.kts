@@ -116,6 +116,8 @@ dependencies {
     implementation(libs.kaml)
     // YAML 节点树保留标量引号与类型标签，互转工具依赖它区分 "123" 与 123
     implementation(libs.snakeyaml.engine)
+    // 二维码生成与识别：纯 Java 实现，不依赖 Play 服务
+    implementation(libs.zxing.core)
     implementation(libs.kotlinx.coroutines.android)
 
     // 拼接预览的 Markdown 渲染

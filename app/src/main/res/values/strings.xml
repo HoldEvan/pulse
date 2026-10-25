@@ -74,6 +74,7 @@
     <string name="tool_json_schema">JSON Schema 校验</string>
     <string name="tool_yaml_json">YAML 与 JSON 互转</string>
     <string name="tool_url_parser">URL 解析</string>
+    <string name="tool_qr_code">二维码</string>
     <string name="json_tool_title">JSON 格式化</string>
     <string name="json_tool_input_label">JSON 内容</string>
     <string name="json_tool_output_label">输出结果</string>
@@ -152,6 +153,31 @@
     <string name="url_parser_error_host">缺少主机名</string>
     <string name="url_parser_error_port">端口应为 1-65535 的整数</string>
     <string name="url_parser_error_invalid">地址格式无法识别</string>
+    <string name="qr_title">二维码</string>
+    <string name="qr_tab_generate">生成</string>
+    <string name="qr_tab_scan">识别</string>
+    <string name="qr_input_label">二维码内容</string>
+    <string name="qr_correction_label">纠错级别</string>
+    <string name="qr_correction_low">L（约 7%）</string>
+    <string name="qr_correction_medium">M（约 15%）</string>
+    <string name="qr_correction_quartile">Q（约 25%）</string>
+    <string name="qr_correction_high">H（约 30%）</string>
+    <string name="qr_generate_empty_hint">输入内容后生成二维码</string>
+    <string name="qr_preview_description">二维码预览</string>
+    <string name="qr_matrix_size">点阵 %1$d × %1$d</string>
+    <string name="qr_save_image">保存到相册</string>
+    <string name="qr_save_success">已保存到相册</string>
+    <string name="qr_save_failed">保存失败，请检查存储权限</string>
+    <string name="qr_pick_image">选择图片识别</string>
+    <string name="qr_scanning">正在识别…</string>
+    <string name="qr_scan_empty_hint">选择一张含有二维码的图片</string>
+    <string name="qr_scan_result_title">识别结果</string>
+    <string name="qr_scan_other_format">实际识别到的类型为 %1$s</string>
+    <string name="qr_error_empty">内容不能为空</string>
+    <string name="qr_error_too_long">内容过长，单个二维码最多约 2953 字节</string>
+    <string name="qr_error_not_found">图片中未识别到二维码</string>
+    <string name="qr_error_invalid_image">无法读取该图片</string>
+    <string name="qr_error_failed">识别失败</string>
     <string name="json_tree_items">%1$d 项</string>
 
     <!-- 时间转换工具 -->
@@ -1016,5 +1042,6 @@
     <string name="tool_json_schema_summary">按 Schema 校验结构并定位不匹配字段</string>
     <string name="tool_yaml_json_summary">YAML 与 JSON 双向转换</string>
     <string name="tool_url_parser_summary">拆解地址各段并反向拼装</string>
+    <string name="tool_qr_code_summary">生成二维码或从图片中识别</string>
     <string name="tool_timestamp_summary">时间戳、日期与格式化互转</string>
 </resources>

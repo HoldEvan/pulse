@@ -74,6 +74,7 @@
     <string name="tool_json_schema">JSON Schema 校驗</string>
     <string name="tool_yaml_json">YAML 與 JSON 互轉</string>
     <string name="tool_url_parser">URL 解析</string>
+    <string name="tool_qr_code">QR Code</string>
     <string name="json_tool_title">JSON 格式化</string>
     <string name="json_tool_input_label">JSON 內容</string>
     <string name="json_tool_output_label">輸出結果</string>
@@ -152,6 +153,31 @@
     <string name="url_parser_error_host">缺少主機名</string>
     <string name="url_parser_error_port">連接埠應為 1-65535 的整數</string>
     <string name="url_parser_error_invalid">網址格式無法辨識</string>
+    <string name="qr_title">QR Code</string>
+    <string name="qr_tab_generate">產生</string>
+    <string name="qr_tab_scan">辨識</string>
+    <string name="qr_input_label">QR Code 內容</string>
+    <string name="qr_correction_label">容錯等級</string>
+    <string name="qr_correction_low">L（約 7%）</string>
+    <string name="qr_correction_medium">M（約 15%）</string>
+    <string name="qr_correction_quartile">Q（約 25%）</string>
+    <string name="qr_correction_high">H（約 30%）</string>
+    <string name="qr_generate_empty_hint">輸入內容後產生 QR Code</string>
+    <string name="qr_preview_description">QR Code 預覽</string>
+    <string name="qr_matrix_size">點陣 %1$d × %1$d</string>
+    <string name="qr_save_image">儲存到相簿</string>
+    <string name="qr_save_success">已儲存到相簿</string>
+    <string name="qr_save_failed">儲存失敗，請檢查儲存權限</string>
+    <string name="qr_pick_image">選擇圖片辨識</string>
+    <string name="qr_scanning">正在辨識…</string>
+    <string name="qr_scan_empty_hint">選擇一張含有 QR Code 的圖片</string>
+    <string name="qr_scan_result_title">辨識結果</string>
+    <string name="qr_scan_other_format">實際辨識到的類型為 %1$s</string>
+    <string name="qr_error_empty">內容不能為空</string>
+    <string name="qr_error_too_long">內容過長，單一 QR Code 最多約 2953 位元組</string>
+    <string name="qr_error_not_found">圖片中未辨識到 QR Code</string>
+    <string name="qr_error_invalid_image">無法讀取該圖片</string>
+    <string name="qr_error_failed">辨識失敗</string>
     <string name="json_tree_items">%1$d 項</string>
 
     <!-- 時間轉換工具 -->
@@ -1016,5 +1042,6 @@
     <string name="tool_json_schema_summary">依 Schema 校驗結構並定位不符欄位</string>
     <string name="tool_yaml_json_summary">YAML 與 JSON 雙向轉換</string>
     <string name="tool_url_parser_summary">拆解網址各段並反向拼裝</string>
+    <string name="tool_qr_code_summary">產生 QR Code 或從圖片辨識</string>
     <string name="tool_timestamp_summary">時間戳、日期與格式化互轉</string>
 </resources>

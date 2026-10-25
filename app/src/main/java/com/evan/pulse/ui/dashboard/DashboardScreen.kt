@@ -43,6 +43,7 @@ import top.yukonga.miuix.kmp.icon.extended.Create
 import top.yukonga.miuix.kmp.icon.extended.Search
 import top.yukonga.miuix.kmp.icon.extended.Timer
 import top.yukonga.miuix.kmp.icon.extended.Scan
+import top.yukonga.miuix.kmp.icon.extended.SearchDevice
 
 /** 首页：统计概览 + 工具箱。统计卡来自各内存 Store，工具入口打开对应二级页 */
 @Composable
@@ -54,6 +55,7 @@ fun DashboardScreen(
     onOpenJsonSchema: () -> Unit = {},
     onOpenYamlJson: () -> Unit = {},
     onOpenUrlParser: () -> Unit = {},
+    onOpenQrCode: () -> Unit = {},
     onOpenTimestamp: () -> Unit = {},
     onOpenJwt: () -> Unit = {},
     onOpenHash: () -> Unit = {},
@@ -201,6 +203,19 @@ fun DashboardScreen(
                         )
                     },
                     onClick = onOpenUrlParser
+                )
+            }
+            item {
+                AppArrowRow(
+                    title = stringResource(R.string.tool_qr_code),
+                    summary = stringResource(R.string.tool_qr_code_summary),
+                    startAction = {
+                        AppIcon(
+                            imageVector = MiuixIcons.Light.SearchDevice,
+                            contentDescription = null
+                        )
+                    },
+                    onClick = onOpenQrCode
                 )
             }
             item {
