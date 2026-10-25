@@ -29,6 +29,13 @@ class MainActivity : ComponentActivity() {
         if (uri != null) settingsViewModel.onBackupFilePicked(uri) else settingsViewModel.onBackupFileCancelled()
     }
 
+    /** SAF 保存对话框：导出诊断包 */
+    private val createDiagnosticsFile = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri != null) settingsViewModel.onDiagnosticsPicked(uri) else settingsViewModel.onDiagnosticsCancelled()
+    }
+
     /** SAF 选择对话框：读取本地备份恢复 */
     private val openBackupFile = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
@@ -43,6 +50,9 @@ class MainActivity : ComponentActivity() {
         settingsViewModel.setBackupLauncherHandlers(
             onSave = { createBackupFile.launch("pulse_backup.json") },
             onImport = { openBackupFile.launch(arrayOf("application/json", "*/*")) },
+        )
+        settingsViewModel.setDiagnosticsLauncherHandler(
+            onSave = { createDiagnosticsFile.launch(settingsViewModel.diagnosticFileName()) },
         )
         handleShortcutIntent(intent)
 
@@ -80,6 +90,7 @@ class MainActivity : ComponentActivity() {
                     store = store,
                     backupService = BackupService(applicationContext),
                     cacheCleaner = CacheCleaner(applicationContext),
+                    context = applicationContext,
                 ) as T
         }
         return ViewModelProvider(this, factory)[SettingsViewModel::class.java]

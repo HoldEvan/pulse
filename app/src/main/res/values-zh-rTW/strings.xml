@@ -539,6 +539,10 @@
     <string name="auto_backup_keep_label">保留份數（%1$d–%2$d）</string>
     <string name="auto_backup_hint">備份由系統在背景排程，頻率過低時可能延後；超出份數的舊備份會自動刪除</string>
     <string name="backup_local_title">本地備份</string>
+    <string name="diagnostics_title">診斷資訊</string>
+    <string name="diagnostics_export">匯出診斷包</string>
+    <string name="diagnostics_hint">包含應用與裝置資訊、設定概況、各模組資料量，以及最近失敗的請求與撥測紀錄。網址、請求標頭與權杖會先脫敏，不含請求內容。</string>
+    <string name="diagnostics_export_done">診斷包已匯出</string>
     <string name="backup_webdav_title">WebDAV 遠端備份</string>
     <string name="backup_configured">已設定</string>
     <string name="backup_not_configured">未設定</string>

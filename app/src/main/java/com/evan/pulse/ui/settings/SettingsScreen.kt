@@ -468,6 +468,32 @@ fun SettingsScreen(
         }
         }
 
+        item(key = "diagnostics_card") {
+        AppCard(modifier = Modifier.fillMaxWidth().padding(top = CardGap)) {
+            Column(modifier = Modifier.padding(CardContentPadding)) {
+                CardSectionTitle(
+                    text = stringResource(R.string.diagnostics_title),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                AppText(
+                    text = stringResource(R.string.diagnostics_hint),
+                    fontSize = 12.sp,
+                    color = Color(0xFF8A8F98),
+                    modifier = Modifier.padding(top = 6.dp)
+                )
+                AppButton(
+                    onClick = { viewModel.exportDiagnostics() },
+                    enabled = !status.busy,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp)
+                ) {
+                    AppText(stringResource(R.string.diagnostics_export))
+                }
+            }
+        }
+        }
+
         item(key = "backup_auto_card") {
         AppCard(modifier = Modifier.fillMaxWidth().padding(top = CardGap)) {
             Column(modifier = Modifier.padding(CardContentPadding)) {

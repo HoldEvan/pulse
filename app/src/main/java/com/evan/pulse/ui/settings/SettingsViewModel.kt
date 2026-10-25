@@ -10,6 +10,8 @@ import com.evan.pulse.data.backup.WebDavStage
 import com.evan.pulse.data.backup.WebDavTestResult
 import com.evan.pulse.data.cache.CacheCleaner
 import com.evan.pulse.data.cache.CacheStats
+import com.evan.pulse.data.diagnostics.DiagnosticCollector
+import android.content.Context
 import com.evan.pulse.data.settings.AUTO_BACKUP_INTERVAL_HOURS
 import com.evan.pulse.data.settings.AppSettings
 import com.evan.pulse.data.settings.MAX_AUTO_BACKUP_KEEP
@@ -64,7 +66,10 @@ class SettingsViewModel(
     private val store: SettingsStore,
     private val backupService: BackupService,
     private val cacheCleaner: CacheCleaner,
+    private val context: Context,
 ) : ViewModel() {
+
+    private val diagnostics = DiagnosticCollector(context)
 
     val settings: StateFlow<AppSettings> = store.settings
 
@@ -109,6 +114,12 @@ class SettingsViewModel(
     fun setBackupLauncherHandlers(onSave: () -> Unit, onImport: () -> Unit) {
         onSaveRequested = onSave
         onImportRequested = onImport
+    }
+
+    private var onDiagnosticsSaveRequested: (() -> Unit)? = null
+
+    fun setDiagnosticsLauncherHandler(onSave: () -> Unit) {
+        onDiagnosticsSaveRequested = onSave
     }
 
     fun selectTab(index: Int) {
@@ -426,6 +437,33 @@ class SettingsViewModel(
             _cacheBusy.value = false
             if (result.freed.bytes > 0L) {
                 AppToast.show(L10n.t(R.string.cache_cleared, CacheCleaner.formatBytes(result.freed.bytes)))
+            }
+        }
+    }
+
+    /** 诊断包的建议文件名，导出前传给 SAF 作为默认名 */
+    fun diagnosticFileName(): String =
+        com.evan.pulse.domain.diagnostics.DiagnosticReport.suggestFileName(System.currentTimeMillis())
+
+    /** 拉起系统保存对话框，由界面注册的 SAF 启动器承接 */
+    fun exportDiagnostics() {
+        markBusy()
+        onDiagnosticsSaveRequested?.invoke()
+    }
+
+    /** SAF 取消选择：仅复位状态 */
+    fun onDiagnosticsCancelled() {
+        markOk(null)
+    }
+
+    /** SAF 回传后写入诊断 JSON */
+    fun onDiagnosticsPicked(uri: Uri) {
+        viewModelScope.launch {
+            try {
+                diagnostics.exportTo(uri, store.settings.value)
+                markOk(L10n.t(R.string.diagnostics_export_done))
+            } catch (e: Exception) {
+                markFail(e)
             }
         }
     }
