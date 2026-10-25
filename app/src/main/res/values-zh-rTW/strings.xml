@@ -72,6 +72,7 @@
     <!-- JSON 格式化/壓縮工具 -->
     <string name="tool_json">JSON 格式化</string>
     <string name="tool_json_schema">JSON Schema 校驗</string>
+    <string name="tool_yaml_json">YAML 與 JSON 互轉</string>
     <string name="json_tool_title">JSON 格式化</string>
     <string name="json_tool_input_label">JSON 內容</string>
     <string name="json_tool_output_label">輸出結果</string>
@@ -113,6 +114,18 @@
     <string name="json_schema_violation_any_of">應滿足 %1$s 個分支中的任一個</string>
     <string name="json_schema_violation_one_of">應恰好滿足 %1$s 個分支之一，實際滿足 %2$s 個</string>
     <string name="json_schema_violation_not">不應滿足該排除規則</string>
+    <string name="yaml_json_title">YAML 與 JSON 互轉</string>
+    <string name="yaml_json_tab_to_json">YAML → JSON</string>
+    <string name="yaml_json_tab_to_yaml">JSON → YAML</string>
+    <string name="yaml_json_input_yaml">YAML 內容</string>
+    <string name="yaml_json_input_json">JSON 內容</string>
+    <string name="yaml_json_output_label">轉換結果</string>
+    <string name="yaml_json_empty_hint">輸入內容後自動轉換</string>
+    <string name="yaml_json_error_empty">輸入為空</string>
+    <string name="yaml_json_error_yaml">無法解析 YAML 內容</string>
+    <string name="yaml_json_error_json">無法解析 JSON 內容</string>
+    <string name="yaml_json_error_depth">巢狀層級過深，無法轉換</string>
+    <string name="yaml_json_error_generic">轉換失敗</string>
     <string name="json_tree_items">%1$d 項</string>
 
     <!-- 時間轉換工具 -->
@@ -962,5 +975,6 @@
     <string name="tool_encoding_summary">Base64、進制、URL、Unicode、ASCII 互轉</string>
     <string name="tool_json_summary">JSON 格式化與壓縮</string>
     <string name="tool_json_schema_summary">依 Schema 校驗結構並定位不符欄位</string>
+    <string name="tool_yaml_json_summary">YAML 與 JSON 雙向轉換</string>
     <string name="tool_timestamp_summary">時間戳、日期與格式化互轉</string>
 </resources>

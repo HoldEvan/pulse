@@ -65,6 +65,9 @@ sealed interface PulseRoute : NavKey {
     /** 工具二级页：JSON Schema 结构校验 */
     @Serializable data object JsonSchemaTool : PulseRoute
 
+    /** 工具二级页：YAML 与 JSON 互转 */
+    @Serializable data object YamlJsonTool : PulseRoute
+
     /** 工具二级页：时间转换 */
     @Serializable data object TimestampTool : PulseRoute
 

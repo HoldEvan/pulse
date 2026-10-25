@@ -114,6 +114,8 @@ dependencies {
 
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kaml)
+    // YAML 节点树保留标量引号与类型标签，互转工具依赖它区分 "123" 与 123
+    implementation(libs.snakeyaml.engine)
     implementation(libs.kotlinx.coroutines.android)
 
     // 拼接预览的 Markdown 渲染

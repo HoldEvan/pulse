@@ -72,6 +72,7 @@
     <!-- JSON 格式化/压缩工具 -->
     <string name="tool_json">JSON 格式化</string>
     <string name="tool_json_schema">JSON Schema 校验</string>
+    <string name="tool_yaml_json">YAML 与 JSON 互转</string>
     <string name="json_tool_title">JSON 格式化</string>
     <string name="json_tool_input_label">JSON 内容</string>
     <string name="json_tool_output_label">输出结果</string>
@@ -113,6 +114,18 @@
     <string name="json_schema_violation_any_of">应满足 %1$s 个分支中的任意一个</string>
     <string name="json_schema_violation_one_of">应恰好满足 %1$s 个分支之一，实际满足 %2$s 个</string>
     <string name="json_schema_violation_not">不应满足该排除规则</string>
+    <string name="yaml_json_title">YAML 与 JSON 互转</string>
+    <string name="yaml_json_tab_to_json">YAML → JSON</string>
+    <string name="yaml_json_tab_to_yaml">JSON → YAML</string>
+    <string name="yaml_json_input_yaml">YAML 内容</string>
+    <string name="yaml_json_input_json">JSON 内容</string>
+    <string name="yaml_json_output_label">转换结果</string>
+    <string name="yaml_json_empty_hint">输入内容后自动转换</string>
+    <string name="yaml_json_error_empty">输入为空</string>
+    <string name="yaml_json_error_yaml">无法解析 YAML 内容</string>
+    <string name="yaml_json_error_json">无法解析 JSON 内容</string>
+    <string name="yaml_json_error_depth">嵌套层级过深，无法转换</string>
+    <string name="yaml_json_error_generic">转换失败</string>
     <string name="json_tree_items">%1$d 项</string>
 
     <!-- 时间转换工具 -->
@@ -962,5 +975,6 @@
     <string name="tool_encoding_summary">Base64、进制、URL、Unicode、ASCII 互转</string>
     <string name="tool_json_summary">JSON 格式化与压缩</string>
     <string name="tool_json_schema_summary">按 Schema 校验结构并定位不匹配字段</string>
+    <string name="tool_yaml_json_summary">YAML 与 JSON 双向转换</string>
     <string name="tool_timestamp_summary">时间戳、日期与格式化互转</string>
 </resources>

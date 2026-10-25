@@ -83,6 +83,7 @@ import com.evan.pulse.ui.tools.EncodingToolScreen
 import com.evan.pulse.ui.tools.ImageBase64Screen
 import com.evan.pulse.ui.tools.JsonSchemaScreen
 import com.evan.pulse.ui.tools.JsonToolScreen
+import com.evan.pulse.ui.tools.YamlJsonScreen
 import com.evan.pulse.ui.tools.TimestampToolScreen
 import com.evan.pulse.ui.tools.JwtToolScreen
 import com.evan.pulse.ui.tools.HashToolScreen
@@ -381,6 +382,9 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                                         onOpenJson = { navController.pushRoute(PulseRoute.JsonTool) },
                                         onOpenJsonSchema = {
                                             navController.pushRoute(PulseRoute.JsonSchemaTool)
+                                        },
+                                        onOpenYamlJson = {
+                                            navController.pushRoute(PulseRoute.YamlJsonTool)
                                         },
                                         onOpenTimestamp = { navController.pushRoute(PulseRoute.TimestampTool) },
                                         onOpenJwt = { navController.pushRoute(PulseRoute.JwtTool) },
@@ -733,6 +737,12 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
         entry<PulseRoute.JsonSchemaTool> {
             SubPageScreen(title = stringResource(R.string.json_schema_title)) {
                 JsonSchemaScreen(modifier = Modifier.fillMaxSize())
+            }
+        }
+
+        entry<PulseRoute.YamlJsonTool> {
+            SubPageScreen(title = stringResource(R.string.yaml_json_title)) {
+                YamlJsonScreen(modifier = Modifier.fillMaxSize())
             }
         }
 

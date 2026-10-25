@@ -51,6 +51,7 @@ fun DashboardScreen(
     onOpenImageBase64: () -> Unit = {},
     onOpenJson: () -> Unit = {},
     onOpenJsonSchema: () -> Unit = {},
+    onOpenYamlJson: () -> Unit = {},
     onOpenTimestamp: () -> Unit = {},
     onOpenJwt: () -> Unit = {},
     onOpenHash: () -> Unit = {},
@@ -172,6 +173,19 @@ fun DashboardScreen(
                         )
                     },
                     onClick = onOpenJsonSchema
+                )
+            }
+            item {
+                AppArrowRow(
+                    title = stringResource(R.string.tool_yaml_json),
+                    summary = stringResource(R.string.tool_yaml_json_summary),
+                    startAction = {
+                        AppIcon(
+                            imageVector = MiuixIcons.Light.ConvertFile,
+                            contentDescription = null
+                        )
+                    },
+                    onClick = onOpenYamlJson
                 )
             }
             item {

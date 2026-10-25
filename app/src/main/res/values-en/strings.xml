@@ -72,6 +72,7 @@
     <!-- JSON formatting tool -->
     <string name="tool_json">JSON Formatter</string>
     <string name="tool_json_schema">JSON Schema Validator</string>
+    <string name="tool_yaml_json">YAML / JSON Converter</string>
     <string name="json_tool_title">JSON Formatter</string>
     <string name="json_tool_input_label">JSON content</string>
     <string name="json_tool_output_label">Output</string>
@@ -113,6 +114,18 @@
     <string name="json_schema_violation_any_of">Should satisfy any one of %1$s branches</string>
     <string name="json_schema_violation_one_of">Should satisfy exactly one of %1$s branches, matched %2$s</string>
     <string name="json_schema_violation_not">Should not satisfy the excluded rule</string>
+    <string name="yaml_json_title">YAML / JSON Converter</string>
+    <string name="yaml_json_tab_to_json">YAML → JSON</string>
+    <string name="yaml_json_tab_to_yaml">JSON → YAML</string>
+    <string name="yaml_json_input_yaml">YAML content</string>
+    <string name="yaml_json_input_json">JSON content</string>
+    <string name="yaml_json_output_label">Result</string>
+    <string name="yaml_json_empty_hint">Enter content to convert automatically</string>
+    <string name="yaml_json_error_empty">Input is empty</string>
+    <string name="yaml_json_error_yaml">Cannot parse the YAML content</string>
+    <string name="yaml_json_error_json">Cannot parse the JSON content</string>
+    <string name="yaml_json_error_depth">Nested too deeply to convert</string>
+    <string name="yaml_json_error_generic">Conversion failed</string>
     <string name="json_tree_items">%1$d items</string>
 
     <!-- Timestamp converter tool -->
@@ -962,5 +975,6 @@
     <string name="tool_encoding_summary">Base64, radix, URL, Unicode, ASCII</string>
     <string name="tool_json_summary">Format and minify JSON</string>
     <string name="tool_json_schema_summary">Validate structure against a schema and locate mismatches</string>
+    <string name="tool_yaml_json_summary">Convert between YAML and JSON</string>
     <string name="tool_timestamp_summary">Convert timestamps, dates and custom formats</string>
 </resources>
