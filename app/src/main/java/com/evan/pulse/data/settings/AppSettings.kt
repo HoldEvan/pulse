@@ -83,6 +83,10 @@ data class AppSettings(
     val webhookTemplate: String = "",
     /** 附加请求头，值可放签名或 Token；同名时覆盖内置的 Content-Type */
     val webhookHeaders: List<KeyValueEntry> = emptyList(),
+    /** 请求方法下标：0 = POST（发送 JSON 请求体），1 = GET（只带查询参数） */
+    val webhookMethodIndex: Int = 0,
+    /** 查询参数，按顺序追加到地址后；GET 时即全部载荷 */
+    val webhookParams: List<KeyValueEntry> = emptyList(),
 ) {
     /** 转换为引擎使用的代理配置，端口非法或地址为空时返回未生效配置 */
     fun toProxyConfig(): ProxyConfig = ProxyConfig(

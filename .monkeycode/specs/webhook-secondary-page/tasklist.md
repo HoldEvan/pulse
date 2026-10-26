@@ -1,0 +1,26 @@
+# 需求实施计划
+
+- [x] 1. 数据层（需求 3.3-3.4）
+  - `AppSettings` 增加 `webhookMethodIndex` 与 `webhookParams`
+  - `SettingsStore` 编解码泛化为 `decodeKeyValueList` / `encodeKeyValueList`
+  - `SettingsViewModel.setWebhookMethodIndex()` / `setWebhookParams()`
+- [x] 2. 发送器（需求 3.4-3.5、3.7）
+  - `methodOf()` 方法映射，GET 时 `bodyType = NONE`
+  - `buildUrl()` 参数编码与分隔符合并
+  - GET 跳过内置 Content-Type，用户头保留
+  - 补 8 项单测
+- [x] 3. Webhook 二级页（需求 3.2、3.5-3.6）
+  - 新增 `WebhookScreen` 与 `PulseRoute.Webhook`
+  - 方法、地址、参数、消息格式（仅 POST）、请求头、测试发送
+  - 三语文案
+- [x] 4. 设置页入口（需求 3.1）
+  - 开关下新增配置入口行，副标题显示地址或未配置
+  - 移除原嵌套的 Webhook 配置块
+- [x] 5. 设置页结构调整（需求 1.1、2.1-2.4）
+  - 诊断卡片移到关于区块
+  - WebDAV 卡片底部接入自动备份开关，周期与份数随开关显隐
+  - 删除独立自动备份卡片
+- [x] 6. 检查点 - 确保所有测试通过
+  - 全量单测 594 项通过
+  - Release 打包并覆盖根目录 APK
+  - 校验 versionCode 39 / 0.2.1 与签名

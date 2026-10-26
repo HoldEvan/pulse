@@ -61,26 +61,28 @@ private val KEY_WEBHOOK_URL = stringPreferencesKey("webhook_url")
 private val KEY_WEBHOOK_FORMAT = intPreferencesKey("webhook_format_index")
 private val KEY_WEBHOOK_TEMPLATE = stringPreferencesKey("webhook_template")
 private val KEY_WEBHOOK_HEADERS = stringPreferencesKey("webhook_headers")
+private val KEY_WEBHOOK_METHOD = intPreferencesKey("webhook_method_index")
+private val KEY_WEBHOOK_PARAMS = stringPreferencesKey("webhook_params")
 
 /** Webhook 请求头的落盘格式：JSON 数组，结构只在设置层出现，不进导出链路 */
-private val headersSerializer = ListSerializer(KeyValueEntry.serializer())
+private val keyValueListSerializer = ListSerializer(KeyValueEntry.serializer())
 
-private val headersJson = Json {
+private val keyValueListJson = Json {
     ignoreUnknownKeys = true
     encodeDefaults = true
 }
 
-/** 解析请求头；字段损坏时整体丢弃，宁可让用户重填也不阻塞设置读取 */
-internal fun decodeWebhookHeaders(raw: String, secrets: SecretBox?): List<KeyValueEntry> {
+/** 解析键值列表（请求头 / 查询参数）；字段损坏时整体丢弃，宁可让用户重填也不阻塞设置读取 */
+internal fun decodeKeyValueList(raw: String, secrets: SecretBox?): List<KeyValueEntry> {
     if (raw.isBlank()) return emptyList()
-    val decoded = runCatching { headersJson.decodeFromString(headersSerializer, raw) }
+    val decoded = runCatching { keyValueListJson.decodeFromString(keyValueListSerializer, raw) }
         .getOrElse { return emptyList() }
     return decoded.map { it.copy(value = SecretField.open(it.value, secrets)) }
 }
 
-/** 序列化请求头，值按敏感字段加密；键名保持明文以便排查配置 */
-internal fun encodeWebhookHeaders(list: List<KeyValueEntry>, seal: (String) -> String): String =
-    headersJson.encodeToString(headersSerializer, list.map { it.copy(value = seal(it.value)) })
+/** 序列化键值列表，值按敏感字段加密；键名保持明文以便排查配置 */
+internal fun encodeKeyValueList(list: List<KeyValueEntry>, seal: (String) -> String): String =
+    keyValueListJson.encodeToString(keyValueListSerializer, list.map { it.copy(value = seal(it.value)) })
 
 /**
  * 读取设置。[secrets] 用于解封密码类字段；缺省（单测、无密钥环境）时按明文读回，
@@ -125,7 +127,9 @@ internal fun Preferences.toAppSettings(secrets: SecretBox? = null): AppSettings 
     webhookUrl = get(KEY_WEBHOOK_URL) ?: "",
     webhookFormatIndex = (get(KEY_WEBHOOK_FORMAT) ?: 0).coerceAtLeast(0),
     webhookTemplate = get(KEY_WEBHOOK_TEMPLATE) ?: "",
-    webhookHeaders = decodeWebhookHeaders(get(KEY_WEBHOOK_HEADERS) ?: "", secrets),
+    webhookHeaders = decodeKeyValueList(get(KEY_WEBHOOK_HEADERS) ?: "", secrets),
+    webhookMethodIndex = (get(KEY_WEBHOOK_METHOD) ?: 0).coerceIn(0, 1),
+    webhookParams = decodeKeyValueList(get(KEY_WEBHOOK_PARAMS) ?: "", secrets),
 )
 
 class SettingsStore(context: Context) {
@@ -187,7 +191,9 @@ class SettingsStore(context: Context) {
             prefs[KEY_WEBHOOK_URL] = next.webhookUrl
             prefs[KEY_WEBHOOK_FORMAT] = next.webhookFormatIndex.coerceAtLeast(0)
             prefs[KEY_WEBHOOK_TEMPLATE] = next.webhookTemplate
-            prefs[KEY_WEBHOOK_HEADERS] = encodeWebhookHeaders(next.webhookHeaders, ::seal)
+            prefs[KEY_WEBHOOK_HEADERS] = encodeKeyValueList(next.webhookHeaders, ::seal)
+            prefs[KEY_WEBHOOK_METHOD] = next.webhookMethodIndex.coerceIn(0, 1)
+            prefs[KEY_WEBHOOK_PARAMS] = encodeKeyValueList(next.webhookParams, ::seal)
         }
     }
 }

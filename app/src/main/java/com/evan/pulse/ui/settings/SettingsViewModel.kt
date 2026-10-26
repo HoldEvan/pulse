@@ -295,6 +295,17 @@ class SettingsViewModel(
         viewModelScope.launch { store.update { it.copy(webhookHeaders = headers) } }
     }
 
+    /** 请求方法下标：0 = POST，1 = GET */
+    fun setWebhookMethodIndex(index: Int) {
+        viewModelScope.launch {
+            store.update { it.copy(webhookMethodIndex = index.coerceIn(0, 1)) }
+        }
+    }
+
+    fun setWebhookParams(params: List<KeyValueEntry>) {
+        viewModelScope.launch { store.update { it.copy(webhookParams = params) } }
+    }
+
     private val _webhookTest = MutableStateFlow<WebhookTestState?>(null)
 
     /** Webhook 测试发送结果；null 表示未测试或正在发送 */

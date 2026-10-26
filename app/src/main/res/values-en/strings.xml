@@ -1046,6 +1046,15 @@
     <string name="settings_webhook_test">Send test</string>
     <string name="settings_webhook_test_ok">Sent, please check the receiver</string>
     <string name="settings_webhook_test_failed">Send failed, check URL and network</string>
+    <string name="webhook_section_request">Request</string>
+    <string name="webhook_section_body">Message</string>
+    <string name="webhook_section_headers">Headers</string>
+    <string name="webhook_method_label">Method</string>
+    <string name="webhook_params_label">Query params</string>
+    <string name="webhook_params_hint">Appended to the URL as ?key=value; GET sends only these params and no body</string>
+    <string name="settings_webhook_config">Webhook settings</string>
+    <string name="webhook_not_configured">No URL yet</string>
+    <string name="settings_webhook_config_summary">Method, URL, params, message format and headers</string>
     <string name="webhook_format_generic">Generic</string>
     <string name="webhook_format_wecom">WeCom</string>
     <string name="webhook_format_dingtalk">DingTalk</string>

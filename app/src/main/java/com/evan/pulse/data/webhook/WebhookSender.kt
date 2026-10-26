@@ -10,6 +10,7 @@ import com.evan.pulse.domain.net.HttpEngine
 import com.evan.pulse.domain.webhook.WebhookEvent
 import com.evan.pulse.domain.webhook.WebhookFormat
 import com.evan.pulse.domain.webhook.WebhookPayload
+import java.net.URLEncoder
 
 /**
  * 告警 Webhook 发送器。
@@ -32,14 +33,15 @@ class WebhookSender(
         val format = WebhookFormat.entries.getOrElse(settings.webhookFormatIndex) {
             WebhookFormat.GENERIC
         }
-        val body = WebhookPayload.build(format, settings.webhookTemplate, event)
+        val isGet = methodOf(settings) == HttpMethod.GET
+        val body = if (isGet) "" else WebhookPayload.build(format, settings.webhookTemplate, event)
         val outcome = try {
             httpEngine.execute(
                 HttpCallConfig(
-                    method = HttpMethod("POST"),
-                    url = url,
+                    method = methodOf(settings),
+                    url = buildUrl(settings),
                     headers = buildHeaders(settings),
-                    bodyType = BodyType.RAW,
+                    bodyType = if (isGet) BodyType.NONE else BodyType.RAW,
                     body = body,
                     timeoutMs = timeoutMs,
                     proxy = settings.toProxyConfig(),
@@ -56,9 +58,13 @@ class WebhookSender(
      *
      * 同名头由用户配置覆盖（例如企业微信需要自定义 charset），
      * 因此先放默认值再按顺序剔除同名项，最后一个生效。
+     * GET 不带请求体，也就不需要 Content-Type。
      */
     internal fun buildHeaders(settings: AppSettings): List<KeyValue> {
-        val result = mutableListOf(KeyValue("Content-Type", "application/json; charset=utf-8"))
+        val result = mutableListOf<KeyValue>()
+        if (methodOf(settings) != HttpMethod.GET) {
+            result += KeyValue("Content-Type", "application/json; charset=utf-8")
+        }
         settings.webhookHeaders
             .filter { it.enabled && it.key.isNotBlank() }
             .forEach { header ->
@@ -67,6 +73,35 @@ class WebhookSender(
             }
         return result
     }
+
+    /** 请求方法：下标 1 为 GET，其余按 POST 处理 */
+    internal fun methodOf(settings: AppSettings): HttpMethod =
+        if (settings.webhookMethodIndex == 1) HttpMethod.GET else HttpMethod.POST
+
+    /**
+     * 把启用的查询参数按 `key=value` 追加到地址后。
+     *
+     * 地址已带 `?` 时用 `&` 衔接，以 `?`/`&` 结尾时不重复分隔符；
+     * 键与值都做 URL 编码，空格编成 %20 而不是 `+`。
+     */
+    internal fun buildUrl(settings: AppSettings): String {
+        val base = settings.webhookUrl.trim()
+        val params = settings.webhookParams.filter { it.enabled && it.key.isNotBlank() }
+        if (params.isEmpty()) return base
+        val query = params.joinToString("&") { param ->
+            "${encode(param.key.trim())}=${encode(param.value)}"
+        }
+        val separator = when {
+            base.isEmpty() -> ""
+            !base.contains('?') -> "?"
+            base.endsWith("?") || base.endsWith("&") -> ""
+            else -> "&"
+        }
+        return base + separator + query
+    }
+
+    private fun encode(text: String): String =
+        URLEncoder.encode(text, "UTF-8").replace("+", "%20")
 
     /** 设置页「发送测试」：固定构造一条测试事件 */
     suspend fun sendTest(settings: AppSettings): Boolean = send(
@@ -78,7 +113,7 @@ class WebhookSender(
             durationMs = 0L,
             checkedAt = System.currentTimeMillis(),
             type = "HTTP",
-            address = settings.webhookUrl.trim(),
+            address = buildUrl(settings),
         )
     )
 }

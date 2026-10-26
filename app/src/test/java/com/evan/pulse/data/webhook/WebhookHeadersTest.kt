@@ -2,8 +2,8 @@ package com.evan.pulse.data.webhook
 
 import com.evan.pulse.data.model.KeyValueEntry
 import com.evan.pulse.data.settings.AppSettings
-import com.evan.pulse.data.settings.decodeWebhookHeaders
-import com.evan.pulse.data.settings.encodeWebhookHeaders
+import com.evan.pulse.data.settings.decodeKeyValueList
+import com.evan.pulse.data.settings.encodeKeyValueList
 import com.evan.pulse.domain.crypto.SecretBox
 import com.evan.pulse.domain.crypto.SecretField
 import com.evan.pulse.domain.model.HttpCallConfig
@@ -37,21 +37,21 @@ class WebhookHeadersTest {
             KeyValueEntry("X-Empty", ""),
             KeyValueEntry("X-Off", "off", enabled = false)
         )
-        assertEquals(source, decodeWebhookHeaders(encodeWebhookHeaders(source, seal), box))
+        assertEquals(source, decodeKeyValueList(encodeKeyValueList(source, seal), box))
     }
 
     @Test
     fun valuesAreSealedWhileKeysStayReadable() {
-        val raw = encodeWebhookHeaders(listOf(KeyValueEntry("X-Sign", "secret-value")), seal)
+        val raw = encodeKeyValueList(listOf(KeyValueEntry("X-Sign", "secret-value")), seal)
         assertTrue(raw.contains("X-Sign"))
         assertFalse(raw.contains("secret-value"))
     }
 
     @Test
     fun corruptedOrEmptyPayloadFallsBackToEmptyList() {
-        assertEquals(emptyList<KeyValueEntry>(), decodeWebhookHeaders("", box))
-        assertEquals(emptyList<KeyValueEntry>(), decodeWebhookHeaders("{not json", box))
-        assertEquals(emptyList<KeyValueEntry>(), decodeWebhookHeaders("""[{"key":1}]""", box))
+        assertEquals(emptyList<KeyValueEntry>(), decodeKeyValueList("", box))
+        assertEquals(emptyList<KeyValueEntry>(), decodeKeyValueList("{not json", box))
+        assertEquals(emptyList<KeyValueEntry>(), decodeKeyValueList("""[{"key":1}]""", box))
     }
 
     @Test
@@ -59,7 +59,7 @@ class WebhookHeadersTest {
         val raw = """[{"key":"Accept","value":"application/json","enabled":true}]"""
         assertEquals(
             listOf(KeyValueEntry("Accept", "application/json", true)),
-            decodeWebhookHeaders(raw, null)
+            decodeKeyValueList(raw, null)
         )
     }
 

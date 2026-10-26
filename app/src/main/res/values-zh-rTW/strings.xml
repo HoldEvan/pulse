@@ -1046,6 +1046,15 @@
     <string name="settings_webhook_test">傳送測試</string>
     <string name="settings_webhook_test_ok">已傳送，請檢查接收端</string>
     <string name="settings_webhook_test_failed">傳送失敗，請檢查位址與網路</string>
+    <string name="webhook_section_request">請求</string>
+    <string name="webhook_section_body">訊息內容</string>
+    <string name="webhook_section_headers">請求標頭</string>
+    <string name="webhook_method_label">請求方法</string>
+    <string name="webhook_params_label">查詢參數</string>
+    <string name="webhook_params_hint">以 ?key=value 附加到位址後；GET 只送出這些參數，不帶請求體</string>
+    <string name="settings_webhook_config">Webhook 設定</string>
+    <string name="webhook_not_configured">尚未填寫位址</string>
+    <string name="settings_webhook_config_summary">請求方法、位址、參數、訊息格式與請求標頭</string>
     <string name="webhook_format_generic">通用</string>
     <string name="webhook_format_wecom">企業微信</string>
     <string name="webhook_format_dingtalk">釘釘</string>

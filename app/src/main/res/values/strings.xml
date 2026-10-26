@@ -1046,6 +1046,15 @@
     <string name="settings_webhook_test">发送测试</string>
     <string name="settings_webhook_test_ok">已发送，请检查接收端</string>
     <string name="settings_webhook_test_failed">发送失败，请检查地址与网络</string>
+    <string name="webhook_section_request">请求</string>
+    <string name="webhook_section_body">消息内容</string>
+    <string name="webhook_section_headers">请求头</string>
+    <string name="webhook_method_label">请求方法</string>
+    <string name="webhook_params_label">查询参数</string>
+    <string name="webhook_params_hint">以 ?key=value 追加到地址后；GET 只发送这些参数，不带请求体</string>
+    <string name="settings_webhook_config">Webhook 配置</string>
+    <string name="webhook_not_configured">尚未填写地址</string>
+    <string name="settings_webhook_config_summary">请求方法、地址、参数、消息格式与请求头</string>
     <string name="webhook_format_generic">通用</string>
     <string name="webhook_format_wecom">企业微信</string>
     <string name="webhook_format_dingtalk">钉钉</string>

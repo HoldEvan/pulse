@@ -78,6 +78,7 @@ import com.evan.pulse.ui.resources.ResourcesScreen
 import com.evan.pulse.ui.settings.SettingsScreen
 import com.evan.pulse.ui.settings.SettingsViewModel
 import com.evan.pulse.ui.settings.ThemeSettingsScreen
+import com.evan.pulse.ui.settings.WebhookScreen
 import com.evan.pulse.ui.test.TestScreen
 import com.evan.pulse.ui.tools.EncodingToolScreen
 import com.evan.pulse.ui.tools.ImageBase64Screen
@@ -445,6 +446,7 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                                         modifier = Modifier.fillMaxSize(),
                                         viewModel = settingsViewModel,
                                         onOpenAppearance = { navController.pushRoute(PulseRoute.Appearance) },
+                                        onOpenWebhook = { navController.pushRoute(PulseRoute.Webhook) },
                                         onOpenAbout = { navController.pushRoute(PulseRoute.About) }
                                     )
                                 }
@@ -542,6 +544,15 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
         entry<PulseRoute.Appearance> {
             SubPageScreen(title = stringResource(R.string.theme_page_title)) {
                 ThemeSettingsScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    viewModel = settingsViewModel
+                )
+            }
+        }
+
+        entry<PulseRoute.Webhook> {
+            SubPageScreen(title = stringResource(R.string.settings_webhook)) {
+                WebhookScreen(
                     modifier = Modifier.fillMaxSize(),
                     viewModel = settingsViewModel
                 )
