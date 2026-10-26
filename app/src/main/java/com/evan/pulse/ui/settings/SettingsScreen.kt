@@ -270,16 +270,18 @@ fun SettingsScreen(
                         summary = stringResource(R.string.settings_webhook_summary)
                     )
                 }
-                item {
-                    AppArrowRow(
-                        title = stringResource(R.string.settings_webhook_config),
-                        summary = if (settings.webhookUrl.isBlank()) {
-                            stringResource(R.string.webhook_not_configured)
-                        } else {
-                            settings.webhookUrl
-                        },
-                        onClick = onOpenWebhook
-                    )
+                if (settings.webhookEnabled) {
+                    item {
+                        AppArrowRow(
+                            title = stringResource(R.string.settings_webhook_config),
+                            summary = if (settings.webhookUrl.isBlank()) {
+                                stringResource(R.string.webhook_not_configured)
+                            } else {
+                                settings.webhookUrl
+                            },
+                            onClick = onOpenWebhook
+                        )
+                    }
                 }
             }
         }
@@ -506,6 +508,7 @@ fun SettingsScreen(
             }
             // 自动备份开关铺满卡片宽度，水波纹沿卡片圆角收边
             AppSwitchRow(
+                modifier = Modifier.padding(top = 8.dp),
                 title = stringResource(R.string.auto_backup_title),
                 summary = if (webdavConfigured) {
                     stringResource(R.string.auto_backup_summary)
