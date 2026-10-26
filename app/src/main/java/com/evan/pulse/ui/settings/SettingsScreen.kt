@@ -424,9 +424,17 @@ fun SettingsScreen(
                         fontSize = 12.sp
                     )
                 }
+                // WebDAV 各字段走本地状态 + 提交，避免 DataStore 异步回读把输入光标顶到末尾
+                var webdavUrl by remember(settings.webdavUrl) { mutableStateOf(settings.webdavUrl) }
+                var webdavPath by remember(settings.webdavPath) { mutableStateOf(settings.webdavPath) }
+                var webdavUsername by remember(settings.webdavUsername) { mutableStateOf(settings.webdavUsername) }
+                var webdavPassword by remember(settings.webdavPassword) { mutableStateOf(settings.webdavPassword) }
                 AppTextField(
-                    value = settings.webdavUrl,
-                    onValueChange = { viewModel.setWebdavUrl(it) },
+                    value = webdavUrl,
+                    onValueChange = {
+                        webdavUrl = it
+                        viewModel.setWebdavUrl(it)
+                    },
                     label = stringResource(R.string.webdav_url_label),
                     useLabelAsPlaceholder = true,
                     singleLine = true,
@@ -436,8 +444,11 @@ fun SettingsScreen(
                         .padding(top = 10.dp)
                 )
                 AppTextField(
-                    value = settings.webdavPath,
-                    onValueChange = { viewModel.setWebdavPath(it) },
+                    value = webdavPath,
+                    onValueChange = {
+                        webdavPath = it
+                        viewModel.setWebdavPath(it)
+                    },
                     label = stringResource(R.string.webdav_path_label),
                     useLabelAsPlaceholder = true,
                     singleLine = true,
@@ -452,15 +463,21 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     AppTextField(
-                        value = settings.webdavUsername,
-                        onValueChange = { viewModel.setWebdavUsername(it) },
+                        value = webdavUsername,
+                        onValueChange = {
+                            webdavUsername = it
+                            viewModel.setWebdavUsername(it)
+                        },
                         label = stringResource(R.string.username_label),
                         singleLine = true,
                         modifier = Modifier.weight(1f)
                     )
                     AppTextField(
-                        value = settings.webdavPassword,
-                        onValueChange = { viewModel.setWebdavPassword(it) },
+                        value = webdavPassword,
+                        onValueChange = {
+                            webdavPassword = it
+                            viewModel.setWebdavPassword(it)
+                        },
                         label = stringResource(R.string.password_label),
                         singleLine = true,
                         modifier = Modifier.weight(1f)

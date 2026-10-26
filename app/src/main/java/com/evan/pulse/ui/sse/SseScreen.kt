@@ -161,8 +161,9 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                     )
                     AppTextField(
                         value = viewModel.reconnectDelaySec,
-                        onValueChange = { viewModel.reconnectDelaySec = it },
+                        onValueChange = { viewModel.reconnectDelaySec = it.filter(Char::isDigit) },
                         label = stringResource(R.string.sse_reconnect_delay_label),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 8.dp)

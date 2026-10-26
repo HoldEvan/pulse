@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LinkOff
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -128,8 +130,9 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                     )
                     AppTextField(
                         value = viewModel.keepAliveSec,
-                        onValueChange = { viewModel.keepAliveSec = it },
+                        onValueChange = { viewModel.keepAliveSec = it.filter(Char::isDigit) },
                         label = stringResource(R.string.mqtt_keepalive_label),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier
                             .weight(0.6f)
                             .padding(start = 8.dp)

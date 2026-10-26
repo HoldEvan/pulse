@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LinkOff
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -130,8 +132,9 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
                 Row(modifier = Modifier.padding(top = 8.dp)) {
                     AppTextField(
                         value = viewModel.pingIntervalSec,
-                        onValueChange = { viewModel.pingIntervalSec = it },
+                        onValueChange = { viewModel.pingIntervalSec = it.filter(Char::isDigit) },
                         label = stringResource(R.string.ws_heartbeat_interval_label),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(0.5f)
                     )
                     AppTextField(
@@ -195,14 +198,16 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
                     Row {
                         AppTextField(
                             value = viewModel.reconnectBaseDelaySec,
-                            onValueChange = viewModel::updateReconnectBase,
+                            onValueChange = { viewModel.updateReconnectBase(it.filter(Char::isDigit)) },
                             label = stringResource(R.string.ws_reconnect_base_label),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f)
                         )
                         AppTextField(
                             value = viewModel.reconnectMaxDelaySec,
-                            onValueChange = viewModel::updateReconnectMax,
+                            onValueChange = { viewModel.updateReconnectMax(it.filter(Char::isDigit)) },
                             label = stringResource(R.string.ws_reconnect_max_label),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f).padding(start = 8.dp)
                         )
                     }
