@@ -619,14 +619,8 @@ fun SettingsScreen(
         }
         }
 
-        item(key = "about_title") {
-            SectionTitle(
-                text = stringResource(R.string.settings_about),
-                topPadding = SectionTopGap
-            )
-        }
         item(key = "diagnostics_card") {
-        AppCard(modifier = Modifier.fillMaxWidth()) {
+        AppCard(modifier = Modifier.fillMaxWidth().padding(top = CardGap)) {
             Column(modifier = Modifier.padding(CardContentPadding)) {
                 CardSectionTitle(
                     text = stringResource(R.string.diagnostics_title),
@@ -651,6 +645,12 @@ fun SettingsScreen(
         }
         }
 
+        item(key = "about_title") {
+            SectionTitle(
+                text = stringResource(R.string.settings_about),
+                topPadding = SectionTopGap
+            )
+        }
         item(key = "about_card") {
             AppPreferenceGroup(modifier = Modifier.fillMaxWidth()) {
                 item {
