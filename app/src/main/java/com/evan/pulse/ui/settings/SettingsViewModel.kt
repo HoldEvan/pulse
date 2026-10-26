@@ -12,6 +12,7 @@ import com.evan.pulse.data.cache.CacheCleaner
 import com.evan.pulse.data.cache.CacheStats
 import com.evan.pulse.data.diagnostics.DiagnosticCollector
 import android.content.Context
+import com.evan.pulse.data.model.KeyValueEntry
 import com.evan.pulse.data.settings.AUTO_BACKUP_INTERVAL_HOURS
 import com.evan.pulse.data.settings.AppSettings
 import com.evan.pulse.data.settings.MAX_AUTO_BACKUP_KEEP
@@ -287,6 +288,11 @@ class SettingsViewModel(
 
     fun setWebhookTemplate(template: String) {
         viewModelScope.launch { store.update { it.copy(webhookTemplate = template) } }
+    }
+
+    /** 整体替换附加请求头，列表编辑的增删改都由界面侧收敛成一次写入 */
+    fun setWebhookHeaders(headers: List<KeyValueEntry>) {
+        viewModelScope.launch { store.update { it.copy(webhookHeaders = headers) } }
     }
 
     private val _webhookTest = MutableStateFlow<WebhookTestState?>(null)

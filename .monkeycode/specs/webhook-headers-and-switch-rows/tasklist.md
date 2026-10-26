@@ -1,0 +1,29 @@
+# 需求实施计划
+
+- [x] 1. Webhook 请求头存储（需求 1.1-1.2、1.5）
+  - `AppSettings` 增加 `webhookHeaders`
+  - `SettingsStore` 增加 JSON 编解码、值加密与坏数据回退
+  - `SettingsViewModel.setWebhookHeaders()`
+- [x] 2. Webhook 请求头发送（需求 1.3-1.4）
+  - `WebhookSender.buildHeaders(settings)` 默认头与用户头合并
+  - 同名头大小写不敏感覆盖
+  - 补 7 项单测
+- [x] 3. 设置页请求头编辑器（需求 1.1）
+  - Webhook 区块接入 `KeyValueEditor`
+  - 无 key 的本地状态，避免输入中途行消失
+  - 三语标签与提示
+- [x] 4. WS 页面滚动（需求 2.1-2.2）
+  - 根容器加纵向滚动
+  - 事件流卡片改固定高度并保留内部滚动
+- [x] 5. 开关行统一为偏好行（需求 3.1-3.4）
+  - `AppCard` 内容层增加 `cardContentClip()`
+  - HTTP、SSE、WS、MQTT 开关行提升到卡片级
+  - `InsecureTlsRow` 改为开关行并承载风险/场景说明
+  - 补齐三语简短副标题
+- [x] 6. MQTT 订阅提示（需求 4.1-4.2）
+  - 标签精简为 `Topic`
+  - 通配符与 QoS 说明移到输入框外侧
+- [x] 7. 检查点 - 确保所有测试通过
+  - 全量单测 586 项通过
+  - Release 打包并覆盖根目录 APK
+  - 校验 versionCode 39 / 0.2.1 与签名

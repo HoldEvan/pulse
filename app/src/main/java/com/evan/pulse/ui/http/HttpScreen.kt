@@ -77,7 +77,7 @@ import com.evan.pulse.ui.design.AppDialog
 import com.evan.pulse.ui.design.AppDropdown
 import com.evan.pulse.ui.design.AppIcon
 import com.evan.pulse.ui.design.AppIconButton
-import com.evan.pulse.ui.design.AppSwitch
+import com.evan.pulse.ui.design.AppSwitchRow
 import com.evan.pulse.ui.design.AppTabRow
 import com.evan.pulse.ui.design.AppText
 import com.evan.pulse.ui.design.AppTextButton
@@ -375,7 +375,7 @@ private fun NetworkEditor(viewModel: HttpViewModel) {
         )
         // 超时与代理为常规网络配置，始终显示；强制超时输入框仅在选中该档时出现
         Column(
-            modifier = Modifier.padding(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 12.dp),
+            modifier = Modifier.padding(start = 12.dp, top = 12.dp, end = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             AppTextField(
@@ -402,37 +402,29 @@ private fun NetworkEditor(viewModel: HttpViewModel) {
                     )
                 }
             }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+        }
+        // 开关行铺满卡片宽度，水波纹才能沿卡片圆角收边
+        AppSwitchRow(
+            title = stringResource(R.string.use_proxy_label),
+            summary = stringResource(R.string.use_proxy_summary),
+            checked = viewModel.useProxy,
+            onCheckedChange = { viewModel.useProxy = it },
+            modifier = Modifier.padding(top = 12.dp)
+        )
+        InsecureTlsRow(
+            checked = viewModel.insecureTls,
+            onCheckedChange = { viewModel.insecureTls = it }
+        )
+        AppSwitchRow(
+            title = stringResource(R.string.follow_redirects_label),
+            summary = stringResource(R.string.follow_redirects_summary),
+            checked = viewModel.followRedirects,
+            onCheckedChange = { viewModel.followRedirects = it }
+        )
+        if (viewModel.followRedirects) {
+            Column(
+                modifier = Modifier.padding(start = 12.dp, top = 4.dp, end = 12.dp, bottom = 12.dp)
             ) {
-                AppText(
-                    text = stringResource(R.string.use_proxy_label),
-                    modifier = Modifier.weight(1f)
-                )
-                AppSwitch(
-                    checked = viewModel.useProxy,
-                    onCheckedChange = { viewModel.useProxy = it }
-                )
-            }
-            InsecureTlsRow(
-                checked = viewModel.insecureTls,
-                onCheckedChange = { viewModel.insecureTls = it }
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                AppText(
-                    text = stringResource(R.string.follow_redirects_label),
-                    modifier = Modifier.weight(1f)
-                )
-                AppSwitch(
-                    checked = viewModel.followRedirects,
-                    onCheckedChange = { viewModel.followRedirects = it }
-                )
-            }
-            if (viewModel.followRedirects) {
                 AppTextField(
                     value = viewModel.maxRedirects,
                     onValueChange = { viewModel.maxRedirects = it.filter(Char::isDigit).take(2) },
@@ -443,7 +435,8 @@ private fun NetworkEditor(viewModel: HttpViewModel) {
                 AppText(
                     text = stringResource(R.string.max_redirects_hint),
                     fontSize = 12.sp,
-                    color = AppTheme.colors.onSurfaceSummary
+                    color = AppTheme.colors.onSurfaceSummary,
+                    modifier = Modifier.padding(top = 6.dp)
                 )
             }
         }

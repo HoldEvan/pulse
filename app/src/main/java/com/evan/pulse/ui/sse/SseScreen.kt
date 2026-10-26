@@ -62,7 +62,7 @@ import com.evan.pulse.ui.design.AppDialog
 import com.evan.pulse.ui.design.AppDropdown
 import com.evan.pulse.ui.design.AppIcon
 import com.evan.pulse.ui.design.AppIconButton
-import com.evan.pulse.ui.design.AppSwitch
+import com.evan.pulse.ui.design.AppSwitchRow
 import com.evan.pulse.ui.design.AppTabRow
 import com.evan.pulse.ui.design.AppText
 import com.evan.pulse.ui.design.AppTextButton
@@ -222,33 +222,29 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
 
                         2 -> BodyEditor(viewModel)
 
-                        3 -> Column(modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp)) {
-                            AppTextField(
-                                value = viewModel.timeoutSec,
-                                onValueChange = { viewModel.timeoutSec = it.filter(Char::isDigit) },
-                                label = stringResource(R.string.timeout_sec_label),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                        3 -> Column(modifier = Modifier.fillMaxWidth()) {
+                            Column(
+                                modifier = Modifier.padding(start = 12.dp, end = 12.dp)
                             ) {
-                                AppText(
-                                    text = stringResource(R.string.use_proxy_label),
-                                    modifier = Modifier.weight(1f)
-                                )
-                                AppSwitch(
-                                    checked = viewModel.useProxy,
-                                    onCheckedChange = { viewModel.useProxy = it }
+                                AppTextField(
+                                    value = viewModel.timeoutSec,
+                                    onValueChange = { viewModel.timeoutSec = it.filter(Char::isDigit) },
+                                    label = stringResource(R.string.timeout_sec_label),
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                             }
+                            // 开关行铺满卡片宽度，水波纹才能沿卡片圆角收边
+                            AppSwitchRow(
+                                title = stringResource(R.string.use_proxy_label),
+                                summary = stringResource(R.string.use_proxy_summary),
+                                checked = viewModel.useProxy,
+                                onCheckedChange = { viewModel.useProxy = it },
+                                modifier = Modifier.padding(top = 10.dp)
+                            )
                             InsecureTlsRow(
                                 checked = viewModel.insecureTls,
-                                onCheckedChange = { viewModel.insecureTls = it },
-                                modifier = Modifier.padding(top = 10.dp)
+                                onCheckedChange = { viewModel.insecureTls = it }
                             )
                         }
                     }

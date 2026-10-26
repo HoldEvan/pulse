@@ -38,7 +38,7 @@ class WebhookSender(
                 HttpCallConfig(
                     method = HttpMethod("POST"),
                     url = url,
-                    headers = listOf(KeyValue("Content-Type", "application/json; charset=utf-8")),
+                    headers = buildHeaders(settings),
                     bodyType = BodyType.RAW,
                     body = body,
                     timeoutMs = timeoutMs,
@@ -49,6 +49,23 @@ class WebhookSender(
             return false
         }
         return outcome is HttpCallOutcome.Success && outcome.statusCode in 200..299
+    }
+
+    /**
+     * 内置 Content-Type + 用户附加头。
+     *
+     * 同名头由用户配置覆盖（例如企业微信需要自定义 charset），
+     * 因此先放默认值再按顺序剔除同名项，最后一个生效。
+     */
+    internal fun buildHeaders(settings: AppSettings): List<KeyValue> {
+        val result = mutableListOf(KeyValue("Content-Type", "application/json; charset=utf-8"))
+        settings.webhookHeaders
+            .filter { it.enabled && it.key.isNotBlank() }
+            .forEach { header ->
+                result.removeAll { it.key.equals(header.key.trim(), ignoreCase = true) }
+                result += KeyValue(header.key.trim(), header.value)
+            }
+        return result
     }
 
     /** 设置页「发送测试」：固定构造一条测试事件 */

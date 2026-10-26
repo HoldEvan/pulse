@@ -1,5 +1,6 @@
 package com.evan.pulse.data.settings
 
+import com.evan.pulse.data.model.KeyValueEntry
 import com.evan.pulse.domain.model.ProxyConfig
 import com.evan.pulse.domain.model.ProxyType
 
@@ -80,6 +81,8 @@ data class AppSettings(
     val webhookFormatIndex: Int = 0,
     /** 自定义模板；空则用格式对应的默认模板 */
     val webhookTemplate: String = "",
+    /** 附加请求头，值可放签名或 Token；同名时覆盖内置的 Content-Type */
+    val webhookHeaders: List<KeyValueEntry> = emptyList(),
 ) {
     /** 转换为引擎使用的代理配置，端口非法或地址为空时返回未生效配置 */
     fun toProxyConfig(): ProxyConfig = ProxyConfig(

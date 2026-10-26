@@ -7,10 +7,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LinkOff
 import androidx.compose.material.icons.filled.Save
@@ -46,12 +48,13 @@ import com.evan.pulse.ui.common.eventLogText
 import com.evan.pulse.ui.common.roundedPressable
 import com.evan.pulse.ui.common.subPageLazyListState
 import com.evan.pulse.ui.common.subPageOverScroll
+import com.evan.pulse.ui.common.subPageScrollState
 import com.evan.pulse.ui.design.AppSmallTitle
 import com.evan.pulse.ui.design.AppCard
 import com.evan.pulse.ui.design.AppDialog
 import com.evan.pulse.ui.design.AppIcon
 import com.evan.pulse.ui.design.AppIconButton
-import com.evan.pulse.ui.design.AppSwitch
+import com.evan.pulse.ui.design.AppSwitchRow
 import com.evan.pulse.ui.design.AppDropdown
 import com.evan.pulse.ui.design.AppTheme
 import com.evan.pulse.domain.net.BinaryEncoding
@@ -97,7 +100,15 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
     var templateName by remember { mutableStateOf("") }
     var templateNameError by remember { mutableStateOf(false) }
 
-    Column(modifier = modifier.fillMaxSize().padding(horizontal = 12.dp)) {
+    // 与 SSE / MQTT 一致：整页纵向滚动，事件流给固定高度，
+    // 否则配置项一多就把下方的输入区挤出屏幕且无法滚动
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 12.dp)
+            .subPageOverScroll()
+            .verticalScroll(subPageScrollState())
+    ) {
         SectionTitleRow(
             status = {
                 ConnectionStateIndicator(
@@ -159,36 +170,29 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
                         valueHintProvider = viewModel::placeholderHints
                     )
                 }
-                // 是否套用设置页的全局代理
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically
+            }
+            // 开关行铺满卡片宽度，水波纹才能沿卡片圆角收边
+            AppSwitchRow(
+                title = stringResource(R.string.use_proxy_label),
+                summary = stringResource(R.string.use_proxy_summary),
+                checked = viewModel.useProxy,
+                onCheckedChange = { viewModel.useProxy = it }
+            )
+            InsecureTlsRow(
+                checked = viewModel.insecureTls,
+                onCheckedChange = { viewModel.insecureTls = it }
+            )
+            AppSwitchRow(
+                title = stringResource(R.string.ws_auto_reconnect_label),
+                summary = stringResource(R.string.ws_auto_reconnect_summary),
+                checked = viewModel.autoReconnect,
+                onCheckedChange = viewModel::updateAutoReconnect
+            )
+            if (viewModel.autoReconnect) {
+                Column(
+                    modifier = Modifier.padding(start = 12.dp, top = 4.dp, end = 12.dp)
                 ) {
-                    AppText(
-                        text = stringResource(R.string.use_proxy_label),
-                        modifier = Modifier.weight(1f)
-                    )
-                    AppSwitch(
-                        checked = viewModel.useProxy,
-                        onCheckedChange = { viewModel.useProxy = it }
-                    )
-                }
-                InsecureTlsRow(
-                    checked = viewModel.insecureTls,
-                    onCheckedChange = { viewModel.insecureTls = it },
-                    modifier = Modifier.padding(top = 10.dp)
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    AppText(stringResource(R.string.ws_auto_reconnect_label), modifier = Modifier.weight(1f))
-                    AppSwitch(checked = viewModel.autoReconnect, onCheckedChange = viewModel::updateAutoReconnect)
-                }
-                if (viewModel.autoReconnect) {
-                    Row(modifier = Modifier.padding(top = 8.dp)) {
+                    Row {
                         AppTextField(
                             value = viewModel.reconnectBaseDelaySec,
                             onValueChange = viewModel::updateReconnectBase,
@@ -211,8 +215,11 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
                         )
                     }
                 }
+            }
+            Column(
+                modifier = Modifier.padding(start = 12.dp, top = 10.dp, end = 12.dp, bottom = 12.dp)
+            ) {
                 Row(
-                    modifier = Modifier.padding(top = 10.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     AppButton(
@@ -263,7 +270,7 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
                     .padding(6.dp)
             )
         }
-        AppCard(modifier = Modifier.fillMaxWidth().weight(1f)) {
+        AppCard(modifier = Modifier.fillMaxWidth().height(320.dp)) {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -303,27 +310,22 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
                     modifier = Modifier.fillMaxWidth()
                 )
             }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                AppText(
-                    text = stringResource(
-                        if (viewModel.binaryMode) R.string.ws_send_binary
-                        else R.string.ws_send_text
-                    ),
-                    fontSize = 12.sp,
-                    color = AppTheme.colors.onSurfaceSummary,
-                    modifier = Modifier.weight(1f)
-                )
-                AppSwitch(
-                    checked = viewModel.binaryMode,
-                    onCheckedChange = {
-                        viewModel.binaryMode = it
-                        viewModel.dismissBinaryError()
-                    }
-                )
-            }
+            AppSwitchRow(
+                title = stringResource(
+                    if (viewModel.binaryMode) R.string.ws_send_binary
+                    else R.string.ws_send_text
+                ),
+                summary = if (viewModel.binaryMode) {
+                    stringResource(R.string.ws_binary_mode_summary)
+                } else {
+                    null
+                },
+                checked = viewModel.binaryMode,
+                onCheckedChange = {
+                    viewModel.binaryMode = it
+                    viewModel.dismissBinaryError()
+                }
+            )
             if (viewModel.binaryMode) {
                 AppDropdown(
                     title = stringResource(R.string.ws_binary_encoding),

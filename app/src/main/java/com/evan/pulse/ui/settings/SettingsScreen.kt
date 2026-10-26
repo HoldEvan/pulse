@@ -37,10 +37,12 @@ import com.evan.pulse.data.settings.MAX_AUTO_BACKUP_KEEP
 import com.evan.pulse.data.settings.MIN_AUTO_BACKUP_KEEP
 import com.evan.pulse.data.backup.WebDavStage
 import com.evan.pulse.data.cache.CacheCleaner
+import com.evan.pulse.data.model.KeyValueEntry
 import com.evan.pulse.di.ServiceLocator
 import com.evan.pulse.ui.common.AppToast
 import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.CardSectionTitle
+import com.evan.pulse.ui.common.KeyValueEditor
 import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.SectionTitle
 import com.evan.pulse.ui.common.subPageLazyListState
@@ -57,6 +59,7 @@ import com.evan.pulse.ui.design.AppText
 import com.evan.pulse.ui.design.AppTheme
 import com.evan.pulse.ui.design.AppTextButton
 import com.evan.pulse.ui.design.AppTextField
+import com.evan.pulse.domain.model.KeyValue
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -320,6 +323,49 @@ fun SettingsScreen(
                                 fontSize = 12.sp,
                                 color = AppTheme.colors.onSurfaceSummary,
                                 modifier = Modifier.padding(top = 4.dp)
+                            )
+                            // 附加请求头：只在进入时从设置取一次，编辑期间的中间态（键暂时为空）
+                            // 不能被持久化结果反向覆盖，否则输入过程中行会消失
+                            var webhookHeaders by remember {
+                                mutableStateOf(
+                                    settings.webhookHeaders.map {
+                                        KeyValue(it.key, it.value, it.enabled)
+                                    }.ifEmpty { listOf(KeyValue()) }
+                                )
+                            }
+                            fun persistWebhookHeaders(next: List<KeyValue>) {
+                                webhookHeaders = next
+                                viewModel.setWebhookHeaders(
+                                    next.filter { it.key.isNotBlank() }
+                                        .map { KeyValueEntry(it.key, it.value, it.enabled) }
+                                )
+                            }
+                            AppText(
+                                text = stringResource(R.string.settings_webhook_headers),
+                                fontSize = 13.sp,
+                                modifier = Modifier.padding(top = 12.dp)
+                            )
+                            KeyValueEditor(
+                                items = webhookHeaders,
+                                keyLabel = stringResource(R.string.kv_header_key),
+                                valueLabel = stringResource(R.string.kv_value_label),
+                                onChange = { index, updated ->
+                                    persistWebhookHeaders(
+                                        webhookHeaders.toMutableList().also { it[index] = updated }
+                                    )
+                                },
+                                onAdd = { persistWebhookHeaders(webhookHeaders + KeyValue()) },
+                                onRemove = { index ->
+                                    persistWebhookHeaders(
+                                        webhookHeaders.toMutableList().also { it.removeAt(index) }
+                                    )
+                                }
+                            )
+                            AppText(
+                                text = stringResource(R.string.settings_webhook_headers_hint),
+                                fontSize = 12.sp,
+                                color = AppTheme.colors.onSurfaceSummary,
+                                modifier = Modifier.padding(top = 6.dp)
                             )
                             val testState by viewModel.webhookTest.collectAsStateWithLifecycle()
                             AppTextButton(

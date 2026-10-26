@@ -485,6 +485,7 @@
     <string name="ws_input_label">要发送的消息</string>
     <string name="ws_send_text">发送文本帧</string>
     <string name="ws_send_binary">发送二进制帧</string>
+    <string name="ws_binary_mode_summary">按 Hex 或 Base64 发送</string>
     <string name="ws_binary_encoding">编码</string>
     <string name="ws_binary_hex">Hex</string>
     <string name="ws_binary_base64">Base64</string>
@@ -508,8 +509,10 @@
     <string name="mqtt_qos_label">订阅 QoS</string>
     <string name="mqtt_message_retained">[保留] %1$s · QoS%2$d\n%3$s</string>
     <string name="mqtt_pub_retain_label">保留消息（Retain）</string>
+    <string name="mqtt_pub_retain_summary">Broker 保留最后一条消息</string>
     <string name="mqtt_filter_invalid_list">以下 Topic 无效已跳过：%1$s</string>
-    <string name="mqtt_topic_label">Topic，支持 + 与 # 通配符；多个用换行或逗号分隔，可用 @0/@1/@2 指定 QoS</string>
+    <string name="mqtt_topic_label">Topic</string>
+    <string name="mqtt_topic_hint">支持 + 与 # 通配符，多个用换行或逗号分隔，@0/@1/@2 指定 QoS</string>
     <string name="mqtt_filter_invalid">Topic filter 无效：不能为空，+ 必须独占一层，# 只能独占最后一层</string>
     <string name="sub_item">%1$s · QoS%2$d</string>
     <string name="mqtt_title_pub">发布</string>
@@ -762,12 +765,14 @@
     <string name="graphql_variables_label">Variables（JSON）</string>
     <string name="timeout_sec_label">超时（秒）</string>
     <string name="follow_redirects_label">跟随重定向</string>
+    <string name="follow_redirects_summary">自动跟随 3xx 跳转</string>
     <string name="max_redirects_label">最大跳数（0–20）</string>
     <string name="max_redirects_hint">超过跳数或关闭跟随时，直接展示 3xx 响应与 Location 头</string>
     <string name="insecure_tls_label">跳过 TLS 证书校验</string>
-    <string name="insecure_tls_hint">仅用于自签名或内网证书，默认保持校验</string>
-    <string name="insecure_tls_warning_on">已关闭证书校验，连接无法防中间人攻击，调试完请关闭</string>
+    <string name="insecure_tls_summary">仅调试自签名证书时开启</string>
+    <string name="insecure_tls_summary_on">已跳过校验，存在中间人风险</string>
     <string name="use_proxy_label">使用代理</string>
+    <string name="use_proxy_summary">使用设置页配置的全局代理</string>
     <string name="auth_type_label">认证类型</string>
     <string name="kv_param_value">参数值</string>
     <string name="kv_header_value">Header 值</string>
@@ -802,6 +807,7 @@
     <string name="ws_subprotocols_label">子协议（逗号分隔）</string>
     <string name="ws_heartbeat_payload_label">心跳内容</string>
     <string name="ws_auto_reconnect_label">断线自动重连</string>
+    <string name="ws_auto_reconnect_summary">断开后按设定间隔重连</string>
     <string name="ws_reconnect_base_label">初始延迟（秒）</string>
     <string name="ws_reconnect_max_label">最大延迟（秒）</string>
     <string name="ws_reconnect_delay_error">请输入 1–3600 秒，最大延迟不得小于初始延迟</string>
@@ -1033,6 +1039,8 @@
     <string name="settings_webhook_summary">拨测状态变化时推送到企业微信、钉钉、飞书或 Slack</string>
     <string name="settings_webhook_url">Webhook 地址</string>
     <string name="settings_webhook_format">消息格式</string>
+    <string name="settings_webhook_headers">附加请求头</string>
+    <string name="settings_webhook_headers_hint">随请求一起提交，可放签名或 Token；同名时覆盖内置的 Content-Type</string>
     <string name="settings_webhook_template">自定义模板（可选）</string>
     <string name="settings_webhook_template_hint">可用变量：{{name}} {{status}} {{detail}} {{address}} {{duration}} {{time}}；通用格式下模板即完整 JSON 请求体</string>
     <string name="settings_webhook_test">发送测试</string>

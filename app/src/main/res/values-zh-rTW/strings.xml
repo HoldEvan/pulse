@@ -485,6 +485,7 @@
     <string name="ws_input_label">要傳送的訊息</string>
     <string name="ws_send_text">傳送文字幀</string>
     <string name="ws_send_binary">傳送二進位幀</string>
+    <string name="ws_binary_mode_summary">以 Hex 或 Base64 傳送</string>
     <string name="ws_binary_encoding">編碼</string>
     <string name="ws_binary_hex">Hex</string>
     <string name="ws_binary_base64">Base64</string>
@@ -508,8 +509,10 @@
     <string name="mqtt_qos_label">訂閱 QoS</string>
     <string name="mqtt_message_retained">[保留] %1$s · QoS%2$d\n%3$s</string>
     <string name="mqtt_pub_retain_label">保留訊息（Retain）</string>
+    <string name="mqtt_pub_retain_summary">Broker 保留最後一則訊息</string>
     <string name="mqtt_filter_invalid_list">以下 Topic 無效已略過：%1$s</string>
-    <string name="mqtt_topic_label">Topic，支援 + 與 # 萬用字元；多個用換行或逗號分隔，可用 @0/@1/@2 指定 QoS</string>
+    <string name="mqtt_topic_label">Topic</string>
+    <string name="mqtt_topic_hint">支援 + 與 # 萬用字元，多個以換行或逗號分隔，@0/@1/@2 指定 QoS</string>
     <string name="mqtt_filter_invalid">Topic filter 無效：不能為空，+ 必須獨佔一層，# 只能獨佔最後一層</string>
     <string name="sub_item">%1$s · QoS %2$d</string>
     <string name="mqtt_title_pub">發佈</string>
@@ -762,12 +765,14 @@
     <string name="graphql_variables_label">Variables（JSON）</string>
     <string name="timeout_sec_label">逾時（秒）</string>
     <string name="follow_redirects_label">跟隨重新導向</string>
+    <string name="follow_redirects_summary">自動跟隨 3xx 重新導向</string>
     <string name="max_redirects_label">最大跳數（0–20）</string>
     <string name="max_redirects_hint">超過跳數或關閉跟隨時，直接顯示 3xx 回應與 Location 標頭</string>
     <string name="insecure_tls_label">略過 TLS 憑證檢查</string>
-    <string name="insecure_tls_hint">僅用於自簽章或內網憑證，預設維持檢查</string>
-    <string name="insecure_tls_warning_on">已關閉憑證檢查，連線無法防中間人攻擊，除錯完請關閉</string>
+    <string name="insecure_tls_summary">僅除錯自簽章憑證時開啟</string>
+    <string name="insecure_tls_summary_on">已跳過檢查，存在中間人風險</string>
     <string name="use_proxy_label">使用代理</string>
+    <string name="use_proxy_summary">使用設定頁配置的全域代理</string>
     <string name="auth_type_label">驗證類型</string>
     <string name="kv_param_value">參數值</string>
     <string name="kv_header_value">Header 值</string>
@@ -802,6 +807,7 @@
     <string name="ws_subprotocols_label">子協定（逗號分隔）</string>
     <string name="ws_heartbeat_payload_label">心跳內容</string>
     <string name="ws_auto_reconnect_label">斷線自動重連</string>
+    <string name="ws_auto_reconnect_summary">斷線後依設定間隔重連</string>
     <string name="ws_reconnect_base_label">初始延遲（秒）</string>
     <string name="ws_reconnect_max_label">最大延遲（秒）</string>
     <string name="ws_reconnect_delay_error">請輸入 1–3600 秒，最大延遲不可小於初始延遲</string>
@@ -1033,6 +1039,8 @@
     <string name="settings_webhook_summary">撥測狀態變化時推送到企業微信、釘釘、飛書或 Slack</string>
     <string name="settings_webhook_url">Webhook 位址</string>
     <string name="settings_webhook_format">訊息格式</string>
+    <string name="settings_webhook_headers">附加請求標頭</string>
+    <string name="settings_webhook_headers_hint">隨請求一併送出；同名時覆蓋內建的 Content-Type</string>
     <string name="settings_webhook_template">自訂範本（選填）</string>
     <string name="settings_webhook_template_hint">可用變數：{{name}} {{status}} {{detail}} {{address}} {{duration}} {{time}}；通用格式下範本即完整 JSON 請求體</string>
     <string name="settings_webhook_test">傳送測試</string>

@@ -55,7 +55,7 @@ import com.evan.pulse.ui.design.AppDialog
 import com.evan.pulse.ui.design.AppDropdown
 import com.evan.pulse.ui.design.AppIcon
 import com.evan.pulse.ui.design.AppIconButton
-import com.evan.pulse.ui.design.AppSwitch
+import com.evan.pulse.ui.design.AppSwitchRow
 import com.evan.pulse.ui.design.AppText
 import com.evan.pulse.ui.design.AppTextButton
 import com.evan.pulse.ui.design.AppTextField
@@ -151,29 +151,22 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                             .padding(start = 8.dp)
                     )
                 }
-                // 是否套用设置页的全局代理
+            }
+            // 开关行铺满卡片宽度，水波纹才能沿卡片圆角收边
+            AppSwitchRow(
+                title = stringResource(R.string.use_proxy_label),
+                summary = stringResource(R.string.use_proxy_summary),
+                checked = viewModel.useProxy,
+                onCheckedChange = { viewModel.useProxy = it }
+            )
+            InsecureTlsRow(
+                checked = viewModel.insecureTls,
+                onCheckedChange = { viewModel.insecureTls = it }
+            )
+            Column(
+                modifier = Modifier.padding(start = 12.dp, top = 10.dp, end = 12.dp, bottom = 12.dp)
+            ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    AppText(
-                        text = stringResource(R.string.use_proxy_label),
-                        modifier = Modifier.weight(1f)
-                    )
-                    AppSwitch(
-                        checked = viewModel.useProxy,
-                        onCheckedChange = { viewModel.useProxy = it }
-                    )
-                }
-                InsecureTlsRow(
-                    checked = viewModel.insecureTls,
-                    onCheckedChange = { viewModel.insecureTls = it },
-                    modifier = Modifier.padding(top = 10.dp)
-                )
-                Row(
-                    modifier = Modifier.padding(top = 10.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     AppButton(
@@ -215,6 +208,13 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                 onSelectedIndexChange = { viewModel.subQos = it }
             )
             Column(modifier = Modifier.padding(12.dp)) {
+                // 通配符与 QoS 语法较长，放在输入框外侧，输入框标签只留 Topic
+                AppText(
+                    text = stringResource(R.string.mqtt_topic_hint),
+                    fontSize = 12.sp,
+                    color = AppTheme.colors.onSurfaceSummary,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     AppTextField(
                         value = viewModel.subTopic,
@@ -271,28 +271,22 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                 showValue = true,
                 onSelectedIndexChange = { viewModel.pubQos = it }
             )
-            Column(modifier = Modifier.padding(12.dp)) {
+            Column(modifier = Modifier.padding(start = 12.dp, top = 12.dp, end = 12.dp)) {
                 AppTextField(
                     value = viewModel.pubTopic,
                     onValueChange = { viewModel.pubTopic = it },
                     label = stringResource(R.string.mqtt_pub_topic_label),
                     modifier = Modifier.fillMaxWidth()
                 )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    AppText(
-                        text = stringResource(R.string.mqtt_pub_retain_label),
-                        modifier = Modifier.weight(1f)
-                    )
-                    AppSwitch(
-                        checked = viewModel.pubRetain,
-                        onCheckedChange = { viewModel.pubRetain = it }
-                    )
-                }
+            }
+            // 开关行铺满卡片宽度，水波纹才能沿卡片圆角收边
+            AppSwitchRow(
+                title = stringResource(R.string.mqtt_pub_retain_label),
+                summary = stringResource(R.string.mqtt_pub_retain_summary),
+                checked = viewModel.pubRetain,
+                onCheckedChange = { viewModel.pubRetain = it }
+            )
+            Column(modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp)) {
                 Row(
                     modifier = Modifier.padding(top = 8.dp),
                     verticalAlignment = Alignment.CenterVertically

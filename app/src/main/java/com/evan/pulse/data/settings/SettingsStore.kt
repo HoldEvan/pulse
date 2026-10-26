@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.evan.pulse.data.crypto.KeystoreSecretBox
+import com.evan.pulse.data.model.KeyValueEntry
 import com.evan.pulse.domain.crypto.SecretBox
 import com.evan.pulse.domain.crypto.SecretField
 import java.io.IOException
@@ -21,6 +22,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.Json
 
 private val Context.settingsDataStore: DataStore<Preferences> by
     preferencesDataStore(name = "pulse_settings")
@@ -57,6 +60,27 @@ private val KEY_WEBHOOK_ENABLED = booleanPreferencesKey("webhook_enabled")
 private val KEY_WEBHOOK_URL = stringPreferencesKey("webhook_url")
 private val KEY_WEBHOOK_FORMAT = intPreferencesKey("webhook_format_index")
 private val KEY_WEBHOOK_TEMPLATE = stringPreferencesKey("webhook_template")
+private val KEY_WEBHOOK_HEADERS = stringPreferencesKey("webhook_headers")
+
+/** Webhook 请求头的落盘格式：JSON 数组，结构只在设置层出现，不进导出链路 */
+private val headersSerializer = ListSerializer(KeyValueEntry.serializer())
+
+private val headersJson = Json {
+    ignoreUnknownKeys = true
+    encodeDefaults = true
+}
+
+/** 解析请求头；字段损坏时整体丢弃，宁可让用户重填也不阻塞设置读取 */
+internal fun decodeWebhookHeaders(raw: String, secrets: SecretBox?): List<KeyValueEntry> {
+    if (raw.isBlank()) return emptyList()
+    val decoded = runCatching { headersJson.decodeFromString(headersSerializer, raw) }
+        .getOrElse { return emptyList() }
+    return decoded.map { it.copy(value = SecretField.open(it.value, secrets)) }
+}
+
+/** 序列化请求头，值按敏感字段加密；键名保持明文以便排查配置 */
+internal fun encodeWebhookHeaders(list: List<KeyValueEntry>, seal: (String) -> String): String =
+    headersJson.encodeToString(headersSerializer, list.map { it.copy(value = seal(it.value)) })
 
 /**
  * 读取设置。[secrets] 用于解封密码类字段；缺省（单测、无密钥环境）时按明文读回，
@@ -101,6 +125,7 @@ internal fun Preferences.toAppSettings(secrets: SecretBox? = null): AppSettings 
     webhookUrl = get(KEY_WEBHOOK_URL) ?: "",
     webhookFormatIndex = (get(KEY_WEBHOOK_FORMAT) ?: 0).coerceAtLeast(0),
     webhookTemplate = get(KEY_WEBHOOK_TEMPLATE) ?: "",
+    webhookHeaders = decodeWebhookHeaders(get(KEY_WEBHOOK_HEADERS) ?: "", secrets),
 )
 
 class SettingsStore(context: Context) {
@@ -162,6 +187,7 @@ class SettingsStore(context: Context) {
             prefs[KEY_WEBHOOK_URL] = next.webhookUrl
             prefs[KEY_WEBHOOK_FORMAT] = next.webhookFormatIndex.coerceAtLeast(0)
             prefs[KEY_WEBHOOK_TEMPLATE] = next.webhookTemplate
+            prefs[KEY_WEBHOOK_HEADERS] = encodeWebhookHeaders(next.webhookHeaders, ::seal)
         }
     }
 }

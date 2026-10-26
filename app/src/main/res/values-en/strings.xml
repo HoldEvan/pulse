@@ -485,6 +485,7 @@
     <string name="ws_input_label">Message to send</string>
     <string name="ws_send_text">Send text frame</string>
     <string name="ws_send_binary">Send binary frame</string>
+    <string name="ws_binary_mode_summary">Send as Hex or Base64</string>
     <string name="ws_binary_encoding">Encoding</string>
     <string name="ws_binary_hex">Hex</string>
     <string name="ws_binary_base64">Base64</string>
@@ -508,8 +509,10 @@
     <string name="mqtt_qos_label">Subscribe QoS</string>
     <string name="mqtt_message_retained">[retained] %1$s · QoS %2$d\n%3$s</string>
     <string name="mqtt_pub_retain_label">Retained message (Retain)</string>
+    <string name="mqtt_pub_retain_summary">Broker keeps the last message</string>
     <string name="mqtt_filter_invalid_list">Skipped invalid topics: %1$s</string>
-    <string name="mqtt_topic_label">Topic, supports + and #; separate multiple with newline or comma, add @0/@1/@2 for QoS</string>
+    <string name="mqtt_topic_label">Topic</string>
+    <string name="mqtt_topic_hint">Supports + and # wildcards; separate multiple with newline or comma; @0/@1/@2 for QoS</string>
     <string name="mqtt_filter_invalid">Invalid topic filter: cannot be empty, + must occupy a whole level and # only as the final level</string>
     <string name="sub_item">%1$s · QoS %2$d</string>
     <string name="mqtt_title_pub">Publish</string>
@@ -762,12 +765,14 @@
     <string name="graphql_variables_label">Variables (JSON)</string>
     <string name="timeout_sec_label">Timeout (s)</string>
     <string name="follow_redirects_label">Follow redirects</string>
+    <string name="follow_redirects_summary">Follow 3xx redirects automatically</string>
     <string name="max_redirects_label">Max hops (0–20)</string>
     <string name="max_redirects_hint">When following is off or the limit is reached, the 3xx response and its Location header are shown as-is</string>
     <string name="insecure_tls_label">Skip TLS certificate checks</string>
-    <string name="insecure_tls_hint">Only for self-signed or internal certificates</string>
-    <string name="insecure_tls_warning_on">Certificate checks are off; connections are open to interception. Turn this back off after debugging</string>
+    <string name="insecure_tls_summary">Enable only for self-signed certificates</string>
+    <string name="insecure_tls_summary_on">Verification skipped; interception risk</string>
     <string name="use_proxy_label">Use proxy</string>
+    <string name="use_proxy_summary">Use the global proxy from settings</string>
     <string name="auth_type_label">Auth type</string>
     <string name="kv_param_value">Param value</string>
     <string name="kv_header_value">Header value</string>
@@ -802,6 +807,7 @@
     <string name="ws_subprotocols_label">Subprotocols (comma separated)</string>
     <string name="ws_heartbeat_payload_label">Heartbeat payload</string>
     <string name="ws_auto_reconnect_label">Auto reconnect on drop</string>
+    <string name="ws_auto_reconnect_summary">Reconnect after the delay when dropped</string>
     <string name="ws_reconnect_base_label">Initial delay (sec)</string>
     <string name="ws_reconnect_max_label">Maximum delay (sec)</string>
     <string name="ws_reconnect_delay_error">Use 1–3600 seconds; maximum must be at least the initial delay</string>
@@ -1033,6 +1039,8 @@
     <string name="settings_webhook_summary">Push monitor state changes to WeCom, DingTalk, Feishu or Slack</string>
     <string name="settings_webhook_url">Webhook URL</string>
     <string name="settings_webhook_format">Message format</string>
+    <string name="settings_webhook_headers">Extra headers</string>
+    <string name="settings_webhook_headers_hint">Sent along with the request; overrides the built-in Content-Type when the name matches</string>
     <string name="settings_webhook_template">Custom template (optional)</string>
     <string name="settings_webhook_template_hint">Variables: {{name}} {{status}} {{detail}} {{address}} {{duration}} {{time}}; for Generic the template is the full JSON body</string>
     <string name="settings_webhook_test">Send test</string>
