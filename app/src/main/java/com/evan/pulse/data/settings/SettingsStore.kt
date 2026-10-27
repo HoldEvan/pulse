@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.serialization.builtins.ListSerializer
@@ -153,6 +154,12 @@ class SettingsStore(context: Context) {
             if (error is IOException) emit(AppSettings()) else throw error
         }
         .stateIn(scope, SharingStarted.Eagerly, AppSettings())
+
+    /** 触发 DataStore 真实读盘并等待完成：冷启动时在主线程串行调用，
+     *  让 DataStore actor 先就绪，避免后续各协程与主线程并发触发 InitDataStore 竞态。 */
+    suspend fun warmUpDataStore() {
+        dataStore.data.first()
+    }
 
     suspend fun update(transform: (AppSettings) -> AppSettings) {
         dataStore.edit { prefs ->

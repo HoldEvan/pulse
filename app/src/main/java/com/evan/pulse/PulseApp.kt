@@ -9,6 +9,11 @@ import com.evan.pulse.data.backup.WorkManagerBackupScheduler
 import com.evan.pulse.data.settings.SettingsStore
 import com.evan.pulse.di.ServiceLocator
 import com.evan.pulse.ui.l10n.L10n
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 class PulseApp : Application() {
 
@@ -16,13 +21,25 @@ class PulseApp : Application() {
     lateinit var settingsStore: SettingsStore
         private set
 
+    /** 后台初始化协程作用域：Room 全量读库与拨测调度不阻塞主线程，尽早让出首帧 */
+    private val backgroundScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     override fun onCreate() {
         super.onCreate()
         settingsStore = SettingsStore(applicationContext)
         L10n.bind(applicationContext)
         ServiceLocator.bindSettingsStore(settingsStore)
-        ServiceLocator.init(applicationContext)
-        ServiceLocator.initMonitor(applicationContext)
+
+        // 在主线程串行完成 DataStore 真实读盘：让 DataStore actor 先就绪，
+        // 避免后台 AutoBackup 与主线程 ViewModel 并发触发 InitDataStore 竞态崩溃。
+        // 设置文件很小，此处仅毫秒级阻塞，远快于全量读库。
+        runBlocking { settingsStore.warmUpDataStore() }
+
+        // Room 全量读库与拨测调度放后台，避免冷启动主线程读库拖慢首帧（5s+ 元凶）。
+        backgroundScope.launch {
+            ServiceLocator.init(applicationContext)
+            ServiceLocator.initMonitor(applicationContext)
+        }
 
         // 自动备份：订阅设置变化，把最新开关与周期推给周期任务
         AutoBackupScheduler(
