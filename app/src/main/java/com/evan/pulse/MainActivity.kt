@@ -1,6 +1,7 @@
 package com.evan.pulse
 
 import android.os.Bundle
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -44,6 +45,11 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // 系统启动页：展示 App 图标与品牌背景色至少一个短时长，再让出首屏
+        val splashStart = System.currentTimeMillis()
+        installSplashScreen().setKeepOnScreenCondition {
+            System.currentTimeMillis() - splashStart < SPLASH_DURATION_MS
+        }
         super.onCreate(savedInstanceState)
 
         settingsViewModel = viewModelProvider((application as PulseApp).settingsStore)
@@ -98,5 +104,8 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         const val ACTION_OPEN_TOOLS = "com.evan.pulse.action.OPEN_TOOLS"
+
+        /** 启动页最短展示时长，毫秒 */
+        private const val SPLASH_DURATION_MS = 1400L
     }
 }

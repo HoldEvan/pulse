@@ -5,4 +5,12 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
     </style>
+
+    <!-- 启动页主题：系统 SplashScreen，背景复用启动图标背景色（Android 12+ 为莫奈浅色调） -->
+    <style name="Theme.Pulse.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.Pulse</item>
+    </style>
+
 </resources>
