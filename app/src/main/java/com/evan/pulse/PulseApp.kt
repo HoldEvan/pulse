@@ -12,7 +12,9 @@ import com.evan.pulse.ui.l10n.L10n
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 class PulseApp : Application() {
 
@@ -29,18 +31,22 @@ class PulseApp : Application() {
         L10n.bind(applicationContext)
         ServiceLocator.bindSettingsStore(settingsStore)
 
-        // 数据持久化加载、拨测调度与自动备份都在后台执行，
-        // 避免冷启动时主线程同步读库拖慢首帧（启动页因此被拖到 5s+）
+        // 在主线程串行完成 DataStore 首次初始化：避免后续 ViewModel 主线程 collect
+        // 与自动备份后台 collect 并发触发 InitDataStore，导致设置页首帧竞态崩溃。
+        // 设置文件很小，此处仅毫秒级阻塞，远快于全量读库。
+        runBlocking { settingsStore.settings.first() }
+
+        // 数据持久化加载（Room 全量读库）与拨测调度放后台，避免冷启动主线程读库拖慢首帧。
         backgroundScope.launch {
             ServiceLocator.init(applicationContext)
             ServiceLocator.initMonitor(applicationContext)
-
-            // 自动备份：订阅设置变化，把最新开关与周期推给周期任务
-            AutoBackupScheduler(
-                store = settingsStore,
-                background = WorkManagerBackupScheduler(applicationContext)
-            ).start()
         }
+
+        // 自动备份：订阅设置变化，把最新开关与周期推给周期任务
+        AutoBackupScheduler(
+            store = settingsStore,
+            background = WorkManagerBackupScheduler(applicationContext)
+        ).start()
 
         // App 切到后台时兜底落盘，避免进程被回收时丢失最后一次变更
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
