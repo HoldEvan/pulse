@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 启动页专用图标：分层 adaptive-icon 与桌面图标同机制，渲染最可靠。
+     底色取莫奈强调色（浅色深调/深色浅调），前景复用桌面的白色波形。 -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/splash_logo_bg" />
+    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+</adaptive-icon>

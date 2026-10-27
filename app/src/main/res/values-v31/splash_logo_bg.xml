@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 启动页图标底色：Android 12+ 莫奈强调色深色调，白色启动页背景上清晰可见 -->
+    <color name="splash_logo_bg">@android:color/system_accent1_600</color>
+</resources>

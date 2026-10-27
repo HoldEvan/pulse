@@ -6,10 +6,11 @@
         <item name="android:windowLightStatusBar">true</item>
     </style>
 
-    <!-- 启动页主题：系统 SplashScreen，背景纯白（深色模式为纯黑） -->
+    <!-- 启动页主题：系统 SplashScreen，背景纯白（深色模式为纯黑）。
+     图标用启动页专用 adaptive-icon（莫奈底色 + 白波形），与桌面图标同机制渲染最可靠 -->
     <style name="Theme.Pulse.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_background</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_foreground</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_icon</item>
         <item name="postSplashScreenTheme">@style/Theme.Pulse</item>
     </style>
 
