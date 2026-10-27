@@ -1,6 +1,7 @@
 package com.evan.pulse.data.settings
 
 import android.content.Context
+import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -20,7 +21,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.serialization.builtins.ListSerializer
@@ -135,6 +135,10 @@ internal fun Preferences.toAppSettings(secrets: SecretBox? = null): AppSettings 
 
 class SettingsStore(context: Context) {
 
+    private companion object {
+        const val TAG = "SettingsStore"
+    }
+
     private val dataStore = context.settingsDataStore
 
     /** 代理与 WebDAV 密码落盘前加密；列表页、导出日志都不会出现明文 */
@@ -151,15 +155,14 @@ class SettingsStore(context: Context) {
     val settings: StateFlow<AppSettings> = dataStore.data
         .map { it.toAppSettings(secrets) }
         .catch { error ->
-            if (error is IOException) emit(AppSettings()) else throw error
+            // 任何读取异常都回退默认值而非抛出：设置页首帧崩溃（DataStore InitDataStore）
+            // 曾因这里 rethrow 非 IOException 导致，诊断期先吞掉并打完整日志定位真实异常。
+            if (error !is IOException) {
+                Log.w(TAG, "settings 读取异常，回退默认值", error)
+            }
+            emit(AppSettings())
         }
         .stateIn(scope, SharingStarted.Eagerly, AppSettings())
-
-    /** 触发 DataStore 真实读盘并等待完成：冷启动时在主线程串行调用，
-     *  让 DataStore actor 先就绪，避免后续各协程与主线程并发触发 InitDataStore 竞态。 */
-    suspend fun warmUpDataStore() {
-        dataStore.data.first()
-    }
 
     suspend fun update(transform: (AppSettings) -> AppSettings) {
         dataStore.edit { prefs ->
