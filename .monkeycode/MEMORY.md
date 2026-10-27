@@ -295,7 +295,8 @@ Entries discovered by the Agent during task execution should follow this format:
 - Context: Discovered by Agent while optimizing cold-start with splash screen; backgrounding ServiceLocator.init caused a deterministic crash on the user's device
 - Category: Troubleshooting & Debugging
 - Instructions:
-  - `PulseApp.onCreate` 里把 `ServiceLocator.init`（Room 全量读库）移到后台协程能让冷启动首帧明显变快，但在用户设备（Redmi/Android 16）**确定性崩溃**：设置页首帧 ViewModel 构造时 `DataStoreImpl$InitDataStore` 抛异常（主线程 FATAL）。主线程串行 `warmUpDataStore()`（`dataStore.data.first()`）预初始化也无效，说明竞态假设不成立或另有元凶
+  - `PulseApp.onCreate` 里把 `ServiceLocator.init`（Room 全量读库）移到后台协程能让冷启动首帧明显变快，但在用户设备（Redmi/Android 16）**确定性崩溃**：栈还原显示 `DataStoreImpl$InitDataStore` 帧，但那是 R8 方法合并的干扰项；**真实根因是 checkNotNull getter 竞态**——`ServiceLocator.appContext`/`monitorNotifier`/`monitorScheduler` 都在 init 里注入，后台化后 initMonitor 要等几秒读库才执行，而设置页首帧（`SettingsScreen` 的 `ServiceLocator.monitorNotifier.isGranted()`）、`LanScanViewModel` 构造（`ServiceLocator.appContext`）、`MonitorViewModel` 构造（`monitorScheduler`）抢先访问即抛 `IllegalStateException`，被 ViewModel 工厂反射包装成 FATAL
+  - 正确修法（9d46be4）：把 init 拆成 `initQuick`（主线程瞬时注入 context/通知器/调度器，廉价）+ `loadHeavy`（后台：Room 全量读库 + `monitorScheduler.sync()`），`init()` = 两者顺序执行保持兼容。拆分后既快又不崩；`PersistenceHandle.action` 默认空操作，读库完成前 store 写入安全
   - 崩溃栈被 CrashCatcher 截断：只有外层 RuntimeException → 两层 InvocationTargetException，**最内层真实异常（第 4 个 Caused by）没显示**，只靠 R8 mapping 还原外层类名（rw=miuix CheckboxPreferenceKt, hg0=DataStoreImpl$InitDataStore, eo4=AndroidViewModelFactory, g10=CollectionScreen）无法定位根因。下次必须先拿到最内层 Caused by 再改代码
   - 回滚到同步初始化（`ServiceLocator.init` 主线程）即恢复稳定。同步版慢的根源是主线程同步 Room 全量读库（随拨测历史/cookie 数据量增长变慢），首帧被拖 5-6s，SplashScreen API 会一直停留到 Compose 首帧绘制完成，把这段耗时显性化
   - `stateIn(SharingStarted.Eagerly)` 的 `.first()` 拿到的是缓存初始值，**不会等待 DataStore 真实读盘完成**；要真正预热必须直接 `dataStore.data.first()`
