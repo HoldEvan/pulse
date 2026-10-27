@@ -155,8 +155,8 @@ class SettingsStore(context: Context) {
     val settings: StateFlow<AppSettings> = dataStore.data
         .map { it.toAppSettings(secrets) }
         .catch { error ->
-            // 任何读取异常都回退默认值而非抛出：设置页首帧崩溃（DataStore InitDataStore）
-            // 曾因这里 rethrow 非 IOException 导致，诊断期先吞掉并打完整日志定位真实异常。
+            // 任何读取异常都回退默认值而非抛出：设置读取失败不应让整个 App 无法启动，
+            // 非 IOException 会打完整堆栈到 logcat（TAG=SettingsStore）便于定位数据损坏
             if (error !is IOException) {
                 Log.w(TAG, "settings 读取异常，回退默认值", error)
             }

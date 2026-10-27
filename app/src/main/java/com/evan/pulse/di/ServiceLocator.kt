@@ -1033,8 +1033,22 @@ object ServiceLocator {
     }
 
     /** 初始化数据持久化：注册写盘回调并读回已有数据。必须在 Application.onCreate 中调用 */
-    fun init(context: Context) {
+    /** 启动早期在主线程调用：注入 context、通知器与拨测调度器（均为廉价操作）。
+     *  必须先于首帧组合完成，否则 appContext / monitorNotifier / monitorScheduler
+     *  的 checkNotNull getter 会在设置页等首帧访问时抛 IllegalStateException。 */
+    fun initQuick(context: Context) {
         _appContext = context.applicationContext
+        val notifier = MonitorNotifier(context.applicationContext).also { _monitorNotifier = it }
+        notifier.ensureChannel()
+        _monitorScheduler = MonitorScheduler(
+            notifier = notifier,
+            background = WorkManagerMonitorScheduler(context.applicationContext)
+        )
+    }
+
+    /** 重活：Room 全量读库与拨测调度同步。耗时随数据量增长，必须在后台线程调用；
+     *  必须在 [initQuick] 之后执行。 */
+    fun loadHeavy(context: Context) {
         val persistence = AppStatePersistence(context)
         _persistence = persistence
         projectPersist.action = { persistence.saveProjects() }
@@ -1045,17 +1059,13 @@ object ServiceLocator {
         cookiePersist.action = { persistence.saveCookies() }
         protocolPersist.action = { persistence.saveProtocols() }
         persistence.load()
+        _monitorScheduler?.sync()
     }
 
-    /** 初始化拨测调度：建通知通道并按已启用目标启动定时检查。必须在 init 之后调用 */
-    fun initMonitor(context: Context) {
-        val appContext = context.applicationContext
-        val notifier = MonitorNotifier(appContext).also { _monitorNotifier = it }
-        notifier.ensureChannel()
-        _monitorScheduler = MonitorScheduler(
-            notifier = notifier,
-            background = WorkManagerMonitorScheduler(appContext)
-        ).also { it.sync() }
+    /** 同步完整初始化 = initQuick + loadHeavy；仅限测试或明确接受阻塞主线程的场景 */
+    fun init(context: Context) {
+        initQuick(context)
+        loadHeavy(context)
     }
 
     /** 立即把当前状态写盘，作为进程退出前的兜底 */
