@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+：启动页 logo 取系统莫奈动态强调色，随壁纸/主题变化 -->
+    <color name="splash_logo">@android:color/system_accent1_200</color>
+</resources>
