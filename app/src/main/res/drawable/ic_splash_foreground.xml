@@ -4,14 +4,14 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- 圆点：信号起点（颜色取 @color/splash_logo：Android 12+ 莫奈强调色，低版本白） -->
+    <!-- 圆点：信号起点（浅色模式白底用硬编码品牌蓝，避免 system_server 解析系统动态色失败） -->
     <path
-        android:fillColor="@color/splash_logo"
+        android:fillColor="#3482FF"
         android:pathData="M22.5,54 a5.5,5.5 0 1,0 11,0 a5.5,5.5 0 1,0 -11,0 z" />
     <!-- 波形：平滑正弦，两拍。fillColor 必须显式透明，VectorDrawable 缺省是黑色 -->
     <path
         android:fillColor="#00000000"
-        android:strokeColor="@color/splash_logo"
+        android:strokeColor="#3482FF"
         android:strokeWidth="7"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"

@@ -2,6 +2,10 @@
 <resources>
     <!-- 深色模式：启动页背景纯黑（覆盖 values 里的白） -->
     <style name="Theme.Pulse.Splash">
+        <item name="android:windowSplashScreenBackground">@android:color/black</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_splash_foreground</item>
+        <item name="android:windowSplashScreenBehavior">icon_preferred</item>
         <item name="windowSplashScreenBackground">@android:color/black</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_foreground</item>
     </style>
 </resources>

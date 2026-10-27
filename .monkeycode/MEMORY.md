@@ -301,3 +301,14 @@ Entries discovered by the Agent during task execution should follow this format:
   - 回滚到同步初始化（`ServiceLocator.init` 主线程）即恢复稳定。同步版慢的根源是主线程同步 Room 全量读库（随拨测历史/cookie 数据量增长变慢），首帧被拖 5-6s，SplashScreen API 会一直停留到 Compose 首帧绘制完成，把这段耗时显性化
   - `stateIn(SharingStarted.Eagerly)` 的 `.first()` 拿到的是缓存初始值，**不会等待 DataStore 真实读盘完成**；要真正预热必须直接 `dataStore.data.first()`
   - `SettingsStore.settings` 的 catch 已改为吞掉所有异常回退 `AppSettings()` 并 `Log.w(TAG, "settings 读取异常，回退默认值", error)` 打完整堆栈——真实异常以后能在 logcat 里看到，按 TAG=SettingsStore 过滤
+
+[Project Knowledge Summary]
+- Date: 2026-10-27
+- Context: Discovered by Agent while the system splash screen showed no logo at all on the user's Redmi/Android 16 device, across multiple icon designs
+- Category: Troubleshooting & Debugging
+- Instructions:
+  - 系统启动页（Android 12+ SplashScreen API）的图标由 **system_server** 的 starting-window 渲染，**vector drawable 内引用系统动态色（`@android:color/system_accent1_*` 等）在该进程解析失败**，路径回退成透明/黑，于是白底上看不到任何图形；把颜色**硬编码**（`#3482FF` / `#FFFFFF`）就能正常显示。同理 `windowSplashScreenIconBackgroundColor` 和 adaptive-icon 的 background 若指向动态色，也会失败
+  - 可用配置（已验证能显示）：`values/themes.xml` 的 `Theme.Pulse.Splash` 设 `windowSplashScreenBackground=@color/splash_background`（浅白/深黑）、`windowSplashScreenAnimatedIcon=@drawable/ic_splash_foreground`（普通 vector，浅色模式硬编码品牌蓝 `#3482FF`、深色模式用 `drawable-night/` 变体硬编码白 `#FFFFFF`）；vector 不引用任何动态色、不用 adaptive-icon 包裹
+  - `Theme.SplashScreen`（core-splashscreen 1.0.1）在 `values/` 只设置**库命名空间**的 `windowSplashScreenBackground`/`windowSplashScreenAnimatedIcon`，在 `values-v31/` 才把它们桥接到 framework 的 `android:windowSplashScreenBackground`/`android:windowSplashScreenAnimatedIcon`；桥接本身正确，问题不在属性传递链
+  - 想强制系统渲染我们配置的图标（不被 launcher 图标替代/静默省略），在主题里显式加 `android:windowSplashScreenBehavior=icon_preferred`（framework attr，API 33+，枚举名 `default`/`icon_preferred` 见 `$ANDROID_SDK/platforms/android-37.0/data/res/values/attrs.xml`）；内联在默认 `values/` 即可，低版本运行时忽略未知 attr
+  - 定位手法：`git show <commit>:app/src/main/res/values/themes.xml` 逐版对比能显示/不能显示的 commit，最快锁定是「图标颜色改成动态色」这一改动引入的回归；桌面图标（adaptive + 动态色）在 launcher 里能显示，不能据此推断 splash 图标也能显示——两者渲染进程不同

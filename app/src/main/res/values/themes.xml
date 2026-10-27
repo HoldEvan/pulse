@@ -7,10 +7,14 @@
     </style>
 
     <!-- 启动页主题：系统 SplashScreen，背景纯白（深色模式为纯黑）。
-     图标用启动页专用 adaptive-icon（莫奈底色 + 白波形），与桌面图标同机制渲染最可靠 -->
+     图标用硬编码颜色的普通 vector（浅色=品牌蓝/深色=白），
+     因 splash 图标由 system_server 渲染，vector 内引用系统动态色会解析失败而不显示 -->
     <style name="Theme.Pulse.Splash" parent="Theme.SplashScreen">
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_splash_foreground</item>
         <item name="windowSplashScreenBackground">@color/splash_background</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_icon</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_foreground</item>
+        <item name="android:windowSplashScreenBehavior">icon_preferred</item>
         <item name="postSplashScreenTheme">@style/Theme.Pulse</item>
     </style>
 
