@@ -106,6 +106,6 @@ class MainActivity : ComponentActivity() {
         const val ACTION_OPEN_TOOLS = "com.evan.pulse.action.OPEN_TOOLS"
 
         /** 启动页最短展示时长，毫秒 */
-        private const val SPLASH_DURATION_MS = 1400L
+        private const val SPLASH_DURATION_MS = 700L
     }
 }
