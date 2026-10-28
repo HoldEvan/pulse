@@ -14,6 +14,7 @@ import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import android.widget.TextView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -32,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.evan.pulse.R
@@ -457,8 +459,15 @@ fun CodeEditorField(
     val appliedLanguage = remember { mutableStateOf(language) }
     val appliedProvider = remember { mutableStateOf(completionProvider) }
 
+    val hostView = LocalView.current
     DisposableEffect(Unit) {
         onDispose {
+            // 返回或跳到别的页面时编辑器被移除，输入法仍挂在原窗口上，
+            // 这里统一收键盘并清焦点，避免键盘盖住新页面
+            val manager = hostView.context
+                .getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+            manager?.hideSoftInputFromWindow(hostView.windowToken, 0)
+            editorRef.value?.clearFocus()
             controller?.editor = null
             editorRef.value?.release()
             editorRef.value = null
