@@ -37,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -57,6 +58,7 @@ import com.evan.pulse.domain.pathOnly
 import com.evan.pulse.ui.collection.SaveRequestDialog
 import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.CollapsibleKeyValueTable
+import com.evan.pulse.ui.common.CardSectionTitle
 import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.InsecureTlsRow
 import com.evan.pulse.ui.common.KeyValueEditor
@@ -88,6 +90,8 @@ import top.yukonga.miuix.kmp.icon.extended.Close
 import top.yukonga.miuix.kmp.icon.extended.Send
 import top.yukonga.miuix.kmp.squircle.squircleSurface
 import com.evan.pulse.ui.design.AppButton
+import com.evan.pulse.ui.design.CodeEditorField
+import com.evan.pulse.ui.design.CodeLanguage
 
 private val bodyTypes = listOf(BodyType.NONE, BodyType.JSON, BodyType.RAW, BodyType.FORM_URLENCODED, BodyType.FORM_DATA, BodyType.GRAPHQL)
 private val bodyTypeLabels = listOf(
@@ -545,11 +549,22 @@ private fun BodyEditor(viewModel: HttpViewModel) {
             ) {
             when (viewModel.bodyType) {
             BodyType.NONE -> {}
-            BodyType.JSON, BodyType.RAW -> {
+            BodyType.JSON -> {
+                CardSectionTitle(text = stringResource(R.string.body_json_label))
+                CodeEditorField(
+                    text = viewModel.bodyText,
+                    onValueChange = { viewModel.bodyText = it },
+                    language = CodeLanguage.JSON,
+                    dark = AppTheme.colors.background.luminance() < 0.5f,
+                    modifier = Modifier.fillMaxWidth().height(220.dp)
+                )
+            }
+
+            BodyType.RAW -> {
                 AppTextField(
                     value = viewModel.bodyText,
                     onValueChange = { viewModel.bodyText = it },
-                    label = if (viewModel.bodyType == BodyType.JSON) stringResource(R.string.body_json_label) else stringResource(R.string.body_raw_label),
+                    label = stringResource(R.string.body_raw_label),
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 8
                 )

@@ -31,3 +31,13 @@
 -keep class com.evan.pulse.data.monitor.MonitorWorker { *; }
 # 同上，自动备份 Worker 也由 WorkManager 反射实例化
 -keep class com.evan.pulse.data.backup.AutoBackupWorker { *; }
+
+# sora-editor 的 TextMate 引擎用 Gson 反射解析语法/主题 JSON，
+# 模型类字段名参与反序列化，混淆后字段名对不上会解析失败（高亮全部丢失）
+-keep class org.eclipse.tm4e.** { *; }
+-keep class io.github.rosemoe.sora.langs.textmate.** { *; }
+-keep class io.github.rosemoe.sora.widget.CodeEditor { *; }
+-keep class org.joni.** { *; }
+-dontwarn org.eclipse.tm4e.**
+-dontwarn org.joni.**
+-dontwarn org.jcodings.**

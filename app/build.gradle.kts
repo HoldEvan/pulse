@@ -66,6 +66,8 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
+        // textmate 引擎用到 java.time / java.util.function 等 API，低版本系统需脱糖
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlin {
         compilerOptions {
@@ -78,6 +80,13 @@ android {
     }
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        // textmate 依赖的 eclipse jdt.annotation 与 paho 都带同名 bundle.properties，
+        // 内容只是 OSGi 元数据，重复时直接丢弃
+        resources.excludes += "bundle.properties"
+    }
+    testOptions {
+        // sora-editor 的日志走 android.util.Log，JVM 单测里需要返回默认值才能跑通
+        unitTests.isReturnDefaultValues = true
     }
 }
 
@@ -135,6 +144,12 @@ dependencies {
     // 拼接预览的 Markdown 渲染
     implementation(libs.markdown.renderer)
     implementation(libs.markdown.renderer.m3)
+
+    // 代码编辑器：TextMate 语法高亮（JSON/YAML/JavaScript）
+    implementation(platform(libs.sora.editor.bom))
+    implementation(libs.sora.editor)
+    implementation(libs.sora.language.textmate)
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

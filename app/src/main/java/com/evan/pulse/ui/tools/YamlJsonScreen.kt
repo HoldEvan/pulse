@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -13,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,8 +28,9 @@ import com.evan.pulse.ui.common.subPageOverScroll
 import com.evan.pulse.ui.common.subPageScrollState
 import com.evan.pulse.ui.design.AppTabRow
 import com.evan.pulse.ui.design.AppText
-import com.evan.pulse.ui.design.AppTextField
 import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.CodeEditorField
+import com.evan.pulse.ui.design.CodeLanguage
 
 private enum class YamlJsonMode { YAML_TO_JSON, JSON_TO_YAML }
 
@@ -66,17 +69,21 @@ fun YamlJsonScreen(modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxWidth()
         )
 
-        AppTextField(
-            value = input,
-            onValueChange = { input = it },
-            label = stringResource(
+        CardSectionTitle(
+            text = stringResource(
                 when (mode) {
                     YamlJsonMode.YAML_TO_JSON -> R.string.yaml_json_input_yaml
                     YamlJsonMode.JSON_TO_YAML -> R.string.yaml_json_input_json
                 }
             ),
-            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-            minLines = 8
+            modifier = Modifier.padding(top = 12.dp)
+        )
+        CodeEditorField(
+            text = input,
+            onValueChange = { input = it },
+            language = if (mode == YamlJsonMode.YAML_TO_JSON) CodeLanguage.YAML else CodeLanguage.JSON,
+            dark = AppTheme.colors.background.luminance() < 0.5f,
+            modifier = Modifier.fillMaxWidth().height(220.dp).padding(top = 6.dp)
         )
 
         Row(

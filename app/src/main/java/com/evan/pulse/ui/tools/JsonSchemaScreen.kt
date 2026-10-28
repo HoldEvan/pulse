@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -13,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,8 +29,9 @@ import com.evan.pulse.ui.common.subPageScrollState
 import com.evan.pulse.ui.design.AppCard
 import com.evan.pulse.ui.design.AppText
 import com.evan.pulse.ui.design.AppTextButton
-import com.evan.pulse.ui.design.AppTextField
 import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.CodeEditorField
+import com.evan.pulse.ui.design.CodeLanguage
 
 private const val SAMPLE_SCHEMA = """{
   "type": "object",
@@ -67,25 +70,33 @@ fun JsonSchemaScreen(modifier: Modifier = Modifier) {
             .padding(start = 12.dp, top = LocalTopBarInset.current, end = 12.dp)
             .padding(bottom = 12.dp)
     ) {
-        AppTextField(
-            value = schemaText,
+        CardSectionTitle(
+            text = stringResource(R.string.json_schema_schema_label),
+            modifier = Modifier.padding(top = 12.dp)
+        )
+        CodeEditorField(
+            text = schemaText,
             onValueChange = {
                 schemaText = it
                 report = null
             },
-            label = stringResource(R.string.json_schema_schema_label),
-            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-            minLines = 5
+            language = CodeLanguage.JSON,
+            dark = AppTheme.colors.background.luminance() < 0.5f,
+            modifier = Modifier.fillMaxWidth().height(180.dp).padding(top = 6.dp)
         )
-        AppTextField(
-            value = dataText,
+        CardSectionTitle(
+            text = stringResource(R.string.json_schema_data_label),
+            modifier = Modifier.padding(top = 12.dp)
+        )
+        CodeEditorField(
+            text = dataText,
             onValueChange = {
                 dataText = it
                 report = null
             },
-            label = stringResource(R.string.json_schema_data_label),
-            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-            minLines = 5
+            language = CodeLanguage.JSON,
+            dark = AppTheme.colors.background.luminance() < 0.5f,
+            modifier = Modifier.fillMaxWidth().height(180.dp).padding(top = 6.dp)
         )
 
         Row(

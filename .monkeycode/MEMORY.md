@@ -312,3 +312,14 @@ Entries discovered by the Agent during task execution should follow this format:
   - `Theme.SplashScreen`（core-splashscreen 1.0.1）在 `values/` 只设置**库命名空间**的 `windowSplashScreenBackground`/`windowSplashScreenAnimatedIcon`，在 `values-v31/` 才把它们桥接到 framework 的 `android:windowSplashScreenBackground`/`android:windowSplashScreenAnimatedIcon`；桥接本身正确，问题不在属性传递链
   - 想强制系统渲染我们配置的图标（不被 launcher 图标替代/静默省略），在主题里显式加 `android:windowSplashScreenBehavior=icon_preferred`（framework attr，API 33+，枚举名 `default`/`icon_preferred` 见 `$ANDROID_SDK/platforms/android-37.0/data/res/values/attrs.xml`）；内联在默认 `values/` 即可，低版本运行时忽略未知 attr
   - 定位手法：`git show <commit>:app/src/main/res/values/themes.xml` 逐版对比能显示/不能显示的 commit，最快锁定是「图标颜色改成动态色」这一改动引入的回归；桌面图标（adaptive + 动态色）在 launcher 里能显示，不能据此推断 splash 图标也能显示——两者渲染进程不同
+
+[Project Knowledge Summary]
+- Date: 2026-10-28
+- Context: Discovered by Agent while replacing the hand-written Compose code editors (script/YAML/JSON) with sora-editor + language-textmate
+- Category: Build Methods
+- Instructions:
+  - 引入 sora-editor 0.24.7 需三处配套：`io.github.rosemoe:sora-editor-bom` + `sora-editor` + `sora-language-textmate`（monarch 无 YAML 语法，只能走 textmate）；tm4e 用到 `java.time` 等 API，必须开 `isCoreLibraryDesugaringEnabled = true` 并加 `desugar_jdk_libs`（最新 2.1.5，2.1.6 不存在）
+  - 打包会撞 `bundle.properties` 重复（textmate 传递的 eclipse jdt.annotation 与 paho 各带一份），`packaging.resources.excludes += "bundle.properties"` 解决；R8 需 keep `org.eclipse.tm4e.**`、`io.github.rosemoe.sora.langs.textmate.**`、`CodeEditor`、`org.joni.**`（否则运行期反射/序列化失败）
+  - vscode 的 YAML 语法不是单文件：`source.yaml` 只做分发，实际由 `source.yaml.1.2` 与 `source.yaml.embedded` 承担，三个文件必须同时放进 assets 并在 `languages.json` 注册，否则解析 YAML 时 scope 找不到
+  - tm4e 对 `.tmLanguage.json` 的 `beginCaptures`/`endCaptures` 只接受对象形式；YAML 语法里写成字符串值（`"comment": "..."`）会在解析时抛 `ClassCastException`，需逐项改成对象（`{"name": "..."}`）
+  - 单测里跑纯 JVM 代码调用 Android API 会 `Method not mocked`，`unitTests.isReturnDefaultValues = true` 兜底；编辑器主题用 sora 自带 `quietlight`/`darcula` JSON，深色判定读 `AppTheme.colors.background.luminance() < 0.5f`，换肤靠 `key(dark)` 重建 AndroidView（配色方案不会主动重绘）
