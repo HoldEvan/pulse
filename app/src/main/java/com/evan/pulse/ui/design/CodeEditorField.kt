@@ -177,12 +177,15 @@ private class CompletionEntry(
     }
 
     override fun performCompletion(editor: CodeEditor, content: Content, line: Int, column: Int) {
-        val start = (column - prefixLength).coerceIn(0, column)
-        content.replace(line, start, line, column, completion.insert)
-        val lineLength = content.getLineString(line).length
-        val caret = (start + completion.insert.length - completion.caretBack).coerceIn(0, lineLength)
-        val index = content.getCharIndex(line, caret)
-        editor.setSelection(index, index)
+        val col = column.coerceIn(0, content.getColumnCount(line))
+        val start = (col - prefixLength).coerceIn(0, col)
+        val startIndex = content.getCharIndex(line, start)
+        content.replace(line, start, line, col, completion.insert)
+        // setSelection 接收的是行列坐标（不是字符下标），插入后按新的字符下标换算
+        val end = content.getIndexer().getCharPosition(startIndex + completion.insert.length)
+        val caretColumn = (end.column - completion.caretBack)
+            .coerceIn(0, content.getColumnCount(end.line))
+        editor.setSelection(end.line, caretColumn)
     }
 }
 
