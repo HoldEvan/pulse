@@ -150,6 +150,7 @@ class RhinoScriptExecutor : ScriptExecutor {
             cx.setClassShutter(PulseClassShutter())
             val scope = cx.initStandardObjects()
             scope.defineProperty("pm", buildPm(cx, scope), 0)
+            scope.defineProperty("console", consoleObject(PmBuilder(cx, scope), sandbox), 0)
             cx.evaluateString(scope, script, SCRIPT_FILE_NAME, 1, null)
         } catch (t: Throwable) {
             return ScriptRunResult.Failed(
@@ -213,8 +214,8 @@ private class PmBuilder(val cx: Context, val scope: Scriptable) {
             scope, -1, name, 0, scope
         )
 
-    fun newObject(): ScriptableObject =
-        (cx.newObject(scope) as ScriptableObject).also { it.setPrototype(scope) }
+    /** cx.newObject 已把原型设成 Object.prototype；若改成 scope，pm 会顺着原型链看到 console 等全局对象 */
+    fun newObject(): ScriptableObject = cx.newObject(scope) as ScriptableObject
 
     fun jsonValue(element: JsonElement): Any = when (element) {
         is JsonObject -> newObject().also { obj ->
@@ -268,7 +269,7 @@ private fun toStr(value: Any?): String = when (value) {
 }
 
 /**
- * pm.console 里打印对象时按 JSON 展开，方便查看响应/请求结构。
+ * console 里打印对象时按 JSON 展开，方便查看响应/请求结构。
  * [toStr] 对 Scriptable 走 Context.toString，对象只会输出 [object Object]；
  * 这里在对象场景换成递归序列化。普通流程仍走 Context.toString，避免改动语义。
  */
@@ -723,8 +724,10 @@ private fun consoleObject(
 ): ScriptableObject {
     val n = b.node()
     n.method("log") { args -> sandbox.log("", args.joinToString(" ") { value -> consoleStr(value) }) }
+    n.method("info") { args -> sandbox.log("info", args.joinToString(" ") { value -> consoleStr(value) }) }
     n.method("warn") { args -> sandbox.log("warn", args.joinToString(" ") { value -> consoleStr(value) }) }
     n.method("error") { args -> sandbox.log("error", args.joinToString(" ") { value -> consoleStr(value) }) }
+    n.method("debug") { args -> sandbox.log("debug", args.joinToString(" ") { value -> consoleStr(value) }) }
     return n.self
 }
 
@@ -788,7 +791,6 @@ private fun buildPm(
     sandbox.collectionScope?.let { vars ->
         n.prop("collectionVariables") { variableObject(b, sandbox, vars) }
     }
-    n.prop("console") { consoleObject(b, sandbox) }
     n.value("iteration") { 0 }
     n.value("iterationCount") { 1 }
     if (response != null) n.value("response") { response }
@@ -799,7 +801,6 @@ private fun buildPm(
         sandbox.test(name) { fn.call(b.cx, b.scope, b.scope, emptyArray()) }
         null
     }
-    n.method("log") { args -> sandbox.log("", args.joinToString(" ") { value -> consoleStr(value) }) }
     return n.self
 }
 

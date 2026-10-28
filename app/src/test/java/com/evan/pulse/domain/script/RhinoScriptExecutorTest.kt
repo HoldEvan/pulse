@@ -143,14 +143,14 @@ class RhinoScriptExecutorTest {
     fun queryAddRemoveRoundTripsThroughTheUrl() {
         val (request, _, result) = runPre(
             """
-            pm.console.log('before=' + pm.request.url.query.count)
-            pm.console.log('x=' + pm.request.url.query.get('x'))
-            pm.console.log('hasX=' + pm.request.url.query.has('x'))
+            console.log('before=' + pm.request.url.query.count)
+            console.log('x=' + pm.request.url.query.get('x'))
+            console.log('hasX=' + pm.request.url.query.has('x'))
             pm.request.url.query.add('y', '2')
-            pm.console.log('afterAdd=' + pm.request.url.query.toQuery())
+            console.log('afterAdd=' + pm.request.url.query.toQuery())
             pm.request.url.query.remove('x')
-            pm.console.log('afterRemove=' + pm.request.url.query.toQuery())
-            pm.console.log('count=' + pm.request.url.query.count)
+            console.log('afterRemove=' + pm.request.url.query.toQuery())
+            console.log('count=' + pm.request.url.query.count)
             """.trimIndent(),
             request(url = "https://api.example.com/v1/users?x=1")
         )
@@ -167,16 +167,16 @@ class RhinoScriptExecutorTest {
     fun urlViewExposesEveryComponent() {
         val (_, _, result) = runPre(
             """
-            pm.console.log('scheme=' + pm.request.url.getScheme())
-            pm.console.log('host=' + pm.request.url.getHost())
-            pm.console.log('hostname=' + pm.request.url.getHostname())
-            pm.console.log('port=' + pm.request.url.getPort())
-            pm.console.log('path=' + pm.request.url.getPath())
-            pm.console.log('query=' + pm.request.url.getQuery())
-            pm.console.log('hash=' + pm.request.url.getHash())
-            pm.console.log('user=' + pm.request.url.getCredentials().username)
-            pm.console.log('pass=' + pm.request.url.getCredentials().password)
-            pm.console.log('requestQuery=' + pm.request.query)
+            console.log('scheme=' + pm.request.url.getScheme())
+            console.log('host=' + pm.request.url.getHost())
+            console.log('hostname=' + pm.request.url.getHostname())
+            console.log('port=' + pm.request.url.getPort())
+            console.log('path=' + pm.request.url.getPath())
+            console.log('query=' + pm.request.url.getQuery())
+            console.log('hash=' + pm.request.url.getHash())
+            console.log('user=' + pm.request.url.getCredentials().username)
+            console.log('pass=' + pm.request.url.getCredentials().password)
+            console.log('requestQuery=' + pm.request.query)
             """.trimIndent(),
             request(url = "https://bob:secret@api.example.com:8443/v1/users?page=1&size=20#top")
         )
@@ -201,18 +201,18 @@ class RhinoScriptExecutorTest {
     fun postScriptReadsResponseView() {
         val (_, result) = runPost(
             """
-            pm.console.log('code=' + pm.response.statusCode)
-            pm.console.log('status=' + pm.response.status)
-            pm.console.log('size=' + pm.response.size)
-            pm.console.log('time=' + pm.response.time)
-            pm.console.log('duration=' + pm.response.duration)
-            pm.console.log('contentType=' + pm.response.contentType)
-            pm.console.log('isJson=' + pm.response.isJson())
-            pm.console.log('name=' + pm.response.json().name)
-            pm.console.log('count=' + pm.response.jsonp('count'))
-            pm.console.log('header=' + pm.response.headers.get('content-type'))
-            pm.console.log('len=' + pm.response.text().length)
-            pm.console.log('toJson=' + pm.response.to().json().name)
+            console.log('code=' + pm.response.statusCode)
+            console.log('status=' + pm.response.status)
+            console.log('size=' + pm.response.size)
+            console.log('time=' + pm.response.time)
+            console.log('duration=' + pm.response.duration)
+            console.log('contentType=' + pm.response.contentType)
+            console.log('isJson=' + pm.response.isJson())
+            console.log('name=' + pm.response.json().name)
+            console.log('count=' + pm.response.jsonp('count'))
+            console.log('header=' + pm.response.headers.get('content-type'))
+            console.log('len=' + pm.response.text().length)
+            console.log('toJson=' + pm.response.to().json().name)
             """.trimIndent()
         )
         assertEquals(
@@ -275,8 +275,8 @@ class RhinoScriptExecutorTest {
             """
             pm.request.body.mode = 'json'
             pm.request.body.json = { name: 'pulse', tags: [1, 2] }
-            pm.console.log('mode=' + pm.request.body.mode)
-            pm.console.log('text=' + pm.request.getBody())
+            console.log('mode=' + pm.request.body.mode)
+            console.log('text=' + pm.request.getBody())
             """.trimIndent()
         )
         val lines = requireOk(result).console
@@ -305,13 +305,13 @@ class RhinoScriptExecutorTest {
             """
             pm.variables.set('token', 'abc')
             pm.variables.unshift('env', 'prod')
-            pm.console.log('token=' + pm.variables.get('token'))
-            pm.console.log('hasEnv=' + pm.variables.has('env'))
-            pm.console.log('count=' + pm.variables.count)
+            console.log('token=' + pm.variables.get('token'))
+            console.log('hasEnv=' + pm.variables.has('env'))
+            console.log('count=' + pm.variables.count)
             pm.environment.set('fromEnv', '1')
-            pm.console.log('viaGlobals=' + pm.globals.get('fromEnv'))
+            console.log('viaGlobals=' + pm.globals.get('fromEnv'))
             pm.variables.delete('token')
-            pm.console.log('gone=' + pm.variables.has('token'))
+            console.log('gone=' + pm.variables.has('token'))
             """.trimIndent()
         )
         val ok = requireOk(result)
@@ -328,13 +328,32 @@ class RhinoScriptExecutorTest {
     fun consoleLevelsGetTheirPrefix() {
         val (_, _, result) = runPre(
             """
-            pm.console.log('a', 'b', 3)
-            pm.console.warn('w')
-            pm.console.error('e')
-            pm.log('top')
+            console.log('a', 'b', 3)
+            console.info('i')
+            console.warn('w')
+            console.error('e')
+            console.debug('d')
             """.trimIndent()
         )
-        assertEquals(listOf("a b 3", "warn: w", "error: e", "top"), requireOk(result).console)
+        assertEquals(
+            listOf("a b 3", "info: i", "warn: w", "error: e", "debug: d"),
+            requireOk(result).console
+        )
+    }
+
+    @Test
+    fun pmConsoleIsGoneAndConsoleIsNative() {
+        val (_, _, result) = runPre(
+            """
+            console.log(typeof pm.console)
+            console.log(typeof pm.log)
+            console.log(typeof console.log)
+            """.trimIndent()
+        )
+        assertEquals(
+            listOf("undefined", "undefined", "function"),
+            requireOk(result).console
+        )
     }
 
     @Test
@@ -342,7 +361,7 @@ class RhinoScriptExecutorTest {
         val (_, result) = runPost(
             """
             pm.response.headers.remove('content-type')
-            pm.console.log('count=' + pm.response.headers.count)
+            console.log('count=' + pm.response.headers.count)
             """.trimIndent()
         )
         val ok = requireOk(result)
@@ -352,7 +371,7 @@ class RhinoScriptExecutorTest {
     @Test
     fun postScriptOnFailedCallHasNoResponse() {
         val (_, result) = runPost(
-            "pm.console.log('has=' + (typeof pm.response))",
+            "console.log('has=' + (typeof pm.response))",
             outcome = HttpCallOutcome.Failure(HttpErrorType.NETWORK, "connection refused")
         )
         assertEquals(listOf("has=undefined"), requireOk(result).console)
@@ -362,7 +381,7 @@ class RhinoScriptExecutorTest {
     fun runtimeAndSyntaxErrorsBecomeFailedResults() {
         val scope = Scope(emptyMap())
         val runtime = executor.runPre(
-            "pm.console.log('before')\nthrow new Error('kaboom')\n",
+            "console.log('before')\nthrow new Error('kaboom')\n",
             request(),
             scope.session
         )

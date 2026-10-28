@@ -432,9 +432,10 @@
     <string name="script_docs_group_response">回應</string>
     <string name="script_docs_group_variables">變數</string>
     <string name="script_docs_group_log">日誌與斷言</string>
+    <string name="script_docs_group_json">JSON 物件</string>
     <string name="script_docs_examples_title">範例</string>
     <string name="script_docs_example_pre">// 寫入追蹤 ID，設定請求標頭，並組裝 JSON 請求體\npm.variables.set(\"traceId\", Date.now());\npm.request.setHeader(\"X-Request-Id\", pm.variables.get(\"traceId\"));\npm.request.body.mode = \"raw\";\npm.request.body.json = { token: pm.variables.get(\"token\") };</string>
-    <string name="script_docs_example_post">// 校驗狀態碼與耗時，並把 id 寫入環境\nif (pm.response.statusCode !== 200) {\n    throw new Error(\"expected 200, got \" + pm.response.statusCode);\n}\nif (pm.response.time &gt; 2000) {\n    throw new Error(\"too slow: \" + pm.response.time + \"ms\");\n}\nconst body = pm.response.json();\nif (body.id) pm.environment.set(\"userId\", body.id);\npm.log(\"done in \" + pm.response.time + \"ms\");</string>
+    <string name="script_docs_example_post">// 校驗狀態碼與耗時，並把 id 寫入環境\nif (pm.response.statusCode !== 200) {\n    throw new Error(\"expected 200, got \" + pm.response.statusCode);\n}\nif (pm.response.time &gt; 2000) {\n    throw new Error(\"too slow: \" + pm.response.time + \"ms\");\n}\nconst body = pm.response.json();\nif (body.id) pm.environment.set(\"userId\", body.id);\nconsole.log(\"done in \" + pm.response.time + \"ms\");</string>
     <string name="script_console">腳本輸出</string>
     <string name="kv_param_key">參數名</string>
     <string name="kv_header_key">Header 名</string>

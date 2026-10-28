@@ -63,12 +63,14 @@ fun ScriptDocsScreen(
         )
         DocSection(
             title = stringResource(R.string.script_docs_group_log),
-            entries = ScriptApiCatalog.tokens.filter {
-                it.path.startsWith("pm.console") ||
-                    it.path == "pm.log" ||
-                    it.path == "pm.test" ||
-                    it.path.startsWith("pm.iteration")
-            }
+            entries = ScriptApiCatalog.memberTokens.filter { it.path.startsWith("console.") } +
+                ScriptApiCatalog.tokens.filter {
+                    it.path == "pm.test" || it.path.startsWith("pm.iteration")
+                }
+        )
+        DocSection(
+            title = stringResource(R.string.script_docs_group_json),
+            entries = ScriptApiCatalog.memberTokens.filter { it.path.startsWith("JSON.") }
         )
         if (!isPre) {
             DocSection(

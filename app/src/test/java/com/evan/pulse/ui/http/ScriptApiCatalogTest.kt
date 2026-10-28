@@ -54,4 +54,31 @@ class ScriptApiCatalogTest {
         val result = ScriptApiCatalog.match("dup", script)
         assertEquals(2, result.count { it.path == "dup" || it.path == "dupFn" })
     }
+
+    @Test
+    fun completesConsoleMembersAfterDot() {
+        val result = ScriptApiCatalog.match("console.")
+        assertTrue(result.isNotEmpty())
+        assertTrue(result.all { it.path.startsWith("console.") })
+        assertTrue(result.any { it.path == "console.log" && it.isMethod })
+        assertTrue(result.any { it.path == "console.warn" && it.isMethod })
+    }
+
+    @Test
+    fun completesJsonMembersAfterDot() {
+        val result = ScriptApiCatalog.match("JSON.")
+        assertTrue(result.any { it.path == "JSON.parse" && it.isMethod })
+        assertTrue(result.any { it.path == "JSON.stringify" && it.isMethod })
+        assertTrue(result.all { it.path.startsWith("JSON.") })
+    }
+
+    @Test
+    fun removesPmConsoleFromCatalog() {
+        assertTrue(ScriptApiCatalog.match("pm.console").isEmpty())
+        assertTrue(
+            ScriptApiCatalog.tokens.none {
+                it.path.startsWith("pm.console") || it.path == "pm.log"
+            }
+        )
+    }
 }

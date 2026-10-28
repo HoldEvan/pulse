@@ -432,9 +432,10 @@
     <string name="script_docs_group_response">Response</string>
     <string name="script_docs_group_variables">Variables</string>
     <string name="script_docs_group_log">Logging &amp; assertions</string>
+    <string name="script_docs_group_json">JSON</string>
     <string name="script_docs_examples_title">Examples</string>
     <string name="script_docs_example_pre">// Stamp a trace id, add a header, then build a JSON body\npm.variables.set(\"traceId\", Date.now());\npm.request.setHeader(\"X-Request-Id\", pm.variables.get(\"traceId\"));\npm.request.body.mode = \"raw\";\npm.request.body.json = { token: pm.variables.get(\"token\") };</string>
-    <string name="script_docs_example_post">// Assert status and latency, then persist the id\nif (pm.response.statusCode !== 200) {\n    throw new Error(\"expected 200, got \" + pm.response.statusCode);\n}\nif (pm.response.time &gt; 2000) {\n    throw new Error(\"too slow: \" + pm.response.time + \"ms\");\n}\nconst body = pm.response.json();\nif (body.id) pm.environment.set(\"userId\", body.id);\npm.log(\"done in \" + pm.response.time + \"ms\");</string>
+    <string name="script_docs_example_post">// Assert status and latency, then persist the id\nif (pm.response.statusCode !== 200) {\n    throw new Error(\"expected 200, got \" + pm.response.statusCode);\n}\nif (pm.response.time &gt; 2000) {\n    throw new Error(\"too slow: \" + pm.response.time + \"ms\");\n}\nconst body = pm.response.json();\nif (body.id) pm.environment.set(\"userId\", body.id);\nconsole.log(\"done in \" + pm.response.time + \"ms\");</string>
     <string name="script_console">Script output</string>
     <string name="kv_param_key">Param name</string>
     <string name="kv_header_key">Header</string>

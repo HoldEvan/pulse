@@ -98,12 +98,6 @@ object ScriptApiCatalog {
         add(fn("pm.globals.get", "get(key)"))
         add(fn("pm.globals.set", "set(key, value)"))
 
-        add(prop("pm.console"))
-        add(fn("pm.console.log", "log(...args)"))
-        add(fn("pm.console.warn", "warn(...args)"))
-        add(fn("pm.console.error", "error(...args)"))
-        add(fn("pm.log", "log(...args)"))
-
         add(prop("pm.iteration"))
         add(prop("pm.iterationCount"))
 
@@ -129,10 +123,25 @@ object ScriptApiCatalog {
     }
 
     /**
+     * 原生 JS 对象的成员，只在输入 `console.`、`JSON.` 这类带点前缀时提示；
+     * 裸词补全只列对象名，避免一上来就塞满成员。
+     */
+    val memberTokens: List<ScriptApiToken> = listOf(
+        fn("console.log", "log(...args)"),
+        fn("console.info", "info(...args)"),
+        fn("console.warn", "warn(...args)"),
+        fn("console.error", "error(...args)"),
+        fn("console.debug", "debug(...args)"),
+        fn("JSON.parse", "parse(text, reviver)"),
+        fn("JSON.stringify", "stringify(value, replacer, space)"),
+    )
+
+    /**
      * 按当前正在输入的词元过滤补全项。
      *
-     * 含 `.` 的词元按完整路径前缀匹配；不含 `.` 的裸词元额外按最后一段匹配，
-     * 这样输入 `set` 也能提示出 `pm.request.setHeader` 等函数。
+     * 含 `.` 的词元按完整路径前缀匹配（pm API 加原生 `console.` / `JSON.` 成员）；
+     * 不含 `.` 的裸词元额外按最后一段匹配，这样输入 `set` 也能提示出
+     * `pm.request.setHeader` 等函数。
      *
      * [source] 是编辑器里的脚本全文：裸词元还会合并 JavaScript 内置全局名与脚本里
      * 通过 `function` / `var` / `let` / `const` / 赋值定义的名字，让使用者自己的
@@ -142,7 +151,8 @@ object ScriptApiCatalog {
         val lower = token.lowercase()
         if (lower.isEmpty()) return emptyList()
         val dot = lower.contains('.')
-        val matched = tokens.asSequence()
+        val pool = if (dot) tokens + memberTokens else tokens
+        val matched = pool.asSequence()
             .filter { it.path != token }
             .filter { candidate ->
                 val path = candidate.path.lowercase()
