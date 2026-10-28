@@ -327,3 +327,4 @@ Entries discovered by the Agent during task execution should follow this format:
   - `CodeEditor.setSelection(int, int)` 的参数是 `(line, column)` 而不是字符下标，传下标会直接抛 `StringIndexOutOfBoundsException`；按字符下标定位需先 `content.getIndexer().getCharPosition(index)` 换算
   - 编辑器底色跟随应用主题要显式覆盖配色方案：`colorScheme.setColor(EditorColorScheme.WHOLE_BACKGROUND / LINE_NUMBER_BACKGROUND / LINE_NUMBER_PANEL, argb)`（没有 `EDITOR_BACKGROUND` 常量），且主题切换后需在 `AndroidView.update` 里重新覆盖一次
   - 代码补全走 sora 内置弹窗：用 `Language by delegate` 包装 `TextMateLanguage` 只覆写 `requireAutoComplete`，候选用自定义 `CompletionItem` 覆盖 `performCompletion(editor, content, line, column)` 完成前缀替换与光标回退
+  - 底部符号栏用库内自带的 `io.github.rosemoe.sora.widget.SymbolInputView`（放进 `HorizontalScrollView`，`bindEditor` + `addSymbols(labels, values)`），Tab 会走 `indentOrCommitTab`，其余按键走 `insertText` 自动进撤销栈；不需要自己写插入逻辑

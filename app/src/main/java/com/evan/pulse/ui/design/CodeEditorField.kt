@@ -192,37 +192,40 @@ private class CompletionEntry(
 }
 
 /**
- * 编辑器的命令式入口：供底部工具栏在光标处插入符号、请求焦点。
+ * 编辑器的命令式入口：供外部顶栏执行撤销/重做、请求焦点。
  *
- * Compose 侧的文本同步仍走 [CodeEditorField] 的 text 参数，这里只暴露
- * 那些无法用状态表达的操作（在光标处插入、替换选区）。
+ * [editor] 是 Compose 状态，界面可以在编辑器挂载后拿到实例；文本同步仍走
+ * [CodeEditorField] 的 text 参数，这里只暴露无法用状态表达的操作。
  */
 class CodeEditorController {
-    internal var editor: CodeEditor? = null
 
-    /** 在光标处插入 [text]（有选区时替换选区），光标停在插入内容末尾往前 [caretBack] 个字符处 */
-    fun insert(text: String, caretBack: Int = 0) {
-        val target = editor ?: return
-        val content = target.text
-        val cursor = target.cursor
-        val start = cursor.left()
-        val startIndex = content.getCharIndex(start.line, start.column)
-        if (cursor.isSelected) {
-            val end = cursor.right()
-            content.replace(start.line, start.column, end.line, end.column, text)
-        } else {
-            content.insert(start.line, start.column, text)
+    private val editorState = mutableStateOf<CodeEditor?>(null)
+
+    internal var editor: CodeEditor?
+        get() = editorState.value
+        set(value) {
+            editorState.value = value
         }
-        // setSelection 接收行列坐标，这里按新的字符下标换算，插入多行时也能正确定位
-        val insertEnd = content.getIndexer().getCharPosition(startIndex + text.length)
-        val caretColumn = (insertEnd.column - caretBack)
-            .coerceIn(0, content.getColumnCount(insertEnd.line))
-        target.setSelection(insertEnd.line, caretColumn)
-        target.requestFocus()
+
+    val isAttached: Boolean
+        get() = editorState.value != null
+
+    val canUndo: Boolean
+        get() = editorState.value?.canUndo() == true
+
+    val canRedo: Boolean
+        get() = editorState.value?.canRedo() == true
+
+    fun undo() {
+        editorState.value?.undo()
+    }
+
+    fun redo() {
+        editorState.value?.redo()
     }
 
     fun requestFocus() {
-        editor?.requestFocus()
+        editorState.value?.requestFocus()
     }
 }
 

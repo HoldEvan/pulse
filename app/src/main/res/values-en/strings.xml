@@ -417,6 +417,8 @@
     <string name="script_post_label">Post-response script: runs after the response; can read it and assert on it</string>
     <string name="script_pre_title">Pre-request script</string>
     <string name="script_post_title">Post-response script</string>
+    <string name="cd_undo">Undo</string>
+    <string name="cd_redo">Redo</string>
     <string name="cd_script_docs">Open script docs</string>
     <string name="cd_clear_script">Clear script</string>
     <string name="script_docs_title">Script API Reference</string>

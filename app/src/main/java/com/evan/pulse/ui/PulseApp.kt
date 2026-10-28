@@ -633,25 +633,14 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
         }
 
         entry<PulseRoute.ScriptEditor> { route ->
-            SubPageScreen(
-                title = stringResource(
-                    if (route.target == 0) R.string.script_tab_pre else R.string.script_tab_post
-                ),
-                actions = {
-                    AppIconButton(onClick = { navController.pushRoute(PulseRoute.ScriptDocs(route.target)) }) {
-                        AppIcon(
-                            imageVector = Icons.AutoMirrored.Filled.Article,
-                            contentDescription = stringResource(R.string.cd_script_docs)
-                        )
-                    }
-                }
-            ) {
-                ScriptEditorScreen(
-                    target = route.target,
-                    modifier = Modifier.fillMaxSize(),
-                    viewModel = httpViewModel
-                )
-            }
+            // 脚本编辑页自带单行顶栏（返回/撤销/重做/文档），不复用会收缩的大标题 SubPageScreen
+            ScriptEditorScreen(
+                target = route.target,
+                onBack = { navController.pop() },
+                onOpenDocs = { navController.pushRoute(PulseRoute.ScriptDocs(route.target)) },
+                modifier = Modifier.fillMaxSize(),
+                viewModel = httpViewModel
+            )
         }
 
         entry<PulseRoute.ScriptDocs> { route ->

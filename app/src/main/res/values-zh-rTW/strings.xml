@@ -417,6 +417,8 @@
     <string name="script_post_label">後置腳本：收到回應後執行，可讀取回應並寫斷言</string>
     <string name="script_pre_title">前置腳本</string>
     <string name="script_post_title">後置腳本</string>
+    <string name="cd_undo">復原</string>
+    <string name="cd_redo">重做</string>
     <string name="cd_script_docs">檢視腳本文件</string>
     <string name="cd_clear_script">清空腳本內容</string>
     <string name="script_docs_title">腳本 API 文件</string>
