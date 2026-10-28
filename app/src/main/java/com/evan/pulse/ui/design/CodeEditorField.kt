@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.key
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -17,6 +16,8 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
@@ -37,6 +38,7 @@ import io.github.rosemoe.sora.text.CharPosition
 import io.github.rosemoe.sora.text.Content
 import io.github.rosemoe.sora.text.ContentReference
 import io.github.rosemoe.sora.widget.CodeEditor
+import io.github.rosemoe.sora.widget.schemes.EditorColorScheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -190,11 +192,64 @@ private class CompletionEntry(
 }
 
 /**
+ * 编辑器的命令式入口：供底部工具栏在光标处插入符号、请求焦点。
+ *
+ * Compose 侧的文本同步仍走 [CodeEditorField] 的 text 参数，这里只暴露
+ * 那些无法用状态表达的操作（在光标处插入、替换选区）。
+ */
+class CodeEditorController {
+    internal var editor: CodeEditor? = null
+
+    /** 在光标处插入 [text]（有选区时替换选区），光标停在插入内容末尾往前 [caretBack] 个字符处 */
+    fun insert(text: String, caretBack: Int = 0) {
+        val target = editor ?: return
+        val content = target.text
+        val cursor = target.cursor
+        val start = cursor.left()
+        val startIndex = content.getCharIndex(start.line, start.column)
+        if (cursor.isSelected) {
+            val end = cursor.right()
+            content.replace(start.line, start.column, end.line, end.column, text)
+        } else {
+            content.insert(start.line, start.column, text)
+        }
+        // setSelection 接收行列坐标，这里按新的字符下标换算，插入多行时也能正确定位
+        val insertEnd = content.getIndexer().getCharPosition(startIndex + text.length)
+        val caretColumn = (insertEnd.column - caretBack)
+            .coerceIn(0, content.getColumnCount(insertEnd.line))
+        target.setSelection(insertEnd.line, caretColumn)
+        target.requestFocus()
+    }
+
+    fun requestFocus() {
+        editor?.requestFocus()
+    }
+}
+
+/** 按语言与补全提供方构造编辑器语言；补全存在时套一层只接管 requireAutoComplete 的包装 */
+private fun buildEditorLanguage(
+    language: CodeLanguage,
+    provider: CodeCompletionProvider?,
+): Language {
+    val textMate = TextMateLanguage.create(language.scopeName, false)
+    return if (provider == null) textMate else CompletionLanguage(textMate, provider)
+}
+
+/** 让编辑器底色跟随应用主题，避免 TextMate 自带的纯白/纯黑与页面割裂 */
+private fun applyEditorBackground(editor: CodeEditor, argb: Int) {
+    val scheme = editor.colorScheme
+    scheme.setColor(EditorColorScheme.WHOLE_BACKGROUND, argb)
+    scheme.setColor(EditorColorScheme.LINE_NUMBER_BACKGROUND, argb)
+    scheme.setColor(EditorColorScheme.LINE_NUMBER_PANEL, argb)
+}
+
+/**
  * sora-editor 的 Compose 封装：TextMate 语法高亮 + 行号 + 等宽字体。
  *
  * [text] 由调用方持有，编辑器内部编辑通过 [onValueChange] 回传；外部修改内容时
  * 通过文本比对同步到编辑器，避免每次重组都重设文本导致光标跳动。
  * 传入 [completionProvider] 后使用 sora-editor 内置的补全弹窗展示候选项。
+ * 编辑器只创建一次，换语言用 setEditorLanguage 原地切换，保持焦点与光标。
  */
 @Composable
 fun CodeEditorField(
@@ -206,6 +261,8 @@ fun CodeEditorField(
     dark: Boolean = false,
     readOnly: Boolean = false,
     completionProvider: CodeCompletionProvider? = null,
+    controller: CodeEditorController? = null,
+    background: Color = AppTheme.colors.surfaceVariant,
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
@@ -213,8 +270,9 @@ fun CodeEditorField(
         CodeEditorSupport.ensureReady(context)
         value = true
     }
+    val argb = background.toArgb()
     if (!loaded) {
-        Box(modifier = modifier.clip(RoundedCornerShape(12.dp)).background(AppTheme.colors.surfaceContainer))
+        Box(modifier = modifier.clip(RoundedCornerShape(12.dp)).background(background))
         return
     }
 
@@ -223,50 +281,53 @@ fun CodeEditorField(
 
     val latestOnChange by rememberUpdatedState(onValueChange)
     val editorRef = remember { mutableStateOf<CodeEditor?>(null) }
+    val appliedLanguage = remember { mutableStateOf(language) }
+    val appliedProvider = remember { mutableStateOf(completionProvider) }
 
-    // 换肤或换语言都重建编辑器：配色方案与语法对象只在挂载时注入（仅切换时发生）
-    key(dark, language) {
-        DisposableEffect(Unit) {
-            onDispose {
-                editorRef.value?.release()
-                editorRef.value = null
-            }
+    DisposableEffect(Unit) {
+        onDispose {
+            controller?.editor = null
+            editorRef.value?.release()
+            editorRef.value = null
         }
-
-        AndroidView(
-            modifier = modifier.clip(RoundedCornerShape(12.dp)),
-            factory = { ctx ->
-                CodeEditor(ctx).apply {
-                    setTypefaceText(Typeface.MONOSPACE)
-                    setTextSize(textSizeSp)
-                    setLineSpacing(0f, 1.15f)
-                    setWordwrap(true)
-                    setTabWidth(2)
-                    setLineNumberEnabled(true)
-                    setHighlightCurrentLine(false)
-                    setScrollBarEnabled(true)
-                    setEditable(!readOnly)
-                    val pad = with(density) { 8.dp.roundToPx() }
-                    setPadding(pad, pad, pad, pad)
-                    setColorScheme(TextMateColorScheme.create(ThemeRegistry.getInstance()))
-                    val textMate = TextMateLanguage.create(language.scopeName, false)
-                    setEditorLanguage(
-                        if (completionProvider == null) {
-                            textMate
-                        } else {
-                            CompletionLanguage(textMate, completionProvider)
-                        }
-                    )
-                    setText(text)
-                    subscribeEvent(ContentChangeEvent::class.java) { event, _ ->
-                        latestOnChange(event.editor.text.toString())
-                    }
-                    editorRef.value = this
-                }
-            },
-            update = { editor ->
-                if (editor.text.toString() != text) editor.setText(text)
-            },
-        )
     }
+
+    AndroidView(
+        modifier = modifier.clip(RoundedCornerShape(12.dp)).background(background),
+        factory = { ctx ->
+            CodeEditor(ctx).apply {
+                setTypefaceText(Typeface.MONOSPACE)
+                setTextSize(textSizeSp)
+                setLineSpacing(0f, 1.15f)
+                setWordwrap(true)
+                setTabWidth(2)
+                setLineNumberEnabled(true)
+                setHighlightCurrentLine(false)
+                setScrollBarEnabled(true)
+                setEditable(!readOnly)
+                val pad = with(density) { 8.dp.roundToPx() }
+                setPadding(pad, pad, pad, pad)
+                setColorScheme(TextMateColorScheme.create(ThemeRegistry.getInstance()))
+                setEditorLanguage(buildEditorLanguage(language, completionProvider))
+                applyEditorBackground(this, argb)
+                setText(text)
+                subscribeEvent(ContentChangeEvent::class.java) { event, _ ->
+                    latestOnChange(event.editor.text.toString())
+                }
+                editorRef.value = this
+                controller?.editor = this
+            }
+        },
+        update = { editor ->
+            // 换语言只切语法对象，不重建编辑器，焦点与光标都保留
+            if (appliedLanguage.value != language || appliedProvider.value != completionProvider) {
+                appliedLanguage.value = language
+                appliedProvider.value = completionProvider
+                editor.setEditorLanguage(buildEditorLanguage(language, completionProvider))
+            }
+            // 主题切换会由配色方案监听器重刷颜色，这里每次重组都重新覆盖一次底色
+            applyEditorBackground(editor, argb)
+            if (editor.text.toString() != text) editor.setText(text)
+        },
+    )
 }

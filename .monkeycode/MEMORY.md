@@ -322,4 +322,8 @@ Entries discovered by the Agent during task execution should follow this format:
   - 打包会撞 `bundle.properties` 重复（textmate 传递的 eclipse jdt.annotation 与 paho 各带一份），`packaging.resources.excludes += "bundle.properties"` 解决；R8 需 keep `org.eclipse.tm4e.**`、`io.github.rosemoe.sora.langs.textmate.**`、`CodeEditor`、`org.joni.**`（否则运行期反射/序列化失败）
   - vscode 的 YAML 语法不是单文件：`source.yaml` 只做分发，实际由 `source.yaml.1.2` 与 `source.yaml.embedded` 承担，三个文件必须同时放进 assets 并在 `languages.json` 注册，否则解析 YAML 时 scope 找不到
   - tm4e 对 `.tmLanguage.json` 的 `beginCaptures`/`endCaptures` 只接受对象形式；YAML 语法里写成字符串值（`"comment": "..."`）会在解析时抛 `ClassCastException`，需逐项改成对象（`{"name": "..."}`）
-  - 单测里跑纯 JVM 代码调用 Android API 会 `Method not mocked`，`unitTests.isReturnDefaultValues = true` 兜底；编辑器主题用 sora 自带 `quietlight`/`darcula` JSON，深色判定读 `AppTheme.colors.background.luminance() < 0.5f`，换肤靠 `key(dark)` 重建 AndroidView（配色方案不会主动重绘）
+  - 单测里跑纯 JVM 代码调用 Android API 会 `Method not mocked`，`unitTests.isReturnDefaultValues = true` 兜底；编辑器主题用 sora 自带 `quietlight`/`darcula` JSON，深色判定读 `AppTheme.colors.background.luminance() < 0.5f`
+  - 编辑器实例要复用，不要用 `key(dark, language)` 重建：换主题时 `TextMateColorScheme` 已注册为 `ThemeRegistry` 监听器会自动重刷颜色；换语言改用 `setEditorLanguage`。重建 AndroidView 会导致切换标签后编辑框无法聚焦
+  - `CodeEditor.setSelection(int, int)` 的参数是 `(line, column)` 而不是字符下标，传下标会直接抛 `StringIndexOutOfBoundsException`；按字符下标定位需先 `content.getIndexer().getCharPosition(index)` 换算
+  - 编辑器底色跟随应用主题要显式覆盖配色方案：`colorScheme.setColor(EditorColorScheme.WHOLE_BACKGROUND / LINE_NUMBER_BACKGROUND / LINE_NUMBER_PANEL, argb)`（没有 `EDITOR_BACKGROUND` 常量），且主题切换后需在 `AndroidView.update` 里重新覆盖一次
+  - 代码补全走 sora 内置弹窗：用 `Language by delegate` 包装 `TextMateLanguage` 只覆写 `requireAutoComplete`，候选用自定义 `CompletionItem` 覆盖 `performCompletion(editor, content, line, column)` 完成前缀替换与光标回退
