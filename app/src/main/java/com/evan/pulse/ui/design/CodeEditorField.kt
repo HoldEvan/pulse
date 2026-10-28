@@ -281,8 +281,8 @@ private class PulseCompletionAdapter : EditorCompletionAdapter() {
         if (icon == null) return label
         val span = BadgeSpan(
             icon = icon,
-            sizePx = (14 * context.resources.displayMetrics.density).toInt(),
-            gapPx = (8 * context.resources.displayMetrics.density).toInt(),
+            sizePx = (16 * context.resources.displayMetrics.density).toInt(),
+            gapPx = (6 * context.resources.displayMetrics.density).toInt(),
         )
         return SpannableStringBuilder(" ").apply {
             setSpan(span, 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
@@ -326,10 +326,15 @@ private class PulseCompletionAdapter : EditorCompletionAdapter() {
         ) {
             val fm = paint.fontMetricsInt
             val centerY = y + (fm.ascent + fm.descent) / 2f
-            val left = x.toInt()
-            val iconTop = (centerY - sizePx / 2f).toInt()
-            icon.setBounds(left, iconTop, left + sizePx, iconTop + sizePx)
+            val left = x
+            val iconTop = centerY - sizePx / 2f
+            // sora 的 CircleDrawable 用 bounds.right/bottom 当圆心和半径，完全忽略 left/top，
+            // 所以必须把画布平移到目标位置，再让它以 (0,0,size,size) 为边界绘制
+            canvas.save()
+            canvas.translate(left, iconTop)
+            icon.setBounds(0, 0, sizePx, sizePx)
             icon.draw(canvas)
+            canvas.restore()
         }
     }
 }
