@@ -35,15 +35,18 @@ import com.evan.pulse.ui.design.CodeLanguage
 private enum class YamlJsonMode { YAML_TO_JSON, JSON_TO_YAML }
 
 /**
- * YAML 与 JSON 互转二级页：输入即转换，两个方向共用同一个输入框。
+ * YAML 与 JSON 互转二级页：输入即转换。
  *
- * 切换方向不会清空已输入的内容，方便把一份配置来回转换做校验。
+ * 两个方向各有一份输入内容，切换标签不会把一侧的文本带到另一侧，方便分别保留
+ * 待转换的原始配置。
  */
 @Composable
 fun YamlJsonScreen(modifier: Modifier = Modifier) {
-    var input by remember { mutableStateOf("") }
+    var yamlInput by remember { mutableStateOf("") }
+    var jsonInput by remember { mutableStateOf("") }
     var mode by remember { mutableStateOf(YamlJsonMode.YAML_TO_JSON) }
 
+    val input = if (mode == YamlJsonMode.YAML_TO_JSON) yamlInput else jsonInput
     val result = remember(input, mode) {
         when (mode) {
             YamlJsonMode.YAML_TO_JSON -> YamlJsonTool.yamlToJson(input)
@@ -80,7 +83,9 @@ fun YamlJsonScreen(modifier: Modifier = Modifier) {
         )
         CodeEditorField(
             text = input,
-            onValueChange = { input = it },
+            onValueChange = { next ->
+                if (mode == YamlJsonMode.YAML_TO_JSON) yamlInput = next else jsonInput = next
+            },
             language = if (mode == YamlJsonMode.YAML_TO_JSON) CodeLanguage.YAML else CodeLanguage.JSON,
             dark = AppTheme.colors.background.luminance() < 0.5f,
             modifier = Modifier.fillMaxWidth().height(220.dp).padding(top = 6.dp)

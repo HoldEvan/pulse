@@ -2,6 +2,7 @@ package com.evan.pulse.ui.design
 
 import android.content.Context
 import android.graphics.Typeface
+import android.os.Bundle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,7 +22,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import io.github.rosemoe.sora.event.ContentChangeEvent
-import io.github.rosemoe.sora.event.SelectionChangeEvent
+import io.github.rosemoe.sora.lang.Language
+import io.github.rosemoe.sora.lang.completion.CompletionItem
+import io.github.rosemoe.sora.lang.completion.CompletionItemKind
+import io.github.rosemoe.sora.lang.completion.CompletionPublisher
 import io.github.rosemoe.sora.langs.textmate.TextMateColorScheme
 import io.github.rosemoe.sora.langs.textmate.TextMateLanguage
 import io.github.rosemoe.sora.langs.textmate.registry.FileProviderRegistry
@@ -29,6 +33,9 @@ import io.github.rosemoe.sora.langs.textmate.registry.GrammarRegistry
 import io.github.rosemoe.sora.langs.textmate.registry.ThemeRegistry
 import io.github.rosemoe.sora.langs.textmate.registry.model.ThemeModel
 import io.github.rosemoe.sora.langs.textmate.registry.provider.AssetsFileResolver
+import io.github.rosemoe.sora.text.CharPosition
+import io.github.rosemoe.sora.text.Content
+import io.github.rosemoe.sora.text.ContentReference
 import io.github.rosemoe.sora.widget.CodeEditor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -41,6 +48,24 @@ enum class CodeLanguage(val scopeName: String) {
     JSON("source.json"),
     YAML("source.yaml"),
     JAVASCRIPT("source.js"),
+}
+
+/**
+ * 一条内置自动补全候选。
+ *
+ * [description] 展示在候选右侧（通常是调用签名）；[insert] 是选中后写入的内容；
+ * [caretBack] 表示插入后光标回退的字符数，用于把光标停在一对圆括号中间。
+ */
+data class CodeCompletion(
+    val label: String,
+    val description: String = "",
+    val insert: String = label,
+    val caretBack: Int = 0,
+)
+
+/** 按当前输入前缀给出补全候选；在编辑器的补全线程里调用，实现方不能触碰 Compose 状态 */
+fun interface CodeCompletionProvider {
+    fun complete(prefix: String): List<CodeCompletion>
 }
 
 /**
@@ -103,24 +128,61 @@ object CodeEditorSupport {
 }
 
 /**
- * 编辑器的命令式入口：用于从外部插入文本、移动光标或请求焦点。
+ * 给 TextMate 语言加上自定义补全的语言包装。
  *
- * Compose 侧的文本同步仍走 [CodeEditorField] 的 value 参数，这里只暴露
- * 那些无法用状态表达的操作（替换指定区间、聚焦）。
+ * 语法解析全部委托给 [delegate]，只接管 requireAutoComplete：sora-editor 内置的
+ * 补全弹窗会直接展示 [provider] 返回的候选，插入与光标回退由 [CompletionEntry] 完成。
  */
-class CodeEditorController {
-    internal var editor: CodeEditor? = null
+private class CompletionLanguage(
+    private val delegate: Language,
+    private val provider: CodeCompletionProvider,
+) : Language by delegate {
 
-    /** 用 [replacement] 覆盖 [start]..[end) 区间，光标停在末尾往前 [caretBack] 个字符处 */
-    fun replaceRange(start: Int, end: Int, replacement: String, caretBack: Int = 0) {
-        val target = editor ?: return
-        target.text.replace(start, end, replacement)
-        val caret = (start + replacement.length - caretBack).coerceIn(0, target.text.length)
-        target.setSelection(caret, caret)
+    override fun requireAutoComplete(
+        content: ContentReference,
+        position: CharPosition,
+        publisher: CompletionPublisher,
+        extraArguments: Bundle,
+    ) {
+        val prefix = prefixAt(content, position)
+        if (prefix.isEmpty()) return
+        val items = provider.complete(prefix)
+        if (items.isEmpty()) return
+        items.forEach { publisher.addItem(CompletionEntry(it, prefix.length)) }
+    }
+}
+
+/** 取光标左侧的标识符片段，允许 `.`，让 `pm.request.` 这类成员路径整体参与匹配 */
+private fun prefixAt(content: ContentReference, position: CharPosition): String {
+    if (position.line < 0 || position.line >= content.lineCount) return ""
+    val line = content.getLine(position.line)
+    val column = position.column.coerceIn(0, line.length)
+    var start = column
+    while (start > 0 && isPrefixChar(line[start - 1])) start--
+    return line.substring(start, column)
+}
+
+private fun isPrefixChar(c: Char): Boolean =
+    c.isLetterOrDigit() || c == '_' || c == '$' || c == '.'
+
+/** 内置弹窗里的补全项：替换已输入的前缀，并把光标停在 insert 文本的指定位置 */
+private class CompletionEntry(
+    private val completion: CodeCompletion,
+    prefixLen: Int,
+) : CompletionItem(completion.label, completion.description) {
+
+    init {
+        prefixLength = prefixLen
+        kind = CompletionItemKind.Method
     }
 
-    fun requestFocus() {
-        editor?.requestFocus()
+    override fun performCompletion(editor: CodeEditor, content: Content, line: Int, column: Int) {
+        val start = (column - prefixLength).coerceIn(0, column)
+        content.replace(line, start, line, column, completion.insert)
+        val lineLength = content.getLineString(line).length
+        val caret = (start + completion.insert.length - completion.caretBack).coerceIn(0, lineLength)
+        val index = content.getCharIndex(line, caret)
+        editor.setSelection(index, index)
     }
 }
 
@@ -129,6 +191,7 @@ class CodeEditorController {
  *
  * [text] 由调用方持有，编辑器内部编辑通过 [onValueChange] 回传；外部修改内容时
  * 通过文本比对同步到编辑器，避免每次重组都重设文本导致光标跳动。
+ * 传入 [completionProvider] 后使用 sora-editor 内置的补全弹窗展示候选项。
  */
 @Composable
 fun CodeEditorField(
@@ -139,8 +202,7 @@ fun CodeEditorField(
     textSizeSp: Float = 13f,
     dark: Boolean = false,
     readOnly: Boolean = false,
-    controller: CodeEditorController? = null,
-    onCursorChange: ((Int) -> Unit)? = null,
+    completionProvider: CodeCompletionProvider? = null,
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
@@ -157,14 +219,12 @@ fun CodeEditorField(
     CodeEditorSupport.applyTheme(dark)
 
     val latestOnChange by rememberUpdatedState(onValueChange)
-    val latestOnCursorChange by rememberUpdatedState(onCursorChange)
     val editorRef = remember { mutableStateOf<CodeEditor?>(null) }
 
-    // 换肤时重建编辑器：配色方案不主动通知重绘，重新挂载最省心（仅切换主题时发生）
-    key(dark) {
+    // 换肤或换语言都重建编辑器：配色方案与语法对象只在挂载时注入（仅切换时发生）
+    key(dark, language) {
         DisposableEffect(Unit) {
             onDispose {
-                controller?.editor = null
                 editorRef.value?.release()
                 editorRef.value = null
             }
@@ -186,16 +246,19 @@ fun CodeEditorField(
                     val pad = with(density) { 8.dp.roundToPx() }
                     setPadding(pad, pad, pad, pad)
                     setColorScheme(TextMateColorScheme.create(ThemeRegistry.getInstance()))
-                    setEditorLanguage(TextMateLanguage.create(language.scopeName, false))
+                    val textMate = TextMateLanguage.create(language.scopeName, false)
+                    setEditorLanguage(
+                        if (completionProvider == null) {
+                            textMate
+                        } else {
+                            CompletionLanguage(textMate, completionProvider)
+                        }
+                    )
                     setText(text)
                     subscribeEvent(ContentChangeEvent::class.java) { event, _ ->
                         latestOnChange(event.editor.text.toString())
                     }
-                    subscribeEvent(SelectionChangeEvent::class.java) { event, _ ->
-                        latestOnCursorChange?.invoke(event.left.index)
-                    }
                     editorRef.value = this
-                    controller?.editor = this
                 }
             },
             update = { editor ->
