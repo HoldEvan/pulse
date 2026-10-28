@@ -73,6 +73,25 @@ class ScriptApiCatalogTest {
     }
 
     @Test
+    fun builtinMethodsInsertParentheses() {
+        val all = ScriptApiCatalog.tokens + ScriptApiCatalog.memberTokens +
+            ScriptApiCatalog.match("parseInt")
+        for (path in listOf("console.log", "JSON.stringify", "Math.max", "Object.keys", "parseInt")) {
+            val token = all.first { it.path == path }
+            assertTrue("$path should be a method", token.isMethod)
+            assertEquals("$path()", token.insert)
+            assertEquals("$path should place the caret inside", 1, token.cursorBack)
+        }
+    }
+
+    @Test
+    fun completesMathMembersAfterDot() {
+        val result = ScriptApiCatalog.match("Math.")
+        assertTrue(result.any { it.path == "Math.max" && it.insert == "Math.max()" })
+        assertTrue(result.all { it.path.startsWith("Math.") })
+    }
+
+    @Test
     fun removesPmConsoleFromCatalog() {
         assertTrue(ScriptApiCatalog.match("pm.console").isEmpty())
         assertTrue(

@@ -125,6 +125,8 @@ object ScriptApiCatalog {
     /**
      * 原生 JS 对象的成员，只在输入 `console.`、`JSON.` 这类带点前缀时提示；
      * 裸词补全只列对象名，避免一上来就塞满成员。
+     *
+     * 方法一律走 [fn]：插入 `name()` 并让光标停在括号内，省得再手动补括号。
      */
     val memberTokens: List<ScriptApiToken> = listOf(
         fn("console.log", "log(...args)"),
@@ -134,6 +136,32 @@ object ScriptApiCatalog {
         fn("console.debug", "debug(...args)"),
         fn("JSON.parse", "parse(text, reviver)"),
         fn("JSON.stringify", "stringify(value, replacer, space)"),
+        fn("Math.abs", "abs(x)"),
+        fn("Math.ceil", "ceil(x)"),
+        fn("Math.floor", "floor(x)"),
+        fn("Math.round", "round(x)"),
+        fn("Math.trunc", "trunc(x)"),
+        fn("Math.max", "max(...values)"),
+        fn("Math.min", "min(...values)"),
+        fn("Math.pow", "pow(base, exponent)"),
+        fn("Math.sqrt", "sqrt(x)"),
+        fn("Math.random", "random()"),
+        fn("Object.keys", "keys(obj)"),
+        fn("Object.values", "values(obj)"),
+        fn("Object.entries", "entries(obj)"),
+        fn("Object.assign", "assign(target, ...sources)"),
+        fn("Object.freeze", "freeze(obj)"),
+        fn("Object.hasOwn", "hasOwn(obj, key)"),
+        fn("Array.isArray", "isArray(value)"),
+        fn("Array.from", "from(iterable)"),
+        fn("Array.of", "of(...items)"),
+        fn("String.fromCharCode", "fromCharCode(...codes)"),
+        fn("Number.isInteger", "isInteger(value)"),
+        fn("Number.isNaN", "isNaN(value)"),
+        fn("Number.isFinite", "isFinite(value)"),
+        fn("Number.parseInt", "parseInt(str, radix)"),
+        fn("Number.parseFloat", "parseFloat(str)"),
+        fn("Date.now", "now()"),
     )
 
     /**

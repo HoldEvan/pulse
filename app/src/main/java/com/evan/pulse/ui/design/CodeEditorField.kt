@@ -398,7 +398,10 @@ private fun buildEditorLanguage(
     provider: CodeCompletionProvider?,
 ): Language {
     val textMate = TextMateLanguage.create(language.scopeName, false)
-    // 缩进统一用空格：TextMateLanguage 默认 useTab=true，会让 Tab 键插入一个制表符
+    // 换行缩进由 TextMateNewlineHandler 读 language.getTabSize()，与编辑器 tabWidth 无关，
+    // 不设这里回车会缩进 4 个空格；useTab 则决定 Tab 键插入空格还是制表符
+    textMate.setTabSize(2)
+    textMate.useTab(false)
     val spaces = object : Language by textMate {
         override fun useTab(): Boolean = false
     }

@@ -33,6 +33,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import android.content.Context
 import android.view.inputmethod.InputMethodManager
 import android.widget.HorizontalScrollView
+import android.widget.LinearLayout
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.evan.pulse.R
 import com.evan.pulse.domain.script.JsFormatter
@@ -57,20 +58,23 @@ import top.yukonga.miuix.kmp.icon.extended.ChevronBackward
 
 private val editorFontSize = 13.sp
 
+/** 底部符号栏每行的高度；两行共占 [symbolRowHeight] × 2 */
+private val symbolRowHeight = 44.dp
+
 /**
  * 底部符号栏的按键：左为按钮文字，右为插入内容。
  *
  * Tab 交给 [SymbolInputView] 处理（按缩进或跳到下一个 snippet 占位），其余按键
  * 通过编辑器的 insertText 插入，自动继承撤销栈与选区替换行为。
  */
-private val symbolLabels = arrayOf(
-    "Tab", "↵", "{", "}", "(", ")", "[", "]", "<", ">", "\"", "'",
-    ";", ":", "=", "+", "-", "*", "/", "\\", "|", "&", "!", "?", ",", ".", "$", "_", "@", "#"
+private val symbolRowLabels = arrayOf(
+    arrayOf("Tab", "↵", "{", "}", "(", ")", "[", "]", "<", ">", "\"", "'", ";", ":", "="),
+    arrayOf("+", "-", "*", "/", "\\", "|", "&", "!", "?", ",", ".", "$", "_", "@", "#")
 )
 
-private val symbolValues = arrayOf(
-    "\t", "\n", "{", "}", "(", ")", "[", "]", "<", ">", "\"", "'",
-    ";", ":", "=", "+", "-", "*", "/", "\\", "|", "&", "!", "?", ",", ".", "$", "_", "@", "#"
+private val symbolRowValues = arrayOf(
+    arrayOf("\t", "\n", "{", "}", "(", ")", "[", "]", "<", ">", "\"", "'", ";", ":", "="),
+    arrayOf("+", "-", "*", "/", "\\", "|", "&", "!", "?", ",", ".", "$", "_", "@", "#")
 )
 
 /**
@@ -252,7 +256,7 @@ private fun SymbolBar(controller: CodeEditorController, modifier: Modifier = Mod
             // 底色铺在键盘内边距之前：键盘是圆角的，角落露出的这块区域要和工具条同色
             .background(AppTheme.colors.surfaceVariant)
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
-            .height(44.dp),
+            .height(symbolRowHeight * 2f),
         verticalAlignment = Alignment.CenterVertically
     ) {
         AndroidView(
@@ -260,20 +264,37 @@ private fun SymbolBar(controller: CodeEditorController, modifier: Modifier = Mod
                 .weight(1f)
                 .fillMaxHeight(),
             factory = { context ->
+                val rowHeight = with(context.resources.displayMetrics) {
+                    (symbolRowHeight.value * density).toInt()
+                }
+                // 两行放进同一个滚动容器：横向滑动时上下两行始终一起移动
+                val rows = LinearLayout(context).apply {
+                    orientation = LinearLayout.VERTICAL
+                    for (index in symbolRowLabels.indices) {
+                        addView(
+                            SymbolInputView(context).apply {
+                                addSymbols(symbolRowLabels[index], symbolRowValues[index])
+                                layoutParams = LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    rowHeight
+                                )
+                            }
+                        )
+                    }
+                }
                 HorizontalScrollView(context).apply {
                     isHorizontalScrollBarEnabled = false
-                    addView(
-                        SymbolInputView(context).apply {
-                            addSymbols(symbolLabels, symbolValues)
-                        }
-                    )
+                    addView(rows)
                 }
             },
             update = { view ->
-                val symbolView = view.getChildAt(0) as? SymbolInputView ?: return@AndroidView
-                symbolView.bindEditor(controller.editor)
-                symbolView.setTextColor(textColor)
-                symbolView.setBackgroundColor(backgroundColor)
+                val rows = view.getChildAt(0) as? LinearLayout ?: return@AndroidView
+                for (index in 0 until rows.childCount) {
+                    val symbolView = rows.getChildAt(index) as? SymbolInputView ?: continue
+                    symbolView.bindEditor(controller.editor)
+                    symbolView.setTextColor(textColor)
+                    symbolView.setBackgroundColor(backgroundColor)
+                }
             }
         )
         AppText(
