@@ -352,3 +352,7 @@ Entries discovered by the Agent during task execution should follow this format:
   - sora-editor 行号贴左边：`CodeEditor.setLineNumberMarginLeft(px)` 给行号列加左边距（`measureLineNumber()` 会把它算进 gutter 宽度，右对齐的行号整体右移）；`setPadding` 只影响正文，管不到行号
   - Rhino 里 `Context.newObject(scope)` 自带 `Object.prototype`；若再 `setPrototype(scope)`，pm 下的对象会顺着原型链继承全局变量，`typeof pm.console` 变成 `object`，已删除的旧 API 会“复活”。构造 pm/console 节点时不要覆盖原型
   - 成员补全（`console.log`、`JSON.parse` 等）单独放 `memberTokens`，仅在词元含 `.` 时并入候选池，避免裸词补全被成员占满
+  - sora-editor 的双指缩放默认关闭：`EditorTouchEventHandler` 里虽然有 `ScaleGestureDetector`，但 `CodeEditor.scalable` 默认 false，必须 `setScalable(true)`；缩放上下限由 `setScaleTextSizes(minPx, maxPx)` 设置（默认 8sp~26sp），`setTextSizePxDirect` 会同时刷新正文与行号字体度量
+  - release 打包提速：`lint { checkReleaseBuilds = false }` 可跳过 assembleRelease 附带的 lintVital（省 1~3 分钟，需要时单独跑 `./gradlew lint`）；`org.gradle.caching` + `org.gradle.configuration-cache` 开启后配置阶段从十几秒降到 1 秒内
+  - 配置缓存下不能再用 `file.walkTopDown()` 算构建时间：值会被缓存成旧值。改用 `ValueSource<Long, Params>`，参数用 `@get:InputFiles @get:PathSensitive(RELATIVE) ConfigurableFileCollection`（`from(projectDirectory.dir("src/main"))`，取值时走 `asFileTree.files`，直接 `.files` 只会拿到目录本身），源码内容变化会触发重算
+  - 本机 2 核时 R8 压缩混淆固定占 release 打包约 2.5~3 分钟，`-dontoptimize` 只能省十几秒却让 APK 从 6.2MB 涨到 7.8MB，不值得；真正省时间的是跳过 lintVital

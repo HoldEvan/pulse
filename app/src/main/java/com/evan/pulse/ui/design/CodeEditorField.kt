@@ -473,6 +473,16 @@ fun CodeEditorField(
                 // 行号用同一套等宽字体，字体度量一致后才能和正文逐行对齐
                 setTypefaceLineNumber(Typeface.MONOSPACE)
                 setTextSize(textSizeSp)
+                // 双指缩放字号：sora 自带 ScaleGestureDetector，但 scalable 默认关闭
+                setScalable(true)
+                setScaleTextSizes(
+                    TypedValue.applyDimension(
+                        TypedValue.COMPLEX_UNIT_SP, 9f, resources.displayMetrics
+                    ),
+                    TypedValue.applyDimension(
+                        TypedValue.COMPLEX_UNIT_SP, 28f, resources.displayMetrics
+                    )
+                )
                 setLineSpacing(0f, 1.15f)
                 setWordwrap(true)
                 setTabWidth(2)

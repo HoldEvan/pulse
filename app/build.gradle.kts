@@ -6,17 +6,34 @@ plugins {
 }
 
 import java.util.Properties
+import org.gradle.api.provider.ValueSource
+import org.gradle.api.provider.ValueSourceParameters
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
 
 val releaseKeystore = rootProject.file("keystore/pulse-release.jks")
 val hasReleaseSigning = releaseKeystore.exists()
 
 // 构建时间取最新改动源码的时间戳：源码没变时值保持不变，
 // 连续打包不会只因为时间戳变了就丢掉 Kotlin 的增量编译结果。
-// 这里只注入毫秒值，交给界面用设备本地时区渲染，避免打包机时区污染显示
-val buildTimeMillis = rootProject.file("app/src/main").walkTopDown()
-    .filter { it.isFile }
-    .maxOfOrNull { it.lastModified() }
-        ?: System.currentTimeMillis()
+// 用 ValueSource 把源码目录声明成输入，开启配置缓存后改文件仍会重新取值，
+// 不会像直接 walkTopDown 那样被缓存成旧值。
+abstract class SourceTimestamp : ValueSource<Long, SourceTimestamp.Params> {
+    interface Params : ValueSourceParameters {
+        @get:InputFiles
+        @get:PathSensitive(PathSensitivity.RELATIVE)
+        val sources: org.gradle.api.file.ConfigurableFileCollection
+    }
+
+    override fun obtain(): Long =
+        parameters.sources.asFileTree.files.maxOfOrNull { it.lastModified() }
+            ?: System.currentTimeMillis()
+}
+
+val buildTimeMillis = providers.of(SourceTimestamp::class.java) {
+    parameters.sources.from(layout.projectDirectory.dir("src/main"))
+}.get()
 
 val signingProps = Properties().apply {
     val file = rootProject.file("keystore/keystore.properties")
@@ -87,6 +104,10 @@ android {
     testOptions {
         // sora-editor 的日志走 android.util.Log，JVM 单测里需要返回默认值才能跑通
         unitTests.isReturnDefaultValues = true
+    }
+    lint {
+        // assembleRelease 默认附带 lintVital，每次多花几分钟；日常打包跳过，需要时单独跑 lint
+        checkReleaseBuilds = false
     }
 }
 
