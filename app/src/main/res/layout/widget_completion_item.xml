@@ -10,15 +10,6 @@
     android:paddingEnd="8dp"
     android:paddingBottom="6dp">
 
-    <ImageView
-        android:id="@+id/completion_icon"
-        android:layout_width="18dp"
-        android:layout_height="18dp"
-        android:layout_marginEnd="8dp"
-        android:contentDescription="@null"
-        android:importantForAccessibility="no"
-        android:scaleType="fitCenter" />
-
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

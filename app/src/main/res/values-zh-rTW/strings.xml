@@ -420,6 +420,7 @@
     <string name="cd_undo">復原</string>
     <string name="cd_redo">重做</string>
     <string name="cd_script_docs">檢視腳本文件</string>
+    <string name="cd_format_script">格式化腳本</string>
     <string name="cd_clear_script">清空腳本內容</string>
     <string name="script_docs_title">腳本 API 文件</string>
     <string name="script_api_pm_root">Postman 風格腳本 API 根物件</string>

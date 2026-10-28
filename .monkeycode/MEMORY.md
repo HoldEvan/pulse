@@ -334,7 +334,10 @@ Entries discovered by the Agent during task execution should follow this format:
   - 底部工具条要贴键盘：Compose 的 `WindowInsets.safeDrawing` 已包含 IME，用 `windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))` 即可，不要再叠加 `navigationBarsPadding`（`adjustResize` 与 edge-to-edge 两种情况下都能正确让位）
   - 键盘圆角会在工具条的 IME 内边距区域露出底色：把 `.background(工具条色)` 放在 `.windowInsetsPadding(...)` **之前**（修饰符从外到内），底色就会铺满键盘内边距区域，圆角处不再露出编辑器底色
   - 行号与正文逐行对齐的条件是两个 Paint 的字体度量一致：`setTypefaceText(MONOSPACE)` 之后必须同时 `setTypefaceLineNumber(MONOSPACE)`，否则 `metricsLineNumber` 取自默认字体的 `paintOther`，可见行会偏移
-  - 补全弹窗图标要和文字对齐需换自定义条目：继承 `EditorCompletionAdapter`（`getView(position, convertView, parent, isSelected)` 是 protected），用自己的布局（`includeFontPadding=false`、图标 18dp、`gravity=center_vertical`），再 `getComponent(EditorAutoCompletion::class.java).setAdapter(...)`；库自带布局的字体留白会让图标看起来偏下
+  - 补全弹窗图标要和文字对齐需换自定义条目：继承 `EditorCompletionAdapter`（`getView(position, convertView, parent, isSelected)` 是 protected），再 `getComponent(EditorAutoCompletion::class.java).setAdapter(...)`。图标放在独立 `ImageView` 里只能靠容器垂直居中，和文字仍会差半像素；改成 `ReplacementSpan` 内联在标签文本里，用 `baseline + (fm.ascent + fm.descent) / 2f` 作图标中心，才和字母共用同一条视觉中线
+  - 编辑器统一插空格缩进：`commitTab`/自动缩进走 `TextUtils.createIndent(getTabWidth(), ..., language.useTab())`，所以要 `Language by delegate` 覆写 `useTab() = false` 并 `setTabWidth(2)`；`SymbolInputView` 的 "Tab" 键也走 `indentOrCommitTab`，会自动跟随这套设置
+  - 离开脚本编辑页要收键盘：`LocalView.current` 取 `InputMethodManager.hideSoftInputFromWindow(view.windowToken, 0)` + `controller.clearFocus()`，在返回/跳文档回调里调用，并用 `DisposableEffect.onDispose` 兜住系统返回键；只清焦点不调 IMM 时输入法仍会留在上一层
+  - 格式化 JS 别用 Rhino 的 `AstRoot.toSource(0)`：实测会丢掉 `//` 注释（`setRecordingComments(true)` 也打印不出来），只能自己按 token 重排空白，字符串/模板串/正则/注释原样保留，并保留 `return` 后换行等 ASI 语义
   - 脚本内自定义名字补全：补全提供方的入参改成 `(prefix, source)`，在 `CompletionLanguage.requireAutoComplete` 里用 `ContentReference.getLine(i)` 拼出全文再解析；只认 `function` / `var|let|const` / `name =` 声明位置，避免把 `pm.request.method` 这类成员访问当作变量
 
 [Project Knowledge Summary]

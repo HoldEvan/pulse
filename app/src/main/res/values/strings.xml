@@ -420,6 +420,7 @@
     <string name="cd_undo">撤销</string>
     <string name="cd_redo">重做</string>
     <string name="cd_script_docs">查看脚本文档</string>
+    <string name="cd_format_script">格式化脚本</string>
     <string name="cd_clear_script">清空脚本内容</string>
     <string name="script_docs_title">脚本 API 文档</string>
     <string name="script_api_pm_root">Postman 风格脚本 API 根对象</string>

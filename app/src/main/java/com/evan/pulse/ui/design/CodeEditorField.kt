@@ -1,14 +1,19 @@
 package com.evan.pulse.ui.design
 
 import android.content.Context
+import android.graphics.Canvas
 import android.graphics.Color as AndroidColor
+import android.graphics.Paint
 import android.graphics.Typeface
+import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.style.ReplacementSpan
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
 import android.widget.TextView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -223,9 +228,8 @@ private class CompletionEntry(
 /**
  * 补全弹窗的条目视图。
  *
- * 库自带布局把图标和文字分别居中，字体自带的上下留白会让两者在视觉上错开半像素
- * 到一像素；这里换成 includeFontPadding=false 的布局，图标与文字使用同一套垂直
- * 居中规则，同时把图标缩到 18dp，和方法/变量的字号更协调。
+ * 图标不放在独立 ImageView 里：这样只能靠容器垂直居中，和文字容易差半个像素。
+ * 这里改成一个绘制在文字基线中间的 [BadgeSpan]，图标与字母始终同一条视觉中线。
  */
 private class PulseCompletionAdapter : EditorCompletionAdapter() {
 
@@ -248,7 +252,7 @@ private class PulseCompletionAdapter : EditorCompletionAdapter() {
         val secondary = getThemeColor(EditorColorScheme.COMPLETION_WND_TEXT_SECONDARY)
 
         view.findViewById<TextView>(R.id.completion_label).apply {
-            text = item.label
+            text = buildLabel(item.label, item.icon)
             setTextColor(primary)
             setSelected(isSelected)
             setDeprecated(item.deprecated)
@@ -266,10 +270,6 @@ private class PulseCompletionAdapter : EditorCompletionAdapter() {
             setSelected(isSelected)
             visibility = if (item.desc.isNullOrEmpty()) View.GONE else View.VISIBLE
         }
-        view.findViewById<ImageView>(R.id.completion_icon).apply {
-            setImageDrawable(item.icon)
-            visibility = if (item.icon == null) View.GONE else View.VISIBLE
-        }
         view.setBackgroundColor(
             if (isSelected) getThemeColor(EditorColorScheme.COMPLETION_WND_ITEM_CURRENT)
             else AndroidColor.TRANSPARENT
@@ -277,8 +277,60 @@ private class PulseCompletionAdapter : EditorCompletionAdapter() {
         return view
     }
 
+    private fun buildLabel(label: CharSequence, icon: Drawable?): CharSequence {
+        if (icon == null) return label
+        val span = BadgeSpan(
+            icon = icon,
+            sizePx = (14 * context.resources.displayMetrics.density).toInt(),
+            gapPx = (8 * context.resources.displayMetrics.density).toInt(),
+        )
+        return SpannableStringBuilder(" ").apply {
+            setSpan(span, 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }.append(label)
+    }
+
     private fun TextView.setDeprecated(deprecated: Boolean) {
         paintFlags = if (deprecated) paintFlags or 0x10 else paintFlags and 0x10.inv()
+    }
+
+    /**
+     * 把补全图标画在文字基线范围内。
+     *
+     * 以 `baseline + (ascent + descent) / 2` 作为图标中心，正好落在字母的视觉中线上；
+     * 不改变行高，宽度只占图标加右边距。
+     */
+    private class BadgeSpan(
+        private val icon: Drawable,
+        private val sizePx: Int,
+        private val gapPx: Int,
+    ) : ReplacementSpan() {
+
+        override fun getSize(
+            paint: Paint,
+            text: CharSequence,
+            start: Int,
+            end: Int,
+            fm: Paint.FontMetricsInt?,
+        ): Int = sizePx + gapPx
+
+        override fun draw(
+            canvas: Canvas,
+            text: CharSequence,
+            start: Int,
+            end: Int,
+            x: Float,
+            top: Int,
+            y: Int,
+            bottom: Int,
+            paint: Paint,
+        ) {
+            val fm = paint.fontMetricsInt
+            val centerY = y + (fm.ascent + fm.descent) / 2f
+            val left = x.toInt()
+            val iconTop = (centerY - sizePx / 2f).toInt()
+            icon.setBounds(left, iconTop, left + sizePx, iconTop + sizePx)
+            icon.draw(canvas)
+        }
     }
 }
 
@@ -328,6 +380,11 @@ class CodeEditorController {
     fun requestFocus() {
         editorState.value?.requestFocus()
     }
+
+    /** 收起键盘/离开页面前清掉编辑器焦点，避免输入法继续挂在已隐藏的编辑器上 */
+    fun clearFocus() {
+        editorState.value?.clearFocus()
+    }
 }
 
 /** 按语言与补全提供方构造编辑器语言；补全存在时套一层只接管 requireAutoComplete 的包装 */
@@ -336,7 +393,11 @@ private fun buildEditorLanguage(
     provider: CodeCompletionProvider?,
 ): Language {
     val textMate = TextMateLanguage.create(language.scopeName, false)
-    return if (provider == null) textMate else CompletionLanguage(textMate, provider)
+    // 缩进统一用空格：TextMateLanguage 默认 useTab=true，会让 Tab 键插入一个制表符
+    val spaces = object : Language by textMate {
+        override fun useTab(): Boolean = false
+    }
+    return if (provider == null) spaces else CompletionLanguage(spaces, provider)
 }
 
 /** 让编辑器底色跟随应用主题，避免 TextMate 自带的纯白/纯黑与页面割裂 */

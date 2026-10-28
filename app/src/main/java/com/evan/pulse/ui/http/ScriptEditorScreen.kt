@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -23,14 +24,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import android.content.Context
+import android.view.inputmethod.InputMethodManager
 import android.widget.HorizontalScrollView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.evan.pulse.R
+import com.evan.pulse.domain.script.JsFormatter
 import com.evan.pulse.ui.design.AppIcon
 import com.evan.pulse.ui.design.AppIconButton
 import com.evan.pulse.ui.design.AppScaffold
@@ -45,6 +50,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.automirrored.filled.FormatAlignLeft
 import io.github.rosemoe.sora.widget.SymbolInputView
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.ChevronBackward
@@ -111,6 +117,19 @@ fun ScriptEditorScreen(
     }
     val controller = remember { CodeEditorController() }
     val dark = AppTheme.colors.background.luminance() < 0.5f
+    val view = LocalView.current
+
+    fun hideKeyboard() {
+        val manager = view.context
+            .getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+        manager?.hideSoftInputFromWindow(view.windowToken, 0)
+        controller.clearFocus()
+    }
+
+    // 页面被移除（系统返回键）也要收键盘，否则输入法会留在上一层
+    DisposableEffect(Unit) {
+        onDispose { hideKeyboard() }
+    }
 
     AppScaffold(
         modifier = modifier,
@@ -119,10 +138,20 @@ fun ScriptEditorScreen(
                 title = stringResource(if (isPre) R.string.script_tab_pre else R.string.script_tab_post),
                 canUndo = controller.canUndo,
                 canRedo = controller.canRedo,
-                onBack = onBack,
+                onBack = {
+                    hideKeyboard()
+                    onBack()
+                },
                 onUndo = { controller.undo() },
                 onRedo = { controller.redo() },
-                onOpenDocs = onOpenDocs
+                onFormat = {
+                    val formatted = JsFormatter.format(text)
+                    if (formatted.isNotEmpty() && formatted != text) commit(formatted)
+                },
+                onOpenDocs = {
+                    hideKeyboard()
+                    onOpenDocs()
+                }
             )
         },
         bottomBar = {
@@ -145,7 +174,7 @@ fun ScriptEditorScreen(
     }
 }
 
-/** 单行顶栏：返回、标题、撤销/重做、脚本文档；不使用会随滚动收缩的大标题 */
+/** 单行顶栏：返回、标题、撤销/重做、格式化、脚本文档；不使用会随滚动收缩的大标题 */
 @Composable
 private fun EditorTopBar(
     title: String,
@@ -154,6 +183,7 @@ private fun EditorTopBar(
     onBack: () -> Unit,
     onUndo: () -> Unit,
     onRedo: () -> Unit,
+    onFormat: () -> Unit,
     onOpenDocs: () -> Unit,
 ) {
     Row(
@@ -188,6 +218,12 @@ private fun EditorTopBar(
             AppIcon(
                 imageVector = Icons.AutoMirrored.Filled.Redo,
                 contentDescription = stringResource(R.string.cd_redo)
+            )
+        }
+        AppIconButton(onClick = onFormat) {
+            AppIcon(
+                imageVector = Icons.AutoMirrored.Filled.FormatAlignLeft,
+                contentDescription = stringResource(R.string.cd_format_script)
             )
         }
         AppIconButton(onClick = onOpenDocs) {
