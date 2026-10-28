@@ -328,6 +328,10 @@ Entries discovered by the Agent during task execution should follow this format:
   - 编辑器底色跟随应用主题要显式覆盖配色方案：`colorScheme.setColor(EditorColorScheme.WHOLE_BACKGROUND / LINE_NUMBER_BACKGROUND / LINE_NUMBER_PANEL, argb)`（没有 `EDITOR_BACKGROUND` 常量），且主题切换后需在 `AndroidView.update` 里重新覆盖一次
   - 代码补全走 sora 内置弹窗：用 `Language by delegate` 包装 `TextMateLanguage` 只覆写 `requireAutoComplete`，候选用自定义 `CompletionItem` 覆盖 `performCompletion(editor, content, line, column)` 完成前缀替换与光标回退
   - 底部符号栏用库内自带的 `io.github.rosemoe.sora.widget.SymbolInputView`（放进 `HorizontalScrollView`，`bindEditor` + `addSymbols(labels, values)`），Tab 会走 `indentOrCommitTab`，其余按键走 `insertText` 自动进撤销栈；不需要自己写插入逻辑
+  - 补全项前面要图标时直接设 `CompletionItem.icon = SimpleCompletionIconDrawer.draw(kind)`；方法/变量靠 `CompletionItemKind.Method` / `Variable` 区分。注意 `CompletionItem.kind` 在 Kotlin 侧读出来是 `CompletionItemKind?`，要先存进局部 `val` 再传给 `draw()`，否则编译报 `ARGUMENT_TYPE_MISMATCH`
+  - 缩进/空行圆点用 `CodeEditor.setNonPrintablePaintingFlags(FLAG_DRAW_WHITESPACE_LEADING or FLAG_DRAW_WHITESPACE_FOR_EMPTY_LINE)`，无需自己画
+  - 光标行列号订阅 `SelectionChangeEvent`，`event.right`/`left` 是 0 基 `CharPosition`，转 1 基再显示；`SymbolInputView` 的 Tab 走 `indentOrCommitTab()` 插缩进（不是换行），需要换行键就自己往 `addSymbols` 里加 `"\n"`
+  - 底部工具条要贴键盘：Compose 的 `WindowInsets.safeDrawing` 已包含 IME，用 `windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))` 即可，不要再叠加 `navigationBarsPadding`（`adjustResize` 与 edge-to-edge 两种情况下都能正确让位）
 
 [Project Knowledge Summary]
 - Date: 2026-10-28

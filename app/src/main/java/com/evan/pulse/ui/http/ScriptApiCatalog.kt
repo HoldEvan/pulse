@@ -19,6 +19,8 @@ data class ScriptApiToken(
     @StringRes val detailRes: Int = 0,
     val insert: String = path,
     val cursorBack: Int = 0,
+    /** 方法调用（展示为方法图标），false 表示变量/属性 */
+    val isMethod: Boolean = false,
 )
 
 /** 补全项的展示说明：多语言资源优先，其次静态签名文本 */
@@ -120,8 +122,8 @@ object ScriptApiCatalog {
         add(fn("pm.response.json", "json()"))
         add(fn("pm.response.jsonp", "jsonp(key)"))
         add(fn("pm.response.isJson", "isJson()"))
-        add(prop("pm.response.to().json", "to().json()", insert = "pm.response.to().json()"))
-        add(prop("pm.response.to().text", "to().text()", insert = "pm.response.to().text()"))
+        add(prop("pm.response.to().json", "to().json()", insert = "pm.response.to().json()", isMethod = true))
+        add(prop("pm.response.to().text", "to().text()", insert = "pm.response.to().text()", isMethod = true))
 
         add(fn("pm.test", "test(name, fn)"))
     }
@@ -155,8 +157,15 @@ object ScriptApiCatalog {
         detail: String = "",
         @StringRes detailRes: Int = 0,
         insert: String = path,
-    ): ScriptApiToken = ScriptApiToken(path = path, detail = detail, detailRes = detailRes, insert = insert)
+        isMethod: Boolean = false,
+    ): ScriptApiToken = ScriptApiToken(
+        path = path,
+        detail = detail,
+        detailRes = detailRes,
+        insert = insert,
+        isMethod = isMethod
+    )
 
     private fun fn(path: String, signature: String): ScriptApiToken =
-        ScriptApiToken(path = path, detail = signature, insert = "$path()", cursorBack = 1)
+        ScriptApiToken(path = path, detail = signature, insert = "$path()", cursorBack = 1, isMethod = true)
 }

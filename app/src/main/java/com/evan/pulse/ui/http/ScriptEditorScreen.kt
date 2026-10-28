@@ -3,12 +3,17 @@ package com.evan.pulse.ui.http
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,12 +58,12 @@ private val editorFontSize = 13.sp
  * 通过编辑器的 insertText 插入，自动继承撤销栈与选区替换行为。
  */
 private val symbolLabels = arrayOf(
-    "Tab", "{", "}", "(", ")", "[", "]", "<", ">", "\"", "'",
+    "Tab", "↵", "{", "}", "(", ")", "[", "]", "<", ">", "\"", "'",
     ";", ":", "=", "+", "-", "*", "/", "\\", "|", "&", "!", "?", ",", ".", "$", "_", "@", "#"
 )
 
 private val symbolValues = arrayOf(
-    "\t", "{", "}", "(", ")", "[", "]", "<", ">", "\"", "'",
+    "\t", "\n", "{", "}", "(", ")", "[", "]", "<", ">", "\"", "'",
     ";", ":", "=", "+", "-", "*", "/", "\\", "|", "&", "!", "?", ",", ".", "$", "_", "@", "#"
 )
 
@@ -99,6 +104,7 @@ fun ScriptEditorScreen(
                     description = localizedDetails[token.path] ?: token.detail,
                     insert = token.insert,
                     caretBack = token.cursorBack,
+                    isMethod = token.isMethod,
                 )
             }
         }
@@ -193,32 +199,51 @@ private fun EditorTopBar(
     }
 }
 
-/** sora-editor 自带的符号输入栏：横向滚动，颜色跟随当前主题 */
+/**
+ * sora-editor 自带的符号输入栏：横向滚动，颜色跟随当前主题。
+ *
+ * 键盘弹起时用 IME 高度的底部内边距把整条栏顶到键盘上方，而不是被键盘盖住；
+ * 右侧固定显示光标行列号，方便定位。
+ */
 @Composable
 private fun SymbolBar(controller: CodeEditorController, modifier: Modifier = Modifier) {
     if (!controller.isAttached) return
     val textColor = AppTheme.colors.onSurface.toArgb()
     val backgroundColor = AppTheme.colors.surfaceVariant.toArgb()
-    AndroidView(
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .navigationBarsPadding()
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
             .height(44.dp),
-        factory = { context ->
-            HorizontalScrollView(context).apply {
-                isHorizontalScrollBarEnabled = false
-                addView(
-                    SymbolInputView(context).apply {
-                        addSymbols(symbolLabels, symbolValues)
-                    }
-                )
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AndroidView(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
+            factory = { context ->
+                HorizontalScrollView(context).apply {
+                    isHorizontalScrollBarEnabled = false
+                    addView(
+                        SymbolInputView(context).apply {
+                            addSymbols(symbolLabels, symbolValues)
+                        }
+                    )
+                }
+            },
+            update = { view ->
+                val symbolView = view.getChildAt(0) as? SymbolInputView ?: return@AndroidView
+                symbolView.bindEditor(controller.editor)
+                symbolView.setTextColor(textColor)
+                symbolView.setBackgroundColor(backgroundColor)
             }
-        },
-        update = { view ->
-            val symbolView = view.getChildAt(0) as? SymbolInputView ?: return@AndroidView
-            symbolView.bindEditor(controller.editor)
-            symbolView.setTextColor(textColor)
-            symbolView.setBackgroundColor(backgroundColor)
-        }
-    )
+        )
+        AppText(
+            text = "${controller.cursorLine}:${controller.cursorColumn}",
+            modifier = Modifier.padding(horizontal = 10.dp),
+            fontSize = 12.sp,
+            color = AppTheme.colors.onSurfaceSummary,
+            maxLines = 1
+        )
+    }
 }

@@ -23,10 +23,12 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import io.github.rosemoe.sora.event.ContentChangeEvent
+import io.github.rosemoe.sora.event.SelectionChangeEvent
 import io.github.rosemoe.sora.lang.Language
 import io.github.rosemoe.sora.lang.completion.CompletionItem
 import io.github.rosemoe.sora.lang.completion.CompletionItemKind
 import io.github.rosemoe.sora.lang.completion.CompletionPublisher
+import io.github.rosemoe.sora.lang.completion.SimpleCompletionIconDrawer
 import io.github.rosemoe.sora.langs.textmate.TextMateColorScheme
 import io.github.rosemoe.sora.langs.textmate.TextMateLanguage
 import io.github.rosemoe.sora.langs.textmate.registry.FileProviderRegistry
@@ -63,6 +65,8 @@ data class CodeCompletion(
     val description: String = "",
     val insert: String = label,
     val caretBack: Int = 0,
+    /** 是否是方法调用；补全弹窗据此显示方法/变量两种图标 */
+    val isMethod: Boolean = false,
 )
 
 /** 按当前输入前缀给出补全候选；在编辑器的补全线程里调用，实现方不能触碰 Compose 状态 */
@@ -175,7 +179,10 @@ private class CompletionEntry(
 
     init {
         prefixLength = prefixLen
-        kind = CompletionItemKind.Method
+        val itemKind = if (completion.isMethod) CompletionItemKind.Method else CompletionItemKind.Variable
+        kind = itemKind
+        // 库里自带的圆形图标：方法/变量用不同底色和首字母，浅深色主题都清晰
+        icon = SimpleCompletionIconDrawer.draw(itemKind)
     }
 
     override fun performCompletion(editor: CodeEditor, content: Content, line: Int, column: Int) {
@@ -209,6 +216,16 @@ class CodeEditorController {
 
     val isAttached: Boolean
         get() = editorState.value != null
+
+    private val cursorState = mutableStateOf(1 to 1)
+
+    /** 光标位置（1 基），供顶栏/工具条显示 */
+    val cursorLine: Int get() = cursorState.value.first
+    val cursorColumn: Int get() = cursorState.value.second
+
+    internal fun updateCursor(line: Int, column: Int) {
+        cursorState.value = line to column
+    }
 
     val canUndo: Boolean
         get() = editorState.value?.canUndo() == true
@@ -307,6 +324,11 @@ fun CodeEditorField(
                 setLineNumberEnabled(true)
                 // 行号默认贴着控件左边缘，留出 10dp 左边距，排版不显得顶格
                 setLineNumberMarginLeft(with(density) { 10.dp.toPx() })
+                // 缩进（前导空格）与空行用圆点显示，便于对齐
+                setNonPrintablePaintingFlags(
+                    CodeEditor.FLAG_DRAW_WHITESPACE_LEADING or
+                        CodeEditor.FLAG_DRAW_WHITESPACE_FOR_EMPTY_LINE
+                )
                 setHighlightCurrentLine(false)
                 setScrollBarEnabled(true)
                 setEditable(!readOnly)
@@ -319,6 +341,14 @@ fun CodeEditorField(
                 subscribeEvent(ContentChangeEvent::class.java) { event, _ ->
                     latestOnChange(event.editor.text.toString())
                 }
+                // 光标位置（1 基）变化时同步给工具条；选区取右端，与系统文本框一致
+                subscribeEvent(SelectionChangeEvent::class.java) { event, _ ->
+                    controller?.updateCursor(
+                        event.right.line + 1,
+                        event.right.column + 1
+                    )
+                }
+                controller?.updateCursor(cursor.rightLine + 1, cursor.rightColumn + 1)
                 editorRef.value = this
                 controller?.editor = this
             }
