@@ -32,7 +32,7 @@ class BackupService(context: Context) {
     private val context = context.applicationContext
 
     /** 把当前数据写入用户通过 SAF 选定的 Uri（导出到本地存储） */
-    fun copyToUri(uri: Uri) {
+    suspend fun copyToUri(uri: Uri) = withContext(Dispatchers.IO) {
         val json = ServiceLocator.exportBackupJson()
         val output = context.contentResolver.openOutputStream(uri)
             ?: throw IOException("无法写入目标文件")
@@ -42,7 +42,7 @@ class BackupService(context: Context) {
     }
 
     /** 从用户通过 SAF 选定的 Uri 恢复数据 */
-    fun importLocal(uri: Uri) {
+    suspend fun importLocal(uri: Uri) = withContext(Dispatchers.IO) {
         val json = context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() }
             ?: throw IOException("无法读取备份文件")
         ServiceLocator.restoreFromJson(json)
@@ -50,7 +50,8 @@ class BackupService(context: Context) {
 
     /** 导出到 WebDAV，文件名带时间戳以保留多份历史备份，返回远程文件 URL */
     suspend fun exportToWebDav(config: WebDavConfig): String {
-        val json = ServiceLocator.exportBackupJson()
+        // 组装备份 JSON 会读全量快照，放到 IO 线程，避免在主线程占用过久
+        val json = withContext(Dispatchers.IO) { ServiceLocator.exportBackupJson() }
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
         val fileUrl = config.timestampedFileUrl(timestamp)
         WebDavClient(config).upload(fileUrl, json)
@@ -60,7 +61,8 @@ class BackupService(context: Context) {
     /** 从 WebDAV 下载指定历史备份文件并恢复数据 */
     suspend fun restoreFromWebDavUrl(config: WebDavConfig, fileUrl: String): String {
         val json = WebDavClient(config).downloadUrl(fileUrl)
-        ServiceLocator.restoreFromJson(json)
+        // 恢复会写库并重新加密敏感字段（Keystore Binder），必须离开主线程
+        withContext(Dispatchers.IO) { ServiceLocator.restoreFromJson(json) }
         return fileUrl
     }
 

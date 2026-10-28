@@ -47,7 +47,11 @@ import com.evan.pulse.domain.script.RhinoScriptExecutor
 import com.evan.pulse.domain.script.ScriptEnvWriter
 import android.content.Context
 import android.util.Base64
+import android.util.Log
 import java.io.File
+import java.util.concurrent.Executor
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -952,17 +956,69 @@ class MonitorStoreSnapshot(
     val nextHistoryId: Long
 )
 
-/** Store 的持久化回调句柄：init 前为空操作，避免启动早期写入 */
-class PersistenceHandle {
-    var action: () -> Unit = {}
+/**
+ * Store 的持久化回调句柄。
+ *
+ * 写盘要把状态整体序列化进 Room，敏感字段还要走 Android Keystore 的加解密，
+ * 后者是一次 Binder 事务，冷启动或系统繁忙时可能卡住数百毫秒到数秒。以前这些
+ * 工作直接跑在调用线程（多数是主线程），切后台时 onStop 触发的全量落盘一卡就是
+ * 「Input dispatching timed out」的 ANR。
+ *
+ * 现在写入统一投递到 [executor]（单线程，保证顺序）：调用方立即返回，同一句柄
+ * 的连续写入合并成一次执行，真正执行时再读最新快照，所以合并不会丢最后一次变更。
+ */
+class PersistenceHandle(private val executor: Executor) {
 
-    fun save() = action()
+    /** 测试用：直接在当前线程执行，保持「改一次写一次」的可观察语义 */
+    constructor() : this(Executor { it.run() })
+
+    @Volatile
+    var action: (() -> Unit)? = null
+
+    private val dirty = AtomicBoolean(false)
+    private val scheduled = AtomicBoolean(false)
+
+    /** 注册写盘实现；[ServiceLocator.loadHeavy] 完成前保持为空操作 */
+    fun onSave(block: () -> Unit) {
+        action = block
+    }
+
+    fun save() {
+        if (action == null) return
+        dirty.set(true)
+        schedule()
+    }
+
+    private fun schedule() {
+        if (!scheduled.compareAndSet(false, true)) return
+        executor.execute {
+            try {
+                while (dirty.compareAndSet(true, false)) {
+                    runCatching { action?.invoke() }
+                        .onFailure { Log.w(PERSIST_TAG, "写盘失败，等待下一次变更重试", it) }
+                }
+            } finally {
+                scheduled.set(false)
+                // 收尾瞬间可能又有新写入，补一次调度避免遗漏
+                if (dirty.get()) schedule()
+            }
+        }
+    }
+
+    private companion object {
+        const val PERSIST_TAG = "PulsePersist"
+    }
 }
 
 object ServiceLocator {
 
     private var _settingsStore: SettingsStore? = null
     private var _persistence: AppStatePersistence? = null
+
+    /** 写盘专用单线程：Room 事务与 Keystore 加解密都可能阻塞，绝不能占用主线程 */
+    private val writeExecutor: Executor = Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "pulse-persist").apply { isDaemon = true }
+    }
 
     /** 由 [init] 注入的应用级 Context，供引擎读取 content:// 文件等系统资源 */
     private var _appContext: Context? = null
@@ -973,10 +1029,11 @@ object ServiceLocator {
     private fun appContextOrNull(): Context? = _appContext
 
     // 每个 Store 一个句柄：写操作只重写自己那组表，避免全量序列化
-    private val projectPersist = PersistenceHandle()
-    private val historyPersist = PersistenceHandle()
-    private val envPersist = PersistenceHandle()
-    private val collectionPersist = PersistenceHandle()
+    private val projectPersist = PersistenceHandle(writeExecutor)
+    private val historyPersist = PersistenceHandle(writeExecutor)
+    private val envPersist = PersistenceHandle(writeExecutor)
+    private val collectionPersist = PersistenceHandle(writeExecutor)
+    private val flushPersist = PersistenceHandle(writeExecutor)
 
     val projectStore = ProjectStore(projectPersist)
     val historyStore = HistoryStore(historyPersist)
@@ -1002,9 +1059,9 @@ object ServiceLocator {
     val mqttEngine: MqttEngine = PahoMqttEngine()
     val sseEngine: SseEngine = KtorSseEngine()
 
-    private val monitorPersist = PersistenceHandle()
-    private val cookiePersist = PersistenceHandle()
-    private val protocolPersist = PersistenceHandle()
+    private val monitorPersist = PersistenceHandle(writeExecutor)
+    private val cookiePersist = PersistenceHandle(writeExecutor)
+    private val protocolPersist = PersistenceHandle(writeExecutor)
 
     val monitorStore = MonitorStore(monitorPersist)
     val cookieStore = CookieStore(cookiePersist)
@@ -1051,13 +1108,14 @@ object ServiceLocator {
     fun loadHeavy(context: Context) {
         val persistence = AppStatePersistence(context)
         _persistence = persistence
-        projectPersist.action = { persistence.saveProjects() }
-        historyPersist.action = { persistence.saveHistory() }
-        envPersist.action = { persistence.saveEnvironments() }
-        collectionPersist.action = { persistence.saveCollections() }
-        monitorPersist.action = { persistence.saveMonitors() }
-        cookiePersist.action = { persistence.saveCookies() }
-        protocolPersist.action = { persistence.saveProtocols() }
+        projectPersist.onSave { persistence.saveProjects() }
+        historyPersist.onSave { persistence.saveHistory() }
+        envPersist.onSave { persistence.saveEnvironments() }
+        collectionPersist.onSave { persistence.saveCollections() }
+        monitorPersist.onSave { persistence.saveMonitors() }
+        cookiePersist.onSave { persistence.saveCookies() }
+        protocolPersist.onSave { persistence.saveProtocols() }
+        flushPersist.onSave { persistence.saveAll() }
         persistence.load()
         _monitorScheduler?.sync()
     }
@@ -1068,9 +1126,9 @@ object ServiceLocator {
         loadHeavy(context)
     }
 
-    /** 立即把当前状态写盘，作为进程退出前的兜底 */
+    /** 把当前状态写盘，作为进程退出前的兜底。异步执行：主线程调用不会因 Keystore 卡顿而 ANR */
     fun flush() {
-        _persistence?.saveAll()
+        flushPersist.save()
     }
 
     /** 导出备份 JSON（本地备份与 WebDAV 共用同一份结构） */

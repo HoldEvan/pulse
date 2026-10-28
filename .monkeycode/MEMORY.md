@@ -328,3 +328,14 @@ Entries discovered by the Agent during task execution should follow this format:
   - 编辑器底色跟随应用主题要显式覆盖配色方案：`colorScheme.setColor(EditorColorScheme.WHOLE_BACKGROUND / LINE_NUMBER_BACKGROUND / LINE_NUMBER_PANEL, argb)`（没有 `EDITOR_BACKGROUND` 常量），且主题切换后需在 `AndroidView.update` 里重新覆盖一次
   - 代码补全走 sora 内置弹窗：用 `Language by delegate` 包装 `TextMateLanguage` 只覆写 `requireAutoComplete`，候选用自定义 `CompletionItem` 覆盖 `performCompletion(editor, content, line, column)` 完成前缀替换与光标回退
   - 底部符号栏用库内自带的 `io.github.rosemoe.sora.widget.SymbolInputView`（放进 `HorizontalScrollView`，`bindEditor` + `addSymbols(labels, values)`），Tab 会走 `indentOrCommitTab`，其余按键走 `insertText` 自动进撤销栈；不需要自己写插入逻辑
+
+[Project Knowledge Summary]
+- Date: 2026-10-28
+- Context: Discovered by Agent while fixing the ANR that occurred after using the app then switching to background and back
+- Category: Troubleshooting & Debugging
+- Instructions:
+  - ANR 根因：`PulseApp` 在 `ProcessLifecycleOwner.onStop` 调 `ServiceLocator.flush()`，旧实现直接在主线程 `saveAll()`；敏感字段加密会走 `Cipher.init` → Android Keystore 的 Binder 事务，系统繁忙时卡住即触发 `Input dispatching timed out`。堆栈特征：main Native → `BinderProxy.transactNative` → `IKeystoreSecurityLevel$Stub$Proxy.createOperation` → `AndroidKeyStoreCipherSpiBase.engineInit`
+  - 修法：`PersistenceHandle` 把写盘投递到单线程 `writeExecutor`（线程名 `pulse-persist`），同一句柄的连续写入用 `dirty`/`scheduled` 两个 AtomicBoolean 合并成一次，执行时读最新快照；`flush()` 也走异步句柄
+  - `PersistenceHandle()` 保留无参构造（直接执行 executor）供单测使用，`action` 保持 public，测试里 `apply { action = ... }` 与「改一次写一次」的同步计数断言才能继续成立
+  - 备份的 `copyToUri`/`importLocal` 改为 suspend + `withContext(Dispatchers.IO)`，WebDAV 的 `exportBackupJson`/`restoreFromJson` 也包 IO：恢复会写库并重新加密，同样不能留在主线程
+  - sora-editor 行号贴左边：`CodeEditor.setLineNumberMarginLeft(px)` 给行号列加左边距（`measureLineNumber()` 会把它算进 gutter 宽度，右对齐的行号整体右移）；`setPadding` 只影响正文，管不到行号

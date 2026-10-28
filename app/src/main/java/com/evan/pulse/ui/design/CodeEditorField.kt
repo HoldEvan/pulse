@@ -305,6 +305,8 @@ fun CodeEditorField(
                 setWordwrap(true)
                 setTabWidth(2)
                 setLineNumberEnabled(true)
+                // 行号默认贴着控件左边缘，留出 10dp 左边距，排版不显得顶格
+                setLineNumberMarginLeft(with(density) { 10.dp.toPx() })
                 setHighlightCurrentLine(false)
                 setScrollBarEnabled(true)
                 setEditable(!readOnly)
