@@ -1,8 +1,15 @@
 package com.evan.pulse.ui.design
 
 import android.content.Context
+import android.graphics.Color as AndroidColor
 import android.graphics.Typeface
 import android.os.Bundle
+import android.util.TypedValue
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,6 +29,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.evan.pulse.R
 import io.github.rosemoe.sora.event.ContentChangeEvent
 import io.github.rosemoe.sora.event.SelectionChangeEvent
 import io.github.rosemoe.sora.lang.Language
@@ -40,6 +48,8 @@ import io.github.rosemoe.sora.text.CharPosition
 import io.github.rosemoe.sora.text.Content
 import io.github.rosemoe.sora.text.ContentReference
 import io.github.rosemoe.sora.widget.CodeEditor
+import io.github.rosemoe.sora.widget.component.EditorAutoCompletion
+import io.github.rosemoe.sora.widget.component.EditorCompletionAdapter
 import io.github.rosemoe.sora.widget.schemes.EditorColorScheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -69,9 +79,13 @@ data class CodeCompletion(
     val isMethod: Boolean = false,
 )
 
-/** 按当前输入前缀给出补全候选；在编辑器的补全线程里调用，实现方不能触碰 Compose 状态 */
+/**
+ * 按当前输入前缀给出补全候选；在编辑器的补全线程里调用，实现方不能触碰 Compose 状态。
+ *
+ * [source] 是编辑器当前全文，用于从脚本里收集用户自己定义的名字。
+ */
 fun interface CodeCompletionProvider {
-    fun complete(prefix: String): List<CodeCompletion>
+    fun complete(prefix: String, source: String): List<CodeCompletion>
 }
 
 /**
@@ -152,7 +166,7 @@ private class CompletionLanguage(
     ) {
         val prefix = prefixAt(content, position)
         if (prefix.isEmpty()) return
-        val items = provider.complete(prefix)
+        val items = provider.complete(prefix, fullText(content))
         if (items.isEmpty()) return
         items.forEach { publisher.addItem(CompletionEntry(it, prefix.length)) }
     }
@@ -170,6 +184,14 @@ private fun prefixAt(content: ContentReference, position: CharPosition): String 
 
 private fun isPrefixChar(c: Char): Boolean =
     c.isLetterOrDigit() || c == '_' || c == '$' || c == '.'
+
+/** 把 ContentReference 拼成完整文本；脚本一般只有几 KB，逐次拼接的代价可以接受 */
+private fun fullText(content: ContentReference): String = buildString {
+    for (line in 0 until content.lineCount) {
+        if (line > 0) append('\n')
+        append(content.getLine(line))
+    }
+}
 
 /** 内置弹窗里的补全项：替换已输入的前缀，并把光标停在 insert 文本的指定位置 */
 private class CompletionEntry(
@@ -195,6 +217,68 @@ private class CompletionEntry(
         val caretColumn = (end.column - completion.caretBack)
             .coerceIn(0, content.getColumnCount(end.line))
         editor.setSelection(end.line, caretColumn)
+    }
+}
+
+/**
+ * 补全弹窗的条目视图。
+ *
+ * 库自带布局把图标和文字分别居中，字体自带的上下留白会让两者在视觉上错开半像素
+ * 到一像素；这里换成 includeFontPadding=false 的布局，图标与文字使用同一套垂直
+ * 居中规则，同时把图标缩到 18dp，和方法/变量的字号更协调。
+ */
+private class PulseCompletionAdapter : EditorCompletionAdapter() {
+
+    override fun getItemHeight(): Int = TypedValue.applyDimension(
+        TypedValue.COMPLEX_UNIT_DIP,
+        44f,
+        context.resources.displayMetrics
+    ).toInt()
+
+    override fun getView(
+        position: Int,
+        convertView: View?,
+        parent: ViewGroup,
+        isSelected: Boolean,
+    ): View {
+        val view = convertView ?: LayoutInflater.from(context)
+            .inflate(R.layout.widget_completion_item, parent, false)
+        val item = getItem(position) ?: return view
+        val primary = getThemeColor(EditorColorScheme.COMPLETION_WND_TEXT_PRIMARY)
+        val secondary = getThemeColor(EditorColorScheme.COMPLETION_WND_TEXT_SECONDARY)
+
+        view.findViewById<TextView>(R.id.completion_label).apply {
+            text = item.label
+            setTextColor(primary)
+            setSelected(isSelected)
+            setDeprecated(item.deprecated)
+        }
+        view.findViewById<TextView>(R.id.completion_detail).apply {
+            text = item.detail ?: ""
+            setTextColor(secondary)
+            setSelected(isSelected)
+            visibility = if (item.detail.isNullOrEmpty()) View.GONE else View.VISIBLE
+            setDeprecated(item.deprecated)
+        }
+        view.findViewById<TextView>(R.id.completion_desc).apply {
+            text = item.desc ?: ""
+            setTextColor(secondary)
+            setSelected(isSelected)
+            visibility = if (item.desc.isNullOrEmpty()) View.GONE else View.VISIBLE
+        }
+        view.findViewById<ImageView>(R.id.completion_icon).apply {
+            setImageDrawable(item.icon)
+            visibility = if (item.icon == null) View.GONE else View.VISIBLE
+        }
+        view.setBackgroundColor(
+            if (isSelected) getThemeColor(EditorColorScheme.COMPLETION_WND_ITEM_CURRENT)
+            else AndroidColor.TRANSPARENT
+        )
+        return view
+    }
+
+    private fun TextView.setDeprecated(deprecated: Boolean) {
+        paintFlags = if (deprecated) paintFlags or 0x10 else paintFlags and 0x10.inv()
     }
 }
 
@@ -317,6 +401,8 @@ fun CodeEditorField(
         factory = { ctx ->
             CodeEditor(ctx).apply {
                 setTypefaceText(Typeface.MONOSPACE)
+                // 行号用同一套等宽字体，字体度量一致后才能和正文逐行对齐
+                setTypefaceLineNumber(Typeface.MONOSPACE)
                 setTextSize(textSizeSp)
                 setLineSpacing(0f, 1.15f)
                 setWordwrap(true)
@@ -336,6 +422,9 @@ fun CodeEditorField(
                 setPadding(pad, pad, pad, pad)
                 setColorScheme(TextMateColorScheme.create(ThemeRegistry.getInstance()))
                 setEditorLanguage(buildEditorLanguage(language, completionProvider))
+                // 换成自定义条目布局，保证图标与文字垂直对齐
+                getComponent(EditorAutoCompletion::class.java)
+                    .setAdapter(PulseCompletionAdapter())
                 applyEditorBackground(this, argb)
                 setText(text)
                 subscribeEvent(ContentChangeEvent::class.java) { event, _ ->

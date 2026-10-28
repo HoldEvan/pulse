@@ -332,6 +332,10 @@ Entries discovered by the Agent during task execution should follow this format:
   - 缩进/空行圆点用 `CodeEditor.setNonPrintablePaintingFlags(FLAG_DRAW_WHITESPACE_LEADING or FLAG_DRAW_WHITESPACE_FOR_EMPTY_LINE)`，无需自己画
   - 光标行列号订阅 `SelectionChangeEvent`，`event.right`/`left` 是 0 基 `CharPosition`，转 1 基再显示；`SymbolInputView` 的 Tab 走 `indentOrCommitTab()` 插缩进（不是换行），需要换行键就自己往 `addSymbols` 里加 `"\n"`
   - 底部工具条要贴键盘：Compose 的 `WindowInsets.safeDrawing` 已包含 IME，用 `windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))` 即可，不要再叠加 `navigationBarsPadding`（`adjustResize` 与 edge-to-edge 两种情况下都能正确让位）
+  - 键盘圆角会在工具条的 IME 内边距区域露出底色：把 `.background(工具条色)` 放在 `.windowInsetsPadding(...)` **之前**（修饰符从外到内），底色就会铺满键盘内边距区域，圆角处不再露出编辑器底色
+  - 行号与正文逐行对齐的条件是两个 Paint 的字体度量一致：`setTypefaceText(MONOSPACE)` 之后必须同时 `setTypefaceLineNumber(MONOSPACE)`，否则 `metricsLineNumber` 取自默认字体的 `paintOther`，可见行会偏移
+  - 补全弹窗图标要和文字对齐需换自定义条目：继承 `EditorCompletionAdapter`（`getView(position, convertView, parent, isSelected)` 是 protected），用自己的布局（`includeFontPadding=false`、图标 18dp、`gravity=center_vertical`），再 `getComponent(EditorAutoCompletion::class.java).setAdapter(...)`；库自带布局的字体留白会让图标看起来偏下
+  - 脚本内自定义名字补全：补全提供方的入参改成 `(prefix, source)`，在 `CompletionLanguage.requireAutoComplete` 里用 `ContentReference.getLine(i)` 拼出全文再解析；只认 `function` / `var|let|const` / `name =` 声明位置，避免把 `pm.request.method` 这类成员访问当作变量
 
 [Project Knowledge Summary]
 - Date: 2026-10-28

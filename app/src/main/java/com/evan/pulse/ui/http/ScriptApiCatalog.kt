@@ -133,12 +133,16 @@ object ScriptApiCatalog {
      *
      * 含 `.` 的词元按完整路径前缀匹配；不含 `.` 的裸词元额外按最后一段匹配，
      * 这样输入 `set` 也能提示出 `pm.request.setHeader` 等函数。
+     *
+     * [source] 是编辑器里的脚本全文：裸词元还会合并 JavaScript 内置全局名与脚本里
+     * 通过 `function` / `var` / `let` / `const` / 赋值定义的名字，让使用者自己的
+     * 函数和变量也能被补全。
      */
-    fun match(token: String): List<ScriptApiToken> {
+    fun match(token: String, source: CharSequence = ""): List<ScriptApiToken> {
         val lower = token.lowercase()
         if (lower.isEmpty()) return emptyList()
         val dot = lower.contains('.')
-        return tokens.asSequence()
+        val matched = tokens.asSequence()
             .filter { it.path != token }
             .filter { candidate ->
                 val path = candidate.path.lowercase()
@@ -148,9 +152,89 @@ object ScriptApiCatalog {
                     path.startsWith(lower) || path.substringAfterLast('.').startsWith(lower)
                 }
             }
-            .take(MAX_SUGGESTIONS)
             .toList()
+        if (dot) return matched.take(MAX_SUGGESTIONS)
+
+        val seen = matched.mapTo(HashSet()) { it.path }
+        val extra = ArrayList<ScriptApiToken>()
+        for (global in globals) {
+            if (!global.path.startsWith(token) || !seen.add(global.path)) continue
+            extra += global
+        }
+        for (declared in declaredNames(source)) {
+            if (!declared.name.startsWith(token) || !seen.add(declared.name)) continue
+            extra += ScriptApiToken(
+                path = declared.name,
+                insert = declared.name,
+                isMethod = declared.isMethod
+            )
+        }
+        return (matched + extra).take(MAX_SUGGESTIONS)
     }
+
+    /** JavaScript 运行时内置的全局对象与函数，只在输入裸词元时补充 */
+    private val globals: List<ScriptApiToken> = listOf(
+        prop("console"),
+        prop("Math"),
+        prop("JSON"),
+        prop("Object"),
+        prop("Array"),
+        prop("String"),
+        prop("Number"),
+        prop("Boolean"),
+        prop("Date"),
+        prop("RegExp"),
+        prop("Map"),
+        prop("Set"),
+        fn("parseInt", "parseInt(str, radix)"),
+        fn("parseFloat", "parseFloat(str)"),
+        fn("isNaN", "isNaN(value)"),
+        fn("isFinite", "isFinite(value)"),
+        fn("encodeURIComponent", "encodeURIComponent(str)"),
+        fn("decodeURIComponent", "decodeURIComponent(str)"),
+    )
+
+    private class DeclaredName(val name: String, val isMethod: Boolean)
+
+    /**
+     * 脚本里定义的名字：`function foo`、`var/let/const foo`，以及 `foo = ...` 赋值。
+     *
+     * 只认声明位置，避免把 `pm.request.method` 这类成员访问当成可补全变量。
+     */
+    private fun declaredNames(source: CharSequence): List<DeclaredName> {
+        val result = LinkedHashMap<String, DeclaredName>()
+        for (m in declarationPattern.findAll(source)) {
+            val name = m.groupValues[1].ifEmpty {
+                m.groupValues[2].ifEmpty { m.groupValues[3] }
+            }
+            if (name.isEmpty() || name in reservedWords || result.containsKey(name)) continue
+            val isMethod = m.groupValues[1].isNotEmpty() ||
+                isFunctionAssignment(source, m.range.last + 1)
+            result[name] = DeclaredName(name, isMethod)
+        }
+        return result.values.toList()
+    }
+
+    private fun isFunctionAssignment(source: CharSequence, from: Int): Boolean {
+        val rhsEnd = minOf(source.length, from + 80)
+        val rhs = source.subSequence(from, rhsEnd).toString()
+            .substringAfter('=')
+            .takeWhile { it != ';' && it != '\n' }
+            .trim()
+        return rhs.startsWith("function") || rhs.contains("=>")
+    }
+
+    private val declarationPattern = Regex(
+        """function\s+([A-Za-z_$][\w$]*)|(?:var|let|const)\s+([A-Za-z_$][\w$]*)|(?<![\w$.])([A-Za-z_$][\w$]*)\s*=(?![=>])"""
+    )
+
+    private val reservedWords = setOf(
+        "break", "case", "catch", "class", "const", "continue", "debugger", "default",
+        "delete", "do", "else", "export", "extends", "finally", "for", "function", "if",
+        "import", "in", "instanceof", "let", "new", "return", "super", "switch", "this",
+        "throw", "try", "typeof", "var", "void", "while", "with", "yield",
+        "true", "false", "null", "undefined",
+    )
 
     private fun prop(
         path: String,

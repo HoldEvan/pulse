@@ -1,7 +1,7 @@
 package com.evan.pulse.ui.http
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -97,8 +97,8 @@ fun ScriptEditorScreen(
         .filter { it.detailRes != 0 }
         .associate { it.path to stringResource(it.detailRes) }
     val provider = remember(localizedDetails) {
-        CodeCompletionProvider { prefix ->
-            ScriptApiCatalog.match(prefix).map { token ->
+        CodeCompletionProvider { prefix, source ->
+            ScriptApiCatalog.match(prefix, source).map { token ->
                 CodeCompletion(
                     label = token.path,
                     description = localizedDetails[token.path] ?: token.detail,
@@ -213,6 +213,8 @@ private fun SymbolBar(controller: CodeEditorController, modifier: Modifier = Mod
     Row(
         modifier = modifier
             .fillMaxWidth()
+            // 底色铺在键盘内边距之前：键盘是圆角的，角落露出的这块区域要和工具条同色
+            .background(AppTheme.colors.surfaceVariant)
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
             .height(44.dp),
         verticalAlignment = Alignment.CenterVertically
