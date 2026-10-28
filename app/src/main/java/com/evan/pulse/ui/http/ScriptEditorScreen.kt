@@ -264,9 +264,10 @@ private fun SymbolBar(controller: CodeEditorController, modifier: Modifier = Mod
                 .weight(1f)
                 .fillMaxHeight(),
             factory = { context ->
-                val rowHeight = with(context.resources.displayMetrics) {
-                    (symbolRowHeight.value * density).toInt()
-                }
+                val metrics = context.resources.displayMetrics
+                val rowHeight = (symbolRowHeight.value * metrics.density).toInt()
+                // 默认 Button 的 minWidth/padding 会在按键之间留很大空隙，这里收紧
+                val sidePadding = (3 * metrics.density).toInt()
                 // 两行放进同一个滚动容器：横向滑动时上下两行始终一起移动
                 val rows = LinearLayout(context).apply {
                     orientation = LinearLayout.VERTICAL
@@ -274,6 +275,11 @@ private fun SymbolBar(controller: CodeEditorController, modifier: Modifier = Mod
                         addView(
                             SymbolInputView(context).apply {
                                 addSymbols(symbolRowLabels[index], symbolRowValues[index])
+                                forEachButton { button ->
+                                    button.minimumWidth = 0
+                                    button.minimumHeight = 0
+                                    button.setPadding(sidePadding, 0, sidePadding, 0)
+                                }
                                 layoutParams = LinearLayout.LayoutParams(
                                     LinearLayout.LayoutParams.WRAP_CONTENT,
                                     rowHeight
