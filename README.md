@@ -10,17 +10,18 @@ Pulse 是一款 Android 原生 API 调试工具，覆盖 HTTP / SSE / WebSocket 
 ## 功能
 
 ### 协议调试
-- **HTTP**：完整请求编辑（Query 参数、请求头、请求体 JSON / RAW / form-urlencoded / form-data），鉴权支持 Bearer、Basic、API Key；支持二进制文件流式上传
+- **HTTP**：完整请求编辑（Query 参数、请求头、请求体 JSON / RAW / form-urlencoded / form-data），鉴权支持 Bearer、Basic、API Key；支持二进制文件流式上传、逐请求跟随重定向与跳过 TLS 校验
+- **响应正文**：格式化查看、大响应体分页渲染，一键导出与分享完整响应
 - **Cookie / 会话**：自动跟随 `Set-Cookie` 并在后续请求注入，按域名分组查看、单条删除、按域名清除，数据按项目隔离
 - **响应时间线**：DNS / TCP / TLS / 首字节等待 / 内容下载分段水瀑图
-- **SSE**：支持自定义请求方法、参数与请求体，实时事件流展示
-- **WebSocket**：连接、收发消息与事件日志，消息持久化与可配置指数退避自动重连
-- **MQTT**：连接 Broker、订阅/发布，订阅持久化与可折叠 Topic 树
+- **SSE**：支持自定义请求方法、参数与请求体，实时事件流展示，断线可用 `Last-Event-ID` 续传并统计事件数
+- **WebSocket**：连接、收发文本 / 二进制帧与事件日志，自定义握手头与子协议，命名消息模板一键填充，消息持久化与可配置指数退避自动重连
+- **MQTT**：连接 Broker、订阅/发布（含 retain 标记与批量订阅），订阅持久化与可折叠 Topic 树，支持代理上的 TLS 与可选跳过证书校验
 - **弱网模拟**：5G / 4G / 3G / 2G 档位与强制超时，按上下行速率与时延采样
 - **代理**：全局 HTTP / SOCKS5 代理（支持认证），每次连接前本地化提示当前代理状态
 
 ### 请求管理
-- **集合**：多级文件夹 + 面包屑逐层下钻，接口重命名、移动、递归删除
+- **集合**：多级文件夹 + 面包屑逐层下钻，接口重命名、移动、排序、原地复制，删除接口与递归删除文件夹均有二次确认；支持关键字跨文件夹搜索、curl 命令导入、文件夹级变量（子文件夹继承）以及导出为 Postman / OpenAPI 文档
 - **集合运行器**：顺序运行一组请求，前序响应提取变量传给后序，配合脚本断言完成接口链路测试
 - **历史**：完整请求/响应历史，详情页复现请求，支持收藏与置顶
 - **响应对比**：任选两条历史响应做行级 diff，JSON / XML 先格式化再比较
@@ -29,21 +30,22 @@ Pulse 是一款 Android 原生 API 调试工具，覆盖 HTTP / SSE / WebSocket 
 - **导出**：cURL（Bash / PowerShell）、HTTP 原文、Python requests、JS fetch
 
 ### 自动化
-- **前置/后置脚本**：Rhino JavaScript 引擎，`pm` API 支持变量读写、断言与控制台输出；内置带行号的脚本编辑器与语法文档
-- **接口监控**：定时探测目标接口，支持 IP 连通、TCP 端口、HTTP 三类探测；通过与否全量记录，可按状态与检查类型筛选；延迟趋势曲线支持拖动查看样本详情；异常时发送系统通知
+- **前置/后置脚本**：Rhino JavaScript 引擎，`pm` API 支持变量读写、断言与控制台输出，原生 `console` 输出日志；脚本编辑器基于 sora-editor + TextMate 高亮，提供 `pm.*` / `console.*` / 内置对象成员补全、脚本内自定义变量补全、一键格式化、行号、双指缩放与底部符号栏，并内置语法文档
+- **接口监控**：定时探测目标接口，支持 IP 连通、TCP 端口、HTTP 三类探测，HTTP 可配置方法、头、请求体与鉴权；响应断言支持包含 / 不包含 / JSONPath；通过与否全量记录，可按状态与检查类型筛选；延迟趋势曲线支持拖动查看样本详情；分组与批量开关；异常时发送系统通知，并可通过 Webhook 推送到企业微信、钉钉、飞书、Slack 或自定义端点
 - **桌面小组件**：展示最近拨测状态，支持手动刷新与逐目标立即拨测；长按图标可直达常用工具
 
 ### 工具箱
-- **JSON**：树形查看器（可折叠）、JSONPath 查询、格式化
-- **编解码**：Base64、URL、Unicode 编解码与进制转换、JWT 解析、Hash（MD5 / SHA 系列）
-- **生成与校验**：UUID、正则测试
+- **JSON**：树形查看器（可折叠）、JSONPath 查询、格式化、JSON Schema 校验、YAML / JSON 互转
+- **编解码**：Base64、URL、Unicode 编解码与进制转换、JWT 解析、Hash（MD5 / SHA 系列 / HMAC）
+- **生成与校验**：UUID、二维码生成与识别、URL 解析、正则测试
 - **时间**：时间戳互转（本地 / UTC 双时区）、时间格式化、cron 表达式解析与生成（Linux / Spring / Quartz 三种方言）
 - **局域网扫描**：探测当前网段存活主机（ICMP + 常用端口），显示 IP、主机名、延迟与探测方式，可一键加入拨测
 
 ### 其他
 - **双皮肤**：Miuix（液态玻璃底栏、磨砂二级栏）与 Material 3 两套皮肤，共享设计令牌，一键切换
 - **主题**：深色 / 浅色 / 跟随系统，动态取色（Monet）、纯黑模式、自定义主题色与配色风格
-- **WebDAV 备份**：数据上云，随时恢复
+- **WebDAV 备份**：手动与定时备份，数据上云随时恢复；支持本地备份导入导出
+- **安全与诊断**：敏感字段本地加密存储，一键导出脱敏诊断包
 - **多语言**：简体中文、繁体中文、English
 
 ## 下载
@@ -69,20 +71,22 @@ Pulse 是一款 Android 原生 API 调试工具，覆盖 HTTP / SSE / WebSocket 
 
 | 类别 | 选型 |
 |------|------|
-| 语言 | Kotlin 2.4 |
+| 语言 | Kotlin 2.4.20 |
 | UI | Jetpack Compose（BOM 2026.09.00）+ Miuix 0.9.4 |
-| 网络 | OkHttp、Ktor 3.1（SSE / WebSocket）、Paho MQTT |
-| 存储 | DataStore Preferences、JSON 快照（app_data.json） |
+| 代码编辑器 | sora-editor 0.24.7 + TextMate 语法高亮 |
+| 网络 | OkHttp、Ktor 3.1.3（SSE / WebSocket）、Paho MQTT 1.2.5 |
+| 存储 | Room 2.8.5（SQLite）+ DataStore Preferences |
 | 脚本 | Mozilla Rhino 1.7.15 |
-| 规范解析 | kotlinx.serialization JSON、kaml（YAML） |
-| 最低支持 | Android 8.0（API 26），targetSdk 36 |
+| 序列化 / 规范解析 | kotlinx.serialization 1.9.0、kaml（YAML） |
+| 协程 | kotlinx.coroutines 1.10.2 |
+| 最低支持 | Android 8.0（API 26），compileSdk 37 / targetSdk 36 |
 
 ## 项目结构
 
 ```
 app/src/main/java/com/evan/pulse/
-├── data/          # 持久化、设置、备份、监控调度
-├── domain/        # 网络引擎（HTTP/SSE/WS/MQTT）、脚本执行、规范导入、导出、工具算法
+├── data/          # Room 持久化、设置、备份、加密、诊断、Webhook、监控调度
+├── domain/        # 网络引擎（HTTP/SSE/WS/MQTT）、脚本执行、规范导入、导出、diff、工具算法
 ├── di/            # ServiceLocator 依赖注入
 ├── widget/        # 桌面小组件
 └── ui/            # Compose 页面：http/sse/ws/mqtt/collection/history/
