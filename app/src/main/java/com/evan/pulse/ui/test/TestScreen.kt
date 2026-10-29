@@ -31,6 +31,7 @@ fun TestScreen(
     onOpenScriptEditor: (Int) -> Unit = {},
     onOpenHistory: () -> Unit = {},
     onOpenCookies: () -> Unit = {},
+    onOpenHtmlPreview: (() -> Unit)? = null,
     protocolTab: Int = 0,
     onProtocolTabChange: (Int) -> Unit = {},
     // 必须显式传入：脚本编辑页是独立 route entry，与这里默认 viewModel() 的实例不同，
@@ -50,6 +51,7 @@ fun TestScreen(
                 onOpenScriptEditor = onOpenScriptEditor,
                 onOpenHistory = onOpenHistory,
                 onOpenCookies = onOpenCookies,
+                onOpenHtmlPreview = onOpenHtmlPreview,
                 viewModel = httpViewModel
             )
 

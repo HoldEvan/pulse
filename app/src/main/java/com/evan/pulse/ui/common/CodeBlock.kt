@@ -8,6 +8,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -85,9 +86,18 @@ fun MonospaceBlock(text: String, modifier: Modifier = Modifier, selectable: Bool
  * 合法 http(s) 时作为基准解析相对路径资源。
  */
 @Composable
-fun HtmlPreview(body: String, baseUrl: String? = null, modifier: Modifier = Modifier) {
+fun HtmlPreview(
+    body: String,
+    baseUrl: String? = null,
+    modifier: Modifier = Modifier,
+    fillHeight: Boolean = false
+) {
     AndroidView(
-        modifier = modifier.fillMaxWidth().heightIn(min = 160.dp, max = 420.dp),
+        modifier = if (fillHeight) {
+            modifier.fillMaxSize()
+        } else {
+            modifier.fillMaxWidth().heightIn(min = 160.dp, max = 420.dp)
+        },
         factory = { context ->
             WebView(context).apply {
                 // 部分机型（Android 16/HyperOS）WebView 的 Vulkan 绘制路径会在

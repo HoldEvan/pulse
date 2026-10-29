@@ -20,7 +20,7 @@
     <string name="tab_env">環境</string>
     <string name="tab_projects">專案</string>
     <string name="tab_home">首頁</string>
-    <string name="tab_test">測試</string>
+    <string name="tab_test">偵錯</string>
     <string name="tab_settings">設定</string>
     <string name="tab_collection">集合</string>
     <string name="tab_resources">資源</string>
@@ -929,7 +929,11 @@
     <string name="export_tab_js_fetch">fetch</string>
     <string name="action_copy">複製</string>
     <string name="resp_view_html">HTML</string>
-    <string name="resp_view_html_source">查看原始碼</string>
+    <string name="resp_view_html_preview">預覽</string>
+    <string name="http_assertions_label">回應斷言</string>
+    <string name="http_assertions_hint">全部斷言通過才判定請求成功；關鍵字與期望值支援 {{變數}}</string>
+    <string name="http_assertions_all_passed">斷言全部通過</string>
+    <string name="http_assertions_failed">%1$d 條斷言未通過</string>
     <!-- 撥測 -->
     <string name="monitor_add">新增撥測</string>
     <string name="monitor_empty">還沒有撥測目標，點右上角新增</string>

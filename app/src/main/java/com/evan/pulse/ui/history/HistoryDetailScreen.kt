@@ -24,6 +24,7 @@ import com.evan.pulse.ui.common.CardSectionTitle
 import com.evan.pulse.ui.common.CollapsibleKeyValueTable
 import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.LocalTopBarInset
+import com.evan.pulse.ui.common.HtmlPreviewStore
 import com.evan.pulse.ui.common.MethodBadge
 import com.evan.pulse.ui.common.MonospaceBlock
 import com.evan.pulse.ui.common.SectionTitleRow
@@ -55,7 +56,8 @@ fun HistoryDetailScreen(
     modifier: Modifier = Modifier,
     viewModel: HistoryViewModel = viewModel(),
     entryId: Long,
-    onOpenDiff: (Long) -> Unit = {}
+    onOpenDiff: (Long) -> Unit = {},
+    onOpenHtmlPreview: (() -> Unit)? = null
 ) {
     val all by viewModel.history.collectAsState()
     val projects by viewModel.projects.collectAsState()
@@ -123,7 +125,8 @@ fun HistoryDetailScreen(
                         body = entry.responseBody,
                         url = entry.url,
                         contentType = contentTypeOf(entry.responseHeaders),
-                        onOpenDiff = { onOpenDiff(entry.id) }
+                        onOpenDiff = { onOpenDiff(entry.id) },
+                        onOpenHtmlPreview = onOpenHtmlPreview
                     )
                     TruncatedHint(entry.responseBodyTruncated)
                 }
@@ -217,7 +220,8 @@ private fun ResponseBody(
     body: String,
     url: String,
     contentType: String?,
-    onOpenDiff: () -> Unit
+    onOpenDiff: () -> Unit,
+    onOpenHtmlPreview: (() -> Unit)? = null
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -233,7 +237,14 @@ private fun ResponseBody(
         )
         CopyIconButton(text = body, label = stringResource(R.string.cd_copy_response))
     }
-    ResponseBodyView(body, url, contentType = contentType)
+    ResponseBodyView(
+        body = body,
+        baseUrl = url,
+        contentType = contentType,
+        onOpenHtmlPreview = onOpenHtmlPreview?.let { open ->
+            { html, base -> HtmlPreviewStore.set(html, base); open() }
+        }
+    )
 }
 
 /** 历史里的响应头以 "key: value" 行存储，取 Content-Type 供导出与预览推断 MIME */

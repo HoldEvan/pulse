@@ -24,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Cookie
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.runtime.Composable
@@ -43,6 +44,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
+import com.evan.pulse.domain.assertion.ResponseAssertion
 import com.evan.pulse.domain.net.HttpTimeline
 import com.evan.pulse.domain.net.NetworkPreset
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -60,6 +62,7 @@ import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.CollapsibleKeyValueTable
 import com.evan.pulse.ui.common.CardSectionTitle
 import com.evan.pulse.ui.common.CopyIconButton
+import com.evan.pulse.ui.common.HtmlPreviewStore
 import com.evan.pulse.ui.common.InsecureTlsRow
 import com.evan.pulse.ui.common.KeyValueEditor
 import com.evan.pulse.ui.common.MethodPicker
@@ -117,10 +120,11 @@ private val authTypeLabels = listOf(
     R.string.auth_basic,
     R.string.auth_apikey
 )
+// 请求体紧跟在参数后面：改完参数通常就要改请求体，请求头用得少一些
 private val httpTabLabels = listOf(
     R.string.tab_params,
-    R.string.tab_headers,
     R.string.tab_body,
+    R.string.tab_headers,
     R.string.tab_auth,
     R.string.tab_network
 )
@@ -135,6 +139,7 @@ fun HttpScreen(
     onOpenScriptEditor: (Int) -> Unit = {},
     onOpenHistory: () -> Unit = {},
     onOpenCookies: () -> Unit = {},
+    onOpenHtmlPreview: (() -> Unit)? = null,
     viewModel: HttpViewModel = viewModel(),
 ) {
     val scroll = subPageScrollState()
@@ -184,6 +189,8 @@ fun HttpScreen(
         RequestEditorCard(viewModel)
         SectionTitleRow(label = stringResource(R.string.tab_script))
         ScriptEditorCard(viewModel, onOpenScriptEditor)
+        SectionTitleRow(label = stringResource(R.string.http_assertions_label))
+        AssertionCard(viewModel)
         SectionTitleRow(
             label = stringResource(R.string.http_response_label),
             actions = {
@@ -193,7 +200,7 @@ fun HttpScreen(
                 )
             }
         )
-        ResponseCard(viewModel)
+        ResponseCard(viewModel, onOpenHtmlPreview)
         BottomBarClearance()
     }
     SaveRequestDialog(
@@ -346,7 +353,9 @@ private fun TabContent(vm: HttpViewModel) {
             )
         }
 
-        1 -> Column(modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp)) {
+        1 -> BodyEditor(vm)
+
+        2 -> Column(modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp)) {
             KeyValueEditor(
                 items = vm.headers,
                 keyLabel = stringResource(R.string.kv_header_key),
@@ -357,8 +366,6 @@ private fun TabContent(vm: HttpViewModel) {
                 valueHintProvider = vm::placeholderHints
             )
         }
-
-        2 -> BodyEditor(vm)
         3 -> AuthEditor(vm)
         4 -> NetworkEditor(vm)
     }
@@ -468,6 +475,133 @@ private fun ScriptEditorCard(viewModel: HttpViewModel, onOpenScriptEditor: (Int)
             }
         }
     }
+}
+
+/**
+ * 响应断言编辑区：按顺序校验响应体，全部通过才认为这次请求在业务上成功。
+ * 类型与拨测目标一致（包含 / 不包含 / JSONPath），结果在下方按 PASS/FAIL 列出。
+ */
+@Composable
+private fun AssertionCard(viewModel: HttpViewModel) {
+    val assertions = viewModel.assertions
+    val results = viewModel.assertionResults
+    AppCard(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            AppText(
+                text = stringResource(R.string.http_assertions_hint),
+                fontSize = 12.sp,
+                color = AppTheme.colors.onSurfaceSummary
+            )
+            assertions.forEachIndexed { index, assertion ->
+                AssertionEditorRow(
+                    assertion = assertion,
+                    onChange = { updated ->
+                        viewModel.assertions = viewModel.assertions.mapIndexed { i, a ->
+                            if (i == index) updated else a
+                        }
+                    },
+                    onRemove = {
+                        viewModel.assertions = viewModel.assertions.filterIndexed { i, _ -> i != index }
+                    }
+                )
+            }
+            AppTextButton(
+                text = stringResource(R.string.monitor_assert_add),
+                onClick = { viewModel.assertions = viewModel.assertions + ResponseAssertion() },
+                modifier = Modifier.padding(top = 4.dp)
+            )
+            if (results.isEmpty()) return@Column
+            val failed = results.count { !it.passed }
+            AppText(
+                text = if (failed == 0) {
+                    stringResource(R.string.http_assertions_all_passed)
+                } else {
+                    stringResource(R.string.http_assertions_failed, failed)
+                },
+                modifier = Modifier.padding(top = 8.dp),
+                fontSize = 13.sp,
+                color = if (failed == 0) Color(0xFF2FA37A) else Color(0xFFD32F2F)
+            )
+            results.forEach { check ->
+                val label = stringResource(assertionTypeLabel(check.assertion.type))
+                val detail = check.detail
+                MonospaceBlock(
+                    "${if (check.passed) "PASS" else "FAIL"} $label ${check.assertion.expression}" +
+                        if (detail.isBlank()) "" else " - $detail"
+                )
+            }
+        }
+    }
+}
+
+/** 单条断言：类型下拉 + 关键字（JSONPath 时多一个期望值），与拨测页保持一致 */
+@Composable
+private fun AssertionEditorRow(
+    assertion: ResponseAssertion,
+    onChange: (ResponseAssertion) -> Unit,
+    onRemove: () -> Unit
+) {
+    val isJsonPath = ResponseAssertion.needsExpected(assertion.type)
+    Column(modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            AppDropdown(
+                title = "",
+                items = listOf(
+                    stringResource(R.string.monitor_assert_contains),
+                    stringResource(R.string.monitor_assert_not_contains),
+                    stringResource(R.string.monitor_assert_jsonpath)
+                ),
+                selectedIndex = assertionTypeIndex(assertion.type),
+                showValue = false,
+                filled = true,
+                modifier = Modifier.weight(1f),
+                onSelectedIndexChange = { onChange(assertion.copy(type = assertionTypeName(it))) }
+            )
+            AppIconButton(onClick = onRemove, modifier = Modifier.size(36.dp)) {
+                AppIcon(
+                    imageVector = Icons.Filled.Delete,
+                    contentDescription = stringResource(R.string.action_delete)
+                )
+            }
+        }
+        AppTextField(
+            value = assertion.expression,
+            onValueChange = { onChange(assertion.copy(expression = it)) },
+            label = stringResource(
+                if (isJsonPath) R.string.monitor_assert_path else R.string.monitor_assert_keyword
+            ),
+            modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
+        )
+        if (isJsonPath) {
+            AppTextField(
+                value = assertion.expected,
+                onValueChange = { onChange(assertion.copy(expected = it)) },
+                label = stringResource(R.string.monitor_assert_expected),
+                modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
+            )
+        }
+    }
+}
+
+private fun assertionTypeIndex(type: String): Int = when (type.uppercase()) {
+    ResponseAssertion.TYPE_NOT_CONTAINS -> 1
+    ResponseAssertion.TYPE_JSON_PATH -> 2
+    else -> 0
+}
+
+private fun assertionTypeName(index: Int): String = when (index) {
+    1 -> ResponseAssertion.TYPE_NOT_CONTAINS
+    2 -> ResponseAssertion.TYPE_JSON_PATH
+    else -> ResponseAssertion.TYPE_CONTAINS
+}
+
+private fun assertionTypeLabel(type: String): Int = when (type.uppercase()) {
+    ResponseAssertion.TYPE_NOT_CONTAINS -> R.string.monitor_assert_not_contains
+    ResponseAssertion.TYPE_JSON_PATH -> R.string.monitor_assert_jsonpath
+    else -> R.string.monitor_assert_contains
 }
 
 @Composable
@@ -752,7 +886,7 @@ private fun AuthEditor(viewModel: HttpViewModel) {
 }
 
 @Composable
-private fun ResponseCard(viewModel: HttpViewModel) {
+private fun ResponseCard(viewModel: HttpViewModel, onOpenHtmlPreview: (() -> Unit)?) {
     val outcome = viewModel.outcome
 
     AppCard(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
@@ -819,7 +953,10 @@ private fun ResponseCard(viewModel: HttpViewModel) {
                     outcome.body,
                     viewModel.url,
                     contentType = responseContentType(outcome.headers),
-                    bodyBytes = outcome.bodyBytes
+                    bodyBytes = outcome.bodyBytes,
+                    onOpenHtmlPreview = onOpenHtmlPreview?.let { open ->
+                        { body, base -> HtmlPreviewStore.set(body, base); open() }
+                    }
                 )
             }
         }

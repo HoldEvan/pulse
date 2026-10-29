@@ -32,6 +32,7 @@ import com.evan.pulse.R
 import com.evan.pulse.ui.about.AboutScreen
 import com.evan.pulse.ui.about.LegalScreen
 import com.evan.pulse.ui.common.BlurredBar
+import com.evan.pulse.ui.common.HtmlPreviewPage
 import com.evan.pulse.ui.common.LocalSubPageCanScroll
 import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.TabPageScaffold
@@ -414,6 +415,7 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                                         onOpenScriptEditor = { navController.pushRoute(PulseRoute.ScriptEditor(it)) },
                                         onOpenHistory = { navController.pushRoute(PulseRoute.History) },
                                         onOpenCookies = { navController.pushRoute(PulseRoute.Cookies) },
+                                        onOpenHtmlPreview = { navController.pushRoute(PulseRoute.HtmlPreview) },
                                         httpViewModel = httpViewModel
                                     )
                                     2 -> ResourcesScreen(
@@ -585,7 +587,18 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                     modifier = Modifier.fillMaxSize(),
                     viewModel = historyViewModel,
                     entryId = route.entryId,
-                    onOpenDiff = { navController.pushRoute(PulseRoute.ResponseDiff(it)) }
+                    onOpenDiff = { navController.pushRoute(PulseRoute.ResponseDiff(it)) },
+                    onOpenHtmlPreview = { navController.pushRoute(PulseRoute.HtmlPreview) }
+                )
+            }
+        }
+
+        entry<PulseRoute.HtmlPreview> {
+            SubPageScreen(title = stringResource(R.string.resp_view_html_preview)) {
+                HtmlPreviewPage(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = LocalTopBarInset.current)
                 )
             }
         }

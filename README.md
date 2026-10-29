@@ -11,7 +11,8 @@ Pulse 是一款 Android 原生 API 调试工具，覆盖 HTTP / SSE / WebSocket 
 
 ### 协议调试
 - **HTTP**：完整请求编辑（Query 参数、请求头、请求体 JSON / RAW / form-urlencoded / form-data），鉴权支持 Bearer、Basic、API Key；支持二进制文件流式上传、逐请求跟随重定向与跳过 TLS 校验
-- **响应正文**：格式化查看、大响应体分页渲染，一键导出与分享完整响应
+- **响应正文**：格式化查看、大响应体分页渲染，HTML 默认展示源码并可跳转全屏 WebView 预览，媒体预览入口由响应头 Content-Type 决定，一键导出与分享完整响应
+- **响应断言**：为单个请求配置包含 / 不包含 / JSONPath 断言，发送后自动校验响应体并汇总 PASS / FAIL，全部通过才算请求成功
 - **Cookie / 会话**：自动跟随 `Set-Cookie` 并在后续请求注入，按域名分组查看、单条删除、按域名清除，数据按项目隔离
 - **响应时间线**：DNS / TCP / TLS / 首字节等待 / 内容下载分段水瀑图
 - **SSE**：支持自定义请求方法、参数与请求体，实时事件流展示，断线可用 `Last-Event-ID` 续传并统计事件数

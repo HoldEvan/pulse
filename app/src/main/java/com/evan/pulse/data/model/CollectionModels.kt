@@ -84,7 +84,17 @@ data class HttpSnapshot(
     /** 是否自动跟随 3xx 重定向 */
     val followRedirects: Boolean = true,
     /** 最大跟随跳数 */
-    val maxRedirects: Int = 10
+    val maxRedirects: Int = 10,
+    /** 响应断言：请求成功后按顺序校验响应体 */
+    val assertions: List<AssertionEntry> = emptyList()
+)
+
+/** 快照里的单条响应断言 */
+@Serializable
+data class AssertionEntry(
+    val type: String = "CONTAINS",
+    val expression: String = "",
+    val expected: String = ""
 )
 
 @Serializable

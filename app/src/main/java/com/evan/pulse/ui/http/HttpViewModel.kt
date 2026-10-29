@@ -7,11 +7,15 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.evan.pulse.data.model.FormFieldEntry
+import com.evan.pulse.data.model.AssertionEntry
 import com.evan.pulse.data.model.HistoryEntry
 import com.evan.pulse.data.model.HttpSnapshot
 import com.evan.pulse.data.model.KeyValueEntry
 import com.evan.pulse.data.model.RequestType
 import com.evan.pulse.data.model.snapshotJson
+import com.evan.pulse.domain.assertion.AssertionCheck
+import com.evan.pulse.domain.assertion.ResponseAssertion
+import com.evan.pulse.domain.assertion.ResponseAssertions
 import com.evan.pulse.di.ServiceLocator
 import com.evan.pulse.di.StoredCookie
 import com.evan.pulse.ui.collection.LoadedRequestTracker
@@ -107,6 +111,10 @@ class HttpViewModel : ViewModel() {
     /** 上一次请求里前置/后置脚本的 console 输出 */
     var scriptConsole by mutableStateOf<List<String>>(emptyList())
     var scriptTests by mutableStateOf<List<TestRecord>>(emptyList())
+
+    /** 响应断言：每次发送后按顺序校验响应体，结果见 [assertionResults] */
+    var assertions by mutableStateOf<List<ResponseAssertion>>(emptyList())
+    var assertionResults by mutableStateOf<List<AssertionCheck>>(emptyList())
     var scriptError by mutableStateOf<String?>(null)
 
     private val collectionStore = ServiceLocator.collectionStore
@@ -165,7 +173,8 @@ class HttpViewModel : ViewModel() {
             forceTimeoutSec = forceTimeoutSec,
             insecureTls = insecureTls,
             followRedirects = followRedirects,
-            maxRedirects = maxRedirects.toIntOrNull()?.coerceIn(0, 20) ?: 10
+            maxRedirects = maxRedirects.toIntOrNull()?.coerceIn(0, 20) ?: 10,
+            assertions = assertions.map { AssertionEntry(it.type, it.expression, it.expected) }
         )
     )
 
@@ -200,6 +209,7 @@ class HttpViewModel : ViewModel() {
         insecureTls = snap.insecureTls
         followRedirects = snap.followRedirects
         maxRedirects = snap.maxRedirects.toString()
+        assertions = snap.assertions.map { ResponseAssertion(it.type, it.expression, it.expected) }
     }
 
     /** 活动环境变量与文件夹变量合并；文件夹变量优先，便于按集合覆盖环境默认值 */
@@ -411,6 +421,7 @@ class HttpViewModel : ViewModel() {
             missingVars = null
             scriptConsole = emptyList()
             scriptTests = emptyList()
+            assertionResults = emptyList()
             scriptError = null
             try {
                 // 前置与后置脚本共用同一个变量作用域，前置设的值后置能读到
@@ -426,6 +437,12 @@ class HttpViewModel : ViewModel() {
 
                 val result = engine.execute(withCookies(built.config))
                 outcome = result
+                // 断言只针对拿到的响应体；请求失败（超时/断网）没有可校验的内容
+                assertionResults = if (result is HttpCallOutcome.Success) {
+                    ResponseAssertions.evaluate(result.body, assertions, activeEnvVars())
+                } else {
+                    emptyList()
+                }
                 if (result is HttpCallOutcome.Success) {
                     storeResponseCookies(built.config.url, result.headers)
                     val requestBody = clipBody(renderedBody(built.config))

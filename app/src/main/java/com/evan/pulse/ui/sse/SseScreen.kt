@@ -79,10 +79,11 @@ private val sseBodyTypeLabels = listOf(
     R.string.body_json,
     R.string.body_raw
 )
+// 与 HTTP 页一致：请求体排在请求头前面
 private val sseTabLabels = listOf(
     R.string.tab_params,
-    R.string.tab_headers,
     R.string.tab_body,
+    R.string.tab_headers,
     R.string.tab_network
 )
 private val previewTabLabels = listOf(
@@ -209,7 +210,9 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                             )
                         }
 
-                        1 -> Column(modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp)) {
+                        1 -> BodyEditor(viewModel)
+
+                        2 -> Column(modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp)) {
                             KeyValueEditor(
                                 items = viewModel.headers,
                                 keyLabel = stringResource(R.string.kv_header_key),
@@ -220,8 +223,6 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                                 valueHintProvider = viewModel::placeholderHints
                             )
                         }
-
-                        2 -> BodyEditor(viewModel)
 
                         3 -> Column(modifier = Modifier.fillMaxWidth()) {
                             Column(

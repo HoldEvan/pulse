@@ -56,6 +56,9 @@ sealed interface PulseRoute : NavKey {
     /** HTTP 三级页：当前项目的 Cookie 管理（自动收集 + 手动添加） */
     @Serializable data object Cookies : PulseRoute
 
+    /** 响应体 HTML 预览页：内容经 HtmlPreviewStore 传递，路由本身不携带正文 */
+    @Serializable data object HtmlPreview : PulseRoute
+
     /** 工具二级页：信息码转换（Base64/进制/URL/Unicode/ASCII） */
     @Serializable data object EncodingTool : PulseRoute
 
