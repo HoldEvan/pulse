@@ -134,23 +134,24 @@ fun WebhookScreen(
 
             item(key = "webhook_body_card") {
                 AppCard(modifier = Modifier.fillMaxWidth()) {
+                    // 标题行与上方的请求方法下拉保持一致：直接作为卡片子项铺满整行，
+                    // 不再套 filled 容器，否则会比卡片内边距多缩进一层
+                    AppDropdown(
+                        title = stringResource(R.string.settings_webhook_format),
+                        items = listOf(
+                            stringResource(R.string.webhook_format_generic),
+                            stringResource(R.string.webhook_format_wecom),
+                            stringResource(R.string.webhook_format_dingtalk),
+                            stringResource(R.string.webhook_format_feishu),
+                            stringResource(R.string.webhook_format_slack)
+                        ),
+                        selectedIndex = settings.webhookFormatIndex.coerceIn(
+                            0,
+                            com.evan.pulse.domain.webhook.WebhookFormat.entries.lastIndex
+                        ),
+                        onSelectedIndexChange = { viewModel.setWebhookFormatIndex(it) }
+                    )
                     Column(modifier = Modifier.padding(CardContentPadding)) {
-                        AppDropdown(
-                            title = stringResource(R.string.settings_webhook_format),
-                            items = listOf(
-                                stringResource(R.string.webhook_format_generic),
-                                stringResource(R.string.webhook_format_wecom),
-                                stringResource(R.string.webhook_format_dingtalk),
-                                stringResource(R.string.webhook_format_feishu),
-                                stringResource(R.string.webhook_format_slack)
-                            ),
-                            selectedIndex = settings.webhookFormatIndex.coerceIn(
-                                0,
-                                com.evan.pulse.domain.webhook.WebhookFormat.entries.lastIndex
-                            ),
-                            filled = true,
-                            onSelectedIndexChange = { viewModel.setWebhookFormatIndex(it) }
-                        )
                         var webhookTemplate by remember(settings.webhookTemplate) {
                             mutableStateOf(settings.webhookTemplate)
                         }
@@ -161,9 +162,7 @@ fun WebhookScreen(
                                 viewModel.setWebhookTemplate(it)
                             },
                             label = stringResource(R.string.settings_webhook_template),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 8.dp)
+                            modifier = Modifier.fillMaxWidth()
                         )
                         AppText(
                             text = stringResource(R.string.settings_webhook_template_hint),
