@@ -830,6 +830,8 @@
     <string name="request_move_up">Move up</string>
     <string name="request_move_down">Move down</string>
     <string name="request_duplicate">Duplicate</string>
+    <string name="request_delete_title">Delete request</string>
+    <string name="request_delete_confirm">Delete request "%1$s"? This cannot be undone.</string>
     <string name="request_copy_name">%1$s copy</string>
     <string name="cd_move_request">Move request</string>
     <string name="collection_move_forbidden">Cannot move a folder into itself</string>

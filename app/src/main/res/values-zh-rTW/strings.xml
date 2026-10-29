@@ -830,6 +830,8 @@
     <string name="request_move_up">上移</string>
     <string name="request_move_down">下移</string>
     <string name="request_duplicate">複製</string>
+    <string name="request_delete_title">刪除接口</string>
+    <string name="request_delete_confirm">將刪除接口「%1$s」，此操作無法復原</string>
     <string name="request_copy_name">%1$s 副本</string>
     <string name="cd_move_request">移動介面</string>
     <string name="collection_move_forbidden">不能移動到自身或其子資料夾</string>

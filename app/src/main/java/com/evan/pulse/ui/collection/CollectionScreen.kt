@@ -115,6 +115,7 @@ fun CollectionScreen(
     var renameRequestName by remember { mutableStateOf("") }
     var moveRequestId by remember { mutableStateOf<Long?>(null) }
     var moveRequestSelected by remember { mutableStateOf<Long?>(null) }
+    var deleteRequestTarget by remember { mutableStateOf<SavedRequest?>(null) }
 
     LaunchedEffect(currentProjectId) {
         rawPath = emptyList()
@@ -124,6 +125,7 @@ fun CollectionScreen(
         moveRequestId = null
         moveRequestSelected = null
         renameRequestId = null
+        deleteRequestTarget = null
     }
 
     val own = viewModel.projectCollections()
@@ -352,7 +354,7 @@ fun CollectionScreen(
                             moveRequestId = request.id
                         },
                         onDuplicate = { name -> viewModel.duplicateRequest(request.id, name) },
-                        onDelete = { viewModel.deleteRequest(request.id) }
+                        onDelete = { deleteRequestTarget = request }
                     )
                 }
             }
@@ -463,6 +465,26 @@ fun CollectionScreen(
                     onConfirm = {
                         viewModel.deleteRecursive(target.id)
                         deleteOpen = false
+                    }
+                )
+            }
+        }
+    }
+
+    deleteRequestTarget?.let { target ->
+        AppDialog(
+            show = true,
+            title = stringResource(R.string.request_delete_title),
+            onDismissRequest = { deleteRequestTarget = null }
+        ) {
+            Column {
+                AppText(text = stringResource(R.string.request_delete_confirm, target.name))
+                DialogActions(
+                    onCancel = { deleteRequestTarget = null },
+                    confirmText = stringResource(R.string.action_delete),
+                    onConfirm = {
+                        viewModel.deleteRequest(target.id)
+                        deleteRequestTarget = null
                     }
                 )
             }
