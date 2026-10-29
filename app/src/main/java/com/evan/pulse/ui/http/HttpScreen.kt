@@ -924,6 +924,20 @@ private fun ResponseCard(viewModel: HttpViewModel, onOpenHtmlPreview: (() -> Uni
                         fontSize = 13.sp
                     )
                 }
+                // 断言结论放在状态码旁边：HTTP 2xx 但业务字段不对时也能一眼看出请求失败
+                val failedAssertions = viewModel.assertionResults.count { !it.passed }
+                if (viewModel.assertionResults.isNotEmpty()) {
+                    AppText(
+                        text = if (failedAssertions == 0) {
+                            stringResource(R.string.http_assertions_all_passed)
+                        } else {
+                            stringResource(R.string.http_assertions_failed, failedAssertions)
+                        },
+                        modifier = Modifier.padding(top = 8.dp),
+                        fontSize = 13.sp,
+                        color = if (failedAssertions == 0) Color(0xFF2FA37A) else Color(0xFFD32F2F)
+                    )
+                }
                 val tl = outcome.timeline
                 if (tl.dnsMs > 0 || tl.tcpMs > 0 || tl.tlsMs > 0 || tl.ttfbMs > 0) {
                     HttpTimingBreakdown(

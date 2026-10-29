@@ -437,12 +437,6 @@ class HttpViewModel : ViewModel() {
 
                 val result = engine.execute(withCookies(built.config))
                 outcome = result
-                // 断言只针对拿到的响应体；请求失败（超时/断网）没有可校验的内容
-                assertionResults = if (result is HttpCallOutcome.Success) {
-                    ResponseAssertions.evaluate(result.body, assertions, activeEnvVars())
-                } else {
-                    emptyList()
-                }
                 if (result is HttpCallOutcome.Success) {
                     storeResponseCookies(built.config.url, result.headers)
                     val requestBody = clipBody(renderedBody(built.config))
@@ -478,6 +472,13 @@ class HttpViewModel : ViewModel() {
                     ScriptRunResult.Skipped
                 }
                 publishScriptResult(built.preResult, postResult)
+                // 断言放在脚本之后求值：前置/后置脚本 set 的变量都能被 {{变量}} 引用；
+                // 请求失败（超时/断网）没有响应体可校验，结果清空
+                assertionResults = if (result is HttpCallOutcome.Success) {
+                    ResponseAssertions.evaluate(result.body, assertions, scope.all())
+                } else {
+                    emptyList()
+                }
             } finally {
                 sending = false
             }

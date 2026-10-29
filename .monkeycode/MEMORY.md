@@ -32,6 +32,17 @@ Entries discovered by the Agent during task execution should follow this format:
 ## Entries
 
 [Project Knowledge Summary]
+- Date: 2026-10-29
+- Context: Discovered by Agent while adding HTTP response assertions plus a full-screen HTML preview page (Content-Type driven) to the HTTP/历史 response viewer
+- Category: Workflow & Collaboration
+- Instructions:
+  - 大块正文（响应体）不要放进 `@Serializable` 路由参数：miuix-nav 的返回栈会持久化，几十 MB 字符串会撑爆 back stack 与 SavedState；正确做法是进程内单例 store（`ui/common/HtmlPreviewPage.kt` 的 `HtmlPreviewStore`）在 push 前写入，路由本身只放 `data object`
+  - 响应断言求值必须放在后置脚本之后，并用 `VariableScope.all()` 取变量表；用 `activeEnvVars()` 会漏掉脚本 `pm.variables.set` 写进 scope 的值，断言里 `{{变量}}` 会误报缺变量
+  - ViewModel 单测拿不到 Android Context，`L10n.t()` 返回空串，所以断言类单测只能断言 `passed` 布尔，别断言 detail 文本；App 运行时才有真实文案
+  - 判断响应是否 HTML/媒体一律先用 `contentType.substringBefore(';').trim().lowercase()`，再在 Content-Type 缺失时按正文开头 `<!doctype html` / `<html` 兜底——历史记录可能没存响应头，纯按类型判断会让预览入口直接消失
+  - 新增界面文案要同步 `values` / `values-en` / `values-zh-rTW` 三份 strings；删掉旧文案时用 `grep -rn` 确认无引用，避免留下死资源
+
+[Project Knowledge Summary]
 - Date: 2026-10-01
 - Context: Discovered by Agent while making the settings page show a build timestamp that was 8 hours off from the user's clock
 - Category: Environment Configuration
