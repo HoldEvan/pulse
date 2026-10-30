@@ -795,26 +795,27 @@ private fun MonitorTargetRow(
                 fontSize = 13.sp,
                 color = AppTheme.colors.onSurfaceSummary
             )
-            AppIconButton(
-                onClick = onToggleEnabled,
-                modifier = Modifier
-                    .padding(end = 2.dp)
-                    .size(28.dp)
-            ) {
-                AppIcon(
-                    imageVector = if (target.enabled) MiuixIcons.Light.Pause else MiuixIcons.Light.Play,
-                    contentDescription = if (target.enabled) {
-                        stringResource(R.string.monitor_pause)
-                    } else {
-                        stringResource(R.string.monitor_start)
-                    },
-                    modifier = Modifier.size(20.dp)
-                )
-            }
             AppIconDropdownMenu(
                 entries = listOf(
                     DropdownEntry(
                         items = listOf(
+                            DropdownItem(
+                                text = stringResource(
+                                    if (target.enabled) R.string.monitor_pause else R.string.monitor_start
+                                ),
+                                icon = { m ->
+                                    AppIcon(
+                                        imageVector = if (target.enabled) {
+                                            MiuixIcons.Light.Pause
+                                        } else {
+                                            MiuixIcons.Light.Play
+                                        },
+                                        contentDescription = null,
+                                        modifier = m
+                                    )
+                                },
+                                onClick = onToggleEnabled
+                            ),
                             DropdownItem(
                                 text = stringResource(R.string.monitor_trend),
                                 icon = { m ->
