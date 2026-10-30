@@ -6,6 +6,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.evan.pulse.ui.common.tlsConfigOf
+import com.evan.pulse.data.model.AssertionEntry
 import com.evan.pulse.data.model.MqttSnapshot
 import com.evan.pulse.data.model.MqttSubscriptionEntry
 import com.evan.pulse.data.model.RequestType
@@ -13,6 +15,10 @@ import com.evan.pulse.data.model.snapshotJson
 import com.evan.pulse.di.ServiceLocator
 import com.evan.pulse.R
 import com.evan.pulse.domain.PlaceholderResolver
+import com.evan.pulse.domain.assertion.AssertionCheck
+import com.evan.pulse.domain.assertion.AssertionTarget
+import com.evan.pulse.domain.assertion.ResponseAssertion
+import com.evan.pulse.domain.assertion.ResponseAssertions
 import com.evan.pulse.domain.model.MqttConnectionState
 import com.evan.pulse.domain.model.MqttEvent
 import com.evan.pulse.domain.mqtt.MqttSubscriptionInput
@@ -47,6 +53,9 @@ class MqttViewModel : ViewModel() {
 
     /** 跳过 TLS 证书校验；仅对 ssl:// 生效，用于调试自签名或内网 Broker */
     var insecureTls by mutableStateOf(false)
+    var customCaPem by mutableStateOf("")
+    var clientCertPem by mutableStateOf("")
+    var clientKeyPem by mutableStateOf("")
 
     /** 是否套用设置页里的全局代理；关闭则本次连接强制直连 */
     var useProxy by mutableStateOf(true)
@@ -66,19 +75,32 @@ class MqttViewModel : ViewModel() {
     var missingVars by mutableStateOf<List<String>?>(null)
     var lastError by mutableStateOf<String?>(null)
 
+    /** 收到消息时执行的断言：全部通过才认为该条消息符合预期 */
+    var assertions by mutableStateOf<List<ResponseAssertion>>(emptyList())
+
+    /** 最近一条消息的断言结果 */
+    var assertionResults by mutableStateOf<List<AssertionCheck>>(emptyList())
+
+    /** 自连接以来累计校验的消息条数与失败条数 */
+    var assertionChecked by mutableStateOf(0)
+    var assertionFailed by mutableStateOf(0)
+
     init {
         viewModelScope.launch {
             events.collect { event ->
                 when (event) {
                     is MqttEvent.Connected -> add(L10n.t(R.string.state_connected, event.latencyMs), true)
-                    is MqttEvent.MessageReceived -> add(
-                        if (event.retained) {
-                            L10n.t(R.string.mqtt_message_retained, event.topic, event.qos, event.payload)
-                        } else {
-                            L10n.t(R.string.message_line, event.topic, event.qos, event.payload)
-                        },
-                        false
-                    )
+                    is MqttEvent.MessageReceived -> {
+                        add(
+                            if (event.retained) {
+                                L10n.t(R.string.mqtt_message_retained, event.topic, event.qos, event.payload)
+                            } else {
+                                L10n.t(R.string.message_line, event.topic, event.qos, event.payload)
+                            },
+                            false
+                        )
+                        evaluateAssertions(event.payload)
+                    }
                     is MqttEvent.Disconnected -> add(L10n.t(R.string.state_closed_message, event.reason), true)
                     is MqttEvent.Error -> {
                         lastError = event.cause
@@ -127,7 +149,11 @@ class MqttViewModel : ViewModel() {
             pubQos = pubQos,
             pubRetain = pubRetain,
             useProxy = useProxy,
-            insecureTls = insecureTls
+            insecureTls = insecureTls,
+            customCaPem = customCaPem,
+            clientCertPem = clientCertPem,
+            clientKeyPem = clientKeyPem,
+            assertions = assertions.map { AssertionEntry(it.type, it.expression, it.expected, it.operator) }
         )
     )
 
@@ -149,11 +175,26 @@ class MqttViewModel : ViewModel() {
         pubRetain = snap.pubRetain
         useProxy = snap.useProxy
         insecureTls = snap.insecureTls
+        customCaPem = snap.customCaPem
+        clientCertPem = snap.clientCertPem
+        clientKeyPem = snap.clientKeyPem
+        assertions = snap.assertions.map { ResponseAssertion(it.type, it.expression, it.expected, it.operator) }
     }
 
     private fun add(text: String, isSystem: Boolean) {
         lines.add(UiEventLine(text, isSystem, System.currentTimeMillis()))
         if (lines.size > 1000) lines.removeAt(0)
+    }
+
+    /** 对一条收到的消息负载求值断言；没有配置断言时不做任何事 */
+    private fun evaluateAssertions(payload: String) {
+        if (assertions.isEmpty()) return
+        val vars = ServiceLocator.varsForCollection(activeCollectionId)
+        val results = ResponseAssertions.evaluate(AssertionTarget(body = payload), assertions, vars)
+        if (results.isEmpty()) return
+        assertionResults = results
+        assertionChecked += 1
+        if (results.any { !it.passed }) assertionFailed += 1
     }
 
     private fun resolve(text: String, onOk: (String) -> Unit) {
@@ -167,6 +208,9 @@ class MqttViewModel : ViewModel() {
     fun connect() {
         viewModelScope.launch {
             lastError = null
+            assertionResults = emptyList()
+            assertionChecked = 0
+            assertionFailed = 0
             val proxy = if (useProxy) settingsStore.settings.value.toProxyConfig() else ProxyConfig()
             resolve(brokerUrl) { resolvedUrl ->
                 viewModelScope.launch {
@@ -179,7 +223,8 @@ class MqttViewModel : ViewModel() {
                             password = password.ifBlank { null },
                             keepAliveSec = keepAliveSec.toIntOrNull() ?: 60,
                             proxy = proxy,
-                            insecureTls = insecureTls
+                            insecureTls = insecureTls,
+                            tls = tlsConfigOf(insecureTls, customCaPem, clientCertPem, clientKeyPem)
                         )
                     )
                     // 连接建立或恢复后，对保存的订阅逐一按存储的 QoS 重新订阅（需求 3.3）

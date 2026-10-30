@@ -81,6 +81,12 @@ data class HttpSnapshot(
     val forceTimeoutSec: String = "",
     /** 跳过 TLS 证书校验：仅用于自签名/内网证书调试 */
     val insecureTls: Boolean = false,
+    /** 自定义 CA 证书 PEM，追加到系统信任库 */
+    val customCaPem: String = "",
+    /** 客户端证书 PEM（mTLS） */
+    val clientCertPem: String = "",
+    /** 客户端私钥 PEM（PKCS#8） */
+    val clientKeyPem: String = "",
     /** 是否自动跟随 3xx 重定向 */
     val followRedirects: Boolean = true,
     /** 最大跟随跳数 */
@@ -94,7 +100,9 @@ data class HttpSnapshot(
 data class AssertionEntry(
     val type: String = "CONTAINS",
     val expression: String = "",
-    val expected: String = ""
+    val expected: String = "",
+    /** 比较运算符；为空时按类型取默认值，兼容旧快照 */
+    val operator: String = ""
 )
 
 @Serializable
@@ -112,7 +120,15 @@ data class WsSnapshot(
     val reconnectBaseDelaySec: Int = 3,
     val reconnectMaxDelaySec: Int = 60,
     /** 跳过 TLS 证书校验：仅用于自签名/内网证书调试 */
-    val insecureTls: Boolean = false
+    val insecureTls: Boolean = false,
+    /** 自定义 CA 证书 PEM，追加到系统信任库 */
+    val customCaPem: String = "",
+    /** 客户端证书 PEM（mTLS） */
+    val clientCertPem: String = "",
+    /** 客户端私钥 PEM（PKCS#8） */
+    val clientKeyPem: String = "",
+    /** 收到消息时执行的断言 */
+    val assertions: List<AssertionEntry> = emptyList()
 )
 
 @Serializable
@@ -131,7 +147,15 @@ data class MqttSnapshot(
     /** 是否使用设置页的全局代理 */
     val useProxy: Boolean = true,
     /** 跳过 TLS 证书校验：仅对 ssl:// 生效，用于自签名/内网 Broker 调试 */
-    val insecureTls: Boolean = false
+    val insecureTls: Boolean = false,
+    /** 自定义 CA 证书 PEM，追加到系统信任库 */
+    val customCaPem: String = "",
+    /** 客户端证书 PEM（mTLS） */
+    val clientCertPem: String = "",
+    /** 客户端私钥 PEM（PKCS#8） */
+    val clientKeyPem: String = "",
+    /** 收到消息时执行的断言 */
+    val assertions: List<AssertionEntry> = emptyList()
 )
 
 @Serializable
@@ -145,6 +169,16 @@ data class SseSnapshot(
     val eventFilter: String = "",
     val autoReconnect: Boolean = false,
     val reconnectDelaySec: Int = 3,
+    /** 指数退避重连：间隔逐次翻倍 */
+    val exponentialBackoff: Boolean = true,
+    /** 重连间隔上限（秒） */
+    val maxBackoffSec: Int = 30,
+    /** 重连抖动：间隔叠加 ±25% 随机量 */
+    val jitter: Boolean = true,
+    /** 最大连续重连次数，0 表示无限 */
+    val maxRetries: Int = 0,
+    /** 空闲超时（秒），0 表示不检测 */
+    val idleTimeoutSec: Int = 0,
     /** 拼接预览的 JSONPath 表达式，空表示不提取 */
     val previewPath: String = "",
     /** 连接建立超时秒数 */
@@ -153,6 +187,12 @@ data class SseSnapshot(
     val useProxy: Boolean = true,
     /** 跳过 TLS 证书校验：仅用于自签名/内网证书调试 */
     val insecureTls: Boolean = false,
+    /** 自定义 CA 证书 PEM，追加到系统信任库 */
+    val customCaPem: String = "",
+    /** 客户端证书 PEM（mTLS） */
+    val clientCertPem: String = "",
+    /** 客户端私钥 PEM（PKCS#8） */
+    val clientKeyPem: String = "",
     /** 断点续连起点：首次连接作为 Last-Event-ID 发送 */
     val lastEventId: String = ""
 )

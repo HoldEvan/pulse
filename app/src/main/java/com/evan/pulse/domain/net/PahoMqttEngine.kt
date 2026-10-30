@@ -67,12 +67,13 @@ class PahoMqttEngine : MqttEngine {
                     config.password?.let { setPassword(it.toCharArray()) }
                     if (secure) {
                         // ssl:// 只认 SSLSocketFactory：走代理时在隧道之上叠加 TLS，直连时按校验策略给工厂
-                        if (config.insecureTls) {
+                        val tlsConfig = config.effectiveTls
+                        if (tlsConfig.insecure) {
                             // 跳过证书校验时同时关闭主机名校验，否则自签名证书仍会被拒
                             setHttpsHostnameVerificationEnabled(false)
                             setSSLHostnameVerifier(javax.net.ssl.HostnameVerifier { _, _ -> true })
                         }
-                        val tlsFactory = MqttTls.socketFactory(config.insecureTls)
+                        val tlsFactory = TlsContexts.build(tlsConfig).socketFactory
                         socketFactory = if (config.proxy.enabled) {
                             val endpoint = MqttTls.endpoint(config.brokerUrl)
                                 ?: throw IOException("无法解析 Broker 地址: ${config.brokerUrl}")

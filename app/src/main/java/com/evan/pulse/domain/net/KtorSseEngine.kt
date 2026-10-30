@@ -4,6 +4,7 @@ import com.evan.pulse.domain.model.BodyType
 import com.evan.pulse.domain.model.HttpMethod
 import com.evan.pulse.domain.model.ProxyConfig
 import com.evan.pulse.domain.model.ProxyType
+import com.evan.pulse.domain.model.TlsConfig
 import com.evan.pulse.domain.model.SseConfig
 import com.evan.pulse.domain.model.SseConnectionState
 import com.evan.pulse.domain.model.SseEvent
@@ -31,6 +32,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -40,8 +42,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import com.evan.pulse.domain.net.InsecureTls.applyInsecureTls
+import com.evan.pulse.domain.net.InsecureTls.applyTls
 import com.evan.pulse.domain.sse.SseResume
+import com.evan.pulse.domain.sse.SseRetryPolicy
 import kotlinx.coroutines.withContext
 
 /**
@@ -55,7 +58,7 @@ class KtorSseEngine : SseEngine {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val lock = Mutex()
     /** 代理与 TLS 策略都是引擎级配置，按两者组合缓存客户端 */
-    private data class ClientKey(val proxy: ProxyConfig, val insecureTls: Boolean)
+    private data class ClientKey(val proxy: ProxyConfig, val tls: TlsConfig)
 
     private val clients = ConcurrentHashMap<ClientKey, HttpClient>()
 
@@ -71,6 +74,7 @@ class KtorSseEngine : SseEngine {
         lock.withLock {
             streamJob?.cancel()
             streamJob = null
+            serverRetryMs = null
             _state.value = SseConnectionState.CONNECTING
             streamJob = scope.launch { runStream(config) }
         }
@@ -88,7 +92,10 @@ class KtorSseEngine : SseEngine {
     private suspend fun runStream(config: SseConfig) {
         // 跨重连保留最后收到的事件 id，作为下一次请求的断点
         var resumeId: String? = null
+        // 连续重连计数：任意一次连接成功建立并收到数据后清零
+        var attempt = 0
         while (true) {
+            var gotFrame = false
             try {
                 val resumeHeader = SseResume.lastEventId(config.lastEventId, resumeId)
                 val explicitResume = config.headers.any {
@@ -96,7 +103,7 @@ class KtorSseEngine : SseEngine {
                 }
                 // 超时只约束到响应头到达为止；流建立后 parseStream 不再受影响
                 val response = withTimeout(config.timeoutMs) {
-                    clientFor(config.proxy, config.insecureTls).request(config.url) {
+                    clientFor(config.proxy, config.effectiveTls).request(config.url) {
                         method = ktorMethod(config.method)
                         header("Accept", "text/event-stream")
                         config.queryParams
@@ -117,27 +124,56 @@ class KtorSseEngine : SseEngine {
                 }
                 _state.value = SseConnectionState.CONNECTED
                 _events.tryEmit(SseEvent.Connected(System.currentTimeMillis()))
-                parseStream(response.bodyAsChannel(), config) { resumeId = it }
+                parseStream(response.bodyAsChannel(), config) {
+                    resumeId = it
+                    gotFrame = true
+                }
                 _state.value = SseConnectionState.CLOSED
                 _events.tryEmit(SseEvent.Closed("连接已关闭", System.currentTimeMillis()))
-                if (!config.autoReconnect) return
-                _events.tryEmit(
-                    SseEvent.Reconnecting(config.reconnectDelaySec, System.currentTimeMillis())
-                )
-                delay(config.reconnectDelaySec * 1000L)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Throwable) {
                 _state.value = SseConnectionState.FAILED
                 _events.tryEmit(SseEvent.Failed(describe(e), System.currentTimeMillis()))
-                if (!config.autoReconnect) return
-                _events.tryEmit(
-                    SseEvent.Reconnecting(config.reconnectDelaySec, System.currentTimeMillis())
-                )
-                delay(config.reconnectDelaySec * 1000L)
             }
+            if (!config.autoReconnect) return
+            // 收到过数据说明这条流曾经可用，重新从第一次退避开始计
+            if (gotFrame) attempt = 0
+            // 解析服务端下发的 retry 字段作为基础间隔（若本次流设置过）
+            val baseSec = serverRetryMs?.let { (it / 1000).toInt().coerceAtLeast(1) }
+                ?: config.reconnectDelaySec
+            attempt++
+            if (config.maxRetries > 0 && attempt > config.maxRetries) {
+                _state.value = SseConnectionState.FAILED
+                _events.tryEmit(
+                    SseEvent.RetryExhausted(config.maxRetries, System.currentTimeMillis())
+                )
+                return
+            }
+            val delaySec = SseRetryPolicy.delaySeconds(
+                baseSec = baseSec,
+                attempt = attempt,
+                exponential = config.exponentialBackoff,
+                maxSec = config.maxBackoffSec,
+                jitter = config.jitter
+            )
+            _events.tryEmit(
+                SseEvent.Reconnecting(
+                    delaySec = delaySec,
+                    attempt = attempt,
+                    maxRetries = config.maxRetries,
+                    timestamp = System.currentTimeMillis()
+                )
+            )
+            delay(delaySec * 1000L)
         }
     }
+
+    /**
+     * 解析流时记录服务端下发的 `retry:` 值（毫秒），供下一次重连用它作为基础间隔。
+     * 服务端未下发时保持 null，沿用用户配置的重连延迟。
+     */
+    @Volatile private var serverRetryMs: Long? = null
 
     /** 与 HTTP 引擎一致：只要有 body 内容就随请求发送，Content-Type 按类型推断 */
     private fun requestBody(config: SseConfig): TextContent? = when {
@@ -177,9 +213,17 @@ class KtorSseEngine : SseEngine {
             data.setLength(0)
         }
 
+        val idleMs = config.idleTimeoutSec * 1000L
         withContext(Dispatchers.IO) {
             while (true) {
-                val line = channel.readUTF8Line() ?: break
+                // 空闲超时：长时间没有任何帧（含注释心跳）就判定连接已僵死，主动断开交给外层重连
+                val line = if (idleMs > 0) {
+                    withTimeoutOrNull(idleMs) { channel.readUTF8Line() } ?: throw IdleTimeoutException(
+                        "空闲超过 ${config.idleTimeoutSec}s 未收到数据"
+                    )
+                } else {
+                    channel.readUTF8Line()
+                } ?: break
                 when {
                     line.isBlank() -> flush()
                     line.startsWith(":") -> _events.tryEmit(
@@ -187,6 +231,12 @@ class KtorSseEngine : SseEngine {
                     )
                     line.startsWith("id:") -> id = line.removePrefix("id:").trim().ifBlank { null }
                     line.startsWith("event:") -> event = line.removePrefix("event:").trim()
+                    line.startsWith("retry:") -> {
+                        // 服务端建议的重连间隔（毫秒），记录后由外层在下次重连时采用
+                        line.removePrefix("retry:").trim().toLongOrNull()
+                            ?.takeIf { it >= 0 }
+                            ?.let { serverRetryMs = it }
+                    }
                     line.startsWith("data:") -> {
                         if (data.isNotEmpty()) data.append('\n')
                         data.append(line.removePrefix("data:").trimStart())
@@ -197,22 +247,25 @@ class KtorSseEngine : SseEngine {
         flush()
     }
 
-    private fun clientFor(proxyConfig: ProxyConfig, insecureTls: Boolean): HttpClient {
-        val key = ClientKey(proxyConfig, insecureTls)
+    /** 空闲超时触发的主动断开，用于和真正的网络异常区分提示 */
+    private class IdleTimeoutException(message: String) : IOException(message)
+
+    private fun clientFor(proxyConfig: ProxyConfig, tls: TlsConfig): HttpClient {
+        val key = ClientKey(proxyConfig, tls)
         clients[key]?.let { return it }
         if (clients.size >= MAX_CACHED_CLIENTS) {
             clients.keys.firstOrNull()?.let { clients.remove(it) }
         }
-        return clients.getOrPut(key) { buildClient(proxyConfig, insecureTls) }
+        return clients.getOrPut(key) { buildClient(proxyConfig, tls) }
     }
 
-    private fun buildClient(proxyConfig: ProxyConfig, insecureTls: Boolean): HttpClient = HttpClient(OkHttp) {
+    private fun buildClient(proxyConfig: ProxyConfig, tls: TlsConfig): HttpClient = HttpClient(OkHttp) {
         engine {
             config {
                 connectTimeout(0, TimeUnit.MILLISECONDS)
                 readTimeout(0, TimeUnit.MILLISECONDS)
                 writeTimeout(0, TimeUnit.MILLISECONDS)
-                applyInsecureTls(insecureTls)
+                applyTls(tls)
                 if (proxyConfig.enabled) {
                     proxy(
                         Proxy(

@@ -43,8 +43,10 @@ import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.ConnectionStateIndicator
 import com.evan.pulse.ui.common.connectionStateColor
 import com.evan.pulse.ui.common.CopyIconButton
-import com.evan.pulse.ui.common.InsecureTlsRow
+import com.evan.pulse.ui.common.TlsSection
+import com.evan.pulse.ui.common.AssertionSection
 import com.evan.pulse.ui.common.eventLogText
+import com.evan.pulse.ui.common.JsonTreeView
 import com.evan.pulse.ui.common.roundedPressable
 import com.evan.pulse.ui.common.subPageScrollState
 import com.evan.pulse.ui.history.UiEventLine
@@ -162,9 +164,27 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                 checked = viewModel.useProxy,
                 onCheckedChange = { viewModel.useProxy = it }
             )
-            InsecureTlsRow(
-                checked = viewModel.insecureTls,
-                onCheckedChange = { viewModel.insecureTls = it }
+            TlsSection(
+                insecure = viewModel.insecureTls,
+                onInsecureChange = { viewModel.insecureTls = it },
+                customCaPem = viewModel.customCaPem,
+                onCustomCaChange = { viewModel.customCaPem = it },
+                clientCertPem = viewModel.clientCertPem,
+                onClientCertChange = { viewModel.clientCertPem = it },
+                clientKeyPem = viewModel.clientKeyPem,
+                onClientKeyChange = { viewModel.clientKeyPem = it }
+            )
+            AssertionSection(
+                assertions = viewModel.assertions,
+                onAssertionsChange = { viewModel.assertions = it },
+                results = viewModel.assertionResults,
+                summary = if (viewModel.assertionChecked == 0) null else stringResource(
+                    R.string.assert_ws_summary,
+                    viewModel.assertionChecked,
+                    viewModel.assertionFailed
+                ),
+                summaryPassed = viewModel.assertionFailed == 0,
+                hint = stringResource(R.string.assert_ws_hint)
             )
             Column(
                 modifier = Modifier.padding(start = 12.dp, top = 10.dp, end = 12.dp, bottom = 12.dp)
@@ -437,6 +457,9 @@ private fun stateLabel(state: MqttConnectionState): String = when (state) {
 private fun EventLine(line: UiEventLine) {
     val time = java.text.SimpleDateFormat("HH:mm:ss.SSS", java.util.Locale.getDefault())
         .format(java.util.Date(line.timestamp))
+    val jsonCapable = !line.isSystem && line.text.length <= 20_000 &&
+        runCatching { kotlinx.serialization.json.Json.parseToJsonElement(line.text) }.isSuccess
+    var treeMode by remember(line.text) { mutableStateOf(false) }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -450,7 +473,21 @@ private fun EventLine(line: UiEventLine) {
             )
             .padding(8.dp)
     ) {
-        AppText(text = time, fontSize = 11.sp)
-        AppText(text = line.text, fontSize = 13.sp, modifier = Modifier.padding(top = 2.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            AppText(text = time, fontSize = 11.sp, modifier = Modifier.weight(1f))
+            if (jsonCapable) {
+                AppTextButton(
+                    text = stringResource(
+                        if (treeMode) R.string.event_view_raw else R.string.event_view_tree
+                    ),
+                    onClick = { treeMode = !treeMode }
+                )
+            }
+        }
+        if (jsonCapable && treeMode) {
+            JsonTreeView(jsonText = line.text, modifier = Modifier.padding(top = 4.dp))
+        } else {
+            AppText(text = line.text, fontSize = 13.sp, modifier = Modifier.padding(top = 2.dp))
+        }
     }
 }

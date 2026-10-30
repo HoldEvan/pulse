@@ -60,11 +60,12 @@ import com.evan.pulse.domain.pathOnly
 import com.evan.pulse.ui.collection.SaveRequestDialog
 import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.assertionTypeLabelRes
+import com.evan.pulse.ui.common.AssertionSection
 import com.evan.pulse.ui.common.CollapsibleKeyValueTable
 import com.evan.pulse.ui.common.CardSectionTitle
 import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.HtmlPreviewStore
-import com.evan.pulse.ui.common.InsecureTlsRow
+import com.evan.pulse.ui.common.TlsSection
 import com.evan.pulse.ui.common.KeyValueEditor
 import com.evan.pulse.ui.common.MethodPicker
 import com.evan.pulse.ui.common.MonospaceBlock
@@ -423,9 +424,15 @@ private fun NetworkEditor(viewModel: HttpViewModel) {
             onCheckedChange = { viewModel.useProxy = it },
             modifier = Modifier.padding(top = 12.dp)
         )
-        InsecureTlsRow(
-            checked = viewModel.insecureTls,
-            onCheckedChange = { viewModel.insecureTls = it }
+        TlsSection(
+            insecure = viewModel.insecureTls,
+            onInsecureChange = { viewModel.insecureTls = it },
+            customCaPem = viewModel.customCaPem,
+            onCustomCaChange = { viewModel.customCaPem = it },
+            clientCertPem = viewModel.clientCertPem,
+            onClientCertChange = { viewModel.clientCertPem = it },
+            clientKeyPem = viewModel.clientKeyPem,
+            onClientKeyChange = { viewModel.clientKeyPem = it }
         )
         AppSwitchRow(
             title = stringResource(R.string.follow_redirects_label),
@@ -480,124 +487,15 @@ private fun ScriptEditorCard(viewModel: HttpViewModel, onOpenScriptEditor: (Int)
 
 /**
  * 响应断言编辑区：按顺序校验响应体，全部通过才认为这次请求在业务上成功。
- * 类型与拨测目标一致（包含 / 不包含 / JSONPath），结果在下方按 PASS/FAIL 列出。
+ * 类型与拨测目标一致（包含 / 不包含 / JSONPath / 状态码 / 响应头 / 耗时）。
  */
 @Composable
 private fun AssertionCard(viewModel: HttpViewModel) {
-    val assertions = viewModel.assertions
-    val results = viewModel.assertionResults
-    AppCard(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            AppText(
-                text = stringResource(R.string.http_assertions_hint),
-                fontSize = 12.sp,
-                color = AppTheme.colors.onSurfaceSummary
-            )
-            assertions.forEachIndexed { index, assertion ->
-                AssertionEditorRow(
-                    assertion = assertion,
-                    onChange = { updated ->
-                        viewModel.assertions = viewModel.assertions.mapIndexed { i, a ->
-                            if (i == index) updated else a
-                        }
-                    },
-                    onRemove = {
-                        viewModel.assertions = viewModel.assertions.filterIndexed { i, _ -> i != index }
-                    }
-                )
-            }
-            AppTextButton(
-                text = stringResource(R.string.monitor_assert_add),
-                onClick = { viewModel.assertions = viewModel.assertions + ResponseAssertion() },
-                modifier = Modifier.padding(top = 4.dp)
-            )
-            if (results.isEmpty()) return@Column
-            val failed = results.count { !it.passed }
-            AppText(
-                text = if (failed == 0) {
-                    stringResource(R.string.http_assertions_all_passed)
-                } else {
-                    stringResource(R.string.http_assertions_failed, failed)
-                },
-                modifier = Modifier.padding(top = 8.dp),
-                fontSize = 13.sp,
-                color = if (failed == 0) Color(0xFF2FA37A) else Color(0xFFD32F2F)
-            )
-            results.forEach { check ->
-                val label = stringResource(assertionTypeLabelRes(check.assertion.type))
-                val detail = check.detail
-                MonospaceBlock(
-                    "${if (check.passed) "PASS" else "FAIL"} $label ${check.assertion.expression}" +
-                        if (detail.isBlank()) "" else " - $detail"
-                )
-            }
-        }
-    }
-}
-
-/** 单条断言：类型下拉 + 关键字（JSONPath 时多一个期望值），与拨测页保持一致 */
-@Composable
-private fun AssertionEditorRow(
-    assertion: ResponseAssertion,
-    onChange: (ResponseAssertion) -> Unit,
-    onRemove: () -> Unit
-) {
-    val isJsonPath = ResponseAssertion.needsExpected(assertion.type)
-    Column(modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // 标题直接显示当前选中的类型：showValue 关掉时若 title 也留空，这一行就只剩箭头，看不到回显
-            AppDropdown(
-                title = stringResource(assertionTypeLabelRes(assertion.type)),
-                items = listOf(
-                    stringResource(R.string.monitor_assert_contains),
-                    stringResource(R.string.monitor_assert_not_contains),
-                    stringResource(R.string.monitor_assert_jsonpath)
-                ),
-                selectedIndex = assertionTypeIndex(assertion.type),
-                showValue = false,
-                filled = true,
-                modifier = Modifier.weight(1f),
-                onSelectedIndexChange = { onChange(assertion.copy(type = assertionTypeName(it))) }
-            )
-            AppIconButton(onClick = onRemove, modifier = Modifier.size(36.dp)) {
-                AppIcon(
-                    imageVector = Icons.Filled.Delete,
-                    contentDescription = stringResource(R.string.action_delete)
-                )
-            }
-        }
-        AppTextField(
-            value = assertion.expression,
-            onValueChange = { onChange(assertion.copy(expression = it)) },
-            label = stringResource(
-                if (isJsonPath) R.string.monitor_assert_path else R.string.monitor_assert_keyword
-            ),
-            modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
-        )
-        if (isJsonPath) {
-            AppTextField(
-                value = assertion.expected,
-                onValueChange = { onChange(assertion.copy(expected = it)) },
-                label = stringResource(R.string.monitor_assert_expected),
-                modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
-            )
-        }
-    }
-}
-
-private fun assertionTypeIndex(type: String): Int = when (type.uppercase()) {
-    ResponseAssertion.TYPE_NOT_CONTAINS -> 1
-    ResponseAssertion.TYPE_JSON_PATH -> 2
-    else -> 0
-}
-
-private fun assertionTypeName(index: Int): String = when (index) {
-    1 -> ResponseAssertion.TYPE_NOT_CONTAINS
-    2 -> ResponseAssertion.TYPE_JSON_PATH
-    else -> ResponseAssertion.TYPE_CONTAINS
+    AssertionSection(
+        assertions = viewModel.assertions,
+        onAssertionsChange = { viewModel.assertions = it },
+        results = viewModel.assertionResults
+    )
 }
 
 @Composable

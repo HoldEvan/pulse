@@ -102,4 +102,105 @@ class ResponseAssertionsTest {
         assertTrue(ResponseAssertion.needsExpected(ResponseAssertion.TYPE_JSON_PATH))
         assertFalse(ResponseAssertion.needsExpected(ResponseAssertion.TYPE_CONTAINS))
     }
+
+    // ---- 状态码 / 响应头 / 耗时 / 运算符 ----
+
+    private val target = AssertionTarget(
+        body = body,
+        statusCode = 200,
+        headers = mapOf("Content-Type" to "application/json; charset=utf-8", "X-Request-Id" to "abc"),
+        durationMs = 120
+    )
+
+    @Test
+    fun statusEqualsAndWildcard() {
+        val results = ResponseAssertions.evaluate(
+            target,
+            listOf(
+                ResponseAssertion(ResponseAssertion.TYPE_STATUS, "200"),
+                ResponseAssertion(ResponseAssertion.TYPE_STATUS, "2xx"),
+                ResponseAssertion(ResponseAssertion.TYPE_STATUS, "404")
+            )
+        )
+        assertTrue(results[0].passed)
+        assertTrue(results[1].passed)
+        assertFalse(results[2].passed)
+    }
+
+    @Test
+    fun statusWithComparisonOperator() {
+        val results = ResponseAssertions.evaluate(
+            target,
+            listOf(
+                ResponseAssertion(ResponseAssertion.TYPE_STATUS, "199", operator = AssertionOperator.GT),
+                ResponseAssertion(ResponseAssertion.TYPE_STATUS, "300", operator = AssertionOperator.LT)
+            )
+        )
+        assertTrue(results[0].passed)
+        assertTrue(results[1].passed)
+    }
+
+    @Test
+    fun statusMissingFails() {
+        val results = ResponseAssertions.evaluate(
+            AssertionTarget(body = body),
+            listOf(ResponseAssertion(ResponseAssertion.TYPE_STATUS, "200"))
+        )
+        assertFalse(results.single().passed)
+    }
+
+    @Test
+    fun headerContainsAndExists() {
+        val results = ResponseAssertions.evaluate(
+            target,
+            listOf(
+                ResponseAssertion(ResponseAssertion.TYPE_HEADER, "content-type", "json", operator = AssertionOperator.CONTAINS),
+                ResponseAssertion(ResponseAssertion.TYPE_HEADER, "X-Request-Id", operator = AssertionOperator.EXISTS),
+                ResponseAssertion(ResponseAssertion.TYPE_HEADER, "X-Missing", operator = AssertionOperator.EXISTS)
+            )
+        )
+        assertTrue(results[0].passed)
+        assertTrue(results[1].passed)
+        assertFalse(results[2].passed)
+    }
+
+    @Test
+    fun durationRespectsThreshold() {
+        val results = ResponseAssertions.evaluate(
+            target,
+            listOf(
+                ResponseAssertion(ResponseAssertion.TYPE_DURATION, "500"),
+                ResponseAssertion(ResponseAssertion.TYPE_DURATION, "100"),
+                ResponseAssertion(ResponseAssertion.TYPE_DURATION, "100", operator = AssertionOperator.GTE)
+            )
+        )
+        assertTrue(results[0].passed)
+        assertFalse(results[1].passed)
+        assertTrue(results[2].passed)
+    }
+
+    @Test
+    fun jsonPathNumericAndTypeOperators() {
+        val results = ResponseAssertions.evaluate(
+            body,
+            listOf(
+                ResponseAssertion(ResponseAssertion.TYPE_JSON_PATH, "$.items[0].id", "5", operator = AssertionOperator.GTE),
+                ResponseAssertion(ResponseAssertion.TYPE_JSON_PATH, "$.code", operator = AssertionOperator.IS_NUMBER),
+                ResponseAssertion(ResponseAssertion.TYPE_JSON_PATH, "$.message", operator = AssertionOperator.IS_STRING),
+                ResponseAssertion(ResponseAssertion.TYPE_JSON_PATH, "$.items", operator = AssertionOperator.IS_ARRAY),
+                ResponseAssertion(ResponseAssertion.TYPE_JSON_PATH, "$.code", operator = AssertionOperator.IS_ARRAY)
+            )
+        )
+        assertTrue(results[0].passed)
+        assertTrue(results[1].passed)
+        assertTrue(results[2].passed)
+        assertTrue(results[3].passed)
+        assertFalse(results[4].passed)
+    }
+
+    @Test
+    fun defaultOperatorDependsOnType() {
+        assertEquals(AssertionOperator.LTE, ResponseAssertion.defaultOperator(ResponseAssertion.TYPE_DURATION))
+        assertEquals(AssertionOperator.EQUALS, ResponseAssertion.defaultOperator(ResponseAssertion.TYPE_JSON_PATH))
+    }
 }

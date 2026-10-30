@@ -90,13 +90,19 @@ data class HttpCallConfig(
     val proxy: ProxyConfig = ProxyConfig(),
     /** 弱网模拟：默认关闭，零开销直发 */
     val throttle: NetworkThrottleConfig = NetworkThrottleConfig(),
-    /** 跳过 TLS 证书校验：仅用于自签名/内网证书调试 */
+    /** 跳过 TLS 证书校验：仅用于自签名/内网证书调试（等价于 tls.insecure，保留兼容） */
     val insecureTls: Boolean = false,
+    /** 完整 TLS 策略：自定义 CA 与客户端证书；为空时按 [insecureTls] 处理 */
+    val tls: TlsConfig = TlsConfig(),
     /** 是否自动跟随 3xx 重定向 */
     val followRedirects: Boolean = true,
     /** 最大跟随跳数，0 表示不跟随（即使 [followRedirects] 为 true） */
     val maxRedirects: Int = 10
-)
+) {
+    /** 合并出实际生效的 TLS 策略：旧布尔开关优先并入 tls，避免两处字段不一致 */
+    val effectiveTls: TlsConfig
+        get() = if (insecureTls) tls.copy(insecure = true) else tls
+}
 
 sealed interface HttpCallOutcome {
     data class Success(

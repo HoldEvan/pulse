@@ -43,7 +43,8 @@ import com.evan.pulse.ui.common.ConnectionStateIndicator
 import com.evan.pulse.ui.common.connectionStateColor
 import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.EventLine
-import com.evan.pulse.ui.common.InsecureTlsRow
+import com.evan.pulse.ui.common.TlsSection
+import com.evan.pulse.ui.common.AssertionSection
 import com.evan.pulse.ui.common.KeyValueEditor
 import com.evan.pulse.ui.common.ValueHints
 import com.evan.pulse.ui.common.eventLogText
@@ -187,9 +188,27 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
                 checked = viewModel.useProxy,
                 onCheckedChange = { viewModel.useProxy = it }
             )
-            InsecureTlsRow(
-                checked = viewModel.insecureTls,
-                onCheckedChange = { viewModel.insecureTls = it }
+            TlsSection(
+                insecure = viewModel.insecureTls,
+                onInsecureChange = { viewModel.insecureTls = it },
+                customCaPem = viewModel.customCaPem,
+                onCustomCaChange = { viewModel.customCaPem = it },
+                clientCertPem = viewModel.clientCertPem,
+                onClientCertChange = { viewModel.clientCertPem = it },
+                clientKeyPem = viewModel.clientKeyPem,
+                onClientKeyChange = { viewModel.clientKeyPem = it }
+            )
+            AssertionSection(
+                assertions = viewModel.assertions,
+                onAssertionsChange = { viewModel.assertions = it },
+                results = viewModel.assertionResults,
+                summary = if (viewModel.assertionChecked == 0) null else stringResource(
+                    R.string.assert_ws_summary,
+                    viewModel.assertionChecked,
+                    viewModel.assertionFailed
+                ),
+                summaryPassed = viewModel.assertionFailed == 0,
+                hint = stringResource(R.string.assert_ws_hint)
             )
             AppSwitchRow(
                 title = stringResource(R.string.ws_auto_reconnect_label),

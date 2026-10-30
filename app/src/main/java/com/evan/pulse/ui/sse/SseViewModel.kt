@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.evan.pulse.ui.common.tlsConfigOf
 import com.evan.pulse.R
 import com.evan.pulse.data.model.KeyValueEntry
 import com.evan.pulse.data.model.RequestType
@@ -50,6 +51,13 @@ class SseViewModel : ViewModel() {
     var eventFilter by mutableStateOf("")
     var autoReconnect by mutableStateOf(false)
     var reconnectDelaySec by mutableStateOf("3")
+    var exponentialBackoff by mutableStateOf(true)
+    var maxBackoffSec by mutableStateOf("30")
+    var jitter by mutableStateOf(true)
+    /** 0 表示无限重连 */
+    var maxRetries by mutableStateOf("0")
+    /** 空闲超时（秒），0 表示不检测 */
+    var idleTimeoutSec by mutableStateOf("0")
 
     /** 手动断点：首次连接时作为 Last-Event-ID 发送 */
     var lastEventIdInput by mutableStateOf("")
@@ -66,6 +74,9 @@ class SseViewModel : ViewModel() {
 
     /** 跳过 TLS 证书校验；仅用于调试自签名或内网 HTTPS 服务 */
     var insecureTls by mutableStateOf(false)
+    var customCaPem by mutableStateOf("")
+    var clientCertPem by mutableStateOf("")
+    var clientKeyPem by mutableStateOf("")
 
     var activeTab by mutableIntStateOf(0)
 
@@ -95,9 +106,22 @@ class SseViewModel : ViewModel() {
 
                     is SseEvent.Comment -> add(event.line, true)
                     is SseEvent.Reconnecting -> add(
-                        L10n.t(R.string.sse_log_reconnecting, event.delaySec),
+                        if (event.maxRetries > 0) {
+                            L10n.t(
+                                R.string.sse_log_reconnecting_attempt,
+                                event.attempt,
+                                event.maxRetries,
+                                event.delaySec
+                            )
+                        } else {
+                            L10n.t(R.string.sse_log_reconnecting, event.delaySec)
+                        },
                         true
                     )
+                    is SseEvent.RetryExhausted -> {
+                        lastError = L10n.t(R.string.sse_log_retry_exhausted, event.attempts)
+                        add(lastError!!, true)
+                    }
                     is SseEvent.Closed -> add(
                         L10n.t(R.string.sse_log_closed, event.reason ?: L10n.t(R.string.ws_unknown_reason)),
                         true
@@ -147,11 +171,19 @@ class SseViewModel : ViewModel() {
             eventFilter = eventFilter,
             autoReconnect = autoReconnect,
             reconnectDelaySec = reconnectDelaySec.toIntOrNull() ?: 3,
+            exponentialBackoff = exponentialBackoff,
+            maxBackoffSec = maxBackoffSec.toIntOrNull() ?: 30,
+            jitter = jitter,
+            maxRetries = maxRetries.toIntOrNull() ?: 0,
+            idleTimeoutSec = idleTimeoutSec.toIntOrNull() ?: 0,
             lastEventId = lastEventIdInput.trim(),
             previewPath = previewPath,
             timeoutSec = timeoutSec.toIntOrNull() ?: 15,
             useProxy = useProxy,
-            insecureTls = insecureTls
+            insecureTls = insecureTls,
+            customCaPem = customCaPem,
+            clientCertPem = clientCertPem,
+            clientKeyPem = clientKeyPem
         )
     )
 
@@ -170,10 +202,18 @@ class SseViewModel : ViewModel() {
         eventFilter = snap.eventFilter
         autoReconnect = snap.autoReconnect
         reconnectDelaySec = snap.reconnectDelaySec.toString()
+        exponentialBackoff = snap.exponentialBackoff
+        maxBackoffSec = snap.maxBackoffSec.toString()
+        jitter = snap.jitter
+        maxRetries = snap.maxRetries.toString()
+        idleTimeoutSec = snap.idleTimeoutSec.toString()
         lastEventIdInput = snap.lastEventId
         timeoutSec = snap.timeoutSec.toString()
         useProxy = snap.useProxy
         insecureTls = snap.insecureTls
+        customCaPem = snap.customCaPem
+        clientCertPem = snap.clientCertPem
+        clientKeyPem = snap.clientKeyPem
         previewPath = snap.previewPath
     }
 
@@ -266,7 +306,13 @@ class SseViewModel : ViewModel() {
                     lastEventId = lastEventIdInput.trim(),
                     autoReconnect = autoReconnect,
                     reconnectDelaySec = reconnectDelaySec.toIntOrNull() ?: 3,
-                    insecureTls = insecureTls
+                    exponentialBackoff = exponentialBackoff,
+                    maxBackoffSec = maxBackoffSec.toIntOrNull() ?: 30,
+                    jitter = jitter,
+                    maxRetries = maxRetries.toIntOrNull() ?: 0,
+                    idleTimeoutSec = idleTimeoutSec.toIntOrNull() ?: 0,
+                    insecureTls = insecureTls,
+                    tls = tlsConfigOf(insecureTls, customCaPem, clientCertPem, clientKeyPem)
                 )
             )
         }

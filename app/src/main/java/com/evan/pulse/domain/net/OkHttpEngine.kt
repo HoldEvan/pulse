@@ -14,6 +14,7 @@ import com.evan.pulse.domain.model.HttpMethod
 import com.evan.pulse.domain.model.KeyValue
 import com.evan.pulse.domain.model.ProxyConfig
 import com.evan.pulse.domain.model.ProxyType
+import com.evan.pulse.domain.model.TlsConfig
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.network.sockets.ConnectTimeoutException
@@ -53,7 +54,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.io.asOutputStream
 import com.evan.pulse.domain.http.RedirectPolicy
-import com.evan.pulse.domain.net.InsecureTls.applyInsecureTls
+import com.evan.pulse.domain.net.InsecureTls.applyTls
 import okhttp3.Credentials
 
 /**
@@ -69,7 +70,7 @@ import okhttp3.Credentials
 class OkHttpEngine(private val appContextProvider: () -> Context? = { null }) : HttpEngine {
 
     /** 代理与 TLS 策略都是引擎级配置，按两者组合缓存客户端 */
-    private data class ClientKey(val proxy: ProxyConfig, val insecureTls: Boolean)
+    private data class ClientKey(val proxy: ProxyConfig, val tls: TlsConfig)
 
     private val clients = ConcurrentHashMap<ClientKey, HttpClient>()
     private val throttleRandom = Random.Default
@@ -158,7 +159,7 @@ class OkHttpEngine(private val appContextProvider: () -> Context? = { null }) : 
             while (outcome == null) {
                 val body = if (dropBody) null else requestBody(config)
                 register(currentUrl)
-                val response = clientFor(config.proxy, config.insecureTls).request {
+                val response = clientFor(config.proxy, config.effectiveTls).request {
                     method = ktorMethod(currentMethod)
                     url {
                         takeFrom(currentUrl)
@@ -226,16 +227,16 @@ class OkHttpEngine(private val appContextProvider: () -> Context? = { null }) : 
         return outcome
     }
 
-    private fun clientFor(proxyConfig: ProxyConfig, insecureTls: Boolean): HttpClient {
-        val key = ClientKey(proxyConfig, insecureTls)
+    private fun clientFor(proxyConfig: ProxyConfig, tls: TlsConfig): HttpClient {
+        val key = ClientKey(proxyConfig, tls)
         clients[key]?.let { return it }
         if (clients.size >= MAX_CACHED_CLIENTS) {
             clients.keys.firstOrNull()?.let { clients.remove(it) }
         }
-        return clients.getOrPut(key) { buildClient(proxyConfig, insecureTls) }
+        return clients.getOrPut(key) { buildClient(proxyConfig, tls) }
     }
 
-    private fun buildClient(proxyConfig: ProxyConfig, insecureTls: Boolean): HttpClient = HttpClient(OkHttp) {
+    private fun buildClient(proxyConfig: ProxyConfig, tls: TlsConfig): HttpClient = HttpClient(OkHttp) {
         install(HttpTimeout)
         engine {
             config {
@@ -243,7 +244,7 @@ class OkHttpEngine(private val appContextProvider: () -> Context? = { null }) : 
                 connectTimeout(0, TimeUnit.MILLISECONDS)
                 readTimeout(0, TimeUnit.MILLISECONDS)
                 writeTimeout(0, TimeUnit.MILLISECONDS)
-                applyInsecureTls(insecureTls)
+                applyTls(tls)
                 // 重定向由 execute() 显式跟随，便于限制跳数并展示中间 3xx
                 followRedirects(false)
                 followSslRedirects(false)

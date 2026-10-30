@@ -45,7 +45,7 @@ import com.evan.pulse.ui.common.ConnectionStateIndicator
 import com.evan.pulse.ui.common.connectionStateColor
 import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.EventLine
-import com.evan.pulse.ui.common.InsecureTlsRow
+import com.evan.pulse.ui.common.TlsSection
 import com.evan.pulse.ui.common.KeyValueEditor
 import com.evan.pulse.ui.common.MethodPicker
 import com.evan.pulse.ui.common.MarkdownBlock
@@ -161,15 +161,6 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                             .padding(top = 8.dp)
                     )
                     AppTextField(
-                        value = viewModel.reconnectDelaySec,
-                        onValueChange = { viewModel.reconnectDelaySec = it.filter(Char::isDigit) },
-                        label = stringResource(R.string.sse_reconnect_delay_label),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp)
-                    )
-                    AppTextField(
                         value = viewModel.lastEventIdInput,
                         onValueChange = { viewModel.lastEventIdInput = it },
                         label = stringResource(R.string.sse_last_event_id_label),
@@ -187,6 +178,10 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                         onCheckedChange = { viewModel.autoReconnect = it },
                         modifier = Modifier.fillMaxWidth()
                     )
+                    // 重连策略仅在开启自动重连时需要，收起以免干扰主参数
+                    if (viewModel.autoReconnect) {
+                        SseRetrySettings(viewModel)
+                    }
                     AppTabRow(
                         tabs = sseTabLabels.localizedLabels(),
                         selectedTabIndex = viewModel.activeTab,
@@ -244,9 +239,15 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                                 onCheckedChange = { viewModel.useProxy = it },
                                 modifier = Modifier.padding(top = 10.dp)
                             )
-                            InsecureTlsRow(
-                                checked = viewModel.insecureTls,
-                                onCheckedChange = { viewModel.insecureTls = it }
+                            TlsSection(
+                                insecure = viewModel.insecureTls,
+                                onInsecureChange = { viewModel.insecureTls = it },
+                                customCaPem = viewModel.customCaPem,
+                                onCustomCaChange = { viewModel.customCaPem = it },
+                                clientCertPem = viewModel.clientCertPem,
+                                onClientCertChange = { viewModel.clientCertPem = it },
+                                clientKeyPem = viewModel.clientKeyPem,
+                                onClientKeyChange = { viewModel.clientKeyPem = it }
                             )
                         }
                     }
@@ -472,6 +473,53 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
         onDismiss = { showSave = false },
         onSaved = viewModel::markSaved
     )
+}
+
+/** 重连策略：基础延迟、指数退避、间隔上限、抖动、次数上限、空闲超时 */
+@Composable
+private fun SseRetrySettings(viewModel: SseViewModel) {
+    Column(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+        AppTextField(
+            value = viewModel.reconnectDelaySec,
+            onValueChange = { viewModel.reconnectDelaySec = it.filter(Char::isDigit) },
+            label = stringResource(R.string.sse_reconnect_delay_label),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth()
+        )
+        AppTextField(
+            value = viewModel.maxBackoffSec,
+            onValueChange = { viewModel.maxBackoffSec = it.filter(Char::isDigit) },
+            label = stringResource(R.string.sse_max_backoff_label),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+        )
+        AppTextField(
+            value = viewModel.maxRetries,
+            onValueChange = { viewModel.maxRetries = it.filter(Char::isDigit) },
+            label = stringResource(R.string.sse_max_retries_label),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+        )
+        AppTextField(
+            value = viewModel.idleTimeoutSec,
+            onValueChange = { viewModel.idleTimeoutSec = it.filter(Char::isDigit) },
+            label = stringResource(R.string.sse_idle_timeout_label),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+        )
+        AppCheckboxRow(
+            title = stringResource(R.string.sse_exponential_backoff_label),
+            checked = viewModel.exponentialBackoff,
+            onCheckedChange = { viewModel.exponentialBackoff = it },
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+        )
+        AppCheckboxRow(
+            title = stringResource(R.string.sse_jitter_label),
+            checked = viewModel.jitter,
+            onCheckedChange = { viewModel.jitter = it },
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
 }
 
 @Composable

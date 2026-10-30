@@ -25,6 +25,7 @@ import com.evan.pulse.data.model.HistoryEntry
 import com.evan.pulse.ui.common.CardSectionTitle
 import com.evan.pulse.ui.common.CollapsibleKeyValueTable
 import com.evan.pulse.ui.common.assertionTypeLabelRes
+import com.evan.pulse.ui.common.assertionOperatorLabelRes
 import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.HtmlPreviewStore
@@ -164,10 +165,16 @@ private fun AssertionSummary(assertions: List<HistoryAssertion>) {
     )
     assertions.forEach { item ->
         val label = stringResource(assertionTypeLabelRes(item.type))
-        val expression = if (item.expected.isBlank()) {
-            item.expression
+        val operator = item.operator
+        val operatorLabel = if (operator.isBlank()) {
+            ""
         } else {
-            "${item.expression} = ${item.expected}"
+            stringResource(assertionOperatorLabelRes(operator)) + " "
+        }
+        val expression = if (item.expected.isBlank()) {
+            "$operatorLabel${item.expression}"
+        } else {
+            "$operatorLabel${item.expression} = ${item.expected}"
         }
         MonospaceBlock(
             "${if (item.passed) "PASS" else "FAIL"} $label $expression" +

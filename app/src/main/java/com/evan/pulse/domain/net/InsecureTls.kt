@@ -33,10 +33,27 @@ object InsecureTls {
     }
 
     /** 按开关把跳过校验的套接字工厂与主机名校验器挂到 OkHttp 构建器上 */
-    fun OkHttpClient.Builder.applyInsecureTls(enabled: Boolean): OkHttpClient.Builder {
-        if (!enabled) return this
-        sslSocketFactory(insecureSocketFactory, trustManager)
-        hostnameVerifier { _, _ -> true }
+    fun OkHttpClient.Builder.applyInsecureTls(enabled: Boolean): OkHttpClient.Builder =
+        applyTls(com.evan.pulse.domain.model.TlsConfig.of(enabled))
+
+    /**
+     * 按完整 TLS 策略构建套接字工厂并挂到 OkHttp 构建器上。
+     * 默认策略不动构建器；自定义 CA / 客户端证书 / 跳过校验时按需挂载。
+     */
+    fun OkHttpClient.Builder.applyTls(config: com.evan.pulse.domain.model.TlsConfig): OkHttpClient.Builder {
+        if (config.isDefault) return this
+        if (config.insecure && !config.hasCustomCa && !config.hasClientCert) {
+            sslSocketFactory(insecureSocketFactory, trustManager)
+            hostnameVerifier { _, _ -> true }
+            return this
+        }
+        val context = TlsContexts.build(config)
+        // 跳过校验时保留主机名放行；仅自定义 CA/客户端证书时仍校验主机名
+        sslSocketFactory(
+            context.socketFactory,
+            TlsContexts.serverTrustManager(config)
+        )
+        if (config.insecure) hostnameVerifier { _, _ -> true }
         return this
     }
 }

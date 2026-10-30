@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.evan.pulse.ui.common.tlsConfigOf
 import com.evan.pulse.data.model.FormFieldEntry
 import com.evan.pulse.data.model.AssertionEntry
 import com.evan.pulse.data.model.HistoryAssertion
@@ -15,6 +16,7 @@ import com.evan.pulse.data.model.KeyValueEntry
 import com.evan.pulse.data.model.RequestType
 import com.evan.pulse.data.model.snapshotJson
 import com.evan.pulse.domain.assertion.AssertionCheck
+import com.evan.pulse.domain.assertion.AssertionTarget
 import com.evan.pulse.domain.assertion.ResponseAssertion
 import com.evan.pulse.domain.assertion.ResponseAssertions
 import com.evan.pulse.di.ServiceLocator
@@ -90,6 +92,9 @@ class HttpViewModel : ViewModel() {
 
     /** 跳过 TLS 证书校验；仅用于调试自签名或内网 HTTPS 服务 */
     var insecureTls by mutableStateOf(false)
+    var customCaPem by mutableStateOf("")
+    var clientCertPem by mutableStateOf("")
+    var clientKeyPem by mutableStateOf("")
 
     /** 是否自动跟随 3xx 重定向；关闭后直接展示 3xx 与 Location */
     var followRedirects by mutableStateOf(true)
@@ -173,9 +178,12 @@ class HttpViewModel : ViewModel() {
             throttlePreset = throttlePreset.name,
             forceTimeoutSec = forceTimeoutSec,
             insecureTls = insecureTls,
+            customCaPem = customCaPem,
+            clientCertPem = clientCertPem,
+            clientKeyPem = clientKeyPem,
             followRedirects = followRedirects,
             maxRedirects = maxRedirects.toIntOrNull()?.coerceIn(0, 20) ?: 10,
-            assertions = assertions.map { AssertionEntry(it.type, it.expression, it.expected) }
+            assertions = assertions.map { AssertionEntry(it.type, it.expression, it.expected, it.operator) }
         )
     )
 
@@ -208,9 +216,12 @@ class HttpViewModel : ViewModel() {
         throttlePreset = NetworkPreset.entries.firstOrNull { it.name == snap.throttlePreset } ?: NetworkPreset.NONE
         forceTimeoutSec = snap.forceTimeoutSec
         insecureTls = snap.insecureTls
+        customCaPem = snap.customCaPem
+        clientCertPem = snap.clientCertPem
+        clientKeyPem = snap.clientKeyPem
         followRedirects = snap.followRedirects
         maxRedirects = snap.maxRedirects.toString()
-        assertions = snap.assertions.map { ResponseAssertion(it.type, it.expression, it.expected) }
+        assertions = snap.assertions.map { ResponseAssertion(it.type, it.expression, it.expected, it.operator) }
     }
 
     /** 活动环境变量与文件夹变量合并；文件夹变量优先，便于按集合覆盖环境默认值 */
@@ -336,6 +347,7 @@ class HttpViewModel : ViewModel() {
                 forceTimeoutSec = forceTimeoutSec.toIntOrNull()?.coerceIn(0, 300) ?: 0
             ),
             insecureTls = insecureTls,
+            tls = tlsConfigOf(insecureTls, customCaPem, clientCertPem, clientKeyPem),
             followRedirects = followRedirects,
             maxRedirects = maxRedirects.toIntOrNull()?.coerceIn(0, 20) ?: 10
         )
@@ -477,7 +489,17 @@ class HttpViewModel : ViewModel() {
                 // 断言放在脚本之后求值：前置/后置脚本 set 的变量都能被 {{变量}} 引用；
                 // 请求失败（超时/断网）没有响应体可校验，结果清空
                 assertionResults = if (result is HttpCallOutcome.Success) {
-                    ResponseAssertions.evaluate(result.body, assertions, scope.all())
+                    ResponseAssertions.evaluate(
+                        AssertionTarget(
+                            body = result.body,
+                            statusCode = result.statusCode,
+                            headers = result.headers.groupBy({ it.key }, { it.value })
+                                .mapValues { (_, values) -> values.joinToString(", ") },
+                            durationMs = result.durationMs
+                        ),
+                        assertions,
+                        scope.all()
+                    )
                 } else {
                     emptyList()
                 }
@@ -489,6 +511,7 @@ class HttpViewModel : ViewModel() {
                                     type = check.assertion.type,
                                     expression = check.assertion.expression,
                                     expected = check.assertion.expected,
+                                    operator = check.assertion.operator,
                                     passed = check.passed,
                                     detail = check.detail
                                 )

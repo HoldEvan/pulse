@@ -24,6 +24,7 @@ data class HistoryAssertion(
     val type: String,
     val expression: String = "",
     val expected: String = "",
+    val operator: String = "",
     val passed: Boolean = false,
     val detail: String = ""
 )

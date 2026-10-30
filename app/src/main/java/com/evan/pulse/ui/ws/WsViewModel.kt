@@ -5,6 +5,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.evan.pulse.ui.common.tlsConfigOf
+import com.evan.pulse.data.model.AssertionEntry
 import com.evan.pulse.data.model.KeyValueEntry
 import com.evan.pulse.data.model.RequestType
 import com.evan.pulse.data.model.WsSnapshot
@@ -15,6 +17,10 @@ import com.evan.pulse.data.model.snapshotJson
 import com.evan.pulse.di.ServiceLocator
 import com.evan.pulse.R
 import com.evan.pulse.domain.PlaceholderResolver
+import com.evan.pulse.domain.assertion.AssertionCheck
+import com.evan.pulse.domain.assertion.AssertionTarget
+import com.evan.pulse.domain.assertion.ResponseAssertion
+import com.evan.pulse.domain.assertion.ResponseAssertions
 import com.evan.pulse.domain.net.BinaryEncoding
 import com.evan.pulse.domain.net.BinaryPayload
 import com.evan.pulse.domain.model.KeyValue
@@ -83,6 +89,9 @@ class WsViewModel : ViewModel() {
 
     /** 跳过 TLS 证书校验；仅用于调试自签名或内网 WSS 服务 */
     var insecureTls by mutableStateOf(false)
+    var customCaPem by mutableStateOf("")
+    var clientCertPem by mutableStateOf("")
+    var clientKeyPem by mutableStateOf("")
 
     /** 发送模式：false 为文本帧，true 为二进制帧 */
     var binaryMode by mutableStateOf(false)
@@ -106,6 +115,16 @@ class WsViewModel : ViewModel() {
     var missingVars by mutableStateOf<List<String>?>(null)
     var lastError by mutableStateOf<String?>(null)
 
+    /** 收到消息时执行的断言：全部通过才认为该条消息符合预期 */
+    var assertions by mutableStateOf<List<ResponseAssertion>>(emptyList())
+
+    /** 最近一条消息的断言结果 */
+    var assertionResults by mutableStateOf<List<AssertionCheck>>(emptyList())
+
+    /** 自连接以来累计校验的消息条数与失败条数 */
+    var assertionChecked by mutableStateOf(0)
+    var assertionFailed by mutableStateOf(0)
+
     init {
         viewModelScope.launch {
             state.collect { connection ->
@@ -122,7 +141,10 @@ class WsViewModel : ViewModel() {
                         add(L10n.t(R.string.state_opened), true, event.timestamp)
                     }
                     is WsEvent.Sent -> add(event.content, true, event.timestamp)
-                    is WsEvent.TextReceived -> add(event.content, false, event.timestamp)
+                    is WsEvent.TextReceived -> {
+                        add(event.content, false, event.timestamp)
+                        evaluateAssertions(event.content)
+                    }
                     is WsEvent.BinarySent -> add(
                         L10n.t(R.string.ws_log_binary_sent, event.sizeBytes, event.preview),
                         true,
@@ -187,7 +209,11 @@ class WsViewModel : ViewModel() {
             autoReconnect = autoReconnect,
             reconnectBaseDelaySec = sessions.wsReconnectSettings.value.baseDelaySec,
             reconnectMaxDelaySec = sessions.wsReconnectSettings.value.maxDelaySec,
-            insecureTls = insecureTls
+            insecureTls = insecureTls,
+            customCaPem = customCaPem,
+            clientCertPem = clientCertPem,
+            clientKeyPem = clientKeyPem,
+            assertions = assertions.map { AssertionEntry(it.type, it.expression, it.expected, it.operator) }
         )
     )
 
@@ -204,6 +230,10 @@ class WsViewModel : ViewModel() {
         subprotocols = snap.subprotocols.joinToString(", ")
         useProxy = snap.useProxy
         insecureTls = snap.insecureTls
+        customCaPem = snap.customCaPem
+        clientCertPem = snap.clientCertPem
+        clientKeyPem = snap.clientKeyPem
+        assertions = snap.assertions.map { ResponseAssertion(it.type, it.expression, it.expected, it.operator) }
         updateReconnectBase(snap.reconnectBaseDelaySec.toString())
         updateReconnectMax(snap.reconnectMaxDelaySec.toString())
         updateAutoReconnect(snap.autoReconnect)
@@ -236,6 +266,17 @@ class WsViewModel : ViewModel() {
 
     private fun add(text: String, isSystem: Boolean, timestamp: Long = System.currentTimeMillis()) {
         sessions.appendWs(activeEndpoint, text, isSystem, timestamp)
+    }
+
+    /** 对一条收到的消息求值断言；没有配置断言时不做任何事 */
+    private fun evaluateAssertions(content: String) {
+        if (assertions.isEmpty()) return
+        val vars = ServiceLocator.varsForCollection(activeCollectionId)
+        val results = ResponseAssertions.evaluate(AssertionTarget(body = content), assertions, vars)
+        if (results.isEmpty()) return
+        assertionResults = results
+        assertionChecked += 1
+        if (results.any { !it.passed }) assertionFailed += 1
     }
 
     private fun scheduleRetry() {
@@ -277,6 +318,9 @@ class WsViewModel : ViewModel() {
         connectJob?.cancel()
         connectJob = viewModelScope.launch {
             lastError = null
+            assertionResults = emptyList()
+            assertionChecked = 0
+            assertionFailed = 0
             val proxy = if (useProxy) settingsStore.settings.value.toProxyConfig() else ProxyConfig()
             val vars = ServiceLocator.varsForCollection(activeCollectionId)
 
@@ -309,7 +353,8 @@ class WsViewModel : ViewModel() {
                 proxy = proxy,
                 pingIntervalSec = pingIntervalSec.toIntOrNull() ?: 0,
                 pingPayload = pingPayload.ifBlank { "ping" },
-                insecureTls = insecureTls
+                insecureTls = insecureTls,
+                tls = tlsConfigOf(insecureTls, customCaPem, clientCertPem, clientKeyPem)
             )
             allowReconnect = true
             add(L10n.t(R.string.proxy_in_use, proxy.summary.ifEmpty { L10n.t(R.string.proxy_summary_direct) }), true)
