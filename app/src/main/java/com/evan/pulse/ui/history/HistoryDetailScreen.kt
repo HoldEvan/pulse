@@ -13,15 +13,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.evan.pulse.R
+import com.evan.pulse.data.model.HistoryAssertion
 import com.evan.pulse.data.model.HistoryEntry
 import com.evan.pulse.ui.common.CardSectionTitle
 import com.evan.pulse.ui.common.CollapsibleKeyValueTable
+import com.evan.pulse.ui.common.assertionTypeLabelRes
 import com.evan.pulse.ui.common.CopyIconButton
 import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.HtmlPreviewStore
@@ -94,14 +97,18 @@ fun HistoryDetailScreen(
         AppCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
             Column(modifier = Modifier.padding(12.dp)) {
                 MonospaceBlock(entry.url)
-                if (entry.requestHeaders.isNotEmpty()) {
-                    CollapsibleKeyValueTable(
-                        title = stringResource(R.string.history_request_headers),
-                        items = entry.requestHeaders.map(::splitHeaderLine),
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-                }
-                if (entry.requestBody.isNotEmpty()) {
+            }
+            // 折叠表放在卡片内边距之外，标题行水波纹才能横向贴住卡片左右边缘
+            if (entry.requestHeaders.isNotEmpty()) {
+                CollapsibleKeyValueTable(
+                    title = stringResource(R.string.history_request_headers),
+                    items = entry.requestHeaders.map(::splitHeaderLine),
+                    horizontalPadding = 12.dp,
+                    verticalPadding = 8.dp
+                )
+            }
+            if (entry.requestBody.isNotEmpty()) {
+                Column(modifier = Modifier.padding(12.dp)) {
                     CardSectionTitle(stringResource(R.string.history_request_body))
                     MonospaceBlock(entry.requestBody)
                     TruncatedHint(entry.requestBodyTruncated)
@@ -111,16 +118,23 @@ fun HistoryDetailScreen(
 
         SectionTitleRow(label = stringResource(R.string.http_response_label))
         AppCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-            Column(modifier = Modifier.padding(12.dp)) {
-                if (entry.responseHeaders.isNotEmpty()) {
-                    CollapsibleKeyValueTable(
-                        title = stringResource(R.string.http_response_headers),
-                        items = entry.responseHeaders.map(::splitHeaderLine),
-                        modifier = Modifier.padding(top = 8.dp),
-                        initiallyExpanded = true
-                    )
+            if (entry.responseHeaders.isNotEmpty()) {
+                CollapsibleKeyValueTable(
+                    title = stringResource(R.string.http_response_headers),
+                    items = entry.responseHeaders.map(::splitHeaderLine),
+                    initiallyExpanded = true,
+                    horizontalPadding = 12.dp,
+                    verticalPadding = 8.dp
+                )
+            }
+            if (entry.assertions.isNotEmpty()) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    CardSectionTitle(stringResource(R.string.http_assertions_label))
+                    AssertionSummary(entry.assertions)
                 }
-                if (entry.responseBody.isNotEmpty()) {
+            }
+            if (entry.responseBody.isNotEmpty()) {
+                Column(modifier = Modifier.padding(12.dp)) {
                     ResponseBody(
                         body = entry.responseBody,
                         url = entry.url,
@@ -132,6 +146,33 @@ fun HistoryDetailScreen(
                 }
             }
         }
+    }
+}
+
+/** 断言复盘：先给一句总结，再逐条列出类型、表达式与失败原因 */
+@Composable
+private fun AssertionSummary(assertions: List<HistoryAssertion>) {
+    val failed = assertions.count { it.passed.not() }
+    AppText(
+        text = if (failed == 0) {
+            stringResource(R.string.http_assertions_all_passed)
+        } else {
+            stringResource(R.string.http_assertions_failed, failed)
+        },
+        fontSize = 13.sp,
+        color = if (failed == 0) Color(0xFF2FA37A) else Color(0xFFD32F2F)
+    )
+    assertions.forEach { item ->
+        val label = stringResource(assertionTypeLabelRes(item.type))
+        val expression = if (item.expected.isBlank()) {
+            item.expression
+        } else {
+            "${item.expression} = ${item.expected}"
+        }
+        MonospaceBlock(
+            "${if (item.passed) "PASS" else "FAIL"} $label $expression" +
+                if (item.detail.isBlank()) "" else " - ${item.detail}"
+        )
     }
 }
 

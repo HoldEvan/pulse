@@ -14,6 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.evan.pulse.R
@@ -30,13 +31,18 @@ import top.yukonga.miuix.kmp.squircle.squircleBackground
  *
  * 键列固定宽度、值列占满剩余空间，多行值在值列内自然换行，
  * 比等宽文本块更容易逐条核对请求头。
+ *
+ * [horizontalPadding] 只作用于标题行与内容块内部：标题行的 clickable 铺满父容器宽度，
+ * 放在卡片内边距之外时水波纹能贴住卡片左右边缘。[verticalPadding] 控制标题行高度。
  */
 @Composable
 fun CollapsibleKeyValueTable(
     title: String,
     items: List<Pair<String, String>>,
     modifier: Modifier = Modifier,
-    initiallyExpanded: Boolean = false
+    initiallyExpanded: Boolean = false,
+    horizontalPadding: Dp = 0.dp,
+    verticalPadding: Dp = 4.dp
 ) {
     if (items.isEmpty()) return
 
@@ -47,7 +53,7 @@ fun CollapsibleKeyValueTable(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { expanded = !expanded }
-                .padding(vertical = 4.dp),
+                .padding(horizontal = horizontalPadding, vertical = verticalPadding),
             verticalAlignment = Alignment.CenterVertically
         ) {
             AppText(
@@ -75,7 +81,8 @@ fun CollapsibleKeyValueTable(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 6.dp)
+                .padding(start = horizontalPadding, end = horizontalPadding)
+                .padding(top = 8.dp)
                 .squircleBackground(AppTheme.colors.surfaceVariant, 8.dp)
                 .padding(horizontal = 10.dp, vertical = 8.dp)
         ) {

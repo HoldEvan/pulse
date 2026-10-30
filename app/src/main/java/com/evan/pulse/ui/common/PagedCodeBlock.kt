@@ -88,17 +88,20 @@ fun PagedHexBlock(
         hexDumpRange(bytes, offset = current * HEX_BYTES_PER_PAGE)
     }
     Column(modifier = modifier) {
-        PagerBar(
-            page = current,
-            pageCount = pageCount,
-            summary = stringResource(
-                R.string.paged_view_hex_summary,
-                CacheCleaner.formatBytes(bytes.size.toLong()),
-                pageCount
-            ),
-            onPageChange = { page = it },
-            trailingHint = hint
-        )
+        // 只有一页时没有翻页可做，分页信息一并隐藏，避免小响应体也顶着一排翻页按钮
+        if (pageCount > 1) {
+            PagerBar(
+                page = current,
+                pageCount = pageCount,
+                summary = stringResource(
+                    R.string.paged_view_hex_summary,
+                    CacheCleaner.formatBytes(bytes.size.toLong()),
+                    pageCount
+                ),
+                onPageChange = { page = it },
+                trailingHint = hint
+            )
+        }
         MonospaceBlock(
             text = pageText,
             modifier = Modifier.padding(top = 6.dp),

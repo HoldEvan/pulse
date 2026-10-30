@@ -42,7 +42,8 @@ data class AssertionCheck(
  */
 object ResponseAssertions {
 
-    private val PLACEHOLDER = Regex("""\{\{\s*([A-Za-z0-9_.\-]+)\s*}}""")
+    // 结尾的 } 必须转义：JVM 把孤立的 } 当字面量，Android 的 ICU 正则直接抛 PatternSyntaxException
+    private val PLACEHOLDER = Regex("""\{\{\s*([A-Za-z0-9_.\-]+)\s*\}\}""")
 
     /**
      * 依次求值；expression 为空的条目视为未填写，直接跳过不产生结果。

@@ -540,8 +540,18 @@ fun MonitorScreen(
                         itemCount = viewModel.assertions.size,
                         modifier = Modifier.padding(top = 8.dp)
                     ) {
+                        val assertionTypeLabels = listOf(
+                            stringResource(R.string.monitor_assert_contains),
+                            stringResource(R.string.monitor_assert_not_contains),
+                            stringResource(R.string.monitor_assert_jsonpath)
+                        )
                         viewModel.assertions.forEachIndexed { index, assertion ->
                             val isJsonPath = assertion.type.equals("JSON_PATH", ignoreCase = true)
+                            val typeIndex = when (assertion.type.uppercase()) {
+                                "NOT_CONTAINS" -> 1
+                                "JSON_PATH" -> 2
+                                else -> 0
+                            }
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -549,18 +559,11 @@ fun MonitorScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
+                                // 标题直接显示当前选中的类型：showValue 关掉时若 title 也留空，这一行就只剩箭头，看不到回显
                                 AppDropdown(
-                                    title = "",
-                                    items = listOf(
-                                        stringResource(R.string.monitor_assert_contains),
-                                        stringResource(R.string.monitor_assert_not_contains),
-                                        stringResource(R.string.monitor_assert_jsonpath)
-                                    ),
-                                    selectedIndex = when (assertion.type.uppercase()) {
-                                        "NOT_CONTAINS" -> 1
-                                        "JSON_PATH" -> 2
-                                        else -> 0
-                                    },
+                                    title = assertionTypeLabels[typeIndex],
+                                    items = assertionTypeLabels,
+                                    selectedIndex = typeIndex,
                                     showValue = false,
                                     filled = true,
                                     modifier = Modifier.weight(1f),

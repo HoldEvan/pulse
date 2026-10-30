@@ -24,7 +24,7 @@ Pulse 是一款 Android 原生 API 调试工具，覆盖 HTTP / SSE / WebSocket 
 ### 请求管理
 - **集合**：多级文件夹 + 面包屑逐层下钻，接口重命名、移动、排序、原地复制，删除接口与递归删除文件夹均有二次确认；支持关键字跨文件夹搜索、curl 命令导入、文件夹级变量（子文件夹继承）以及导出为 Postman / OpenAPI 文档
 - **集合运行器**：顺序运行一组请求，前序响应提取变量传给后序，配合脚本断言完成接口链路测试
-- **历史**：完整请求/响应历史，详情页复现请求，支持收藏与置顶
+- **历史**：完整请求/响应历史，详情页复现请求并回看当时的断言结论，支持收藏与置顶
 - **响应对比**：任选两条历史响应做行级 diff，JSON / XML 先格式化再比较
 - **环境变量**：多环境定义，`{{variable}}` 占位符全字段解析，缺失变量连接前预警
 - **导入**：OpenAPI 3 / Swagger 2、Postman Collection、HAR（JSON / YAML，支持 URL 拉取与粘贴），分组预览后批量入库
@@ -51,7 +51,7 @@ Pulse 是一款 Android 原生 API 调试工具，覆盖 HTTP / SSE / WebSocket 
 
 ## 下载
 
-前往 [Releases](https://github.com/HoldEvan/pulse/releases) 下载最新 APK（如 `Pulse-v0.2.1-release.apk`），Android 8.0（API 26）及以上可安装。
+前往 [Releases](https://github.com/HoldEvan/pulse/releases) 下载最新 APK（如 `Pulse-v0.2.2-release.apk`），Android 8.0（API 26）及以上可安装。
 
 ## 构建
 

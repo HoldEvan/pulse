@@ -59,6 +59,7 @@ import com.evan.pulse.domain.model.KeyValue
 import com.evan.pulse.domain.pathOnly
 import com.evan.pulse.ui.collection.SaveRequestDialog
 import com.evan.pulse.ui.common.BottomBarClearance
+import com.evan.pulse.ui.common.assertionTypeLabelRes
 import com.evan.pulse.ui.common.CollapsibleKeyValueTable
 import com.evan.pulse.ui.common.CardSectionTitle
 import com.evan.pulse.ui.common.CopyIconButton
@@ -523,7 +524,7 @@ private fun AssertionCard(viewModel: HttpViewModel) {
                 color = if (failed == 0) Color(0xFF2FA37A) else Color(0xFFD32F2F)
             )
             results.forEach { check ->
-                val label = stringResource(assertionTypeLabel(check.assertion.type))
+                val label = stringResource(assertionTypeLabelRes(check.assertion.type))
                 val detail = check.detail
                 MonospaceBlock(
                     "${if (check.passed) "PASS" else "FAIL"} $label ${check.assertion.expression}" +
@@ -547,8 +548,9 @@ private fun AssertionEditorRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            // 标题直接显示当前选中的类型：showValue 关掉时若 title 也留空，这一行就只剩箭头，看不到回显
             AppDropdown(
-                title = "",
+                title = stringResource(assertionTypeLabelRes(assertion.type)),
                 items = listOf(
                     stringResource(R.string.monitor_assert_contains),
                     stringResource(R.string.monitor_assert_not_contains),
@@ -596,12 +598,6 @@ private fun assertionTypeName(index: Int): String = when (index) {
     1 -> ResponseAssertion.TYPE_NOT_CONTAINS
     2 -> ResponseAssertion.TYPE_JSON_PATH
     else -> ResponseAssertion.TYPE_CONTAINS
-}
-
-private fun assertionTypeLabel(type: String): Int = when (type.uppercase()) {
-    ResponseAssertion.TYPE_NOT_CONTAINS -> R.string.monitor_assert_not_contains
-    ResponseAssertion.TYPE_JSON_PATH -> R.string.monitor_assert_jsonpath
-    else -> R.string.monitor_assert_contains
 }
 
 @Composable
@@ -908,70 +904,79 @@ private fun ResponseCard(viewModel: HttpViewModel, onOpenHtmlPreview: (() -> Uni
                 )
             }
 
-            is HttpCallOutcome.Success -> Column(modifier = Modifier.padding(16.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    StatusBadge(outcome.statusCode)
-                    if (outcome.statusText.isNotBlank()) {
+            is HttpCallOutcome.Success -> {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        StatusBadge(outcome.statusCode)
+                        if (outcome.statusText.isNotBlank()) {
+                            AppText(
+                                text = outcome.statusText,
+                                modifier = Modifier.padding(start = 10.dp),
+                                fontSize = 13.sp
+                            )
+                        }
                         AppText(
-                            text = outcome.statusText,
+                            text = stringResource(R.string.duration_size, outcome.durationMs, outcome.responseSizeBytes),
                             modifier = Modifier.padding(start = 10.dp),
                             fontSize = 13.sp
                         )
                     }
-                    AppText(
-                        text = stringResource(R.string.duration_size, outcome.durationMs, outcome.responseSizeBytes),
-                        modifier = Modifier.padding(start = 10.dp),
-                        fontSize = 13.sp
-                    )
+                    // 断言结论放在状态码旁边：HTTP 2xx 但业务字段不对时也能一眼看出请求失败
+                    val failedAssertions = viewModel.assertionResults.count { !it.passed }
+                    if (viewModel.assertionResults.isNotEmpty()) {
+                        AppText(
+                            text = if (failedAssertions == 0) {
+                                stringResource(R.string.http_assertions_all_passed)
+                            } else {
+                                stringResource(R.string.http_assertions_failed, failedAssertions)
+                            },
+                            modifier = Modifier.padding(top = 8.dp),
+                            fontSize = 13.sp,
+                            color = if (failedAssertions == 0) Color(0xFF2FA37A) else Color(0xFFD32F2F)
+                        )
+                    }
+                    val tl = outcome.timeline
+                    if (tl.dnsMs > 0 || tl.tcpMs > 0 || tl.tlsMs > 0 || tl.ttfbMs > 0) {
+                        HttpTimingBreakdown(
+                            timeline = tl,
+                            modifier = Modifier.padding(top = 12.dp)
+                        )
+                    }
                 }
-                // 断言结论放在状态码旁边：HTTP 2xx 但业务字段不对时也能一眼看出请求失败
-                val failedAssertions = viewModel.assertionResults.count { !it.passed }
-                if (viewModel.assertionResults.isNotEmpty()) {
-                    AppText(
-                        text = if (failedAssertions == 0) {
-                            stringResource(R.string.http_assertions_all_passed)
-                        } else {
-                            stringResource(R.string.http_assertions_failed, failedAssertions)
-                        },
-                        modifier = Modifier.padding(top = 8.dp),
-                        fontSize = 13.sp,
-                        color = if (failedAssertions == 0) Color(0xFF2FA37A) else Color(0xFFD32F2F)
-                    )
-                }
-                val tl = outcome.timeline
-                if (tl.dnsMs > 0 || tl.tcpMs > 0 || tl.tlsMs > 0 || tl.ttfbMs > 0) {
-                    HttpTimingBreakdown(
-                        timeline = tl,
-                        modifier = Modifier.padding(top = 12.dp)
-                    )
-                }
-                // 真实请求头默认折叠：多数场景只关心响应，需要排查时再展开逐条核对
+                // 真实请求头默认折叠：多数场景只关心响应，需要排查时再展开逐条核对。
+                // 两张表放在卡片内边距之外，标题行水波纹才能横向贴住卡片左右边缘
                 CollapsibleKeyValueTable(
                     title = stringResource(R.string.history_request_headers),
                     items = outcome.requestHeaders.map { it.key to it.value },
-                    modifier = Modifier.padding(top = 12.dp)
+                    modifier = Modifier.padding(top = 2.dp),
+                    horizontalPadding = 16.dp,
+                    verticalPadding = 10.dp
                 )
                 // 响应头与请求头用同一套表格，字段对齐、长值换行；默认展开
                 CollapsibleKeyValueTable(
                     title = stringResource(R.string.http_response_headers),
                     items = outcome.headers.map { it.key to it.value },
-                    modifier = Modifier.padding(top = 12.dp),
-                    initiallyExpanded = true
+                    modifier = Modifier.padding(top = 2.dp),
+                    initiallyExpanded = true,
+                    horizontalPadding = 16.dp,
+                    verticalPadding = 10.dp
                 )
-                AppText(
-                    text = stringResource(R.string.http_response_body),
-                    modifier = Modifier.padding(top = 14.dp, bottom = 8.dp),
-                    fontSize = 13.sp
-                )
-                ResponseBodyView(
-                    outcome.body,
-                    viewModel.url,
-                    contentType = responseContentType(outcome.headers),
-                    bodyBytes = outcome.bodyBytes,
-                    onOpenHtmlPreview = onOpenHtmlPreview?.let { open ->
-                        { body, base -> HtmlPreviewStore.set(body, base); open() }
-                    }
-                )
+                Column(modifier = Modifier.padding(16.dp)) {
+                    AppText(
+                        text = stringResource(R.string.http_response_body),
+                        modifier = Modifier.padding(top = 6.dp, bottom = 8.dp),
+                        fontSize = 13.sp
+                    )
+                    ResponseBodyView(
+                        outcome.body,
+                        viewModel.url,
+                        contentType = responseContentType(outcome.headers),
+                        bodyBytes = outcome.bodyBytes,
+                        onOpenHtmlPreview = onOpenHtmlPreview?.let { open ->
+                            { body, base -> HtmlPreviewStore.set(body, base); open() }
+                        }
+                    )
+                }
             }
         }
     }

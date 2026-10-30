@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.evan.pulse.data.model.FormFieldEntry
 import com.evan.pulse.data.model.AssertionEntry
+import com.evan.pulse.data.model.HistoryAssertion
 import com.evan.pulse.data.model.HistoryEntry
 import com.evan.pulse.data.model.HttpSnapshot
 import com.evan.pulse.data.model.KeyValueEntry
@@ -437,11 +438,13 @@ class HttpViewModel : ViewModel() {
 
                 val result = engine.execute(withCookies(built.config))
                 outcome = result
+                // 历史先在这里攒好，等断言求值完再落库，详情页才能看到这次请求的断言结论
+                var historyEntry: HistoryEntry? = null
                 if (result is HttpCallOutcome.Success) {
                     storeResponseCookies(built.config.url, result.headers)
                     val requestBody = clipBody(renderedBody(built.config))
                     val responseBody = clipBody(result.body)
-                    historyStore.add(
+                    historyEntry =
                         HistoryEntry(
                             id = 0,
                             projectId = currentProjectId.value,
@@ -463,7 +466,6 @@ class HttpViewModel : ViewModel() {
                             responseBody = responseBody.text,
                             responseBodyTruncated = responseBody.truncated
                         )
-                    )
                 }
 
                 val postResult = if (postScript.isNotBlank()) {
@@ -478,6 +480,21 @@ class HttpViewModel : ViewModel() {
                     ResponseAssertions.evaluate(result.body, assertions, scope.all())
                 } else {
                     emptyList()
+                }
+                historyEntry?.let { entry ->
+                    historyStore.add(
+                        entry.copy(
+                            assertions = assertionResults.map { check ->
+                                HistoryAssertion(
+                                    type = check.assertion.type,
+                                    expression = check.assertion.expression,
+                                    expected = check.assertion.expected,
+                                    passed = check.passed,
+                                    detail = check.detail
+                                )
+                            }
+                        )
+                    )
                 }
             } finally {
                 sending = false

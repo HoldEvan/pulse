@@ -85,7 +85,9 @@ data class HistoryEntity(
     val responseHeaders: String,
     val responseBody: String,
     val responseBodyTruncated: Boolean,
-    val favorite: Boolean
+    val favorite: Boolean,
+    /** 断言快照的 JSON（密文），v2 新增 */
+    val assertions: String = ""
 )
 
 @Entity(

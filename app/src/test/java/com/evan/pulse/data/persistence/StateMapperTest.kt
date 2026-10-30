@@ -2,6 +2,7 @@ package com.evan.pulse.data.persistence
 
 import com.evan.pulse.data.model.CollectionInfo
 import com.evan.pulse.data.model.EnvironmentInfo
+import com.evan.pulse.data.model.HistoryAssertion
 import com.evan.pulse.data.model.HistoryEntry
 import com.evan.pulse.data.model.KeyValueEntry
 import com.evan.pulse.data.model.MonitorAssertion
@@ -100,6 +101,20 @@ class StateMapperTest {
             requestBody = """{"password":"p@ss"}""",
             responseHeaders = listOf("Set-Cookie: sid=abc"),
             responseBody = """{"token":"jwt.value"}""",
+            assertions = listOf(
+                HistoryAssertion(
+                    type = "JSON_PATH",
+                    expression = "$.token",
+                    expected = "jwt.value",
+                    passed = true
+                ),
+                HistoryAssertion(
+                    type = "CONTAINS",
+                    expression = "error",
+                    passed = false,
+                    detail = "响应未包含关键字 error"
+                )
+            ),
             favorite = true
         )
         val entity = mapper.historyToEntity(entry)

@@ -7,6 +7,7 @@ import com.evan.pulse.data.db.PulseDatabase
 import com.evan.pulse.data.db.StoreMetaEntity
 import com.evan.pulse.data.model.CollectionInfo
 import com.evan.pulse.data.model.EnvironmentInfo
+import com.evan.pulse.data.model.HistoryAssertion
 import com.evan.pulse.data.model.HistoryEntry
 import com.evan.pulse.data.model.KeyValueEntry
 import com.evan.pulse.data.model.MonitorAssertion
@@ -34,6 +35,7 @@ import com.evan.pulse.di.ServiceLocator
 import com.evan.pulse.domain.crypto.SecretBox
 import com.evan.pulse.domain.crypto.SecretField
 import java.io.File
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -479,6 +481,15 @@ class AppStatePersistence(
                         put("responseBody", seal(h.responseBody))
                         put("responseBodyTruncated", h.responseBodyTruncated)
                         put("favorite", h.favorite)
+                        put(
+                            "assertions",
+                            seal(
+                                json.encodeToString(
+                                    ListSerializer(HistoryAssertion.serializer()),
+                                    h.assertions
+                                )
+                            )
+                        )
                     })
                 }
             })
@@ -839,7 +850,13 @@ class AppStatePersistence(
         responseHeaders = o.stringValueList("responseHeaders").map { open(it) },
         responseBody = open(o.stringValue("responseBody")),
         responseBodyTruncated = o.booleanValue("responseBodyTruncated", false),
-        favorite = o.booleanValue("favorite", false)
+        favorite = o.booleanValue("favorite", false),
+        assertions = runCatching {
+            json.decodeFromString(
+                ListSerializer(HistoryAssertion.serializer()),
+                open(o.stringValue("assertions"))
+            )
+        }.getOrDefault(emptyList())
     ).takeIf { it.id >= 0 }
 
     private fun parseMonitorTarget(o: JsonObject): MonitorTarget? {

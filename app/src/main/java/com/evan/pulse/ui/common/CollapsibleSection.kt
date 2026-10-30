@@ -39,6 +39,7 @@ fun CollapsibleSection(
     modifier: Modifier = Modifier,
     initiallyExpanded: Boolean = true,
     horizontalPadding: Dp = 0.dp,
+    verticalPadding: Dp = 6.dp,
     trailing: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -50,7 +51,7 @@ fun CollapsibleSection(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { expanded = !expanded }
-                .padding(horizontal = horizontalPadding, vertical = 6.dp),
+                .padding(horizontal = horizontalPadding, vertical = verticalPadding),
             verticalAlignment = Alignment.CenterVertically
         ) {
             AppText(

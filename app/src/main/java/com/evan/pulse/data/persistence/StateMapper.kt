@@ -16,6 +16,7 @@ import com.evan.pulse.data.db.WsSessionEntity
 import com.evan.pulse.data.db.WsTemplateEntity
 import com.evan.pulse.data.model.CollectionInfo
 import com.evan.pulse.data.model.EnvironmentInfo
+import com.evan.pulse.data.model.HistoryAssertion
 import com.evan.pulse.data.model.HistoryEntry
 import com.evan.pulse.data.model.KeyValueEntry
 import com.evan.pulse.data.model.MonitorAssertion
@@ -156,7 +157,11 @@ class StateMapper(private val cipher: FieldCipher) {
         responseHeaders = cipher.sealAll(item.responseHeaders),
         responseBody = cipher.seal(item.responseBody),
         responseBodyTruncated = item.responseBodyTruncated,
-        favorite = item.favorite
+        favorite = item.favorite,
+        // 断言快照整块存成加密后的 JSON，便于后续加字段而不用再动表结构
+        assertions = cipher.seal(
+            json.encodeToString(ListSerializer(HistoryAssertion.serializer()), item.assertions)
+        )
     )
 
     fun historyFromEntity(item: HistoryEntity) = HistoryEntry(
@@ -176,7 +181,8 @@ class StateMapper(private val cipher: FieldCipher) {
         responseHeaders = cipher.openAll(item.responseHeaders),
         responseBody = cipher.open(item.responseBody),
         responseBodyTruncated = item.responseBodyTruncated,
-        favorite = item.favorite
+        favorite = item.favorite,
+        assertions = decodeList(cipher.open(item.assertions)) { HistoryAssertion.serializer() }
     )
 
     // ---- Cookie ----

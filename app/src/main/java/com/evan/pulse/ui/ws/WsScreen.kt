@@ -156,13 +156,19 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
                         .padding(top = 8.dp)
                 )
                 ValueHints(hints = viewModel.placeholderHints(viewModel.subprotocols))
-                // 握手请求头默认折叠，鉴权头等按需展开
-                CollapsibleSection(
-                    title = stringResource(R.string.tab_headers),
-                    itemCount = viewModel.headers.count { it.key.isNotBlank() },
-                    initiallyExpanded = false,
-                    modifier = Modifier.padding(top = 10.dp)
-                ) {
+            }
+            // 握手请求头默认折叠，鉴权头等按需展开；放在内边距之外，
+            // 标题行的水波纹才能横向贴住卡片左右边缘，纵向也留出更大的点击区域
+            CollapsibleSection(
+                title = stringResource(R.string.tab_headers),
+                itemCount = viewModel.headers.count { it.key.isNotBlank() },
+                initiallyExpanded = false,
+                horizontalPadding = 12.dp,
+                verticalPadding = 10.dp,
+                modifier = Modifier.padding(top = 6.dp)
+            ) {
+                // 与折叠标题行留出间距，避免展开后第一行输入框贴着标题
+                Column(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)) {
                     KeyValueEditor(
                         items = viewModel.headers,
                         keyLabel = stringResource(R.string.kv_header_key),
