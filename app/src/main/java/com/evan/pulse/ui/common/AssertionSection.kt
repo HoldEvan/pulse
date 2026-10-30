@@ -115,12 +115,12 @@ fun AssertionEditorRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // 标题直接显示当前选中的类型：showValue 关掉时若 title 也留空，这一行就只剩箭头，看不到回显
+            // 左侧标题固定写「断言类型」，右侧值显示当前选中类型，选中后两处都会跟着变
             AppDropdown(
-                title = stringResource(assertionTypeLabelRes(assertion.type)),
+                title = stringResource(R.string.assert_type_label),
                 items = assertionTypeOptions.map { stringResource(assertionTypeLabelRes(it)) },
                 selectedIndex = assertionTypeOptions.indexOf(assertion.type.uppercase()).coerceAtLeast(0),
-                showValue = false,
+                showValue = true,
                 filled = true,
                 modifier = Modifier.weight(1f),
                 onSelectedIndexChange = { index ->

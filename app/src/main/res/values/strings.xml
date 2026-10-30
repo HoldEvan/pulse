@@ -997,6 +997,7 @@
     <string name="monitor_assert_jsonpath_failed">JSONPath %1$s 期望 %2$s，实际 %3$s</string>
     <string name="monitor_assert_jsonpath_missing">JSONPath %1$s 无匹配</string>
     <string name="monitor_assert_vars_missing">断言 %1$s 存在未定义变量 %2$s</string>
+    <string name="assert_type_label">断言类型</string>
     <string name="assert_type_status">状态码</string>
     <string name="assert_type_header">响应头</string>
     <string name="assert_type_duration">耗时</string>
