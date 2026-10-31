@@ -40,7 +40,9 @@ value class HttpMethod(val value: String) {
 }
 
 enum class BodyType {
-    NONE, JSON, RAW, FORM_URLENCODED, FORM_DATA, GRAPHQL
+    NONE, JSON, RAW, FORM_URLENCODED, FORM_DATA, GRAPHQL,
+    /** 原始二进制：直接把所选文件的字节作为请求体发送 */
+    FILE
 }
 
 enum class AuthType {
@@ -86,7 +88,17 @@ data class HttpCallConfig(
     val graphqlVariables: String = "",
     val formFields: List<FormField> = emptyList(),
     val auth: AuthConfig = AuthConfig(),
+    /** 总超时（毫秒），兜底上限；连接/读取未单独指定时各阶段也用它 */
     val timeoutMs: Long = 30_000L,
+    /** 连接超时（毫秒），0 表示沿用 [timeoutMs] */
+    val connectTimeoutMs: Long = 0,
+    /** 读取超时（毫秒），0 表示沿用 [timeoutMs] */
+    val readTimeoutMs: Long = 0,
+    /** BodyType.FILE 时的文件 URI 与展示名 */
+    val fileUri: String? = null,
+    val fileName: String? = null,
+    /** BodyType.FILE 时显式声明的 Content-Type，为空按扩展名推断 */
+    val fileContentType: String? = null,
     val proxy: ProxyConfig = ProxyConfig(),
     /** 弱网模拟：默认关闭，零开销直发 */
     val throttle: NetworkThrottleConfig = NetworkThrottleConfig(),
@@ -104,8 +116,14 @@ data class HttpCallConfig(
         get() = if (insecureTls) tls.copy(insecure = true) else tls
 }
 
-sealed interface HttpCallOutcome {
-    data class Success(
+/** 一次重定向跳转：请求的地址、服务端返回的状态码与本次实际使用的方法 */
+data class HttpRedirectHop(
+    val url: String,
+    val statusCode: Int,
+    val method: String
+)
+
+sealed interface HttpCallOutcome {    data class Success(
         val statusCode: Int,
         val statusText: String,
         val headers: List<KeyValue>,
@@ -116,7 +134,9 @@ sealed interface HttpCallOutcome {
         /** 响应原始字节，供媒体（image/audio/video）预览；文本响应可为空 */
         val bodyBytes: ByteArray? = null,
         /** 实际发出的请求头（含引擎补充的默认头），用于结果页展示真实请求 */
-        val requestHeaders: List<KeyValue> = emptyList()
+        val requestHeaders: List<KeyValue> = emptyList(),
+        /** 重定向链：每跟随一跳记录一次，首跳不在此列 */
+        val redirectChain: List<HttpRedirectHop> = emptyList()
     ) : HttpCallOutcome
 
     data class Failure(

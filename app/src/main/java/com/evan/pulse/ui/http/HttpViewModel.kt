@@ -87,6 +87,15 @@ class HttpViewModel : ViewModel() {
     /** 请求超时（秒），输入框直接绑文本，非法输入回落到默认 30s */
     var timeoutSec by mutableStateOf("30")
 
+    /** 连接超时（秒）：留空沿用总超时 */
+    var connectTimeoutSec by mutableStateOf("")
+    /** 读取超时（秒）：留空沿用总超时 */
+    var readTimeoutSec by mutableStateOf("")
+
+    /** 原始二进制请求体：所选文件 URI 与展示名 */
+    var bodyFileUri by mutableStateOf<String?>(null)
+    var bodyFileName by mutableStateOf<String?>(null)
+
     /** 是否套用设置页里的全局代理；关闭则本次请求强制直连 */
     var useProxy by mutableStateOf(true)
 
@@ -174,6 +183,10 @@ class HttpViewModel : ViewModel() {
             preScript = preScript,
             postScript = postScript,
             timeoutSec = timeoutSec,
+            connectTimeoutSec = connectTimeoutSec,
+            readTimeoutSec = readTimeoutSec,
+            bodyFileUri = bodyFileUri,
+            bodyFileName = bodyFileName,
             useProxy = useProxy,
             throttlePreset = throttlePreset.name,
             forceTimeoutSec = forceTimeoutSec,
@@ -212,6 +225,10 @@ class HttpViewModel : ViewModel() {
         preScript = snap.preScript
         postScript = snap.postScript
         timeoutSec = snap.timeoutSec.takeIf { it.isNotBlank() } ?: "30"
+        connectTimeoutSec = snap.connectTimeoutSec
+        readTimeoutSec = snap.readTimeoutSec
+        bodyFileUri = snap.bodyFileUri
+        bodyFileName = snap.bodyFileName
         useProxy = snap.useProxy
         throttlePreset = NetworkPreset.entries.firstOrNull { it.name == snap.throttlePreset } ?: NetworkPreset.NONE
         forceTimeoutSec = snap.forceTimeoutSec
@@ -308,6 +325,28 @@ class HttpViewModel : ViewModel() {
         if (formFields.isEmpty()) formFields = listOf(FormField())
     }
 
+    /** 选择原始二进制请求体文件，补齐展示名并申请持久读权限，便于历史重发 */
+    fun setBodyFile(uri: android.net.Uri) {
+        val resolver = ServiceLocator.appContext.contentResolver
+        val displayName = runCatching {
+            resolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) cursor.getString(0) else null
+            }
+        }.getOrNull()?.takeIf { !it.isNullOrBlank() }
+        bodyFileName = displayName
+            ?: uri.lastPathSegment?.substringAfterLast('/')
+            ?: uri.toString()
+        bodyFileUri = uri.toString()
+        runCatching {
+            resolver.takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+    }
+
+    fun clearBodyFile() {
+        bodyFileUri = null
+        bodyFileName = null
+    }
+
     fun dismissMissing() {
         missingVars = null
     }
@@ -339,8 +378,12 @@ class HttpViewModel : ViewModel() {
             bodyType = bodyType,
             body = bodyText,
             graphqlVariables = graphqlVariables,
-            formFields = formFields.filter { it.name.isNotBlank() && !it.isFile },
+            formFields = formFields.filter { it.name.isNotBlank() },
             timeoutMs = (timeoutSec.toLongOrNull()?.coerceAtLeast(1) ?: 30L) * 1000L,
+            connectTimeoutMs = (connectTimeoutSec.toLongOrNull()?.takeIf { it > 0 } ?: 0L) * 1000L,
+            readTimeoutMs = (readTimeoutSec.toLongOrNull()?.takeIf { it > 0 } ?: 0L) * 1000L,
+            fileUri = bodyFileUri,
+            fileName = bodyFileName,
             proxy = if (useProxy) settingsStore.settings.value.toProxyConfig() else ProxyConfig(),
             throttle = NetworkThrottleConfig(
                 preset = throttlePreset,
@@ -407,7 +450,33 @@ class HttpViewModel : ViewModel() {
         }
 
         val missing = mutableSetOf<String>()
-        val config = resolveConfig(mutable.toCallConfig(raw.proxy), scope.all(), missing)
+        // 脚本视图只承载 method/url/headers/query/body，传输层配置需从原始配置补回，
+        // 否则请求会退回 HttpCallConfig 的默认值，导致超时/TLS/代理/重定向设置失效
+        val scriptEdited = mutable.toCallConfig(raw.proxy)
+        // 脚本视图不承载文件字段的 URI，按索引把原始文件字段补回，multipart 上传才能带上文件
+        val mergedFields = scriptEdited.formFields.mapIndexed { index, field ->
+            val source = raw.formFields.getOrNull(index)
+            if (source != null && source.isFile) source.copy(name = field.name, value = field.value) else field
+        }
+        val config = resolveConfig(
+            scriptEdited.copy(
+                formFields = mergedFields,
+                graphqlVariables = raw.graphqlVariables,
+                timeoutMs = raw.timeoutMs,
+                connectTimeoutMs = raw.connectTimeoutMs,
+                readTimeoutMs = raw.readTimeoutMs,
+                fileUri = raw.fileUri,
+                fileName = raw.fileName,
+                fileContentType = raw.fileContentType,
+                throttle = raw.throttle,
+                insecureTls = raw.insecureTls,
+                tls = raw.tls,
+                followRedirects = raw.followRedirects,
+                maxRedirects = raw.maxRedirects
+            ),
+            scope.all(),
+            missing
+        )
         return BuiltCall(config, missing.sorted(), preResult)
     }
 
@@ -543,6 +612,7 @@ class HttpViewModel : ViewModel() {
         BodyType.GRAPHQL -> buildGraphqlRequestBody(config.body, config.graphqlVariables)
         BodyType.FORM_URLENCODED, BodyType.FORM_DATA -> config.formFields
             .joinToString("&") { field -> "${field.name}=${field.value}" }
+        BodyType.FILE -> config.fileName?.let { "[文件] $it" } ?: "[文件]"
     }
 
     /** 自动附带当前项目 Cookie 库里命中 host 的 Cookie；用户手动设置的 Cookie 头优先 */

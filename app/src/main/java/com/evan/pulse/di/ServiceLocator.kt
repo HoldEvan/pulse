@@ -20,6 +20,8 @@ import com.evan.pulse.data.model.MqttSubscriptionEntry
 import com.evan.pulse.data.model.WsSessionEntry
 import com.evan.pulse.data.model.WsReconnectSettings
 import com.evan.pulse.data.model.WS_SESSION_HISTORY_LIMIT
+import com.evan.pulse.data.model.MQTT_SESSION_HISTORY_LIMIT
+import com.evan.pulse.data.model.MqttSessionEntry
 import com.evan.pulse.data.model.RequestType
 import com.evan.pulse.data.model.SavedRequest
 import com.evan.pulse.data.monitor.MonitorChecker
@@ -39,7 +41,7 @@ import com.evan.pulse.domain.net.KtorSseEngine
 import com.evan.pulse.domain.net.KtorWsEngine
 import com.evan.pulse.domain.net.MqttEngine
 import com.evan.pulse.domain.net.OkHttpEngine
-import com.evan.pulse.domain.net.PahoMqttEngine
+import com.evan.pulse.domain.net.HiveMqMqttEngine
 import com.evan.pulse.domain.net.SseEngine
 import com.evan.pulse.ui.l10n.L10n
 import com.evan.pulse.domain.net.WsEngine
@@ -850,8 +852,25 @@ class ProtocolSessionStore(private val persist: PersistenceHandle) {
     private val _wsTemplates = MutableStateFlow<List<WsMessageTemplate>>(emptyList())
     val wsTemplates: StateFlow<List<WsMessageTemplate>> = _wsTemplates.asStateFlow()
 
+    private val _mqttHistory = MutableStateFlow<List<MqttSessionEntry>>(emptyList())
+    val mqttHistory: StateFlow<List<MqttSessionEntry>> = _mqttHistory.asStateFlow()
+
     private var nextWsId = 1L
     private var nextTemplateId = 1L
+    private var nextMqttId = 1L
+
+    fun appendMqtt(broker: String, text: String, isSystem: Boolean, timestamp: Long): MqttSessionEntry {
+        val entry = MqttSessionEntry(nextMqttId++, broker, text, isSystem, timestamp)
+        _mqttHistory.value = (_mqttHistory.value + entry).takeLast(MQTT_SESSION_HISTORY_LIMIT)
+        persist.save()
+        return entry
+    }
+
+    fun clearMqttHistory() {
+        if (_mqttHistory.value.isEmpty()) return
+        _mqttHistory.value = emptyList()
+        persist.save()
+    }
 
     fun appendWs(endpoint: String, text: String, isSystem: Boolean, timestamp: Long): WsSessionEntry {
         val entry = WsSessionEntry(nextWsId++, endpoint, text, isSystem, timestamp)
@@ -918,7 +937,9 @@ class ProtocolSessionStore(private val persist: PersistenceHandle) {
         nextWsId,
         _wsReconnectSettings.value,
         _wsTemplates.value,
-        nextTemplateId
+        nextTemplateId,
+        _mqttHistory.value,
+        nextMqttId
     )
 
     fun restore(snapshot: ProtocolSessionStoreSnapshot) {
@@ -935,6 +956,8 @@ class ProtocolSessionStore(private val persist: PersistenceHandle) {
             snapshot.nextTemplateId,
             (_wsTemplates.value.maxOfOrNull { it.id } ?: 0L) + 1L
         )
+        _mqttHistory.value = snapshot.mqttHistory.takeLast(MQTT_SESSION_HISTORY_LIMIT)
+        nextMqttId = maxOf(snapshot.nextMqttId, (_mqttHistory.value.maxOfOrNull { it.id } ?: 0L) + 1L)
     }
 }
 
@@ -944,7 +967,9 @@ class ProtocolSessionStoreSnapshot(
     val nextWsId: Long,
     val wsReconnectSettings: WsReconnectSettings = WsReconnectSettings(),
     val wsTemplates: List<WsMessageTemplate> = emptyList(),
-    val nextTemplateId: Long = 1L
+    val nextTemplateId: Long = 1L,
+    val mqttHistory: List<MqttSessionEntry> = emptyList(),
+    val nextMqttId: Long = 1L
 )
 
 class MonitorStoreSnapshot(
@@ -1056,16 +1081,21 @@ object ServiceLocator {
         com.evan.pulse.data.webhook.WebhookSender(httpEngine)
     }
     val wsEngine: WsEngine = KtorWsEngine()
-    val mqttEngine: MqttEngine = PahoMqttEngine()
-    val sseEngine: SseEngine = KtorSseEngine()
+    val mqttEngine: MqttEngine = HiveMqMqttEngine()
+    /** SSE 支持多连接并行：每个连接标签页各建一个引擎实例，底层客户端缓存由引擎共享 */
+    fun newSseEngine(): SseEngine = KtorSseEngine()
 
     private val monitorPersist = PersistenceHandle(writeExecutor)
     private val cookiePersist = PersistenceHandle(writeExecutor)
     private val protocolPersist = PersistenceHandle(writeExecutor)
 
+    /** SSE 历史单独落盘：转录文本较大，不随 WS/MQTT 日志的高频写入一起重写 */
+    private val sseHistoryPersist = PersistenceHandle(writeExecutor)
+
     val monitorStore = MonitorStore(monitorPersist)
     val cookieStore = CookieStore(cookiePersist)
     val protocolSessionStore = ProtocolSessionStore(protocolPersist)
+    val sseHistoryStore = SseHistoryStore(sseHistoryPersist)
     val monitorChecker: MonitorChecker by lazy { MonitorChecker() }
 
     private var _monitorNotifier: MonitorNotifier? = null
@@ -1115,6 +1145,7 @@ object ServiceLocator {
         monitorPersist.onSave { persistence.saveMonitors() }
         cookiePersist.onSave { persistence.saveCookies() }
         protocolPersist.onSave { persistence.saveProtocols() }
+        sseHistoryPersist.onSave { persistence.saveSseHistory() }
         flushPersist.onSave { persistence.saveAll() }
         persistence.load()
         _monitorScheduler?.sync()

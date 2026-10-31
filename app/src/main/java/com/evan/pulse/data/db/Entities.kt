@@ -166,6 +166,29 @@ data class WsSessionEntity(
     val timestamp: Long
 )
 
+/** SSE 会话历史；url 与 transcript 可能含令牌，加密落盘 */
+@Entity(tableName = "sse_history")
+data class SseHistoryEntity(
+    @PrimaryKey val id: Long,
+    val method: String,
+    val url: String,
+    val startedAt: Long,
+    val endedAt: Long,
+    val frames: Int,
+    val outcome: String,
+    val transcript: String
+)
+
+/** MQTT 事件日志；broker 与 text 走 [com.evan.pulse.data.persistence.StateMapper] 加密落盘 */
+@Entity(tableName = "mqtt_sessions")
+data class MqttSessionEntity(
+    @PrimaryKey val id: Long,
+    val broker: String,
+    val text: String,
+    val isSystem: Boolean,
+    val timestamp: Long
+)
+
 @Entity(tableName = "mqtt_subscriptions")
 data class MqttSubscriptionEntity(
     @PrimaryKey val topic: String,

@@ -15,6 +15,7 @@ import javax.net.ssl.KeyManagerFactory
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
 import javax.net.ssl.TrustManagerFactory
+import javax.net.ssl.TrustManagerFactorySpi
 import javax.net.ssl.X509TrustManager
 
 /**
@@ -50,6 +51,18 @@ object TlsContexts {
     fun serverTrustManager(config: TlsConfig): X509TrustManager =
         trustManagers(config).filterIsInstance<X509TrustManager>().first()
 
+    /**
+     * HiveMQ 的 `sslConfig()` 只接受 [TrustManagerFactory]，这里把已算好的信任管理器
+     * 包成一个固定工厂：init 时什么都不做，始终返回组合后的管理器数组。
+     * 其余网络引擎仍可直接用 [build] 拿 SSLContext。
+     */
+    fun trustManagerFactory(config: TlsConfig): TrustManagerFactory =
+        FixedTrustManagerFactory(trustManagers(config))
+
+    /** 客户端证书对应的 KeyManagerFactory；未配置 mTLS 时返回 null */
+    fun keyManagerFactory(config: TlsConfig): KeyManagerFactory? =
+        if (config.hasClientCert) buildKeyManagerFactory(config) else null
+
     /** 跳过校验时用一个放行一切的管理器；否则按「系统默认 + 自定义 CA」组合 */
     private fun trustManagers(config: TlsConfig): Array<TrustManager> {
         if (config.insecure) return arrayOf(InsecureTls.trustManager)
@@ -75,7 +88,10 @@ object TlsContexts {
         return factory
     }
 
-    private fun clientKeyManagers(config: TlsConfig): Array<KeyManager> {
+    private fun clientKeyManagers(config: TlsConfig): Array<KeyManager> =
+        buildKeyManagerFactory(config).keyManagers
+
+    private fun buildKeyManagerFactory(config: TlsConfig): KeyManagerFactory {
         val chain = parseCertificates(config.clientCertPem)
         if (chain.isEmpty()) {
             throw TlsConfigException("客户端证书为空或格式无法识别")
@@ -85,7 +101,7 @@ object TlsContexts {
         store.setKeyEntry(KEY_ALIAS, key, KEY_PASSWORD.toCharArray(), chain.toTypedArray())
         val factory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm())
         factory.init(store, KEY_PASSWORD.toCharArray())
-        return factory.keyManagers
+        return factory
     }
 
     /** 解析一段或一段以上的 PEM 证书（一个文件里可能有 CA 链） */
@@ -153,4 +169,22 @@ private class CombinedTrustManager(
         throw last ?: java.security.cert.CertificateException("没有任何信任管理器通过校验")
     }
 }
+
+/**
+ * 固定返回既有信任管理器的 [TrustManagerFactory]。
+ *
+ * HiveMQ 只接受工厂而不是管理器实例；标准工厂无法表达「系统根 + 自定义 CA 组合」
+ * 或「放行一切」，因此这里用自定义 SPI 直接回传预先算好的数组，init 时忽略参数。
+ */
+private class FixedTrustManagerFactory(
+    private val managers: Array<TrustManager>
+) : TrustManagerFactory(
+    object : TrustManagerFactorySpi() {
+        override fun engineInit(ks: KeyStore?) = Unit
+        override fun engineInit(spec: javax.net.ssl.ManagerFactoryParameters?) = Unit
+        override fun engineGetTrustManagers(): Array<TrustManager> = managers
+    },
+    null,
+    "Fixed"
+)
 

@@ -38,6 +38,7 @@ import com.evan.pulse.R
 import com.evan.pulse.data.model.MqttSubscriptionEntry
 import com.evan.pulse.data.model.RequestType
 import com.evan.pulse.domain.model.MqttConnectionState
+import com.evan.pulse.domain.net.BinaryEncoding
 import com.evan.pulse.ui.collection.SaveRequestDialog
 import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.ConnectionStateIndicator
@@ -93,7 +94,8 @@ private fun SectionTitleRow(status: @Composable () -> Unit, onSaveClick: () -> U
 @Composable
 fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewModel()) {
     val state by viewModel.state.collectAsState()
-    val lines = viewModel.lines
+    val history by viewModel.history.collectAsState()
+    val lines = remember(history) { history.map { UiEventLine(it.text, it.isSystem, it.timestamp) } }
     val missingVars = viewModel.missingVars
     val subscriptions by viewModel.subscriptions.collectAsState()
     var showSave by remember { mutableStateOf(false) }
@@ -157,6 +159,41 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                     )
                 }
             }
+            AppDropdown(
+                items = listOf(
+                    stringResource(R.string.mqtt_version_5),
+                    stringResource(R.string.mqtt_version_3)
+                ),
+                selectedIndex = if (viewModel.mqttVersion == 3) 1 else 0,
+                title = stringResource(R.string.mqtt_version_label),
+                modifier = Modifier.fillMaxWidth(),
+                showValue = true,
+                onSelectedIndexChange = { viewModel.mqttVersion = if (it == 1) 3 else 5 }
+            )
+            AppSwitchRow(
+                title = stringResource(R.string.mqtt_clean_start_label),
+                summary = stringResource(R.string.mqtt_clean_start_summary),
+                checked = viewModel.cleanStart,
+                onCheckedChange = { viewModel.cleanStart = it }
+            )
+            if (viewModel.mqttVersion == 5) {
+                AppTextField(
+                    value = viewModel.sessionExpirySec,
+                    onValueChange = { viewModel.sessionExpirySec = it.filter(Char::isDigit) },
+                    label = stringResource(R.string.mqtt_session_expiry_label),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                )
+            }
+            AppSwitchRow(
+                title = stringResource(R.string.mqtt_auto_reconnect_label),
+                summary = stringResource(R.string.mqtt_auto_reconnect_summary),
+                checked = viewModel.autoReconnect,
+                onCheckedChange = { viewModel.autoReconnect = it }
+            )
+            WillSection(viewModel)
             // 开关行铺满卡片宽度，水波纹才能沿卡片圆角收边
             AppSwitchRow(
                 title = stringResource(R.string.use_proxy_label),
@@ -202,7 +239,8 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                     }
                     AppButton(
                         onClick = { viewModel.disconnect() },
-                        enabled = state == MqttConnectionState.CONNECTED,
+                        // 自动重连期间状态为 CONNECTING，也要允许用户中止
+                        enabled = state == MqttConnectionState.CONNECTED || state == MqttConnectionState.CONNECTING,
                         modifier = Modifier.weight(1f)
                     ) {
                         AppIcon(Icons.Filled.LinkOff, contentDescription = null)
@@ -309,6 +347,31 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                 checked = viewModel.pubRetain,
                 onCheckedChange = { viewModel.pubRetain = it }
             )
+            AppSwitchRow(
+                title = stringResource(R.string.mqtt_pub_binary_label),
+                summary = stringResource(R.string.mqtt_pub_binary_summary),
+                checked = viewModel.pubBinary,
+                onCheckedChange = {
+                    viewModel.pubBinary = it
+                    viewModel.dismissBinaryError()
+                }
+            )
+            if (viewModel.pubBinary) {
+                AppDropdown(
+                    title = stringResource(R.string.ws_binary_encoding),
+                    items = listOf(
+                        stringResource(R.string.ws_binary_hex),
+                        stringResource(R.string.ws_binary_base64)
+                    ),
+                    selectedIndex = if (viewModel.pubEncoding == BinaryEncoding.HEX) 0 else 1,
+                    modifier = Modifier.fillMaxWidth(),
+                    showValue = true,
+                    onSelectedIndexChange = {
+                        viewModel.pubEncoding = if (it == 0) BinaryEncoding.HEX else BinaryEncoding.BASE64
+                        viewModel.dismissBinaryError()
+                    }
+                )
+            }
             Column(modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp)) {
                 Row(
                     modifier = Modifier.padding(top = 8.dp),
@@ -316,8 +379,14 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                 ) {
                     AppTextField(
                         value = viewModel.pubPayload,
-                        onValueChange = { viewModel.pubPayload = it },
-                        label = stringResource(R.string.mqtt_pub_payload_label),
+                        onValueChange = {
+                            viewModel.pubPayload = it
+                            viewModel.dismissBinaryError()
+                        },
+                        label = stringResource(
+                            if (viewModel.pubBinary) R.string.ws_binary_input_label
+                            else R.string.mqtt_pub_payload_label
+                        ),
                         modifier = Modifier.weight(1f)
                     )
                     AppButton(
@@ -327,6 +396,14 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                     ) {
                         AppIcon(MiuixIcons.Light.Send, contentDescription = stringResource(R.string.action_publish))
                     }
+                }
+                viewModel.binaryError?.let { message ->
+                    AppText(
+                        text = message,
+                        color = AppTheme.colors.error,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
                 }
             }
         }
@@ -392,6 +469,53 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
         onDismiss = { showSave = false },
         onSaved = viewModel::markSaved
     )
+}
+
+/** 遗嘱消息配置：主题留空即不启用，其余字段仅在填了主题后才有意义 */
+@Composable
+private fun WillSection(viewModel: MqttViewModel) {
+    Column(modifier = Modifier.padding(start = 12.dp, top = 8.dp, end = 12.dp)) {
+        AppText(
+            text = stringResource(R.string.mqtt_will_title),
+            fontSize = 13.sp,
+            color = AppTheme.colors.onSurfaceSummary,
+            modifier = Modifier.padding(bottom = 6.dp)
+        )
+        AppTextField(
+            value = viewModel.willTopic,
+            onValueChange = { viewModel.willTopic = it },
+            label = stringResource(R.string.mqtt_will_topic_label),
+            modifier = Modifier.fillMaxWidth()
+        )
+        if (viewModel.willTopic.isNotBlank()) {
+            AppTextField(
+                value = viewModel.willPayload,
+                onValueChange = { viewModel.willPayload = it },
+                label = stringResource(R.string.mqtt_will_payload_label),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+            )
+        }
+    }
+    if (viewModel.willTopic.isNotBlank()) {
+        AppDropdown(
+            items = qosLabels.localizedLabels(),
+            selectedIndex = viewModel.willQos,
+            title = stringResource(R.string.mqtt_will_qos_label),
+            modifier = Modifier.fillMaxWidth(),
+            showValue = true,
+            onSelectedIndexChange = { viewModel.willQos = it }
+        )
+        AppSwitchRow(
+            title = stringResource(R.string.mqtt_will_retain_label),
+            summary = stringResource(R.string.mqtt_will_retain_summary),
+            checked = viewModel.willRetain,
+            onCheckedChange = { viewModel.willRetain = it }
+        )
+    } else {
+        Spacer(modifier = Modifier.height(8.dp))
+    }
 }
 
 @Composable

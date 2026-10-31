@@ -27,6 +27,8 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         MonitorRecordEntity::class,
         MonitorHistoryEntity::class,
         WsSessionEntity::class,
+        MqttSessionEntity::class,
+        SseHistoryEntity::class,
         MqttSubscriptionEntity::class,
         WsTemplateEntity::class,
         StoreMetaEntity::class
@@ -48,8 +50,11 @@ abstract class PulseDatabase : RoomDatabase() {
     companion object {
         const val NAME = "pulse.db"
 
-        /** v1：从单文件 JSON 迁移而来，首次启动时导入旧数据；v2：历史记录增加断言快照 */
-        const val VERSION = 2
+        /**
+         * v1：从单文件 JSON 迁移而来，首次启动时导入旧数据；v2：历史记录增加断言快照；
+         * v3：新增 MQTT 事件日志表与 SSE 会话历史表
+         */
+        const val VERSION = 3
 
         /** v1 → v2：历史记录补一列断言快照，旧记录默认为空 */
         private val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -58,12 +63,29 @@ abstract class PulseDatabase : RoomDatabase() {
             }
         }
 
+        /** v2 → v3：新增 MQTT 事件日志表与 SSE 会话历史表，与 Room 导出的 schema 保持一致 */
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `mqtt_sessions` (" +
+                        "`id` INTEGER NOT NULL, `broker` TEXT NOT NULL, `text` TEXT NOT NULL, " +
+                        "`isSystem` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, PRIMARY KEY(`id`))"
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `sse_history` (" +
+                        "`id` INTEGER NOT NULL, `method` TEXT NOT NULL, `url` TEXT NOT NULL, " +
+                        "`startedAt` INTEGER NOT NULL, `endedAt` INTEGER NOT NULL, `frames` INTEGER NOT NULL, " +
+                        "`outcome` TEXT NOT NULL, `transcript` TEXT NOT NULL, PRIMARY KEY(`id`))"
+                )
+            }
+        }
+
         fun build(context: Context): PulseDatabase =
             Room.databaseBuilder(context, PulseDatabase::class.java, NAME)
                 // 现有写入路径都在调用方线程同步执行（StateFlow 更新后立即落盘），
                 // 关闭主线程限制以保持行为一致；后续可改为单一写协程队列。
                 .allowMainThreadQueries()
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .build()
     }
 }

@@ -121,6 +121,13 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
             },
             onSaveClick = { if (!viewModel.saveOverLoaded()) showSave = true }
         )
+        viewModel.negotiatedSubprotocol?.let { sp ->
+            AppText(
+                stringResource(R.string.ws_negotiated_subprotocol, sp),
+                modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
+                fontSize = 13.sp
+            )
+        }
         AppCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(12.dp)) {
                 AppTextField(
@@ -244,6 +251,34 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
                             fontSize = 13.sp
                         )
                     }
+                }
+            }
+            AppSwitchRow(
+                title = stringResource(R.string.ws_auto_send_label),
+                summary = stringResource(R.string.ws_auto_send_summary),
+                checked = viewModel.autoSendEnabled,
+                onCheckedChange = { viewModel.autoSendEnabled = it }
+            )
+            if (viewModel.autoSendEnabled) {
+                Column(
+                    modifier = Modifier.padding(start = 12.dp, top = 4.dp, end = 12.dp)
+                ) {
+                    AppTextField(
+                        value = viewModel.autoSendIntervalSec,
+                        onValueChange = { viewModel.autoSendIntervalSec = it.filter(Char::isDigit) },
+                        label = stringResource(R.string.ws_auto_send_interval_label),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    AppTextField(
+                        value = viewModel.autoSendContent,
+                        onValueChange = { viewModel.autoSendContent = it },
+                        label = stringResource(R.string.ws_auto_send_content_label),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                    )
+                    ValueHints(hints = viewModel.placeholderHints(viewModel.autoSendContent))
                 }
             }
             Column(

@@ -49,7 +49,7 @@ android {
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 41
-        versionName = "0.2.3"
+        versionName = "0.2.2"
         buildConfigField("long", "BUILD_TIME_MS", "${buildTimeMillis}L")
     }
 
@@ -97,9 +97,13 @@ android {
     }
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        // textmate 依赖的 eclipse jdt.annotation 与 paho 都带同名 bundle.properties，
+        // textmate 依赖的 eclipse jdt.annotation 等带同名 bundle.properties，
         // 内容只是 OSGi 元数据，重复时直接丢弃
         resources.excludes += "bundle.properties"
+        // HiveMQ 依赖的一堆 netty 分包各自带同名元数据文件，合并时人工忽略
+        resources.excludes += "META-INF/io.netty.versions.properties"
+        resources.excludes += "META-INF/INDEX.LIST"
+        resources.excludes += "META-INF/DEPENDENCIES"
     }
     testOptions {
         // sora-editor 的日志走 android.util.Log，JVM 单测里需要返回默认值才能跑通
@@ -142,7 +146,9 @@ dependencies {
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.okhttp)
     implementation(libs.ktor.client.websockets)
-    implementation(libs.paho.mqtt)
+    implementation(libs.hivemq.mqtt.client)
+    implementation(libs.netty.handler.proxy)
+    implementation(libs.netty.codec.http)
 
     // 前置/后置脚本的解释器
     implementation(libs.rhino)

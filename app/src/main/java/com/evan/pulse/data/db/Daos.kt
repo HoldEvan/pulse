@@ -134,6 +134,24 @@ interface ProtocolDao {
     @Query("SELECT * FROM mqtt_subscriptions ORDER BY position")
     fun allMqttNow(): List<MqttSubscriptionEntity>
 
+    @Query("SELECT * FROM mqtt_sessions ORDER BY id")
+    fun allMqttSessionsNow(): List<MqttSessionEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertAllMqttSessions(items: List<MqttSessionEntity>)
+
+    @Query("DELETE FROM mqtt_sessions")
+    fun clearMqttSessions()
+
+    @Query("SELECT * FROM sse_history ORDER BY id")
+    fun allSseHistoryNow(): List<SseHistoryEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertAllSseHistory(items: List<SseHistoryEntity>)
+
+    @Query("DELETE FROM sse_history")
+    fun clearSseHistory()
+
     @Query("SELECT * FROM ws_templates ORDER BY position, id")
     fun allTemplatesNow(): List<WsTemplateEntity>
 

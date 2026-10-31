@@ -1,6 +1,29 @@
 package com.evan.pulse.ui.sse
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.History
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextOverflow
+import com.evan.pulse.data.export.ResponseFileStore
+import com.evan.pulse.data.model.SseHistoryEntry
+import com.evan.pulse.domain.sse.SseTranscript
+import com.evan.pulse.ui.common.AppToast
+import com.evan.pulse.ui.common.AuthFields
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import top.yukonga.miuix.kmp.icon.extended.Close
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -84,6 +107,7 @@ private val sseTabLabels = listOf(
     R.string.tab_params,
     R.string.tab_body,
     R.string.tab_headers,
+    R.string.tab_auth,
     R.string.tab_network
 )
 private val previewTabLabels = listOf(
@@ -117,6 +141,29 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
     val systemLabel = stringResource(R.string.ws_direction_system)
     val recvLabel = stringResource(R.string.sse_direction_recv)
     var showSave by remember { mutableStateOf(false) }
+    var showHistory by remember { mutableStateOf(false) }
+
+    // 导出走系统文件选择器：先暂存待写入的转录，用户选好位置后再落盘
+    val context = LocalContext.current
+    val fileStore = remember(context) { ResponseFileStore(context) }
+    val exportEmptyText = stringResource(R.string.sse_export_empty)
+    val exportSavedText = stringResource(R.string.sse_export_saved)
+    val exportFailedText = stringResource(R.string.sse_export_failed)
+    var pendingExport by remember { mutableStateOf<String?>(null) }
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument(SseTranscript.MIME)
+    ) { uri ->
+        val text = pendingExport
+        pendingExport = null
+        if (uri != null && text != null) {
+            val ok = runCatching { fileStore.writeTo(uri, text.toByteArray(Charsets.UTF_8)) }.isSuccess
+            AppToast.show(if (ok) exportSavedText else exportFailedText)
+        }
+    }
+    val requestExport: (Long, String) -> Unit = { startedAt, text ->
+        pendingExport = text
+        exportLauncher.launch(SseTranscript.suggestedName(startedAt))
+    }
 
     Column(
         modifier = modifier
@@ -134,6 +181,7 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
             },
             onSaveClick = { if (!viewModel.saveOverLoaded()) showSave = true }
         )
+        ConnectionTabs(viewModel)
         Column(modifier = Modifier.fillMaxWidth()) {
             AppCard(modifier = Modifier.fillMaxWidth()) {
                 MethodPicker(
@@ -219,7 +267,9 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                             )
                         }
 
-                        3 -> Column(modifier = Modifier.fillMaxWidth()) {
+                        3 -> AuthFields(auth = viewModel.auth, onChange = { viewModel.auth = it })
+
+                        4 -> Column(modifier = Modifier.fillMaxWidth()) {
                             Column(
                                 modifier = Modifier.padding(start = 12.dp, end = 12.dp)
                             ) {
@@ -420,6 +470,24 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 AppSmallTitle(text = stringResource(R.string.event_stream_title), modifier = Modifier.weight(1f))
+                AppIcon(
+                    imageVector = Icons.Filled.History,
+                    contentDescription = stringResource(R.string.cd_sse_history),
+                    modifier = Modifier
+                        .clickable { showHistory = true }
+                        .padding(6.dp)
+                )
+                AppIcon(
+                    imageVector = Icons.Filled.FileDownload,
+                    contentDescription = stringResource(R.string.cd_sse_export_log),
+                    modifier = Modifier
+                        .clickable {
+                            val current = viewModel.selected.exportable()
+                            if (current == null) AppToast.show(exportEmptyText)
+                            else requestExport(current.first, current.second)
+                        }
+                        .padding(6.dp)
+                )
                 CopyIconButton(
                     text = eventLogText(lines),
                     label = stringResource(R.string.cd_copy_stream)
@@ -465,6 +533,14 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
         }
     }
 
+    if (showHistory) {
+        SseHistoryDialog(
+            viewModel = viewModel,
+            onExport = { entry -> requestExport(entry.startedAt, entry.transcript) },
+            onDismiss = { showHistory = false }
+        )
+    }
+
     SaveRequestDialog(
         show = showSave,
         type = RequestType.SSE,
@@ -474,6 +550,226 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
         onSaved = viewModel::markSaved
     )
 }
+
+/**
+ * 并行连接标签：每个标签显示序号、主机名与实时状态点。
+ * 表单只有一份，「连接」按钮作用于当前选中的标签。
+ */
+@Composable
+private fun ConnectionTabs(viewModel: SseViewModel) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(bottom = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        viewModel.connections.forEachIndexed { index, connection ->
+            val connState by connection.state.collectAsState()
+            val selected = index == viewModel.selectedIndex
+            val label = connection.label()
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(
+                        if (selected) AppTheme.colors.primaryContainer else AppTheme.colors.surfaceContainer
+                    )
+                    .clickable { viewModel.selectConnection(index) }
+                    .padding(start = 10.dp, top = 6.dp, bottom = 6.dp, end = if (viewModel.connections.size > 1) 4.dp else 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(connectionStateColor(connState))
+                )
+                AppText(
+                    text = label,
+                    fontSize = 13.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = if (selected) AppTheme.colors.onPrimaryContainer else AppTheme.colors.onSurface,
+                    modifier = Modifier
+                        .padding(start = 6.dp)
+                        .widthIn(max = 160.dp)
+                )
+                if (viewModel.connections.size > 1) {
+                    AppIcon(
+                        imageVector = MiuixIcons.Light.Close,
+                        contentDescription = stringResource(R.string.cd_sse_close_connection, label),
+                        modifier = Modifier
+                            .padding(start = 2.dp)
+                            .size(22.dp)
+                            .clip(CircleShape)
+                            .clickable { viewModel.closeConnection(index) }
+                            .padding(4.dp)
+                    )
+                }
+            }
+        }
+        if (viewModel.canAddConnection) {
+            AppIcon(
+                imageVector = Icons.Filled.Add,
+                contentDescription = stringResource(R.string.cd_sse_add_connection),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(AppTheme.colors.surfaceContainer)
+                    .clickable { viewModel.addConnection() }
+                    .padding(6.dp)
+                    .size(20.dp)
+            )
+        }
+    }
+}
+
+/** 连接历史：列表 → 详情（转录预览、复制、导出、删除） */
+@Composable
+private fun SseHistoryDialog(
+    viewModel: SseViewModel,
+    onExport: (SseHistoryEntry) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val entries by viewModel.history.collectAsState()
+    var openId by remember { mutableStateOf<Long?>(null) }
+    val open = entries.firstOrNull { it.id == openId }
+    val timeFormat = remember { SimpleDateFormat("MM-dd HH:mm:ss", Locale.getDefault()) }
+
+    AppDialog(
+        show = true,
+        title = stringResource(R.string.sse_history_title),
+        onDismissRequest = onDismiss
+    ) {
+        Column {
+            if (open == null) {
+                if (entries.isEmpty()) {
+                    AppText(
+                        text = stringResource(R.string.sse_history_empty),
+                        fontSize = 13.sp,
+                        color = AppTheme.colors.onSurfaceSummary,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                } else {
+                    LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 360.dp)) {
+                        items(entries.asReversed(), key = { it.id }) { entry ->
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable { openId = entry.id }
+                                    .padding(vertical = 8.dp, horizontal = 4.dp)
+                            ) {
+                                AppText(
+                                    text = "${entry.method} ${entry.url}",
+                                    fontSize = 13.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                AppText(
+                                    text = stringResource(
+                                        R.string.sse_history_meta,
+                                        timeFormat.format(Date(entry.startedAt)),
+                                        formatDuration(entry.endedAt - entry.startedAt),
+                                        entry.frames
+                                    ),
+                                    fontSize = 12.sp,
+                                    color = AppTheme.colors.onSurfaceSummary
+                                )
+                            }
+                        }
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    AppTextButton(
+                        text = stringResource(R.string.action_clear),
+                        onClick = { viewModel.clearHistory() },
+                        enabled = entries.isNotEmpty(),
+                        modifier = Modifier.weight(1f)
+                    )
+                    AppTextButton(
+                        text = stringResource(R.string.action_got_it),
+                        onClick = onDismiss,
+                        primary = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            } else {
+                AppText(text = "${open.method} ${open.url}", fontSize = 13.sp)
+                AppText(
+                    text = stringResource(
+                        R.string.sse_history_meta,
+                        timeFormat.format(Date(open.startedAt)),
+                        formatDuration(open.endedAt - open.startedAt),
+                        open.frames
+                    ) + "\n" + stringResource(R.string.sse_history_outcome, open.outcome),
+                    fontSize = 12.sp,
+                    color = AppTheme.colors.onSurfaceSummary,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+                // 转录可能很长，这里只预览开头部分；完整内容请导出或复制
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                        .heightIn(max = 280.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(AppTheme.colors.surfaceContainer)
+                        .verticalScroll(rememberScrollState())
+                        .padding(8.dp)
+                ) {
+                    AppText(
+                        text = open.transcript.take(HISTORY_PREVIEW_CHARS) +
+                            if (open.transcript.length > HISTORY_PREVIEW_CHARS) "\n…" else "",
+                        fontSize = 12.sp,
+                        fontFamily = FontFamily.Monospace
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CopyIconButton(text = open.transcript, label = stringResource(R.string.action_copy))
+                    AppTextButton(
+                        text = stringResource(R.string.action_delete),
+                        onClick = {
+                            viewModel.deleteHistory(open.id)
+                            openId = null
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                    AppTextButton(
+                        text = stringResource(R.string.sse_history_export),
+                        onClick = { onExport(open) },
+                        modifier = Modifier.weight(1f)
+                    )
+                    AppTextButton(
+                        text = stringResource(R.string.sse_history_back),
+                        onClick = { openId = null },
+                        primary = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** 会话时长：不足一分钟显示秒（一位小数），否则显示分秒 */
+private fun formatDuration(ms: Long): String {
+    val safe = ms.coerceAtLeast(0)
+    return if (safe < 60_000) {
+        String.format(Locale.US, "%.1fs", safe / 1000.0)
+    } else {
+        "${safe / 60_000}m ${(safe % 60_000) / 1000}s"
+    }
+}
+
+private const val HISTORY_PREVIEW_CHARS = 8_000
 
 /** 重连策略：基础延迟、指数退避、间隔上限、抖动、次数上限、空闲超时 */
 @Composable

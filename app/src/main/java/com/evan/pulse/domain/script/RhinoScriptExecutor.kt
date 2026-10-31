@@ -815,12 +815,14 @@ private fun bodyModeName(type: BodyType): String = when (type) {
     BodyType.FORM_URLENCODED -> "urlencoded"
     BodyType.FORM_DATA -> "form-data"
     BodyType.GRAPHQL -> "graphql"
+    BodyType.FILE -> "binary"
 }
 
 private fun bodyTypeOf(name: String): BodyType = when (name.trim().lowercase()) {
     "raw", "text", "json" -> BodyType.RAW
     "urlencoded", "url-encoded", "x-www-form-urlencoded" -> BodyType.FORM_URLENCODED
     "form-data", "multipart", "form" -> BodyType.FORM_DATA
+    "binary", "file" -> BodyType.FILE
     "none", "", "null" -> BodyType.NONE
     else -> BodyType.RAW
 }

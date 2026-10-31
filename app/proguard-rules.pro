@@ -9,8 +9,20 @@
 -dontwarn javax.annotation.**
 -dontwarn okio.**
 
-# Eclipse Paho MQTT talks to itself via reflection and ServiceLoader
--keep class org.eclipse.paho.client.mqttv3.** { *; }
+# HiveMQ MQTT Client (Netty)：按官方 Android 说明保留字段名。
+# Netty / JCTools 用 AtomicXxxFieldUpdater 与 Unsafe 按字段名字符串反射访问，
+# R8 改名后运行时才会抛 NoSuchFieldException，编译期发现不了。
+-keepclassmembernames class io.netty.** { *; }
+-keepclassmembers class org.jctools.** { *; }
+# 以下都是 Netty 运行时探测的可选集成（epoll、tcnative、log4j、Jetty ALPN、BlockHound），
+# 类不存在时自动回退到 NIO 与 JDK TLS，Android 上本就不可用
+-dontwarn io.netty.channel.epoll.**
+-dontwarn io.netty.internal.tcnative.**
+-dontwarn org.apache.log4j.**
+-dontwarn org.apache.logging.log4j.**
+-dontwarn org.eclipse.jetty.alpn.**
+-dontwarn org.eclipse.jetty.npn.**
+-dontwarn reactor.blockhound.**
 
 # Mozilla Rhino 通过类名字符串解析标准内建对象，反射不到就报 Cannot call native method。
 # 解释执行（optimizationLevel = -1）会用到 Parser、TokenStream、AstRoot 等解析类，

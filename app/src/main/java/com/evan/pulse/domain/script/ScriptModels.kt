@@ -96,11 +96,17 @@ class VariableScope(
     private val envLookup: () -> Map<String, String>,
     private val envWriter: ScriptEnvWriter
 ) {
+    /**
+     * 数据驱动运行注入的当前行变量，优先级高于环境变量、低于脚本本次写入，
+     * 与 Postman 的 data 变量语义一致。
+     */
+    var dataVars: Map<String, String> = emptyMap()
+
     /** 本次请求内脚本写入的值，按写入顺序排列 */
     private val written = LinkedHashMap<String, String>()
     private val removed = LinkedHashSet<String>()
 
-    fun get(name: String): String? = written[name] ?: envLookup()[name]
+    fun get(name: String): String? = written[name] ?: dataVars[name] ?: envLookup()[name]
 
     fun has(name: String): Boolean = get(name) != null
 
@@ -128,6 +134,7 @@ class VariableScope(
     fun all(): Map<String, String> {
         val base = LinkedHashMap<String, String>()
         for ((k, v) in envLookup()) if (k !in removed) base[k] = v
+        for ((k, v) in dataVars) if (k !in removed) base[k] = v
         for ((k, v) in written) base[k] = v
         return base
     }

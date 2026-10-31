@@ -12,6 +12,8 @@ import com.evan.pulse.data.db.MonitorTargetEntity
 import com.evan.pulse.data.db.MqttSubscriptionEntity
 import com.evan.pulse.data.db.ProjectEntity
 import com.evan.pulse.data.db.SavedRequestEntity
+import com.evan.pulse.data.db.MqttSessionEntity
+import com.evan.pulse.data.db.SseHistoryEntity
 import com.evan.pulse.data.db.WsSessionEntity
 import com.evan.pulse.data.db.WsTemplateEntity
 import com.evan.pulse.data.model.CollectionInfo
@@ -29,6 +31,8 @@ import com.evan.pulse.data.model.ProjectInfo
 import com.evan.pulse.data.model.RequestType
 import com.evan.pulse.data.model.SavedRequest
 import com.evan.pulse.data.model.WsMessageTemplate
+import com.evan.pulse.data.model.MqttSessionEntry
+import com.evan.pulse.data.model.SseHistoryEntry
 import com.evan.pulse.data.model.WsSessionEntry
 import com.evan.pulse.di.StoredCookie
 import kotlinx.serialization.builtins.ListSerializer
@@ -326,6 +330,44 @@ class StateMapper(private val cipher: FieldCipher) {
         text = cipher.open(item.text),
         isSystem = item.isSystem,
         timestamp = item.timestamp
+    )
+
+    fun mqttSessionToEntity(item: MqttSessionEntry) = MqttSessionEntity(
+        id = item.id,
+        broker = cipher.seal(item.broker),
+        text = cipher.seal(item.text),
+        isSystem = item.isSystem,
+        timestamp = item.timestamp
+    )
+
+    fun mqttSessionFromEntity(item: MqttSessionEntity) = MqttSessionEntry(
+        id = item.id,
+        broker = cipher.open(item.broker),
+        text = cipher.open(item.text),
+        isSystem = item.isSystem,
+        timestamp = item.timestamp
+    )
+
+    fun sseHistoryToEntity(item: SseHistoryEntry) = SseHistoryEntity(
+        id = item.id,
+        method = item.method,
+        url = cipher.seal(item.url),
+        startedAt = item.startedAt,
+        endedAt = item.endedAt,
+        frames = item.frames,
+        outcome = item.outcome,
+        transcript = cipher.seal(item.transcript)
+    )
+
+    fun sseHistoryFromEntity(item: SseHistoryEntity) = SseHistoryEntry(
+        id = item.id,
+        method = item.method,
+        url = cipher.open(item.url),
+        startedAt = item.startedAt,
+        endedAt = item.endedAt,
+        frames = item.frames,
+        outcome = item.outcome,
+        transcript = cipher.open(item.transcript)
     )
 
     fun mqttSubscriptionToEntity(item: MqttSubscriptionEntry, position: Int) =

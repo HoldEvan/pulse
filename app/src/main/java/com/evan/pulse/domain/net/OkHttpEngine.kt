@@ -11,6 +11,7 @@ import com.evan.pulse.domain.net.NetworkPreset
 import com.evan.pulse.domain.model.buildGraphqlRequestBody
 import com.evan.pulse.domain.model.HttpErrorType
 import com.evan.pulse.domain.model.HttpMethod
+import com.evan.pulse.domain.model.HttpRedirectHop
 import com.evan.pulse.domain.model.KeyValue
 import com.evan.pulse.domain.model.ProxyConfig
 import com.evan.pulse.domain.model.ProxyType
@@ -33,6 +34,7 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsBytes
 import io.ktor.client.statement.request
 import io.ktor.http.ContentType
+import io.ktor.http.content.ByteArrayContent
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.HttpMethod as KtorHttpMethod
 import io.ktor.http.Parameters
@@ -154,6 +156,8 @@ class OkHttpEngine(private val appContextProvider: () -> Context? = { null }) : 
         var firstHop = true
         var hops = 0
         var outcome: HttpCallOutcome? = null
+        // 每跟随一次 3xx 记一条，最终展示完整跳转链
+        val redirectChain = mutableListOf<HttpRedirectHop>()
         try {
             // 重定向由本层显式跟随：OkHttp 自身的跟随无法限制跳数，也拿不到中间响应
             while (outcome == null) {
@@ -174,9 +178,11 @@ class OkHttpEngine(private val appContextProvider: () -> Context? = { null }) : 
                     config.proxy.sendCredentials()
                         ?.let { credential -> header("Proxy-Authorization", credential) }
                     timeout {
+                        val connect = config.connectTimeoutMs.takeIf { it > 0 } ?: config.timeoutMs
+                        val read = config.readTimeoutMs.takeIf { it > 0 } ?: config.timeoutMs
                         requestTimeoutMillis = config.timeoutMs
-                        connectTimeoutMillis = config.timeoutMs
-                        socketTimeoutMillis = config.timeoutMs
+                        connectTimeoutMillis = connect
+                        socketTimeoutMillis = read
                     }
                     if (body != null) setBody(body)
                 }
@@ -188,6 +194,11 @@ class OkHttpEngine(private val appContextProvider: () -> Context? = { null }) : 
                     null
                 }
                 if (next != null) {
+                    redirectChain += HttpRedirectHop(
+                        url = currentUrl,
+                        statusCode = response.status.value,
+                        method = currentMethod.value
+                    )
                     currentUrl = next.url
                     currentMethod = next.method
                     dropBody = dropBody || next.dropBody
@@ -214,7 +225,8 @@ class OkHttpEngine(private val appContextProvider: () -> Context? = { null }) : 
                     bodyBytes = bytes,
                     // 取 Ktor 最终组装出的请求头，包含引擎自动补的 Host/Accept/Content-Type 等
                     requestHeaders = response.request.headers.flattenEntries()
-                        .map { KeyValue(it.first, it.second) }
+                        .map { KeyValue(it.first, it.second) },
+                    redirectChain = redirectChain.toList()
                 )
             }
         } catch (e: CancellationException) {
@@ -283,6 +295,24 @@ class OkHttpEngine(private val appContextProvider: () -> Context? = { null }) : 
         BodyType.FORM_DATA -> config.formFields.filter { it.name.isNotBlank() }
             .takeIf { it.isNotEmpty() }
             ?.let { multipartBody(it) }
+
+        BodyType.FILE -> fileBody(config)
+    }
+
+    /**
+     * 原始文件请求体：把所选文件按字节整读进内存后直发，Content-Type 优先取请求头，
+     * 其次取显式配置，再按文件名推断，最后退回 application/octet-stream。
+     */
+    private fun fileBody(config: HttpCallConfig): OutgoingContent? {
+        val uriString = config.fileUri?.takeIf { it.isNotBlank() } ?: return null
+        val uri = Uri.parse(uriString)
+        val resolver = appContextProvider()?.contentResolver
+            ?: throw IOException("无法读取文件：缺少上下文")
+        val bytes = resolver.openInputStream(uri)?.use { it.readBytes() }
+            ?: throw IOException("无法读取文件：${config.fileName ?: uriString}")
+        val declared = config.fileContentType?.takeIf { it.isNotBlank() }
+        val fallback = ContentType.parse(declared ?: guessFileMime(config.fileName))
+        return ByteArrayContent(bytes, declaredContentType(config, fallback))
     }
 
     /**

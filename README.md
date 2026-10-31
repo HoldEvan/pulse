@@ -10,14 +10,14 @@ Pulse 是一款 Android 原生 API 调试工具，覆盖 HTTP / SSE / WebSocket 
 ## 功能
 
 ### 协议调试
-- **HTTP**：完整请求编辑（Query 参数、请求头、请求体 JSON / RAW / form-urlencoded / form-data），鉴权支持 Bearer、Basic、API Key；支持二进制文件流式上传、逐请求跟随重定向与跳过 TLS 校验
+- **HTTP**：完整请求编辑（Query 参数、请求头、请求体 JSON / RAW / form-urlencoded / form-data），鉴权支持 Bearer、Basic、API Key；请求体可直接引用本地文件流式发送，连接与读取超时可分别设置，重定向逐跳展示完整链路，支持跳过 TLS 校验
 - **响应正文**：格式化查看、大响应体分页渲染，HTML 默认展示源码并可跳转全屏 WebView 预览，媒体预览入口由响应头 Content-Type 决定，一键导出与分享完整响应
 - **响应断言**：断言类型覆盖包含 / 不包含 / JSONPath / 状态码 / 响应头 / 耗时，JSONPath 支持等于 / 包含 / 数值比较 / 类型校验等运算符；HTTP 发送后自动校验并汇总 PASS / FAIL，WebSocket 与 MQTT 也可对每条收到的消息实时断言并累计通过率，配置随快照保存
 - **Cookie / 会话**：自动跟随 `Set-Cookie` 并在后续请求注入，按域名分组查看、单条删除、按域名清除，数据按项目隔离
 - **响应时间线**：DNS / TCP / TLS / 首字节等待 / 内容下载分段水瀑图
-- **SSE**：支持自定义请求方法、参数与请求体，实时事件流展示；断线自动重连，可用 `Last-Event-ID` 续传，支持指数退避、重连抖动、最大重试次数、空闲超时与服务端 `retry:` 指令解析
-- **WebSocket**：连接、收发文本 / 二进制帧与事件日志，自定义握手头与子协议，命名消息模板一键填充，消息持久化与可配置指数退避自动重连
-- **MQTT**：连接 Broker、订阅/发布（含 retain 标记与批量订阅），订阅持久化与可折叠 Topic 树
+- **SSE**：支持自定义请求方法、参数、请求体与鉴权，最多 5 条连接并行分标签调试；断线自动重连，可用 `Last-Event-ID` 续传，支持指数退避、重连抖动、最大重试次数、空闲超时与服务端 `retry:` 指令解析；连接记录保留最近 50 条，可回看、导出并随备份迁移
+- **WebSocket**：连接、收发文本 / 二进制帧与事件日志，自定义握手头与子协议，命名消息模板一键填充，支持按间隔真实 ping/pong 心跳与定时重发当前消息，消息持久化与可配置指数退避自动重连
+- **MQTT**：连接 Broker，支持 MQTT 5 / 3.1.1 协议版本、Clean Start 与会话过期、自动重连、遗嘱消息；订阅 / 发布含 retain、二进制载荷与批量订阅，可取消订阅，订阅持久化与可折叠 Topic 树，会话历史可回看
 - **TLS 证书管理**：四种协议共用自定义 CA 证书与客户端证书（mTLS）PEM 导入，支持系统信任库叠加而非替换，保留逐请求跳过证书校验开关
 - **消息视图**：WebSocket 与 MQTT 的文本消息可解析 JSON 时，一键在树形与原文视图间切换，超长消息保留原文避免卡顿
 - **弱网模拟**：5G / 4G / 3G / 2G 档位与强制超时，按上下行速率与时延采样
@@ -53,7 +53,7 @@ Pulse 是一款 Android 原生 API 调试工具，覆盖 HTTP / SSE / WebSocket 
 
 ## 下载
 
-前往 [Releases](https://github.com/HoldEvan/pulse/releases) 下载最新 APK（如 `Pulse-v0.2.3-release.apk`），Android 8.0（API 26）及以上可安装。
+前往 [Releases](https://github.com/HoldEvan/pulse/releases) 下载最新 APK（如 `Pulse-v0.2.2-release.apk`），Android 8.0（API 26）及以上可安装。
 
 ## 构建
 
@@ -68,7 +68,7 @@ Pulse 是一款 Android 原生 API 调试工具，覆盖 HTTP / SSE / WebSocket 
 ./gradlew testDebugUnitTest
 ```
 
-推荐使用 Android Studio（Ladybug 或更新版本）打开项目，JDK 17+。
+推荐使用 Android Studio（Ladybug 或更新版本）打开项目，JDK 21+。
 
 ## 技术栈
 
@@ -77,7 +77,7 @@ Pulse 是一款 Android 原生 API 调试工具，覆盖 HTTP / SSE / WebSocket 
 | 语言 | Kotlin 2.4.20 |
 | UI | Jetpack Compose（BOM 2026.09.00）+ Miuix 0.9.4 |
 | 代码编辑器 | sora-editor 0.24.7 + TextMate 语法高亮 |
-| 网络 | OkHttp、Ktor 3.1.3（SSE / WebSocket）、Paho MQTT 1.2.5 |
+| 网络 | OkHttp、Ktor 3.1.3（SSE / WebSocket）、HiveMQ MQTT Client 1.4.1 |
 | 存储 | Room 2.8.5（SQLite）+ DataStore Preferences |
 | 脚本 | Mozilla Rhino 1.7.15 |
 | 序列化 / 规范解析 | kotlinx.serialization 1.9.0、kaml（YAML） |

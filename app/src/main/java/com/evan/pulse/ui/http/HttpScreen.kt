@@ -51,7 +51,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.evan.pulse.R
 import com.evan.pulse.data.model.RequestType
 import com.evan.pulse.domain.http.HttpExportFormat
+import com.evan.pulse.domain.model.AuthConfig
 import com.evan.pulse.domain.model.AuthType
+import com.evan.pulse.ui.common.AuthFields
 import com.evan.pulse.domain.model.BodyType
 import com.evan.pulse.domain.model.FormField
 import com.evan.pulse.domain.model.HttpCallOutcome
@@ -98,14 +100,15 @@ import com.evan.pulse.ui.design.AppButton
 import com.evan.pulse.ui.design.CodeEditorField
 import com.evan.pulse.ui.design.CodeLanguage
 
-private val bodyTypes = listOf(BodyType.NONE, BodyType.JSON, BodyType.RAW, BodyType.FORM_URLENCODED, BodyType.FORM_DATA, BodyType.GRAPHQL)
+private val bodyTypes = listOf(BodyType.NONE, BodyType.JSON, BodyType.RAW, BodyType.FORM_URLENCODED, BodyType.FORM_DATA, BodyType.GRAPHQL, BodyType.FILE)
 private val bodyTypeLabels = listOf(
     R.string.body_none,
     R.string.body_json,
     R.string.body_raw,
     R.string.body_form_urlencoded,
     R.string.body_form_data,
-    R.string.body_graphql
+    R.string.body_graphql,
+    R.string.body_file
 )
 private val throttleLabels = listOf(
     R.string.net_throttle_off,
@@ -116,12 +119,6 @@ private val throttleLabels = listOf(
     R.string.net_throttle_force
 )
 
-private val authTypeLabels = listOf(
-    R.string.auth_none,
-    R.string.auth_bearer,
-    R.string.auth_basic,
-    R.string.auth_apikey
-)
 // 请求体紧跟在参数后面：改完参数通常就要改请求体，请求头用得少一些
 private val httpTabLabels = listOf(
     R.string.tab_params,
@@ -395,6 +392,20 @@ private fun NetworkEditor(viewModel: HttpViewModel) {
                 value = viewModel.timeoutSec,
                 onValueChange = { viewModel.timeoutSec = it.filter(Char::isDigit) },
                 label = stringResource(R.string.timeout_sec_label),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth()
+            )
+            AppTextField(
+                value = viewModel.connectTimeoutSec,
+                onValueChange = { viewModel.connectTimeoutSec = it.filter(Char::isDigit) },
+                label = stringResource(R.string.timeout_connect_label),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth()
+            )
+            AppTextField(
+                value = viewModel.readTimeoutSec,
+                onValueChange = { viewModel.readTimeoutSec = it.filter(Char::isDigit) },
+                label = stringResource(R.string.timeout_read_label),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -694,6 +705,43 @@ private fun BodyEditor(viewModel: HttpViewModel) {
                     }
                 }
             }
+
+            BodyType.FILE -> {
+                val pickFileLauncher = rememberLauncherForActivityResult(
+                    ActivityResultContracts.OpenDocument()
+                ) { uri ->
+                    if (uri != null) viewModel.setBodyFile(uri)
+                }
+                AppText(
+                    text = stringResource(R.string.body_file_label),
+                    fontSize = 13.sp,
+                    color = AppTheme.colors.onSurfaceSummary
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    AppText(
+                        text = viewModel.bodyFileName ?: stringResource(R.string.body_file_none),
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { pickFileLauncher.launch(arrayOf("*/*")) },
+                        maxLines = 1
+                    )
+                    if (viewModel.bodyFileUri != null) {
+                        AppIcon(
+                            imageVector = MiuixIcons.Light.Close,
+                            contentDescription = stringResource(R.string.body_file_clear),
+                            modifier = Modifier
+                                .clickable { viewModel.clearBodyFile() }
+                                .padding(6.dp)
+                        )
+                    }
+                }
+                AddFieldButton(stringResource(R.string.body_file_pick)) {
+                    pickFileLauncher.launch(arrayOf("*/*"))
+                }
+            }
         }
         }
         }
@@ -718,65 +766,24 @@ private fun AddFieldButton(label: String, onClick: () -> Unit) {
 
 @Composable
 private fun AuthEditor(viewModel: HttpViewModel) {
-    Column {
-        AppDropdown(
-            items = authTypeLabels.localizedLabels(),
-            selectedIndex = viewModel.authType.ordinal,
-            title = stringResource(R.string.auth_type_label),
-            modifier = Modifier.fillMaxWidth(),
-            showValue = true,
-            onSelectedIndexChange = { viewModel.authType = AuthType.entries[it] }
-        )
-        // 内容列仅在类型有内容时渲染：NONE 时空列的内边距会在卡片底部留白
-        if (viewModel.authType != com.evan.pulse.domain.model.AuthType.NONE) {
-            Column(
-                modifier = Modifier.padding(start = 12.dp, top = 8.dp, end = 12.dp, bottom = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-            when (viewModel.authType) {
-            com.evan.pulse.domain.model.AuthType.NONE -> {}
-            com.evan.pulse.domain.model.AuthType.BEARER -> {
-                AppTextField(
-                    value = viewModel.bearerToken,
-                    onValueChange = { viewModel.bearerToken = it },
-                    label = stringResource(R.string.bearer_token_label),
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-            com.evan.pulse.domain.model.AuthType.APIKEY -> {
-                AppTextField(
-                    value = viewModel.apiKeyName,
-                    onValueChange = { viewModel.apiKeyName = it },
-                    label = stringResource(R.string.apikey_name_label),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                AppTextField(
-                    value = viewModel.apiKeyValue,
-                    onValueChange = { viewModel.apiKeyValue = it },
-                    label = stringResource(R.string.apikey_value_label),
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-            com.evan.pulse.domain.model.AuthType.BASIC -> {
-                AppTextField(
-                    value = viewModel.basicUsername,
-                    onValueChange = { viewModel.basicUsername = it },
-                    label = stringResource(R.string.username_label),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                AppTextField(
-                    value = viewModel.basicPassword,
-                    onValueChange = { viewModel.basicPassword = it },
-                    label = stringResource(R.string.password_label),
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+    AuthFields(
+        auth = AuthConfig(
+            type = viewModel.authType,
+            bearerToken = viewModel.bearerToken,
+            basicUsername = viewModel.basicUsername,
+            basicPassword = viewModel.basicPassword,
+            apiKeyName = viewModel.apiKeyName,
+            apiKeyValue = viewModel.apiKeyValue
+        ),
+        onChange = {
+            viewModel.authType = it.type
+            viewModel.bearerToken = it.bearerToken
+            viewModel.basicUsername = it.basicUsername
+            viewModel.basicPassword = it.basicPassword
+            viewModel.apiKeyName = it.apiKeyName
+            viewModel.apiKeyValue = it.apiKeyValue
         }
-        }
-        }
-    }
+    )
 }
 
 @Composable
@@ -839,6 +846,26 @@ private fun ResponseCard(viewModel: HttpViewModel, onOpenHtmlPreview: (() -> Uni
                             timeline = tl,
                             modifier = Modifier.padding(top = 12.dp)
                         )
+                    }
+                    if (outcome.redirectChain.isNotEmpty()) {
+                        AppText(
+                            text = stringResource(R.string.http_redirect_chain, outcome.redirectChain.size),
+                            modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
+                            fontSize = 13.sp,
+                            color = AppTheme.colors.onSurfaceSummary
+                        )
+                        outcome.redirectChain.forEachIndexed { index, hop ->
+                            AppText(
+                                text = stringResource(
+                                    R.string.http_redirect_hop,
+                                    index + 1,
+                                    hop.method,
+                                    "${hop.statusCode} ${hop.url}"
+                                ),
+                                fontSize = 12.sp,
+                                color = AppTheme.colors.onSurfaceSummary
+                            )
+                        }
                     }
                 }
                 // 真实请求头默认折叠：多数场景只关心响应，需要排查时再展开逐条核对。

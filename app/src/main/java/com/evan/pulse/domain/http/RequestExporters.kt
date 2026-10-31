@@ -101,6 +101,7 @@ private fun HttpCallConfig.hasBodyContent(): Boolean = when (bodyType) {
     BodyType.NONE -> false
     BodyType.JSON, BodyType.RAW, BodyType.GRAPHQL -> body.isNotBlank()
     BodyType.FORM_URLENCODED, BodyType.FORM_DATA -> formFieldsToSend().isNotEmpty()
+    BodyType.FILE -> !fileUri.isNullOrBlank()
 }
 
 /** body 类型推断出的 content-type；FORM_DATA 的 boundary 由各自工具生成，故返回 null */
@@ -112,6 +113,7 @@ private fun HttpCallConfig.inferredContentType(): String? {
         BodyType.RAW -> "text/plain"
         BodyType.FORM_URLENCODED -> "application/x-www-form-urlencoded"
         BodyType.FORM_DATA -> null
+        BodyType.FILE -> fileContentType?.takeIf { it.isNotBlank() } ?: "application/octet-stream"
     }
 }
 
@@ -132,6 +134,7 @@ private fun HttpCallConfig.buildCurl(program: String, quote: (String) -> String)
                 add("--data-urlencode ${quote("${it.name}=${it.value}")}")
             }
             BodyType.FORM_DATA -> fields.forEach { add("--form ${quote("${it.name}=${it.value}")}") }
+            BodyType.FILE -> add("--data-binary ${quote("@${fileName ?: "<file>"}")}")
         }
     }.joinToString(" ")
 }
@@ -209,6 +212,7 @@ private fun HttpCallConfig.buildPythonRequests(): String {
                 "${codeString(it.name)}: (${codeString(it.name)}, ${codeString(it.value)})"
             }}},\n")
         }
+        BodyType.FILE -> sb.append("    data=open(${codeString(fileName ?: "file")}, 'rb'),\n")
     }
     sb.append(")\n\nprint(response.text)\n")
     return sb.toString()
@@ -245,6 +249,7 @@ private fun HttpCallConfig.buildJsFetch(): String {
             sb.append("  })\n")
         }
         BodyType.FORM_DATA -> if (fields.isNotEmpty()) sb.append("  body: formData\n")
+        BodyType.FILE -> sb.append("  body: await (await fetch(${jsString(fileName ?: "file")})).blob()\n")
     }
     sb.append("});\nconsole.log(await response.text());\n")
     return sb.toString()

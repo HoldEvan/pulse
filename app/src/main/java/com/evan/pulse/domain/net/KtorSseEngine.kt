@@ -60,8 +60,6 @@ class KtorSseEngine : SseEngine {
     /** 代理与 TLS 策略都是引擎级配置，按两者组合缓存客户端 */
     private data class ClientKey(val proxy: ProxyConfig, val tls: TlsConfig)
 
-    private val clients = ConcurrentHashMap<ClientKey, HttpClient>()
-
     private val _state = MutableStateFlow(SseConnectionState.IDLE)
     override val state: StateFlow<SseConnectionState> = _state.asStateFlow()
 
@@ -290,6 +288,12 @@ class KtorSseEngine : SseEngine {
 
     private companion object {
         const val MAX_CACHED_CLIENTS = 8
+
+        /**
+         * 客户端缓存在所有引擎实例间共享：SSE 页面每个并行连接各持一个引擎，
+         * 共享缓存避免关闭标签页后遗留 OkHttp 线程池，也让同配置的连接复用连接池。
+         */
+        val clients = ConcurrentHashMap<ClientKey, HttpClient>()
     }
 }
 

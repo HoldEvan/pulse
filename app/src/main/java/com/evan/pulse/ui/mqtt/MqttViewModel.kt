@@ -1,13 +1,13 @@
 package com.evan.pulse.ui.mqtt
 
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.evan.pulse.ui.common.tlsConfigOf
 import com.evan.pulse.data.model.AssertionEntry
+import com.evan.pulse.data.model.MqttSessionEntry
 import com.evan.pulse.data.model.MqttSnapshot
 import com.evan.pulse.data.model.MqttSubscriptionEntry
 import com.evan.pulse.data.model.RequestType
@@ -19,11 +19,15 @@ import com.evan.pulse.domain.assertion.AssertionCheck
 import com.evan.pulse.domain.assertion.AssertionTarget
 import com.evan.pulse.domain.assertion.ResponseAssertion
 import com.evan.pulse.domain.assertion.ResponseAssertions
+import com.evan.pulse.domain.model.MqttConfig
 import com.evan.pulse.domain.model.MqttConnectionState
 import com.evan.pulse.domain.model.MqttEvent
+import com.evan.pulse.domain.model.MqttWill
+import com.evan.pulse.domain.mqtt.MqttPayloadText
 import com.evan.pulse.domain.mqtt.MqttSubscriptionInput
 import com.evan.pulse.domain.model.ProxyConfig
-import com.evan.pulse.ui.history.UiEventLine
+import com.evan.pulse.domain.net.BinaryEncoding
+import com.evan.pulse.domain.net.BinaryPayload
 import com.evan.pulse.ui.collection.LoadedRequestTracker
 import com.evan.pulse.ui.l10n.L10n
 import kotlinx.coroutines.flow.StateFlow
@@ -42,6 +46,24 @@ class MqttViewModel : ViewModel() {
     var password by mutableStateOf("")
     var keepAliveSec by mutableStateOf("60")
 
+    /** 协议版本：5 = MQTT 5.0，3 = MQTT 3.1.1 */
+    var mqttVersion by mutableStateOf(5)
+
+    /** clean start（MQTT 5）/ clean session（3.1.1） */
+    var cleanStart by mutableStateOf(true)
+
+    /** 会话过期秒数，仅 MQTT 5 生效 */
+    var sessionExpirySec by mutableStateOf("0")
+
+    /** 断线后由引擎按指数退避自动重连 */
+    var autoReconnect by mutableStateOf(true)
+
+    /** 遗嘱消息：主题为空时不下发 */
+    var willTopic by mutableStateOf("")
+    var willPayload by mutableStateOf("")
+    var willQos by mutableStateOf(0)
+    var willRetain by mutableStateOf(false)
+
     var subTopic by mutableStateOf("demo/+/status")
     var subQos by mutableStateOf(0)
     var pubTopic by mutableStateOf("demo/device")
@@ -50,6 +72,13 @@ class MqttViewModel : ViewModel() {
 
     /** 发布时是否让 Broker 保留消息 */
     var pubRetain by mutableStateOf(false)
+
+    /** 发布负载按二进制解码后发送 */
+    var pubBinary by mutableStateOf(false)
+    var pubEncoding by mutableStateOf(BinaryEncoding.HEX)
+
+    /** 二进制负载解码失败的提示；null 表示无错误 */
+    var binaryError by mutableStateOf<String?>(null)
 
     /** 跳过 TLS 证书校验；仅对 ssl:// 生效，用于调试自签名或内网 Broker */
     var insecureTls by mutableStateOf(false)
@@ -63,15 +92,20 @@ class MqttViewModel : ViewModel() {
     /** 当前请求所属文件夹，用于合并文件夹变量 */
     private var activeCollectionId: Long? = null
 
+    /** 最近一次连接的 Broker（已解析变量），作为日志来源标记 */
+    private var activeBroker = ""
+
     /** 持久化订阅集合，来自 ProtocolSessionStore，启动时随本地数据库恢复 */
     val subscriptions: StateFlow<List<MqttSubscriptionEntry>> = sessions.mqttSubscriptions
+
+    /** 持久化事件日志：重启应用后仍可查看上次会话收发的消息 */
+    val history: StateFlow<List<MqttSessionEntry>> = sessions.mqttHistory
 
     /** 最近一次订阅输入中无法解析的条目原文，用于行内提示 */
     var invalidTopics by mutableStateOf<List<String>>(emptyList())
         private set
     val state = engine.state
     val events = engine.events
-    val lines = mutableStateListOf<UiEventLine>()
     var missingVars by mutableStateOf<List<String>?>(null)
     var lastError by mutableStateOf<String?>(null)
 
@@ -89,17 +123,22 @@ class MqttViewModel : ViewModel() {
         viewModelScope.launch {
             events.collect { event ->
                 when (event) {
-                    is MqttEvent.Connected -> add(L10n.t(R.string.state_connected, event.latencyMs), true)
+                    is MqttEvent.Connected -> {
+                        lastError = null
+                        add(L10n.t(R.string.state_connected, event.latencyMs), true)
+                    }
                     is MqttEvent.MessageReceived -> {
+                        val display = displayPayload(event.payloadBytes, event.payload)
                         add(
                             if (event.retained) {
-                                L10n.t(R.string.mqtt_message_retained, event.topic, event.qos, event.payload)
+                                L10n.t(R.string.mqtt_message_retained, event.topic, event.qos, display)
                             } else {
-                                L10n.t(R.string.message_line, event.topic, event.qos, event.payload)
+                                L10n.t(R.string.message_line, event.topic, event.qos, display)
                             },
                             false
                         )
-                        evaluateAssertions(event.payload)
+                        // 断言针对文本负载；二进制负载以十六进制参与，便于做包含/相等判断
+                        evaluateAssertions(MqttPayloadText.textOrNull(event.payloadBytes) ?: display)
                     }
                     is MqttEvent.Disconnected -> add(L10n.t(R.string.state_closed_message, event.reason), true)
                     is MqttEvent.Error -> {
@@ -153,7 +192,17 @@ class MqttViewModel : ViewModel() {
             customCaPem = customCaPem,
             clientCertPem = clientCertPem,
             clientKeyPem = clientKeyPem,
-            assertions = assertions.map { AssertionEntry(it.type, it.expression, it.expected, it.operator) }
+            assertions = assertions.map { AssertionEntry(it.type, it.expression, it.expected, it.operator) },
+            mqttVersion = mqttVersion,
+            cleanStart = cleanStart,
+            sessionExpirySec = sessionExpirySec,
+            autoReconnect = autoReconnect,
+            willTopic = willTopic,
+            willPayload = willPayload,
+            willQos = willQos,
+            willRetain = willRetain,
+            pubBinary = pubBinary,
+            pubEncoding = pubEncoding.name
         )
     )
 
@@ -179,11 +228,28 @@ class MqttViewModel : ViewModel() {
         clientCertPem = snap.clientCertPem
         clientKeyPem = snap.clientKeyPem
         assertions = snap.assertions.map { ResponseAssertion(it.type, it.expression, it.expected, it.operator) }
+        mqttVersion = if (snap.mqttVersion == 3) 3 else 5
+        cleanStart = snap.cleanStart
+        sessionExpirySec = snap.sessionExpirySec
+        autoReconnect = snap.autoReconnect
+        willTopic = snap.willTopic
+        willPayload = snap.willPayload
+        willQos = snap.willQos.coerceIn(0, 2)
+        willRetain = snap.willRetain
+        pubBinary = snap.pubBinary
+        pubEncoding = BinaryEncoding.entries.firstOrNull { it.name == snap.pubEncoding } ?: BinaryEncoding.HEX
+        binaryError = null
     }
 
     private fun add(text: String, isSystem: Boolean) {
-        lines.add(UiEventLine(text, isSystem, System.currentTimeMillis()))
-        if (lines.size > 1000) lines.removeAt(0)
+        sessions.appendMqtt(activeBroker, text, isSystem, System.currentTimeMillis())
+    }
+
+    /** 文本负载原样展示；二进制负载显示字节数与十六进制预览 */
+    private fun displayPayload(bytes: ByteArray, fallback: String): String {
+        if (bytes.isEmpty()) return fallback
+        return MqttPayloadText.textOrNull(bytes)
+            ?: L10n.t(R.string.mqtt_binary_payload, bytes.size, MqttPayloadText.hexPreview(bytes))
     }
 
     /** 对一条收到的消息负载求值断言；没有配置断言时不做任何事 */
@@ -197,41 +263,61 @@ class MqttViewModel : ViewModel() {
         if (results.any { !it.passed }) assertionFailed += 1
     }
 
-    private fun resolve(text: String, onOk: (String) -> Unit) {
+    /**
+     * 一次解析多段文本中的变量；任一段缺变量时汇总所有缺失项提示，返回 null。
+     * 连接时 Broker 地址与遗嘱主题/内容需要一起解析，避免分多次弹窗。
+     */
+    private fun resolveAll(vararg texts: String): List<String>? {
         val vars = ServiceLocator.varsForCollection(activeCollectionId)
-        when (val r = resolver.resolve(text, vars)) {
-            is PlaceholderResolver.ResolveResult.Ok -> onOk(r.resolved)
-            is PlaceholderResolver.ResolveResult.Missing -> missingVars = r.keys
+        val resolved = ArrayList<String>(texts.size)
+        val missing = LinkedHashSet<String>()
+        for (text in texts) {
+            when (val r = resolver.resolve(text, vars)) {
+                is PlaceholderResolver.ResolveResult.Ok -> resolved += r.resolved
+                is PlaceholderResolver.ResolveResult.Missing -> missing += r.keys
+            }
         }
+        if (missing.isNotEmpty()) {
+            missingVars = missing.toList()
+            return null
+        }
+        return resolved
     }
 
     fun connect() {
+        lastError = null
+        assertionResults = emptyList()
+        assertionChecked = 0
+        assertionFailed = 0
+        val proxy = if (useProxy) settingsStore.settings.value.toProxyConfig() else ProxyConfig()
+        val (resolvedUrl, resolvedWillTopic, resolvedWillPayload) =
+            resolveAll(brokerUrl, willTopic, willPayload) ?: return
+        activeBroker = resolvedUrl
+        val will = resolvedWillTopic.trim().takeIf { it.isNotEmpty() }?.let {
+            MqttWill(topic = it, payload = resolvedWillPayload, qos = willQos, retain = willRetain)
+        }
         viewModelScope.launch {
-            lastError = null
-            assertionResults = emptyList()
-            assertionChecked = 0
-            assertionFailed = 0
-            val proxy = if (useProxy) settingsStore.settings.value.toProxyConfig() else ProxyConfig()
-            resolve(brokerUrl) { resolvedUrl ->
-                viewModelScope.launch {
-                    add(L10n.t(R.string.proxy_in_use, proxy.summary.ifEmpty { L10n.t(R.string.proxy_summary_direct) }), true)
-                    engine.connect(
-                        com.evan.pulse.domain.model.MqttConfig(
-                            brokerUrl = resolvedUrl,
-                            clientId = clientId.ifBlank { "pulse-android" },
-                            username = username.ifBlank { null },
-                            password = password.ifBlank { null },
-                            keepAliveSec = keepAliveSec.toIntOrNull() ?: 60,
-                            proxy = proxy,
-                            insecureTls = insecureTls,
-                            tls = tlsConfigOf(insecureTls, customCaPem, clientCertPem, clientKeyPem)
-                        )
-                    )
-                    // 连接建立或恢复后，对保存的订阅逐一按存储的 QoS 重新订阅（需求 3.3）
-                    if (engine.state.value == MqttConnectionState.CONNECTED) {
-                        sessions.mqttSubscriptions.value.forEach { engine.subscribe(it.topic, it.qos) }
-                    }
-                }
+            add(L10n.t(R.string.proxy_in_use, proxy.summary.ifEmpty { L10n.t(R.string.proxy_summary_direct) }), true)
+            engine.connect(
+                MqttConfig(
+                    brokerUrl = resolvedUrl,
+                    clientId = clientId.ifBlank { "pulse-android" },
+                    username = username.ifBlank { null },
+                    password = password.ifBlank { null },
+                    keepAliveSec = keepAliveSec.toIntOrNull() ?: 60,
+                    proxy = proxy,
+                    insecureTls = insecureTls,
+                    tls = tlsConfigOf(insecureTls, customCaPem, clientCertPem, clientKeyPem),
+                    mqttVersion = mqttVersion,
+                    cleanStart = cleanStart,
+                    sessionExpirySec = sessionExpirySec.toLongOrNull()?.coerceAtLeast(0) ?: 0,
+                    autoReconnect = autoReconnect,
+                    will = will
+                )
+            )
+            // 连接建立后，对保存的订阅逐一按存储的 QoS 重新订阅（需求 3.3）
+            if (engine.state.value == MqttConnectionState.CONNECTED) {
+                sessions.mqttSubscriptions.value.forEach { engine.subscribe(it.topic, it.qos) }
             }
         }
     }
@@ -269,8 +355,15 @@ class MqttViewModel : ViewModel() {
         }
     }
 
+    /** 删除订阅：本地移除，已连接时同时向 Broker 发送 UNSUBSCRIBE */
     fun removeSubscription(topic: String) {
         sessions.setMqttSubscriptions(sessions.mqttSubscriptions.value.filter { it.topic != topic })
+        if (state.value == MqttConnectionState.CONNECTED) {
+            viewModelScope.launch {
+                engine.unsubscribe(topic)
+                add(L10n.t(R.string.mqtt_unsubscribed, topic), true)
+            }
+        }
     }
 
     fun clearFilterError() {
@@ -280,19 +373,34 @@ class MqttViewModel : ViewModel() {
     fun publish() {
         val topic = pubTopic.trim()
         if (topic.isBlank() || state.value != MqttConnectionState.CONNECTED) return
-        viewModelScope.launch {
-            resolve(pubPayload) { resolvedPayload ->
-                viewModelScope.launch { engine.publish(topic, resolvedPayload, pubQos, pubRetain) }
+        val resolved = resolveAll(pubPayload)?.first() ?: return
+        val bytes = if (pubBinary) {
+            BinaryPayload.decode(resolved, pubEncoding).getOrElse {
+                binaryError = L10n.t(R.string.ws_binary_invalid)
+                return
             }
-            pubPayload = ""
+        } else {
+            resolved.toByteArray(Charsets.UTF_8)
         }
+        binaryError = null
+        val qos = pubQos
+        val retain = pubRetain
+        pubPayload = ""
+        viewModelScope.launch {
+            engine.publish(topic, bytes, qos, retain)
+            add(L10n.t(R.string.mqtt_published_line, topic, qos, displayPayload(bytes, resolved)), false)
+        }
+    }
+
+    fun dismissBinaryError() {
+        binaryError = null
     }
 
     fun disconnect() {
         viewModelScope.launch { engine.disconnect() }
     }
 
-    fun clearLog() = lines.clear()
+    fun clearLog() = sessions.clearMqttHistory()
 
     fun dismissMissing() {
         missingVars = null

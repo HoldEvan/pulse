@@ -21,6 +21,8 @@ import com.evan.pulse.data.model.RequestType
 import com.evan.pulse.data.model.SavedRequest
 import com.evan.pulse.data.model.WsMessageTemplate
 import com.evan.pulse.data.model.WsReconnectSettings
+import com.evan.pulse.data.model.MqttSessionEntry
+import com.evan.pulse.data.model.SseHistoryEntry
 import com.evan.pulse.data.model.WsSessionEntry
 import com.evan.pulse.data.crypto.KeystoreSecretBox
 import com.evan.pulse.di.CollectionStoreSnapshot
@@ -186,8 +188,14 @@ class AppStatePersistence(
                     maxDelaySec = metaLong(KEY_WS_RECONNECT_MAX, 60L).toInt()
                 ),
                 wsTemplates = protocolDao.allTemplatesNow().map { mapper.wsTemplateFromEntity(it) },
-                nextTemplateId = metaLong(KEY_WS_TEMPLATE_NEXT, 1L)
+                nextTemplateId = metaLong(KEY_WS_TEMPLATE_NEXT, 1L),
+                mqttHistory = protocolDao.allMqttSessionsNow().map { mapper.mqttSessionFromEntity(it) },
+                nextMqttId = metaLong(KEY_MQTT_SESSION_NEXT, 1L)
             )
+        )
+        ServiceLocator.sseHistoryStore.restore(
+            protocolDao.allSseHistoryNow().map { mapper.sseHistoryFromEntity(it) },
+            metaLong(KEY_SSE_HISTORY_NEXT, 1L)
         )
 
         val cookies = cookieDao.allNow().groupBy { it.projectId }
@@ -284,6 +292,7 @@ class AppStatePersistence(
         saveCookies()
         saveMonitors()
         saveProtocols()
+        saveSseHistory()
     }
 
     /** 兼容旧调用点：全量落库 */
@@ -390,7 +399,9 @@ class AppStatePersistence(
             protocolDao.clearWs()
             protocolDao.clearMqtt()
             protocolDao.clearTemplates()
+            protocolDao.clearMqttSessions()
             protocolDao.insertAllWs(snapshot.wsHistory.map { mapper.wsSessionToEntity(it) })
+            protocolDao.insertAllMqttSessions(snapshot.mqttHistory.map { mapper.mqttSessionToEntity(it) })
             protocolDao.insertAllMqtt(
                 snapshot.mqttSubscriptions.mapIndexed { index, item ->
                     mapper.mqttSubscriptionToEntity(item, index)
@@ -404,12 +415,24 @@ class AppStatePersistence(
             metaDao.upsertAll(
                 listOf(
                     meta(KEY_WS_NEXT, snapshot.nextWsId),
+                    meta(KEY_MQTT_SESSION_NEXT, snapshot.nextMqttId),
                     meta(KEY_WS_TEMPLATE_NEXT, snapshot.nextTemplateId),
                     meta(KEY_WS_RECONNECT_ENABLED, if (snapshot.wsReconnectSettings.enabled) 1 else 0),
                     meta(KEY_WS_RECONNECT_BASE, snapshot.wsReconnectSettings.baseDelaySec.toLong()),
                     meta(KEY_WS_RECONNECT_MAX, snapshot.wsReconnectSettings.maxDelaySec.toLong())
                 )
             )
+        }
+    }
+
+    fun saveSseHistory() {
+        val store = ServiceLocator.sseHistoryStore
+        val entries = store.entries.value
+        val nextId = store.nextId
+        db.runInTransaction {
+            protocolDao.clearSseHistory()
+            protocolDao.insertAllSseHistory(entries.map { mapper.sseHistoryToEntity(it) })
+            metaDao.upsertAll(listOf(meta(KEY_SSE_HISTORY_NEXT, nextId)))
         }
     }
 
@@ -631,6 +654,33 @@ class AppStatePersistence(
                 }
             })
             put("wsSessionNextId", protocolSessions.nextWsId)
+            put("mqttSessionHistory", buildJsonArray {
+                protocolSessions.mqttHistory.forEach { entry ->
+                    add(buildJsonObject {
+                        put("id", entry.id)
+                        put("broker", entry.broker)
+                        put("text", entry.text)
+                        put("isSystem", entry.isSystem)
+                        put("timestamp", entry.timestamp)
+                    })
+                }
+            })
+            put("mqttSessionNextId", protocolSessions.nextMqttId)
+            put("sseHistory", buildJsonArray {
+                ServiceLocator.sseHistoryStore.entries.value.forEach { entry ->
+                    add(buildJsonObject {
+                        put("id", entry.id)
+                        put("method", entry.method)
+                        put("url", entry.url)
+                        put("startedAt", entry.startedAt)
+                        put("endedAt", entry.endedAt)
+                        put("frames", entry.frames)
+                        put("outcome", entry.outcome)
+                        put("transcript", entry.transcript)
+                    })
+                }
+            })
+            put("sseHistoryNextId", ServiceLocator.sseHistoryStore.nextId)
             put("wsAutoReconnect", protocolSessions.wsReconnectSettings.enabled)
             put("wsReconnectBaseDelaySec", protocolSessions.wsReconnectSettings.baseDelaySec)
             put("wsReconnectMaxDelaySec", protocolSessions.wsReconnectSettings.maxDelaySec)
@@ -808,8 +858,35 @@ class AppStatePersistence(
                         createdAt = o.longValue("createdAt", 0L)
                     ).takeIf { it.id >= 0 && name.isNotBlank() }
                 } ?: emptyList(),
-                nextTemplateId = root.longValue("wsTemplateNextId", 1L)
+                nextTemplateId = root.longValue("wsTemplateNextId", 1L),
+                mqttHistory = root.arrayValue("mqttSessionHistory")?.mapNotNull { item ->
+                    val o = item.jsonObject
+                    MqttSessionEntry(
+                        id = o.longValue("id", -1L),
+                        broker = o.stringValue("broker"),
+                        text = o.stringValue("text"),
+                        isSystem = o.booleanValue("isSystem", false),
+                        timestamp = o.longValue("timestamp", 0L)
+                    ).takeIf { it.id >= 0 }
+                } ?: emptyList(),
+                nextMqttId = root.longValue("mqttSessionNextId", 1L)
             )
+        )
+        ServiceLocator.sseHistoryStore.restore(
+            root.arrayValue("sseHistory")?.mapNotNull { item ->
+                val o = item.jsonObject
+                SseHistoryEntry(
+                    id = o.longValue("id", -1L),
+                    method = o.stringValue("method", "GET"),
+                    url = o.stringValue("url"),
+                    startedAt = o.longValue("startedAt", 0L),
+                    endedAt = o.longValue("endedAt", 0L),
+                    frames = o.intValue("frames", 0),
+                    outcome = o.stringValue("outcome"),
+                    transcript = o.stringValue("transcript")
+                ).takeIf { it.id >= 0 }
+            } ?: emptyList(),
+            root.longValue("sseHistoryNextId", 1L)
         )
     }
 
@@ -949,6 +1026,8 @@ class AppStatePersistence(
         const val KEY_MONITOR_RECORD_NEXT = "monitorRecordNextId"
         const val KEY_MONITOR_HISTORY_NEXT = "monitorHistoryNextId"
         const val KEY_WS_NEXT = "wsSessionNextId"
+        const val KEY_MQTT_SESSION_NEXT = "mqttSessionNextId"
+        const val KEY_SSE_HISTORY_NEXT = "sseHistoryNextId"
         const val KEY_WS_TEMPLATE_NEXT = "wsTemplateNextId"
         const val KEY_WS_RECONNECT_ENABLED = "wsReconnectEnabled"
         const val KEY_WS_RECONNECT_BASE = "wsReconnectBaseSec"

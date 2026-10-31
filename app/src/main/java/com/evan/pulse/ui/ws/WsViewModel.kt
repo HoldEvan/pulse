@@ -66,6 +66,14 @@ class WsViewModel : ViewModel() {
     var pingIntervalSec by mutableStateOf("0")
     var pingPayload by mutableStateOf("ping")
 
+    /** 定时发送：开启后每隔设定秒数自动发送固定内容 */
+    var autoSendEnabled by mutableStateOf(false)
+    var autoSendIntervalSec by mutableStateOf("10")
+    var autoSendContent by mutableStateOf("")
+
+    /** 服务端协商出的子协议；未协商或未连接为 null */
+    var negotiatedSubprotocol by mutableStateOf<String?>(null)
+
     /** 握手请求头；列表始终以一个空行结尾，由 KeyValueEditor 维护 */
     var headers by mutableStateOf(listOf(KeyValue()))
 
@@ -138,9 +146,12 @@ class WsViewModel : ViewModel() {
                 when (event) {
                     is WsEvent.Connected -> {
                         lastError = null
+                        negotiatedSubprotocol = event.subprotocol
                         add(L10n.t(R.string.state_opened), true, event.timestamp)
+                        event.subprotocol?.let { add(L10n.t(R.string.ws_negotiated_subprotocol, it), true, event.timestamp) }
                     }
                     is WsEvent.Sent -> add(event.content, true, event.timestamp)
+                    is WsEvent.PingSent -> add(L10n.t(R.string.ws_log_ping_sent), true, event.timestamp)
                     is WsEvent.TextReceived -> {
                         add(event.content, false, event.timestamp)
                         evaluateAssertions(event.content)
@@ -203,6 +214,9 @@ class WsViewModel : ViewModel() {
             url = url,
             pingIntervalSec = pingIntervalSec.toIntOrNull() ?: 0,
             pingPayload = pingPayload.ifBlank { "ping" },
+            autoSendEnabled = autoSendEnabled,
+            autoSendIntervalSec = autoSendIntervalSec.toIntOrNull() ?: 10,
+            autoSendContent = autoSendContent,
             headers = headers.map { KeyValueEntry(it.key, it.value, it.enabled) },
             subprotocols = parseSubprotocols(subprotocols),
             useProxy = useProxy,
@@ -226,6 +240,9 @@ class WsViewModel : ViewModel() {
         url = snap.url
         pingIntervalSec = snap.pingIntervalSec.toString()
         pingPayload = snap.pingPayload
+        autoSendEnabled = snap.autoSendEnabled
+        autoSendIntervalSec = snap.autoSendIntervalSec.toString()
+        autoSendContent = snap.autoSendContent
         headers = snap.headers.map { KeyValue(it.key, it.value, it.enabled) }.ifEmpty { listOf(KeyValue()) }
         subprotocols = snap.subprotocols.joinToString(", ")
         useProxy = snap.useProxy
@@ -318,6 +335,7 @@ class WsViewModel : ViewModel() {
         connectJob?.cancel()
         connectJob = viewModelScope.launch {
             lastError = null
+            negotiatedSubprotocol = null
             assertionResults = emptyList()
             assertionChecked = 0
             assertionFailed = 0
@@ -339,6 +357,8 @@ class WsViewModel : ViewModel() {
                 .filter { it.enabled && it.key.isNotBlank() }
                 .map { it.copy(key = res(it.key), value = res(it.value)) }
             val resolvedSubprotocols = parseSubprotocols(subprotocols).map { res(it) }
+            // 定时发送内容与手动发送一致，连接时先解析占位符
+            val resolvedAutoSend = if (autoSendEnabled) res(autoSendContent) else autoSendContent
 
             if (missing.isNotEmpty()) {
                 missingVars = missing.sorted()
@@ -353,6 +373,9 @@ class WsViewModel : ViewModel() {
                 proxy = proxy,
                 pingIntervalSec = pingIntervalSec.toIntOrNull() ?: 0,
                 pingPayload = pingPayload.ifBlank { "ping" },
+                autoSendEnabled = autoSendEnabled,
+                autoSendIntervalSec = autoSendIntervalSec.toIntOrNull() ?: 10,
+                autoSendContent = resolvedAutoSend,
                 insecureTls = insecureTls,
                 tls = tlsConfigOf(insecureTls, customCaPem, clientCertPem, clientKeyPem)
             )

@@ -27,6 +27,7 @@ import com.evan.pulse.domain.script.VariableScope
 import com.evan.pulse.domain.script.consoleLines
 import com.evan.pulse.domain.script.errorMessage
 import com.evan.pulse.domain.script.testRecords
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import okhttp3.Cookie
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
@@ -54,7 +55,11 @@ object CollectionRunner {
         val bodyPreview: String,
         val error: String?,
         val console: List<String>,
-        val tests: List<TestRecord>
+        val tests: List<TestRecord>,
+        /** 本步实际尝试次数（含首次），大于 1 表示发生过重试 */
+        val attempts: Int = 1,
+        /** 数据驱动运行时的迭代序号（从 1 开始），非数据集运行为 1 */
+        val iteration: Int = 1
     )
 
     data class RunResult(val steps: List<Step>) {
@@ -66,13 +71,30 @@ object CollectionRunner {
     private const val BODY_PREVIEW_CAP = 300
 
     /**
+     * 运行器执行选项。
+     *
+     * [retries] 为单步最终失败前的额外重试次数（0 表示不重试）；
+     * [stopOnFailure] 为 true 时某步重试耗尽仍失败即终止整条链；
+     * [stepDelayMs] 为相邻两步之间的等待时长。
+     */
+    data class RunnerOptions(
+        val retries: Int = 0,
+        val stopOnFailure: Boolean = false,
+        val stepDelayMs: Long = 0
+    )
+
+    /**
      * 运行一组请求。[projectId] 用于取活动环境、Cookie 与写历史；
      * [withHistory] 为 false 时不落历史（预览式运行）。
+     * [options] 控制单步重试、失败即停与步间延时。
+     * [dataset] 不为空时按行迭代整条链路，每行注入一组数据变量。
      */
     suspend fun run(
         requests: List<SavedRequest>,
         projectId: Long,
         withHistory: Boolean = true,
+        options: RunnerOptions = RunnerOptions(),
+        dataset: RunDataset? = null,
         onStep: ((Step) -> Unit)? = null
     ): RunResult {
         // 整链共享一个作用域：前置/后置脚本设的变量在后续请求里都可见
@@ -86,13 +108,29 @@ object CollectionRunner {
             },
             envWriter = ServiceLocator.scriptEnvWriter
         )
-        val steps = ArrayList<Step>(requests.size)
-        for (request in requests) {
-            activeCollectionId = request.collectionId
-            val step = runOne(request, projectId, scope, withHistory)
-            steps += step
-            // 每步完成就回调，界面可以边跑边显示，不必等整条链结束
-            onStep?.invoke(step)
+        val maxRetries = options.retries.coerceAtLeast(0)
+        val iterations = dataset?.rows?.takeIf { it.isNotEmpty() } ?: listOf(emptyMap())
+        val steps = ArrayList<Step>(requests.size * iterations.size)
+        for ((iterationIndex, row) in iterations.withIndex()) {
+            // 每轮注入本行数据，脚本/占位符据此解析；下一轮覆盖为下一行
+            scope.dataVars = row
+            for ((index, request) in requests.withIndex()) {
+                activeCollectionId = request.collectionId
+                var step = runOne(request, projectId, scope, withHistory)
+                // 失败重试：只对最终失败前重跑，成功即停；失败尝试不落历史
+                var attempt = 0
+                while (!step.success && attempt < maxRetries) {
+                    attempt++
+                    step = runOne(request, projectId, scope, withHistory)
+                }
+                var finalStep = if (attempt > 0) step.copy(attempts = attempt + 1) else step
+                if (iterations.size > 1) finalStep = finalStep.copy(iteration = iterationIndex + 1)
+                steps += finalStep
+                // 每步完成就回调，界面可以边跑边显示，不必等整条链结束
+                onStep?.invoke(finalStep)
+                if (!finalStep.success && options.stopOnFailure) return RunResult(steps)
+                if (options.stepDelayMs > 0 && index < requests.lastIndex) delay(options.stepDelayMs)
+            }
         }
         return RunResult(steps)
     }
@@ -246,9 +284,25 @@ object CollectionRunner {
             )
         }
 
-        val config = mutable.toCallConfig(base.proxy).copy(
+        val scriptEdited = mutable.toCallConfig(base.proxy)
+        // 脚本视图不承载文件字段的 URI，按索引把原始文件字段补回，multipart 上传才能带上文件
+        val mergedFields = scriptEdited.formFields.mapIndexed { index, field ->
+            val source = base.formFields.getOrNull(index)
+            if (source != null && source.isFile) source.copy(name = field.name, value = field.value) else field
+        }
+        val config = scriptEdited.copy(
+            formFields = mergedFields,
             timeoutMs = base.timeoutMs,
-            throttle = base.throttle
+            connectTimeoutMs = base.connectTimeoutMs,
+            readTimeoutMs = base.readTimeoutMs,
+            fileUri = base.fileUri,
+            fileName = base.fileName,
+            fileContentType = base.fileContentType,
+            throttle = base.throttle,
+            insecureTls = base.insecureTls,
+            tls = base.tls,
+            followRedirects = base.followRedirects,
+            maxRedirects = base.maxRedirects
         )
         val missing = mutableSetOf<String>()
         val resolved = resolveConfig(config, scope.all(), missing)
@@ -351,6 +405,7 @@ object CollectionRunner {
         BodyType.GRAPHQL -> buildGraphqlBody(snapshot)
         BodyType.FORM_URLENCODED, BodyType.FORM_DATA -> config.formFields
             .joinToString("&") { "${it.name}=${it.value}" }
+        BodyType.FILE -> config.fileName?.let { "[文件] $it" } ?: "[文件]"
     }
 
     private fun buildGraphqlBody(snapshot: HttpSnapshot): String {

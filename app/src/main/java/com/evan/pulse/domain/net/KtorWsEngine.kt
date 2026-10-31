@@ -63,6 +63,7 @@ class KtorWsEngine : WsEngine {
     @Volatile private var session: DefaultClientWebSocketSession? = null
     @Volatile private var receiveJob: Job? = null
     @Volatile private var pingJob: Job? = null
+    @Volatile private var autoSendJob: Job? = null
 
     override suspend fun connect(config: WsConfig) {
         lock.withLock {
@@ -80,10 +81,18 @@ class KtorWsEngine : WsEngine {
                 }
                 session = wsSession
                 _state.value = WsConnectionState.CONNECTED
-                _events.tryEmit(WsEvent.Connected(System.currentTimeMillis()))
+                val negotiated = runCatching {
+                    wsSession.call.response.headers["Sec-WebSocket-Protocol"]
+                }.getOrNull()?.takeIf { it.isNotBlank() }
+                _events.tryEmit(WsEvent.Connected(System.currentTimeMillis(), negotiated))
                 receiveJob = scope.launch { receiveLoop(wsSession) }
                 if (config.pingIntervalSec > 0) {
                     pingJob = scope.launch { pingLoop(wsSession, config.pingIntervalSec, config.pingPayload) }
+                }
+                if (config.autoSendEnabled && config.autoSendIntervalSec > 0 && config.autoSendContent.isNotBlank()) {
+                    autoSendJob = scope.launch {
+                        autoSendLoop(wsSession, config.autoSendIntervalSec, config.autoSendContent)
+                    }
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -156,6 +165,7 @@ class KtorWsEngine : WsEngine {
                         break
                     }
 
+                    // 控制帧（Ping/Pong）由 Ktor 内部自动处理，不会进入 incoming，走到这里的只有数据帧
                     else -> Unit
                 }
             }
@@ -169,7 +179,19 @@ class KtorWsEngine : WsEngine {
     }
 
     private suspend fun pingLoop(s: DefaultClientWebSocketSession, intervalSec: Int, payload: String) {
-        val content = payload.ifBlank { "ping" }
+        val content = payload.ifBlank { "ping" }.toByteArray()
+        while (true) {
+            delay(intervalSec * 1000L)
+            runCatching {
+                withContext(Dispatchers.IO) { s.send(Frame.Ping(content)) }
+            }.onSuccess {
+                _events.tryEmit(WsEvent.PingSent(System.currentTimeMillis()))
+            }
+        }
+    }
+
+    /** 定时发送：按间隔把固定文本作为文本帧发出，与手动发送共用 Sent 事件 */
+    private suspend fun autoSendLoop(s: DefaultClientWebSocketSession, intervalSec: Int, content: String) {
         while (true) {
             delay(intervalSec * 1000L)
             runCatching {
@@ -183,6 +205,8 @@ class KtorWsEngine : WsEngine {
     private suspend fun closeSession() {
         pingJob?.cancel()
         pingJob = null
+        autoSendJob?.cancel()
+        autoSendJob = null
         receiveJob?.cancel()
         receiveJob = null
         val s = session

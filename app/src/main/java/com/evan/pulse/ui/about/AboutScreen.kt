@@ -231,9 +231,9 @@ fun AboutScreen(
                             }
                             item {
                                 AppArrowRow(
-                                    title = "Paho MQTT",
-                                    summary = "EPL-1.0 / EDL-1.0",
-                                    onClick = { uriHandler.openUri("https://github.com/eclipse/paho.mqtt.java") }
+                                    title = "HiveMQ MQTT Client",
+                                    summary = "Apache-2.0",
+                                    onClick = { uriHandler.openUri("https://github.com/hivemq/hivemq-mqtt-client") }
                                 )
                             }
                             item {

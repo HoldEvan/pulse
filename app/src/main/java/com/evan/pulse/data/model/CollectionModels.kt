@@ -73,6 +73,13 @@ data class HttpSnapshot(
     val postScript: String = "",
     /** 请求超时秒数 */
     val timeoutSec: String = "30",
+    /** 连接超时秒数，空串沿用总超时 */
+    val connectTimeoutSec: String = "",
+    /** 读取超时秒数，空串沿用总超时 */
+    val readTimeoutSec: String = "",
+    /** 原始二进制请求体：文件 URI 与展示名 */
+    val bodyFileUri: String? = null,
+    val bodyFileName: String? = null,
     /** 是否使用设置页的全局代理 */
     val useProxy: Boolean = true,
     /** 弱网模拟档位名（FIVE_G/FOUR_G/THREE_G/TWO_G/FORCE_TIMEOUT），NONE 表示关闭 */
@@ -110,6 +117,10 @@ data class WsSnapshot(
     val url: String = "",
     val pingIntervalSec: Int = 0,
     val pingPayload: String = "ping",
+    /** 定时发送：开关、间隔与内容 */
+    val autoSendEnabled: Boolean = false,
+    val autoSendIntervalSec: Int = 10,
+    val autoSendContent: String = "",
     /** 握手时附带的额外请求头，用于鉴权等场景 */
     val headers: List<KeyValueEntry> = emptyList(),
     /** Sec-WebSocket-Protocol 子协议，逗号分隔后按顺序协商 */
@@ -155,7 +166,23 @@ data class MqttSnapshot(
     /** 客户端私钥 PEM（PKCS#8） */
     val clientKeyPem: String = "",
     /** 收到消息时执行的断言 */
-    val assertions: List<AssertionEntry> = emptyList()
+    val assertions: List<AssertionEntry> = emptyList(),
+    /** 协议版本：5 或 3（3.1.1） */
+    val mqttVersion: Int = 5,
+    /** clean start / clean session */
+    val cleanStart: Boolean = true,
+    /** 会话过期秒数（仅 MQTT 5） */
+    val sessionExpirySec: String = "0",
+    /** 断线自动重连 */
+    val autoReconnect: Boolean = true,
+    /** 遗嘱：主题为空表示不启用 */
+    val willTopic: String = "",
+    val willPayload: String = "",
+    val willQos: Int = 0,
+    val willRetain: Boolean = false,
+    /** 发布负载按二进制（HEX / BASE64）解码后发送 */
+    val pubBinary: Boolean = false,
+    val pubEncoding: String = "HEX"
 )
 
 @Serializable
@@ -194,7 +221,14 @@ data class SseSnapshot(
     /** 客户端私钥 PEM（PKCS#8） */
     val clientKeyPem: String = "",
     /** 断点续连起点：首次连接作为 Last-Event-ID 发送 */
-    val lastEventId: String = ""
+    val lastEventId: String = "",
+    /** 鉴权：取值为 AuthType 名称，旧快照缺字段时为 NONE */
+    val authType: String = "NONE",
+    val bearerToken: String = "",
+    val basicUsername: String = "",
+    val basicPassword: String = "",
+    val apiKeyName: String = "",
+    val apiKeyValue: String = ""
 )
 
 /** 快照统一序列化配置：字段只增不减，旧快照缺字段时用默认值兜底 */
