@@ -23,6 +23,9 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun TabPageScaffold(
     modifier: Modifier = Modifier,
+    // 顶栏中盖在内容之上、不需要额外挤占内容视口的高度（例如吸顶标签条）：
+    // 让位按「顶栏总高 - 该值」计算，内容从其下方穿过，标签条与顶栏共用一块磨砂背景
+    overlappingTopBarHeight: Dp = 0.dp,
     topBar: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
@@ -62,7 +65,7 @@ fun TabPageScaffold(
                 top = if (topBarPlaceable.width == 0 && topBarPlaceable.height == 0) {
                     0.dp
                 } else {
-                    topBarPlaceable.height.toDp()
+                    (topBarPlaceable.height.toDp() - overlappingTopBarHeight).coerceAtLeast(0.dp)
                 }
             )
 

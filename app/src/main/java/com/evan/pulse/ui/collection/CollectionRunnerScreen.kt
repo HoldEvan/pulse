@@ -186,6 +186,8 @@ fun CollectionRunnerScreen(
     collectionId: Long?,
     modifier: Modifier = Modifier,
     viewModel: CollectionRunnerViewModel = viewModel(),
+    /** 打开 HTML 报告预览；为空表示当前导航栈不支持预览，只保留导出 */
+    onPreviewHtml: ((String) -> Unit)? = null,
 ) {
     val result = viewModel.result
     val running = viewModel.running
@@ -245,16 +247,21 @@ fun CollectionRunnerScreen(
                 collectionName = viewModel.collectionName.ifBlank {
                     stringResource(R.string.runner_report_default_collection)
                 },
-                result = result
+                result = result,
+                onPreviewHtml = onPreviewHtml
             )
         }
         BottomBarClearance()
     }
 }
 
-/** 运行报告导出：把整条链的结果保存为 JSON 或 HTML 文件 */
+/** 运行报告导出：把整条链的结果保存为 JSON 或 HTML 文件，HTML 可先在应用内预览 */
 @Composable
-private fun RunnerReportExport(collectionName: String, result: CollectionRunner.RunResult) {
+private fun RunnerReportExport(
+    collectionName: String,
+    result: CollectionRunner.RunResult,
+    onPreviewHtml: ((String) -> Unit)? = null
+) {
     val context = LocalContext.current
     val store = remember(context) { ResponseFileStore(context) }
     val savedText = stringResource(R.string.runner_report_saved)
@@ -290,6 +297,25 @@ private fun RunnerReportExport(collectionName: String, result: CollectionRunner.
             modifier = Modifier.weight(1f)
         ) {
             AppText(stringResource(R.string.runner_report_export_html))
+        }
+    }
+    val preview = onPreviewHtml
+    if (preview != null) {
+        // 预览与导出共用同一个渲染器，看到的就是将要保存的文件
+        AppButton(
+            onClick = {
+                preview(
+                    RunReportExporter.render(
+                        RunReportFormat.HTML,
+                        collectionName,
+                        result,
+                        System.currentTimeMillis()
+                    )
+                )
+            },
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+        ) {
+            AppText(stringResource(R.string.runner_report_preview_html))
         }
     }
 }
@@ -414,8 +440,12 @@ private fun RunnerStepRow(step: CollectionRunner.Step, index: Int) {
                 fontSize = 13.sp,
                 color = AppTheme.colors.onSurfaceSummary
             )
-            if (step.type == RequestType.HTTP) {
+            // HTTP 显示方法徽章；SSE / WS / MQTT 没有执行方法，用灰色徽章标出协议名，
+            // 否则这几类步骤在结果里看不出请求类型
+            if (step.method.isNotBlank()) {
                 MethodBadge(method = step.method)
+            } else {
+                MethodBadge(method = step.type.name)
             }
             AppText(
                 text = step.name,
@@ -449,7 +479,8 @@ private fun RunnerStepRow(step: CollectionRunner.Step, index: Int) {
         AppText(
             text = when {
                 step.error != null -> step.error
-                step.statusCode != null -> "${step.method} ${step.url} → ${step.statusCode} ${step.durationMs}ms"
+                // 方法已在左侧徽章显示，摘要行不再重复
+                step.statusCode != null -> "${step.url} → ${step.statusCode} ${step.durationMs}ms"
                 else -> step.url
             },
             modifier = Modifier.padding(top = 2.dp, start = 24.dp),

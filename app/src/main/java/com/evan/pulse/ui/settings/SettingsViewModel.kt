@@ -209,6 +209,10 @@ class SettingsViewModel(
         }
     }
 
+    fun setLogLevel(index: Int) {
+        viewModelScope.launch { store.update { it.copy(logLevelIndex = index.coerceIn(0, 4)) } }
+    }
+
     fun setLanguage(index: Int) {
         viewModelScope.launch { store.update { it.copy(languageIndex = index) } }
     }

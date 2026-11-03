@@ -66,6 +66,8 @@ import com.evan.pulse.ui.common.AssertionSection
 import com.evan.pulse.ui.common.CollapsibleKeyValueTable
 import com.evan.pulse.ui.common.CardSectionTitle
 import com.evan.pulse.ui.common.CopyIconButton
+import com.evan.pulse.ui.common.LocalStickyTabInset
+import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.HtmlPreviewStore
 import com.evan.pulse.ui.common.TlsSection
 import com.evan.pulse.ui.common.KeyValueEditor
@@ -152,6 +154,7 @@ fun HttpScreen(
             .padding(horizontal = 12.dp)
             .subPageOverScroll()
             .verticalScroll(scroll)
+            .padding(top = LocalTopBarInset.current + LocalStickyTabInset.current)
     ) {
         SectionTitleRow(
             label = stringResource(R.string.http_request_label),

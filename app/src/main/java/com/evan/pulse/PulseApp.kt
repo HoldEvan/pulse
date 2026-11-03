@@ -6,6 +6,8 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.evan.pulse.data.backup.AutoBackupScheduler
 import com.evan.pulse.data.backup.WorkManagerBackupScheduler
+import com.evan.pulse.data.log.AppLog
+import com.evan.pulse.data.log.LogLevel
 import com.evan.pulse.data.settings.SettingsStore
 import com.evan.pulse.di.ServiceLocator
 import com.evan.pulse.ui.l10n.L10n
@@ -33,9 +35,17 @@ class PulseApp : Application() {
         // checkNotNull getter，若放后台会因读库耗时被首帧抢先而崩溃
         ServiceLocator.initQuick(applicationContext)
 
+        // 留一条基线记录：日志页刚打开时不会是空白，也能确认日志链路通畅
+        AppLog.info("App", "应用启动 ${BuildConfig.VERSION_NAME}(${BuildConfig.VERSION_CODE})")
+
         // Room 全量读库是冷启动慢的元凶（随拨测历史/cookie 数据量增长），
         // 移到后台让首帧尽快绘制；完成前各 Store 显示空数据，读完后自动刷新
         backgroundScope.launch { ServiceLocator.loadHeavy(applicationContext) }
+
+        // 日志级别：设置一改就生效，实时预览页无需重启即可看到过滤结果
+        backgroundScope.launch {
+            settingsStore.settings.collect { AppLog.setMinLevel(LogLevel.fromIndex(it.logLevelIndex)) }
+        }
 
         // 自动备份：订阅设置变化，把最新开关与周期推给周期任务
         AutoBackupScheduler(

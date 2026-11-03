@@ -17,6 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -147,16 +149,23 @@ fun statusColor(statusCode: Int): Color = when {
     else -> Color(0xFFC62828)
 }
 
-/** 方法徽章：各方法一色，未知方法用紫色兜底 */
+/** 方法徽章：各方法一色，未知方法用紫色兜底；字号与内边距可调，供列表行使用紧凑尺寸 */
 @Composable
-fun MethodBadge(method: String, modifier: Modifier = Modifier) {
+fun MethodBadge(
+    method: String,
+    modifier: Modifier = Modifier,
+    fontSize: TextUnit = 12.sp,
+    horizontalPadding: Dp = 8.dp,
+    verticalPadding: Dp = 2.dp,
+    cornerRadius: Dp = 6.dp
+) {
     AppText(
         text = method,
         color = Color.White,
         modifier = modifier
-            .squircleBackground(methodColor(method), 6.dp)
-            .padding(horizontal = 8.dp, vertical = 2.dp),
-        fontSize = 12.sp
+            .squircleBackground(methodColor(method), cornerRadius)
+            .padding(horizontal = horizontalPadding, vertical = verticalPadding),
+        fontSize = fontSize
     )
 }
 

@@ -3,6 +3,8 @@ package com.evan.pulse.domain.net
 import android.content.Context
 import android.net.Uri
 import android.webkit.MimeTypeMap
+import com.evan.pulse.data.log.AppLog
+import com.evan.pulse.data.log.loggableUrl
 import com.evan.pulse.domain.model.BodyType
 import com.evan.pulse.domain.model.FormField
 import com.evan.pulse.domain.model.HttpCallConfig
@@ -69,6 +71,8 @@ import okhttp3.Credentials
  * 代理认证采用预置 Proxy-Authorization 头的方式下发，与 curl --proxy-user 行为一致；
  * SOCKS5 代理不支持认证（java.net.Proxy 不携带凭据）。
  */
+private const val LOG_TAG = "HTTP"
+
 class OkHttpEngine(private val appContextProvider: () -> Context? = { null }) : HttpEngine {
 
     /** 代理与 TLS 策略都是引擎级配置，按两者组合缓存客户端 */
@@ -123,6 +127,8 @@ class OkHttpEngine(private val appContextProvider: () -> Context? = { null }) : 
                 "URL 必须以 http:// 或 https:// 开头"
             )
         }
+
+        AppLog.debug(LOG_TAG, "发起 ${config.method.value} ${loggableUrl(config.url)}")
 
         // 网络模拟：强制超时档阻塞指定秒数后按超时失败返回；弱网档位分两段——
         // 请求前随机 RTT + 请求体上行耗时，响应后按响应体大小估算下行耗时
@@ -235,6 +241,18 @@ class OkHttpEngine(private val appContextProvider: () -> Context? = { null }) : 
             outcome = HttpCallOutcome.Failure(classify(e), describe(e))
         } finally {
             registered.forEach { timelines.remove(it) }
+        }
+        // 结束日志只留状态码、耗时与大小：正文可能含敏感数据，不进日志
+        when (outcome) {
+            is HttpCallOutcome.Success -> AppLog.info(
+                LOG_TAG,
+                "${outcome.statusCode} ${loggableUrl(currentUrl)} ${outcome.durationMs}ms ${outcome.responseSizeBytes}B"
+            )
+            is HttpCallOutcome.Failure -> AppLog.warn(
+                LOG_TAG,
+                "${loggableUrl(currentUrl)} 失败：${outcome.message}"
+            )
+            null -> Unit
         }
         return outcome
     }

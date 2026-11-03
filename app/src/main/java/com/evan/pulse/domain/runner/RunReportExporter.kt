@@ -92,6 +92,8 @@ object RunReportExporter {
             result.steps.forEachIndexed { index, step ->
                 val status = step.statusCode?.toString() ?: "-"
                 val duration = step.durationMs?.let { "${it}ms" } ?: "-"
+                // 非 HTTP 步骤没有执行方法，用协议名占位，报告里不会留下一列空白
+                val method = step.method.ifBlank { step.type.name }
                 val verdict = if (step.success) "PASS" else "FAIL"
                 val rowClass = if (step.success) "pass" else "fail"
                 val detail = buildDetail(step)
@@ -99,7 +101,7 @@ object RunReportExporter {
                     "<tr class=\"$rowClass\">" +
                         "<td>${index + 1}</td>" +
                         "<td>${escape(step.name)}</td>" +
-                        "<td>${escape(step.method)}</td>" +
+                        "<td>${escape(method)}</td>" +
                         "<td>${escape(status)}</td>" +
                         "<td>${escape(duration)}</td>" +
                         "<td>${step.attempts}</td>" +

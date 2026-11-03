@@ -30,6 +30,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.evan.pulse.R
 import com.evan.pulse.data.model.ProjectInfo
 import com.evan.pulse.data.model.RequestType
+import com.evan.pulse.ui.common.LocalStickyTabInset
+import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.subPageOverScroll
 import com.evan.pulse.ui.common.subPageScrollState
 import top.yukonga.miuix.kmp.basic.DropdownEntry
@@ -85,7 +87,8 @@ fun ProjectsScreen(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .padding(top = LocalTopBarInset.current + LocalStickyTabInset.current),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(modifier = Modifier.height(48.dp))
@@ -101,6 +104,7 @@ fun ProjectsScreen(
                     .weight(1f)
                     .subPageOverScroll()
                     .verticalScroll(subPageScrollState())
+                    .padding(top = LocalTopBarInset.current + LocalStickyTabInset.current)
             ) {
                 AppCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier) {

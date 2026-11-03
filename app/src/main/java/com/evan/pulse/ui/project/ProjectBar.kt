@@ -55,6 +55,8 @@ fun ProjectBar(
     behavior: AppTopBarBehavior? = null,
     backdrop: LayerBackdrop? = null,
     isBlurActive: Boolean = false,
+    // 与顶栏共用同一块磨砂背景的底部内容（如吸顶标签条），随顶栏一起收缩
+    bottomContent: (@Composable () -> Unit)? = null,
     viewModel: ProjectViewModel = viewModel()
 ) {
     val projects by viewModel.projects.collectAsState()
@@ -74,78 +76,81 @@ fun ProjectBar(
     val topBarBehavior = behavior ?: rememberAppTopBarBehavior()
 
     BlurredBar(backdrop, isBlurActive) {
-        AppTopBar(
-            title = title,
-            color = blurredBarColor(isBlurActive),
-            behavior = topBarBehavior,
-            actions = {
-            if (showProjectSelector) {
-                Row(
-                    modifier = Modifier
-                    .roundedPressable { viewModel.openDialog() }
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    AppText(
-                        text = (current?.name ?: stringResource(R.string.project_none)).take(10),
-                        style = AppTheme.typography.title4,
-                        color = AppTheme.colors.onSurface
-                    )
-                    AppIcon(
-                        imageVector = Icons.Filled.ArrowDropDown,
-                        contentDescription = stringResource(R.string.cd_switch_project)
-                    )
+        Column {
+            AppTopBar(
+                title = title,
+                color = blurredBarColor(isBlurActive),
+                behavior = topBarBehavior,
+                actions = {
+                if (showProjectSelector) {
+                    Row(
+                        modifier = Modifier
+                        .roundedPressable { viewModel.openDialog() }
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        AppText(
+                            text = (current?.name ?: stringResource(R.string.project_none)).take(10),
+                            style = AppTheme.typography.title4,
+                            color = AppTheme.colors.onSurface
+                        )
+                        AppIcon(
+                            imageVector = Icons.Filled.ArrowDropDown,
+                            contentDescription = stringResource(R.string.cd_switch_project)
+                        )
+                    }
+                }
+                if (showEnvSelector) {
+                    val envLabel = if (activeEnvNames.isEmpty()) {
+                        stringResource(R.string.env_none)
+                    } else {
+                        activeEnvNames.joinToString("、")
+                    }
+                    Row(
+                        modifier = Modifier
+                        .roundedPressable { showEnvDialog = true }
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        AppText(
+                            text = envLabel.take(10),
+                            style = AppTheme.typography.title4,
+                            color = AppTheme.colors.onSurface
+                        )
+                        AppIcon(
+                            imageVector = Icons.Filled.ArrowDropDown,
+                            contentDescription = stringResource(R.string.cd_switch_env)
+                        )
+                    }
+                }
+                if (onAddMonitor != null) {
+                    AppIconButton(onClick = onAddMonitor) {
+                        AppIcon(
+                            imageVector = MiuixIcons.Light.Add,
+                            contentDescription = stringResource(R.string.monitor_add)
+                        )
+                    }
+                }
+                if (onAddProject != null) {
+                    AppIconButton(onClick = onAddProject) {
+                        AppIcon(
+                            imageVector = MiuixIcons.Light.Add,
+                            contentDescription = stringResource(R.string.project_new_title)
+                        )
+                    }
+                }
+                if (onAddEnv != null) {
+                    AppIconButton(onClick = onAddEnv) {
+                        AppIcon(
+                            imageVector = MiuixIcons.Light.Add,
+                            contentDescription = stringResource(R.string.env_create_title)
+                        )
+                    }
                 }
             }
-            if (showEnvSelector) {
-                val envLabel = if (activeEnvNames.isEmpty()) {
-                    stringResource(R.string.env_none)
-                } else {
-                    activeEnvNames.joinToString("、")
-                }
-                Row(
-                    modifier = Modifier
-                    .roundedPressable { showEnvDialog = true }
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    AppText(
-                        text = envLabel.take(10),
-                        style = AppTheme.typography.title4,
-                        color = AppTheme.colors.onSurface
-                    )
-                    AppIcon(
-                        imageVector = Icons.Filled.ArrowDropDown,
-                        contentDescription = stringResource(R.string.cd_switch_env)
-                    )
-                }
-            }
-            if (onAddMonitor != null) {
-                AppIconButton(onClick = onAddMonitor) {
-                    AppIcon(
-                        imageVector = MiuixIcons.Light.Add,
-                        contentDescription = stringResource(R.string.monitor_add)
-                    )
-                }
-            }
-            if (onAddProject != null) {
-                AppIconButton(onClick = onAddProject) {
-                    AppIcon(
-                        imageVector = MiuixIcons.Light.Add,
-                        contentDescription = stringResource(R.string.project_new_title)
-                    )
-                }
-            }
-            if (onAddEnv != null) {
-                AppIconButton(onClick = onAddEnv) {
-                    AppIcon(
-                        imageVector = MiuixIcons.Light.Add,
-                        contentDescription = stringResource(R.string.env_create_title)
-                    )
-                }
-            }
+            )
+            bottomContent?.invoke()
         }
-        )
     }
 
     if (showDialog) {

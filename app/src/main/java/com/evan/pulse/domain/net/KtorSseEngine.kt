@@ -1,5 +1,7 @@
 package com.evan.pulse.domain.net
 
+import com.evan.pulse.data.log.AppLog
+import com.evan.pulse.data.log.loggableUrl
 import com.evan.pulse.domain.model.BodyType
 import com.evan.pulse.domain.model.HttpMethod
 import com.evan.pulse.domain.model.ProxyConfig
@@ -53,6 +55,8 @@ import kotlinx.coroutines.withContext
  * 与 [OkHttpEngine] 一样按 ProxyConfig 缓存客户端。autoReconnect 打开时在流结束或
  * 失败后按 reconnectDelaySec 重新连接；关闭时发出 Reconnecting 事件供界面提示。
  */
+private const val LOG_TAG = "SSE"
+
 class KtorSseEngine : SseEngine {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -74,6 +78,7 @@ class KtorSseEngine : SseEngine {
             streamJob = null
             serverRetryMs = null
             _state.value = SseConnectionState.CONNECTING
+            AppLog.info(LOG_TAG, "连接 ${loggableUrl(config.url)}")
             streamJob = scope.launch { runStream(config) }
         }
     }
@@ -121,6 +126,7 @@ class KtorSseEngine : SseEngine {
                     throw IOException("HTTP ${response.status.value} ${response.status.description}")
                 }
                 _state.value = SseConnectionState.CONNECTED
+                AppLog.info(LOG_TAG, "已连接 ${loggableUrl(config.url)}")
                 _events.tryEmit(SseEvent.Connected(System.currentTimeMillis()))
                 parseStream(response.bodyAsChannel(), config) {
                     resumeId = it
@@ -132,7 +138,9 @@ class KtorSseEngine : SseEngine {
                 throw e
             } catch (e: Throwable) {
                 _state.value = SseConnectionState.FAILED
-                _events.tryEmit(SseEvent.Failed(describe(e), System.currentTimeMillis()))
+                val reason = describe(e)
+                AppLog.warn(LOG_TAG, "连接失败 ${loggableUrl(config.url)}：$reason")
+                _events.tryEmit(SseEvent.Failed(reason, System.currentTimeMillis()))
             }
             if (!config.autoReconnect) return
             // 收到过数据说明这条流曾经可用，重新从第一次退避开始计

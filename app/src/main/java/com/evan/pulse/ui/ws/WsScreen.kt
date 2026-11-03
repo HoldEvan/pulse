@@ -42,6 +42,8 @@ import com.evan.pulse.ui.common.CollapsibleSection
 import com.evan.pulse.ui.common.ConnectionStateIndicator
 import com.evan.pulse.ui.common.connectionStateColor
 import com.evan.pulse.ui.common.CopyIconButton
+import com.evan.pulse.ui.common.LocalStickyTabInset
+import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.EventLine
 import com.evan.pulse.ui.common.TlsSection
 import com.evan.pulse.ui.common.AssertionSection
@@ -111,6 +113,7 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
             .padding(horizontal = 12.dp)
             .subPageOverScroll()
             .verticalScroll(subPageScrollState())
+            .padding(top = LocalTopBarInset.current + LocalStickyTabInset.current)
     ) {
         SectionTitleRow(
             status = {

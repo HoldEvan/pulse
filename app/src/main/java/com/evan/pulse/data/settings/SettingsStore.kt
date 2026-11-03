@@ -1,7 +1,6 @@
 package com.evan.pulse.data.settings
 
 import android.content.Context
-import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -10,6 +9,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.evan.pulse.data.crypto.KeystoreSecretBox
+import com.evan.pulse.data.log.AppLog
 import com.evan.pulse.data.model.KeyValueEntry
 import com.evan.pulse.domain.crypto.SecretBox
 import com.evan.pulse.domain.crypto.SecretField
@@ -57,6 +57,7 @@ private val KEY_UI_SCALE_PERCENT = intPreferencesKey("ui_scale_percent")
 private val KEY_AUTO_BACKUP_ENABLED = booleanPreferencesKey("auto_backup_enabled")
 private val KEY_AUTO_BACKUP_INTERVAL = intPreferencesKey("auto_backup_interval_index")
 private val KEY_AUTO_BACKUP_KEEP = intPreferencesKey("auto_backup_keep_count")
+private val KEY_LOG_LEVEL = intPreferencesKey("log_level_index")
 private val KEY_WEBHOOK_ENABLED = booleanPreferencesKey("webhook_enabled")
 private val KEY_WEBHOOK_URL = stringPreferencesKey("webhook_url")
 private val KEY_WEBHOOK_FORMAT = intPreferencesKey("webhook_format_index")
@@ -131,6 +132,7 @@ internal fun Preferences.toAppSettings(secrets: SecretBox? = null): AppSettings 
     webhookHeaders = decodeKeyValueList(get(KEY_WEBHOOK_HEADERS) ?: "", secrets),
     webhookMethodIndex = (get(KEY_WEBHOOK_METHOD) ?: 0).coerceIn(0, 1),
     webhookParams = decodeKeyValueList(get(KEY_WEBHOOK_PARAMS) ?: "", secrets),
+    logLevelIndex = (get(KEY_LOG_LEVEL) ?: 2).coerceIn(0, 4),
 )
 
 class SettingsStore(context: Context) {
@@ -158,7 +160,7 @@ class SettingsStore(context: Context) {
             // 任何读取异常都回退默认值而非抛出：设置读取失败不应让整个 App 无法启动，
             // 非 IOException 会打完整堆栈到 logcat（TAG=SettingsStore）便于定位数据损坏
             if (error !is IOException) {
-                Log.w(TAG, "settings 读取异常，回退默认值", error)
+                AppLog.warn(TAG, "settings 读取异常，回退默认值", error)
             }
             emit(AppSettings())
         }
@@ -204,6 +206,7 @@ class SettingsStore(context: Context) {
             prefs[KEY_WEBHOOK_HEADERS] = encodeKeyValueList(next.webhookHeaders, ::seal)
             prefs[KEY_WEBHOOK_METHOD] = next.webhookMethodIndex.coerceIn(0, 1)
             prefs[KEY_WEBHOOK_PARAMS] = encodeKeyValueList(next.webhookParams, ::seal)
+            prefs[KEY_LOG_LEVEL] = next.logLevelIndex.coerceIn(0, 4)
         }
     }
 }

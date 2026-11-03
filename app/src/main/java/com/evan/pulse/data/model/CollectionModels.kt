@@ -251,13 +251,16 @@ fun SavedRequest.targetUrl(): String = runCatching {
 }.getOrDefault("")
 
 /**
- * HTTP 快照里保存的方法，供集合行直接显示 GET/POST 这类徽章。
+ * 快照里保存的请求方法，供集合行在协议名下直接显示 GET/POST 这类徽章。
  *
- * 非 HTTP 类型没有方法概念，返回 null 由界面回落显示协议名。
+ * HTTP 与 SSE 都有方法概念；WS / MQTT 返回 null，界面只显示协议名。
  */
-fun SavedRequest.httpMethod(): String? = when (type) {
+fun SavedRequest.requestMethod(): String? = when (type) {
     RequestType.HTTP -> runCatching {
         snapshotJson.decodeFromString(HttpSnapshot.serializer(), data).method
+    }.getOrNull()?.takeIf { it.isNotBlank() }
+    RequestType.SSE -> runCatching {
+        snapshotJson.decodeFromString(SseSnapshot.serializer(), data).method
     }.getOrNull()?.takeIf { it.isNotBlank() }
     else -> null
 }

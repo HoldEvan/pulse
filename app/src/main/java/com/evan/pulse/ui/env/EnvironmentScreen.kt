@@ -28,6 +28,8 @@ import com.evan.pulse.R
 import com.evan.pulse.data.model.EnvironmentInfo
 import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.subPageScrollState
+import com.evan.pulse.ui.common.LocalStickyTabInset
+import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.subPageOverScroll
 import top.yukonga.miuix.kmp.basic.DropdownEntry
 import top.yukonga.miuix.kmp.basic.DropdownItem
@@ -63,7 +65,7 @@ fun EnvironmentScreen(
             .fillMaxSize()
             .subPageOverScroll()
             .verticalScroll(subPageScrollState())
-            .padding(horizontal = 12.dp)
+            .padding(start = 12.dp, top = LocalTopBarInset.current + LocalStickyTabInset.current, end = 12.dp)
             .padding(bottom = 12.dp)
     ) {
         AppCard(modifier = Modifier.fillMaxWidth()) {

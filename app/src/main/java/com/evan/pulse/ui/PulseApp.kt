@@ -33,6 +33,7 @@ import com.evan.pulse.ui.about.AboutScreen
 import com.evan.pulse.ui.about.LegalScreen
 import com.evan.pulse.ui.common.BlurredBar
 import com.evan.pulse.ui.common.HtmlPreviewPage
+import com.evan.pulse.ui.common.HtmlPreviewStore
 import com.evan.pulse.ui.common.LocalSubPageCanScroll
 import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.TabPageScaffold
@@ -76,6 +77,7 @@ import com.evan.pulse.ui.monitor.MonitorViewModel
 import com.evan.pulse.ui.project.ProjectViewModel
 import com.evan.pulse.ui.project.ProjectBar
 import com.evan.pulse.ui.resources.ResourcesScreen
+import com.evan.pulse.ui.settings.LogSettingsScreen
 import com.evan.pulse.ui.settings.SettingsScreen
 import com.evan.pulse.ui.settings.SettingsViewModel
 import com.evan.pulse.ui.settings.ThemeSettingsScreen
@@ -97,6 +99,8 @@ import com.evan.pulse.ui.tools.CronToolScreen
 import com.evan.pulse.ui.tools.LanScanToolScreen
 import top.yukonga.miuix.kmp.basic.NavigationItem
 import com.evan.pulse.ui.design.AppScaffold
+import com.evan.pulse.ui.resources.ResourceTabBar
+import com.evan.pulse.ui.test.ProtocolTabBar
 import top.yukonga.miuix.kmp.blur.LayerBackdrop
 import top.yukonga.miuix.kmp.blur.isRuntimeShaderSupported
 import top.yukonga.miuix.kmp.blur.layerBackdrop
@@ -198,6 +202,12 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
      *  每个 tab 配一个"内容可滚动"槽位，内容不足一屏时顶栏不收缩；
      *  已收缩状态下保持可滚，避免收缩过程中视口变高引发的复位抖动 */
     val tabCanScroll = remember { List(5) { mutableStateOf(true) } }
+    /** 调试页吸顶标签条的实测高度：作为顶栏盖在内容之上的部分，从内容让位里扣除 */
+    var protocolTabsHeight by remember { mutableStateOf(0.dp) }
+
+    /** 资源页吸顶标签条的实测高度，作用同上 */
+    var resourceTabsHeight by remember { mutableStateOf(0.dp) }
+
     val tabScrollBehaviors = List(5) { index ->
         lateinit var behavior: AppTopBarBehavior
         behavior = rememberAppTopBarBehavior {
@@ -312,12 +322,27 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                     val pageBackdrop = rememberBlurBackdrop()
                     val pageBehavior = tabScrollBehaviors[tab]
                     TabPageScaffold(
+                        // 调试页/资源页的标签条与顶栏共用磨砂背景并盖在内容之上，不让位给内容
+                        overlappingTopBarHeight = when (tab) {
+                            1 -> protocolTabsHeight
+                            2 -> resourceTabsHeight
+                            else -> 0.dp
+                        },
                         topBar = {
                             when (tab) {
                                 1 -> ProjectBar(
                                     title = stringResource(tabs[1].label),
                                     showProjectSelector = true,
                                     showEnvSelector = true,
+                                    // 协议标签条放在磨砂顶栏内部：与顶栏共享同一块模糊背景，
+                                    // 内容滚动时从标签条下方穿过
+                                    bottomContent = {
+                                        ProtocolTabBar(
+                                            selectedIndex = tabState.homeProtocolTab,
+                                            onTabSelected = { settingsViewModel.selectHomeProtocol(it) },
+                                            onHeightChange = { protocolTabsHeight = it }
+                                        )
+                                    },
                                     viewModel = projectViewModel,
                                     behavior = pageBehavior,
                                     backdrop = pageBackdrop,
@@ -338,6 +363,14 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                                         { envViewModel.openCreate() }
                                     } else {
                                         null
+                                    },
+                                    // 项目/集合/环境标签条同样挂在磨砂顶栏内部
+                                    bottomContent = {
+                                        ResourceTabBar(
+                                            selectedIndex = tabState.resourceTab,
+                                            onTabSelected = { settingsViewModel.selectResourceTab(it) },
+                                            onHeightChange = { resourceTabsHeight = it }
+                                        )
                                     },
                                     viewModel = projectViewModel,
                                     behavior = pageBehavior,
@@ -411,7 +444,7 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                                     1 -> TestScreen(
                                         modifier = Modifier.fillMaxSize(),
                                         protocolTab = tabState.homeProtocolTab,
-                                        onProtocolTabChange = { settingsViewModel.selectHomeProtocol(it) },
+                                        stickyTabInset = protocolTabsHeight,
                                         onOpenScriptEditor = { navController.pushRoute(PulseRoute.ScriptEditor(it)) },
                                         onOpenHistory = { navController.pushRoute(PulseRoute.History) },
                                         onOpenCookies = { navController.pushRoute(PulseRoute.Cookies) },
@@ -421,7 +454,7 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                                     2 -> ResourcesScreen(
                                         modifier = Modifier.fillMaxSize(),
                                         resourceTab = tabState.resourceTab,
-                                        onTabChange = { settingsViewModel.selectResourceTab(it) },
+                                        stickyTabInset = resourceTabsHeight,
                                         onSwitchTab = { settingsViewModel.openHomeProtocol(it) },
                                         projectViewModel = projectViewModel,
                                         envViewModel = envViewModel,
@@ -449,6 +482,7 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                                         viewModel = settingsViewModel,
                                         onOpenAppearance = { navController.pushRoute(PulseRoute.Appearance) },
                                         onOpenWebhook = { navController.pushRoute(PulseRoute.Webhook) },
+                                        onOpenLogSettings = { navController.pushRoute(PulseRoute.LogSettings) },
                                         onOpenAbout = { navController.pushRoute(PulseRoute.About) }
                                     )
                                 }
@@ -546,6 +580,15 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
         entry<PulseRoute.Appearance> {
             SubPageScreen(title = stringResource(R.string.theme_page_title)) {
                 ThemeSettingsScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    viewModel = settingsViewModel
+                )
+            }
+        }
+
+        entry<PulseRoute.LogSettings> {
+            SubPageScreen(title = stringResource(R.string.settings_log)) {
+                LogSettingsScreen(
                     modifier = Modifier.fillMaxSize(),
                     viewModel = settingsViewModel
                 )
@@ -845,7 +888,11 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                 CollectionRunnerScreen(
                     collectionId = route.collectionId,
                     modifier = Modifier.fillMaxSize(),
-                    viewModel = runnerViewModel
+                    viewModel = runnerViewModel,
+                    onPreviewHtml = { html ->
+                        HtmlPreviewStore.set(html, null)
+                        navController.pushRoute(PulseRoute.HtmlPreview)
+                    }
                 )
             }
         }

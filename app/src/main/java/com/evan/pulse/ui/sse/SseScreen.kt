@@ -67,6 +67,8 @@ import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.ConnectionStateIndicator
 import com.evan.pulse.ui.common.connectionStateColor
 import com.evan.pulse.ui.common.CopyIconButton
+import com.evan.pulse.ui.common.LocalStickyTabInset
+import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.EventLine
 import com.evan.pulse.ui.common.TlsSection
 import com.evan.pulse.ui.common.KeyValueEditor
@@ -171,6 +173,7 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
             .padding(horizontal = 12.dp)
             .subPageOverScroll()
             .verticalScroll(subPageScrollState())
+            .padding(top = LocalTopBarInset.current + LocalStickyTabInset.current)
     ) {
         SectionTitleRow(
             status = {

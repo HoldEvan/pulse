@@ -37,6 +37,7 @@ import com.evan.pulse.data.settings.MAX_AUTO_BACKUP_KEEP
 import com.evan.pulse.data.settings.MIN_AUTO_BACKUP_KEEP
 import com.evan.pulse.data.backup.WebDavStage
 import com.evan.pulse.data.cache.CacheCleaner
+import com.evan.pulse.data.log.LogLevel
 import com.evan.pulse.di.ServiceLocator
 import com.evan.pulse.ui.common.AppToast
 import com.evan.pulse.ui.common.BottomBarClearance
@@ -193,6 +194,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel,
     onOpenAppearance: () -> Unit,
     onOpenWebhook: () -> Unit,
+    onOpenLogSettings: () -> Unit,
     onOpenAbout: () -> Unit
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -663,6 +665,27 @@ fun SettingsScreen(
                 }
             }
         }
+        }
+
+        item(key = "log_title") {
+            SectionTitle(
+                text = stringResource(R.string.settings_log),
+                topPadding = SectionTopGap
+            )
+        }
+        item(key = "log_card") {
+            AppPreferenceGroup(modifier = Modifier.fillMaxWidth()) {
+                item {
+                    AppArrowRow(
+                        title = stringResource(R.string.settings_log_level_row),
+                        summary = stringResource(
+                            R.string.settings_log_summary,
+                            LogLevel.fromIndex(settings.logLevelIndex).name
+                        ),
+                        onClick = onOpenLogSettings
+                    )
+                }
+            }
         }
 
         item(key = "about_title") {

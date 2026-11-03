@@ -1,5 +1,7 @@
 package com.evan.pulse.domain.net
 
+import com.evan.pulse.data.log.AppLog
+import com.evan.pulse.data.log.loggableUrl
 import com.evan.pulse.domain.model.MqttConfig
 import com.evan.pulse.domain.model.MqttConnectionState
 import com.evan.pulse.domain.model.MqttEvent
@@ -52,6 +54,8 @@ import kotlinx.coroutines.withTimeout
  *   订阅回调保持不变，因此重连后消息照常进入 [events]。
  * - 首次连接失败时停止重连，避免用户看到「连接失败」后后台仍在不停重试。
  */
+private const val LOG_TAG = "MQTT"
+
 class HiveMqMqttEngine : MqttEngine {
 
     private val lock = Mutex()
@@ -71,6 +75,7 @@ class HiveMqMqttEngine : MqttEngine {
         lock.withLock {
             closeSession()
             _state.value = MqttConnectionState.CONNECTING
+            AppLog.info(LOG_TAG, "连接 ${loggableUrl(config.brokerUrl)}")
             val gen = generation.incrementAndGet()
             val start = System.currentTimeMillis()
             var created: Session? = null
@@ -83,6 +88,7 @@ class HiveMqMqttEngine : MqttEngine {
                 }
                 created.everConnected = true
                 _state.value = MqttConnectionState.CONNECTED
+                AppLog.info(LOG_TAG, "已连接 ${loggableUrl(config.brokerUrl)}，耗时 ${System.currentTimeMillis() - start}ms")
                 _events.tryEmit(
                     MqttEvent.Connected(
                         latencyMs = System.currentTimeMillis() - start,
@@ -95,7 +101,9 @@ class HiveMqMqttEngine : MqttEngine {
                 if (session === created) session = null
                 if (e is CancellationException && e !is kotlinx.coroutines.TimeoutCancellationException) throw e
                 _state.value = MqttConnectionState.FAILED
-                _events.tryEmit(MqttEvent.Error(describe(e, "连接失败"), System.currentTimeMillis()))
+                val reason = describe(e, "连接失败")
+                AppLog.warn(LOG_TAG, "连接失败 ${loggableUrl(config.brokerUrl)}：$reason")
+                _events.tryEmit(MqttEvent.Error(reason, System.currentTimeMillis()))
             }
         }
     }

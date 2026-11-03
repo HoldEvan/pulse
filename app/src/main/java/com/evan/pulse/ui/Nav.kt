@@ -18,6 +18,9 @@ sealed interface PulseRoute : NavKey {
     /** 设置二级页：外观与主题 */
     @Serializable data object Appearance : PulseRoute
 
+    /** 设置二级页：日志级别与内存日志的实时预览 */
+    @Serializable data object LogSettings : PulseRoute
+
     /** 设置二级页：告警 Webhook 配置（方法、地址、参数、格式与请求头） */
     @Serializable data object Webhook : PulseRoute
 

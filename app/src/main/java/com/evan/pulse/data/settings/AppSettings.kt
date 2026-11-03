@@ -87,6 +87,8 @@ data class AppSettings(
     val webhookMethodIndex: Int = 0,
     /** 查询参数，按顺序追加到地址后；GET 时即全部载荷 */
     val webhookParams: List<KeyValueEntry> = emptyList(),
+    /** 日志级别下标，对应 data.log.LogLevel 的顺序，默认 2 = INFO */
+    val logLevelIndex: Int = 2,
 ) {
     /** 转换为引擎使用的代理配置，端口非法或地址为空时返回未生效配置 */
     fun toProxyConfig(): ProxyConfig = ProxyConfig(

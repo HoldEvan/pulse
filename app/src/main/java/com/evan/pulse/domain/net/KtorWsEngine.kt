@@ -1,5 +1,7 @@
 package com.evan.pulse.domain.net
 
+import com.evan.pulse.data.log.AppLog
+import com.evan.pulse.data.log.loggableUrl
 import com.evan.pulse.domain.model.ProxyConfig
 import com.evan.pulse.domain.model.ProxyType
 import com.evan.pulse.domain.model.TlsConfig
@@ -45,6 +47,8 @@ import kotlinx.coroutines.withContext
  * 与 [OkHttpEngine] 一样按 ProxyConfig 缓存客户端；直连时由 Ktor 自带网络层处理。
  * 收到服务器关闭帧或流结束时自动回到 CLOSED；用户调用 close() 时主动关闭会话。
  */
+private const val LOG_TAG = "WS"
+
 class KtorWsEngine : WsEngine {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -69,6 +73,7 @@ class KtorWsEngine : WsEngine {
         lock.withLock {
             closeSession()
             _state.value = WsConnectionState.CONNECTING
+            AppLog.info(LOG_TAG, "连接 ${loggableUrl(config.url)}")
             try {
                 val wsSession = clientFor(config.proxy, config.effectiveTls).webSocketSession(
                     urlString = config.url
@@ -84,6 +89,11 @@ class KtorWsEngine : WsEngine {
                 val negotiated = runCatching {
                     wsSession.call.response.headers["Sec-WebSocket-Protocol"]
                 }.getOrNull()?.takeIf { it.isNotBlank() }
+                AppLog.info(
+                    LOG_TAG,
+                    "已连接 ${loggableUrl(config.url)}" +
+                        (negotiated?.let { "，子协议 $it" } ?: "")
+                )
                 _events.tryEmit(WsEvent.Connected(System.currentTimeMillis(), negotiated))
                 receiveJob = scope.launch { receiveLoop(wsSession) }
                 if (config.pingIntervalSec > 0) {
@@ -99,7 +109,9 @@ class KtorWsEngine : WsEngine {
             } catch (e: Throwable) {
                 closeSession()
                 _state.value = WsConnectionState.FAILED
-                _events.tryEmit(WsEvent.Failed(describe(e), System.currentTimeMillis()))
+                val reason = describe(e)
+                AppLog.warn(LOG_TAG, "连接失败 ${loggableUrl(config.url)}：$reason")
+                _events.tryEmit(WsEvent.Failed(reason, System.currentTimeMillis()))
             }
         }
     }

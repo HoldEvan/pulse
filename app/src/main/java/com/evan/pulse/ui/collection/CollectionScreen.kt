@@ -44,7 +44,7 @@ import com.evan.pulse.R
 import com.evan.pulse.data.model.CollectionInfo
 import com.evan.pulse.data.model.CollectionTree
 import com.evan.pulse.data.model.SavedRequest
-import com.evan.pulse.data.model.httpMethod
+import com.evan.pulse.data.model.requestMethod
 import com.evan.pulse.data.model.targetUrl
 import com.evan.pulse.ui.common.BottomBarClearance
 import com.evan.pulse.ui.common.DialogActions
@@ -52,6 +52,8 @@ import com.evan.pulse.ui.common.KeyValueEditor
 import com.evan.pulse.ui.common.MethodBadge
 import com.evan.pulse.ui.common.subPageScrollState
 import com.evan.pulse.ui.spec.SpecImportScreen
+import com.evan.pulse.ui.common.LocalStickyTabInset
+import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.subPageOverScroll
 import top.yukonga.miuix.kmp.basic.BreadcrumbBar
 import top.yukonga.miuix.kmp.basic.BreadcrumbItem
@@ -156,7 +158,7 @@ fun CollectionScreen(
             .fillMaxSize()
             .subPageOverScroll()
             .verticalScroll(subPageScrollState())
-            .padding(horizontal = 12.dp)
+            .padding(start = 12.dp, top = LocalTopBarInset.current + LocalStickyTabInset.current, end = 12.dp)
     ) {
         AppTextField(
             value = viewModel.keyword,
@@ -860,7 +862,7 @@ private fun RequestRow(
     onDelete: () -> Unit
 ) {
     val url = remember(request.data) { request.targetUrl() }
-    val method = remember(request.type, request.data) { request.httpMethod() }
+    val method = remember(request.type, request.data) { request.requestMethod() }
     // 复制后的名称跟随界面语言，在组合期算好，点击回调里不再读资源
     val copyName = stringResource(R.string.request_copy_name, request.name)
 
@@ -870,12 +872,29 @@ private fun RequestRow(
             .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        AppText(
-            text = request.type.name,
-            fontSize = 11.sp,
-            modifier = Modifier.padding(end = 8.dp)
-        )
-        method?.let { m -> MethodBadge(m, modifier = Modifier.padding(end = 8.dp)) }
+        // 协议名与方法上下居中排列，方法徽章随协议名居中，列宽固定让各行名称左缘对齐
+        Column(
+            modifier = Modifier
+                .padding(end = 8.dp)
+                .width(50.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            AppText(
+                text = request.type.name,
+                fontSize = 12.sp,
+                maxLines = 1
+            )
+            method?.let { m ->
+                MethodBadge(
+                    m,
+                    modifier = Modifier.padding(top = 1.dp),
+                    fontSize = 9.sp,
+                    horizontalPadding = 4.dp,
+                    verticalPadding = 1.dp,
+                    cornerRadius = 4.dp
+                )
+            }
+        }
         Column(
             modifier = Modifier
                 .weight(1f)
