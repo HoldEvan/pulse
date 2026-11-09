@@ -47,53 +47,11 @@ class SseViewModel : ViewModel() {
     private val collectionStore = ServiceLocator.collectionStore
     private val historyStore = ServiceLocator.sseHistoryStore
 
-    var method by mutableStateOf(HttpMethod.POST)
-    var url by mutableStateOf("{{sseUrl}}/v1/chat/completions")
-    var params by mutableStateOf(listOf(KeyValue()))
-    var headers by mutableStateOf(listOf(KeyValue()))
-    var bodyType by mutableStateOf(BodyType.JSON)
-    var bodyText by mutableStateOf("")
-    var eventFilter by mutableStateOf("")
-    var autoReconnect by mutableStateOf(false)
-    var reconnectDelaySec by mutableStateOf("3")
-    var exponentialBackoff by mutableStateOf(true)
-    var maxBackoffSec by mutableStateOf("30")
-    var jitter by mutableStateOf(true)
-    /** 0 表示无限重连 */
-    var maxRetries by mutableStateOf("0")
-    /** 空闲超时（秒），0 表示不检测 */
-    var idleTimeoutSec by mutableStateOf("0")
-
-    /** 鉴权：与 HTTP 页相同的 Bearer / Basic / API Key，连接时合并到请求头 */
-    var auth by mutableStateOf(AuthConfig())
-
-    /** 手动断点：首次连接时作为 Last-Event-ID 发送 */
-    var lastEventIdInput by mutableStateOf("")
-
-    /** 连接建立超时（秒）：只约束握手与响应头到达，流建立后不受影响 */
-    var timeoutSec by mutableStateOf("15")
-
-    /** 是否套用设置页里的全局代理；关闭则本次连接强制直连 */
-    var useProxy by mutableStateOf(true)
-
-    /** 跳过 TLS 证书校验；仅用于调试自签名或内网 HTTPS 服务 */
-    var insecureTls by mutableStateOf(false)
-    var customCaPem by mutableStateOf("")
-    var clientCertPem by mutableStateOf("")
-    var clientKeyPem by mutableStateOf("")
-
+    /** 编辑区的子 Tab（原始/预览），与连接标签无关，全局一份 */
     var activeTab by mutableIntStateOf(0)
-
-    /** 当前请求所属文件夹，用于合并文件夹变量 */
-    private var activeCollectionId: Long? = null
-
-    /** 拼接预览：表达式 + 累计文本；previewTab 0=原始 1=Markdown */
-    var previewPath by mutableStateOf("$.choices[0].delta.content")
     var previewTab by mutableIntStateOf(0)
 
-    var missingVars by mutableStateOf<List<String>?>(null)
-
-    // ---- 并行连接 ----
+    // ---- 并行连接：每个标签自带连接配置与运行状态 ----
 
     private var nextConnectionId = 1
 
@@ -108,6 +66,102 @@ class SseViewModel : ViewModel() {
     val canAddConnection: Boolean get() = connections.size < MAX_CONNECTIONS
 
     // 以下成员都指向所选标签页，页面其余部分无需感知多连接
+    var method: HttpMethod
+        get() = selected.method
+        set(value) { selected.method = value }
+
+    var url: String
+        get() = selected.url
+        set(value) { selected.url = value }
+
+    var params: List<KeyValue>
+        get() = selected.params
+        set(value) { selected.params = value }
+
+    var headers: List<KeyValue>
+        get() = selected.headers
+        set(value) { selected.headers = value }
+
+    var bodyType: BodyType
+        get() = selected.bodyType
+        set(value) { selected.bodyType = value }
+
+    var bodyText: String
+        get() = selected.bodyText
+        set(value) { selected.bodyText = value }
+
+    var eventFilter: String
+        get() = selected.eventFilter
+        set(value) { selected.eventFilter = value }
+
+    var autoReconnect: Boolean
+        get() = selected.autoReconnect
+        set(value) { selected.autoReconnect = value }
+
+    var reconnectDelaySec: String
+        get() = selected.reconnectDelaySec
+        set(value) { selected.reconnectDelaySec = value }
+
+    var exponentialBackoff: Boolean
+        get() = selected.exponentialBackoff
+        set(value) { selected.exponentialBackoff = value }
+
+    var maxBackoffSec: String
+        get() = selected.maxBackoffSec
+        set(value) { selected.maxBackoffSec = value }
+
+    var jitter: Boolean
+        get() = selected.jitter
+        set(value) { selected.jitter = value }
+
+    var maxRetries: String
+        get() = selected.maxRetries
+        set(value) { selected.maxRetries = value }
+
+    var idleTimeoutSec: String
+        get() = selected.idleTimeoutSec
+        set(value) { selected.idleTimeoutSec = value }
+
+    var auth: AuthConfig
+        get() = selected.auth
+        set(value) { selected.auth = value }
+
+    var lastEventIdInput: String
+        get() = selected.lastEventIdInput
+        set(value) { selected.lastEventIdInput = value }
+
+    var timeoutSec: String
+        get() = selected.timeoutSec
+        set(value) { selected.timeoutSec = value }
+
+    var useProxy: Boolean
+        get() = selected.useProxy
+        set(value) { selected.useProxy = value }
+
+    var insecureTls: Boolean
+        get() = selected.insecureTls
+        set(value) { selected.insecureTls = value }
+
+    var customCaPem: String
+        get() = selected.customCaPem
+        set(value) { selected.customCaPem = value }
+
+    var clientCertPem: String
+        get() = selected.clientCertPem
+        set(value) { selected.clientCertPem = value }
+
+    var clientKeyPem: String
+        get() = selected.clientKeyPem
+        set(value) { selected.clientKeyPem = value }
+
+    var previewPath: String
+        get() = selected.previewPath
+        set(value) { selected.previewPath = value }
+
+    var missingVars: List<String>?
+        get() = selected.missingVars
+        set(value) { selected.missingVars = value }
+
     val state: StateFlow<SseConnectionState> get() = selected.state
     val lines: List<UiEventLine> get() = selected.lines
     val stats: SseStreamStats get() = selected.stats
@@ -121,16 +175,27 @@ class SseViewModel : ViewModel() {
         viewModelScope.launch {
             collectionStore.pendingLoad.collect { req ->
                 if (req?.type == RequestType.SSE) {
-                    restore(req.data)
-                    loadedRequest.track(req.id)
-                    activeCollectionId = req.collectionId
+                    // 当前标签还是空白就直接填进去，否则开一个新标签，避免覆盖手上的连接
+                    val target = if (selected.isIdle() || !canAddConnection) {
+                        selected
+                    } else {
+                        newConnection().also { connections.add(it); selectedIndex = connections.lastIndex }
+                    }
+                    restoreInto(target, req.data)
+                    target.loadedRequest.track(req.id)
+                    target.activeCollectionId = req.collectionId
                     collectionStore.consumePending(req)
                 }
             }
         }
     }
 
-    private fun newConnection() = SseConnection(nextConnectionId++, viewModelScope, ServiceLocator.sseHistoryStore)
+    private fun newConnection() = SseConnection(
+        id = nextConnectionId++,
+        scope = viewModelScope,
+        history = ServiceLocator.sseHistoryStore,
+        loadedRequest = LoadedRequestTracker(ServiceLocator.collectionStore)
+    )
 
     fun selectConnection(index: Int) {
         if (index in connections.indices) selectedIndex = index
@@ -154,16 +219,13 @@ class SseViewModel : ViewModel() {
         }
     }
 
-    /** 与集合条目的绑定：从集合加载或保存过一次后，再保存即原地覆盖 */
-    private val loadedRequest = LoadedRequestTracker(ServiceLocator.collectionStore)
-
     /** 已绑定集合条目时原地覆盖；返回 false 表示需要弹出保存对话框 */
-    fun saveOverLoaded(): Boolean = loadedRequest.saveOver { snapshot() }
+    fun saveOverLoaded(): Boolean = selected.loadedRequest.saveOver { snapshot() }
 
     /** 保存对话框新建成功后绑定新条目，避免下次保存再建一条 */
     fun markSaved(id: Long) {
-        loadedRequest.track(id)
-        activeCollectionId = collectionStore.requests.value
+        selected.loadedRequest.track(id)
+        selected.activeCollectionId = collectionStore.requests.value
             .firstOrNull { it.id == id }?.collectionId
     }
 
@@ -202,35 +264,36 @@ class SseViewModel : ViewModel() {
         )
     )
 
-    private fun restore(data: String) {
+    /** 把集合条目的快照写进指定标签；只动目标标签，不依赖当前选中项 */
+    private fun restoreInto(tab: SseConnection, data: String) {
         val snap = try {
             snapshotJson.decodeFromString(SseSnapshot.serializer(), data)
         } catch (_: Exception) {
             return
         }
-        url = snap.url
-        method = HttpMethod.parse(snap.method)
-        params = snap.params.map { KeyValue(it.key, it.value, it.enabled) }.ifEmpty { listOf(KeyValue()) }
-        headers = snap.headers.map { KeyValue(it.key, it.value, it.enabled) }.ifEmpty { listOf(KeyValue()) }
-        bodyType = BodyType.entries.firstOrNull { it.name == snap.bodyType } ?: BodyType.JSON
-        bodyText = snap.bodyText
-        eventFilter = snap.eventFilter
-        autoReconnect = snap.autoReconnect
-        reconnectDelaySec = snap.reconnectDelaySec.toString()
-        exponentialBackoff = snap.exponentialBackoff
-        maxBackoffSec = snap.maxBackoffSec.toString()
-        jitter = snap.jitter
-        maxRetries = snap.maxRetries.toString()
-        idleTimeoutSec = snap.idleTimeoutSec.toString()
-        lastEventIdInput = snap.lastEventId
-        timeoutSec = snap.timeoutSec.toString()
-        useProxy = snap.useProxy
-        insecureTls = snap.insecureTls
-        customCaPem = snap.customCaPem
-        clientCertPem = snap.clientCertPem
-        clientKeyPem = snap.clientKeyPem
-        previewPath = snap.previewPath
-        auth = AuthConfig(
+        tab.url = snap.url
+        tab.method = HttpMethod.parse(snap.method)
+        tab.params = snap.params.map { KeyValue(it.key, it.value, it.enabled) }.ifEmpty { listOf(KeyValue()) }
+        tab.headers = snap.headers.map { KeyValue(it.key, it.value, it.enabled) }.ifEmpty { listOf(KeyValue()) }
+        tab.bodyType = BodyType.entries.firstOrNull { it.name == snap.bodyType } ?: BodyType.JSON
+        tab.bodyText = snap.bodyText
+        tab.eventFilter = snap.eventFilter
+        tab.autoReconnect = snap.autoReconnect
+        tab.reconnectDelaySec = snap.reconnectDelaySec.toString()
+        tab.exponentialBackoff = snap.exponentialBackoff
+        tab.maxBackoffSec = snap.maxBackoffSec.toString()
+        tab.jitter = snap.jitter
+        tab.maxRetries = snap.maxRetries.toString()
+        tab.idleTimeoutSec = snap.idleTimeoutSec.toString()
+        tab.lastEventIdInput = snap.lastEventId
+        tab.timeoutSec = snap.timeoutSec.toString()
+        tab.useProxy = snap.useProxy
+        tab.insecureTls = snap.insecureTls
+        tab.customCaPem = snap.customCaPem
+        tab.clientCertPem = snap.clientCertPem
+        tab.clientKeyPem = snap.clientKeyPem
+        tab.previewPath = snap.previewPath
+        tab.auth = AuthConfig(
             type = AuthType.entries.firstOrNull { it.name == snap.authType } ?: AuthType.NONE,
             bearerToken = snap.bearerToken,
             basicUsername = snap.basicUsername,
@@ -271,7 +334,7 @@ class SseViewModel : ViewModel() {
         if (url.isBlank()) return
         val connection = selected
         val proxy = if (useProxy) settingsStore.settings.value.toProxyConfig() else ProxyConfig()
-        val vars = ServiceLocator.varsForCollection(activeCollectionId)
+        val vars = ServiceLocator.varsForCollection(selected.activeCollectionId)
 
         // 先解析完所有字段再检查缺失变量：缺任何一个都不发起连接
         val missing = sortedSetOf<String>()
@@ -331,9 +394,7 @@ class SseViewModel : ViewModel() {
                 idleTimeoutSec = idleTimeoutSec.toIntOrNull() ?: 0,
                 insecureTls = insecureTls,
                 tls = tlsConfigOf(insecureTls, customCaPem, clientCertPem, clientKeyPem)
-            ),
-            method = method.value,
-            previewPath = { previewPath }
+            )
         )
     }
 

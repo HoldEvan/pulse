@@ -2,6 +2,7 @@ package com.evan.pulse.ui.http
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -67,86 +68,223 @@ class HttpViewModel : ViewModel() {
 
     val currentProjectId = projectStore.currentProjectId
 
-    var method by mutableStateOf(HttpMethod.GET)
-    var url by mutableStateOf("{{baseUrl}}/ping")
-    var params by mutableStateOf(listOf(KeyValue()))
-    var headers by mutableStateOf(listOf(KeyValue()))
-    var bodyType by mutableStateOf(BodyType.NONE)
-    var bodyText by mutableStateOf("")
-    var graphqlVariables by mutableStateOf("{}")
-    var formFields by mutableStateOf(listOf(FormField()))
-    var authType by mutableStateOf(AuthType.NONE)
-    var bearerToken by mutableStateOf("")
-    var basicUsername by mutableStateOf("")
-    var basicPassword by mutableStateOf("")
-    var apiKeyName by mutableStateOf("")
-    var apiKeyValue by mutableStateOf("")
-    var preScript by mutableStateOf("")
-    var postScript by mutableStateOf("")
-
-    /** 请求超时（秒），输入框直接绑文本，非法输入回落到默认 30s */
-    var timeoutSec by mutableStateOf("30")
-
-    /** 连接超时（秒）：留空沿用总超时 */
-    var connectTimeoutSec by mutableStateOf("")
-    /** 读取超时（秒）：留空沿用总超时 */
-    var readTimeoutSec by mutableStateOf("")
-
-    /** 原始二进制请求体：所选文件 URI 与展示名 */
-    var bodyFileUri by mutableStateOf<String?>(null)
-    var bodyFileName by mutableStateOf<String?>(null)
-
-    /** 是否套用设置页里的全局代理；关闭则本次请求强制直连 */
-    var useProxy by mutableStateOf(true)
-
-    /** 跳过 TLS 证书校验；仅用于调试自签名或内网 HTTPS 服务 */
-    var insecureTls by mutableStateOf(false)
-    var customCaPem by mutableStateOf("")
-    var clientCertPem by mutableStateOf("")
-    var clientKeyPem by mutableStateOf("")
-
-    /** 是否自动跟随 3xx 重定向；关闭后直接展示 3xx 与 Location */
-    var followRedirects by mutableStateOf(true)
-
-    /** 最大跟随跳数，输入框直接绑文本 */
-    var maxRedirects by mutableStateOf("10")
-
-    /** 弱网模拟档位；NONE 即关闭，FORCE_TIMEOUT 配合秒数生效 */
-    var throttlePreset by mutableStateOf(NetworkPreset.NONE)
-
-    /** 强制超时秒数，输入框直接绑文本，空或 0 视为不启用 */
-    var forceTimeoutSec by mutableStateOf("")
-
-    var activeTab by mutableIntStateOf(0)
-    var scriptTab by mutableIntStateOf(0)
-    var sending by mutableStateOf(false)
-    var outcome by mutableStateOf<HttpCallOutcome?>(null)
-    var missingVars by mutableStateOf<List<String>?>(null)
-
-    /** 上一次请求里前置/后置脚本的 console 输出 */
-    var scriptConsole by mutableStateOf<List<String>>(emptyList())
-    var scriptTests by mutableStateOf<List<TestRecord>>(emptyList())
-
-    /** 响应断言：每次发送后按顺序校验响应体，结果见 [assertionResults] */
-    var assertions by mutableStateOf<List<ResponseAssertion>>(emptyList())
-    var assertionResults by mutableStateOf<List<AssertionCheck>>(emptyList())
-    var scriptError by mutableStateOf<String?>(null)
-
     private val collectionStore = ServiceLocator.collectionStore
 
-    /** 当前请求所属文件夹；为空时没有文件夹变量可用 */
-    private var activeCollectionId: Long? = null
+    private var nextTabId = 1
 
-    /** 与集合条目的绑定：从集合加载或保存过一次后，再保存即原地覆盖 */
-    private val loadedRequest = LoadedRequestTracker(collectionStore)
+    /** 所有请求标签，至少保留一个；每个标签自带请求配置与响应 */
+    val tabs = mutableStateListOf(newTab())
+
+    var selectedIndex by mutableIntStateOf(0)
+        private set
+
+    val selected: HttpTab get() = tabs[selectedIndex.coerceIn(0, tabs.lastIndex)]
+
+    val canAddTab: Boolean get() = tabs.size < MAX_TABS
+
+    /** 编辑区的子 Tab（参数/请求体/...），与请求标签无关，全局一份 */
+    var activeTab by mutableIntStateOf(0)
+    var scriptTab by mutableIntStateOf(0)
+
+    // 以下成员都指向所选标签，页面其余部分无需感知多标签
+    var method: HttpMethod
+        get() = selected.method
+        set(value) { selected.method = value }
+
+    var url: String
+        get() = selected.url
+        set(value) { selected.url = value }
+
+    var params: List<KeyValue>
+        get() = selected.params
+        set(value) { selected.params = value }
+
+    var headers: List<KeyValue>
+        get() = selected.headers
+        set(value) { selected.headers = value }
+
+    var bodyType: BodyType
+        get() = selected.bodyType
+        set(value) { selected.bodyType = value }
+
+    var bodyText: String
+        get() = selected.bodyText
+        set(value) { selected.bodyText = value }
+
+    var graphqlVariables: String
+        get() = selected.graphqlVariables
+        set(value) { selected.graphqlVariables = value }
+
+    var formFields: List<FormField>
+        get() = selected.formFields
+        set(value) { selected.formFields = value }
+
+    var authType: AuthType
+        get() = selected.authType
+        set(value) { selected.authType = value }
+
+    var bearerToken: String
+        get() = selected.bearerToken
+        set(value) { selected.bearerToken = value }
+
+    var basicUsername: String
+        get() = selected.basicUsername
+        set(value) { selected.basicUsername = value }
+
+    var basicPassword: String
+        get() = selected.basicPassword
+        set(value) { selected.basicPassword = value }
+
+    var apiKeyName: String
+        get() = selected.apiKeyName
+        set(value) { selected.apiKeyName = value }
+
+    var apiKeyValue: String
+        get() = selected.apiKeyValue
+        set(value) { selected.apiKeyValue = value }
+
+    var preScript: String
+        get() = selected.preScript
+        set(value) { selected.preScript = value }
+
+    var postScript: String
+        get() = selected.postScript
+        set(value) { selected.postScript = value }
+
+    var timeoutSec: String
+        get() = selected.timeoutSec
+        set(value) { selected.timeoutSec = value }
+
+    var connectTimeoutSec: String
+        get() = selected.connectTimeoutSec
+        set(value) { selected.connectTimeoutSec = value }
+
+    var readTimeoutSec: String
+        get() = selected.readTimeoutSec
+        set(value) { selected.readTimeoutSec = value }
+
+    var bodyFileUri: String?
+        get() = selected.bodyFileUri
+        set(value) { selected.bodyFileUri = value }
+
+    var bodyFileName: String?
+        get() = selected.bodyFileName
+        set(value) { selected.bodyFileName = value }
+
+    var useProxy: Boolean
+        get() = selected.useProxy
+        set(value) { selected.useProxy = value }
+
+    var insecureTls: Boolean
+        get() = selected.insecureTls
+        set(value) { selected.insecureTls = value }
+
+    var customCaPem: String
+        get() = selected.customCaPem
+        set(value) { selected.customCaPem = value }
+
+    var clientCertPem: String
+        get() = selected.clientCertPem
+        set(value) { selected.clientCertPem = value }
+
+    var clientKeyPem: String
+        get() = selected.clientKeyPem
+        set(value) { selected.clientKeyPem = value }
+
+    var followRedirects: Boolean
+        get() = selected.followRedirects
+        set(value) { selected.followRedirects = value }
+
+    var maxRedirects: String
+        get() = selected.maxRedirects
+        set(value) { selected.maxRedirects = value }
+
+    var throttlePreset: NetworkPreset
+        get() = selected.throttlePreset
+        set(value) { selected.throttlePreset = value }
+
+    var forceTimeoutSec: String
+        get() = selected.forceTimeoutSec
+        set(value) { selected.forceTimeoutSec = value }
+
+    var assertions: List<ResponseAssertion>
+        get() = selected.assertions
+        set(value) { selected.assertions = value }
+
+    var sending: Boolean
+        get() = selected.sending
+        set(value) { selected.sending = value }
+
+    var outcome: HttpCallOutcome?
+        get() = selected.outcome
+        set(value) { selected.outcome = value }
+
+    var assertionResults: List<AssertionCheck>
+        get() = selected.assertionResults
+        set(value) { selected.assertionResults = value }
+
+    var scriptConsole: List<String>
+        get() = selected.scriptConsole
+        set(value) { selected.scriptConsole = value }
+
+    var scriptTests: List<TestRecord>
+        get() = selected.scriptTests
+        set(value) { selected.scriptTests = value }
+
+    var scriptError: String?
+        get() = selected.scriptError
+        set(value) { selected.scriptError = value }
+
+    var missingVars: List<String>?
+        get() = selected.missingVars
+        set(value) { selected.missingVars = value }
+
+    private fun newTab() = HttpTab(nextTabId++, LoadedRequestTracker(collectionStore))
+
+    fun selectTab(index: Int) {
+        if (index in tabs.indices) selectedIndex = index
+    }
+
+    fun addTab() {
+        if (!canAddTab) return
+        tabs.add(newTab())
+        selectedIndex = tabs.lastIndex
+    }
+
+    /** 关闭标签会取消该标签正在进行的请求；关掉最后一个时换成一个空白标签 */
+    fun closeTab(index: Int) {
+        if (index !in tabs.indices) return
+        tabs[index].job?.cancel()
+        tabs.removeAt(index)
+        if (tabs.isEmpty()) tabs.add(newTab())
+        selectedIndex = when {
+            selectedIndex > index -> selectedIndex - 1
+            else -> selectedIndex.coerceAtMost(tabs.lastIndex)
+        }
+    }
+
+    override fun onCleared() {
+        tabs.forEach { it.job?.cancel() }
+    }
+
+    private companion object {
+        /** 同时保留的请求标签上限；每个标签都完整保留请求与响应 */
+        const val MAX_TABS = 5
+    }
 
     init {
         viewModelScope.launch {
             collectionStore.pendingLoad.collect { req ->
                 if (req?.type == RequestType.HTTP) {
-                    restore(req.data)
-                    loadedRequest.track(req.id)
-                    activeCollectionId = req.collectionId
+                    // 当前标签还是空白就直接填进去，否则开一个新标签，避免覆盖手上的请求
+                    val target = if (selected.isIdle() || !canAddTab) {
+                        selected
+                    } else {
+                        newTab().also { tabs.add(it); selectedIndex = tabs.lastIndex }
+                    }
+                    restoreInto(target, req.data)
+                    target.loadedRequest.track(req.id)
+                    target.activeCollectionId = req.collectionId
                     collectionStore.consumePending(req)
                 }
             }
@@ -154,12 +292,12 @@ class HttpViewModel : ViewModel() {
     }
 
     /** 已绑定集合条目时原地覆盖；返回 false 表示需要弹出保存对话框 */
-    fun saveOverLoaded(): Boolean = loadedRequest.saveOver { snapshot() }
+    fun saveOverLoaded(): Boolean = selected.loadedRequest.saveOver { snapshot() }
 
     /** 保存对话框新建成功后绑定新条目，避免下次保存再建一条 */
     fun markSaved(id: Long) {
-        loadedRequest.track(id)
-        activeCollectionId = collectionStore.requests.value.firstOrNull { it.id == id }?.collectionId
+        selected.loadedRequest.track(id)
+        selected.activeCollectionId = collectionStore.requests.value.firstOrNull { it.id == id }?.collectionId
     }
 
     /** 导出当前配置为可恢复快照 */
@@ -200,54 +338,58 @@ class HttpViewModel : ViewModel() {
         )
     )
 
-    private fun restore(data: String) {
+    /** 把集合条目的快照写进指定标签；只动目标标签，不依赖当前选中项 */
+    private fun restoreInto(tab: HttpTab, data: String) {
         val snap = try {
             snapshotJson.decodeFromString(HttpSnapshot.serializer(), data)
         } catch (_: Exception) {
             return
         }
-        method = HttpMethod.parse(snap.method)
-        url = snap.url
-        params = snap.params.map { KeyValue(it.key, it.value, it.enabled) }.ifEmpty { listOf(KeyValue()) }
-        headers = snap.headers.map { KeyValue(it.key, it.value, it.enabled) }.ifEmpty { listOf(KeyValue()) }
-        bodyType = BodyType.entries.firstOrNull { it.name == snap.bodyType } ?: BodyType.NONE
-        bodyText = snap.bodyText
-        graphqlVariables = snap.graphqlVariables
-        formFields = snap.formFields
+        tab.method = HttpMethod.parse(snap.method)
+        tab.url = snap.url
+        tab.params = snap.params.map { KeyValue(it.key, it.value, it.enabled) }.ifEmpty { listOf(KeyValue()) }
+        tab.headers = snap.headers.map { KeyValue(it.key, it.value, it.enabled) }.ifEmpty { listOf(KeyValue()) }
+        tab.bodyType = BodyType.entries.firstOrNull { it.name == snap.bodyType } ?: BodyType.NONE
+        tab.bodyText = snap.bodyText
+        tab.graphqlVariables = snap.graphqlVariables
+        tab.formFields = snap.formFields
             .map { FormField(name = it.name, value = it.value, isFile = it.isFile, fileName = it.fileName) }
             .ifEmpty { listOf(FormField()) }
-        authType = AuthType.entries.firstOrNull { it.name == snap.authType } ?: AuthType.NONE
-        bearerToken = snap.bearerToken
-        basicUsername = snap.basicUsername
-        basicPassword = snap.basicPassword
-        apiKeyName = snap.apiKeyName
-        apiKeyValue = snap.apiKeyValue
-        preScript = snap.preScript
-        postScript = snap.postScript
-        timeoutSec = snap.timeoutSec.takeIf { it.isNotBlank() } ?: "30"
-        connectTimeoutSec = snap.connectTimeoutSec
-        readTimeoutSec = snap.readTimeoutSec
-        bodyFileUri = snap.bodyFileUri
-        bodyFileName = snap.bodyFileName
-        useProxy = snap.useProxy
-        throttlePreset = NetworkPreset.entries.firstOrNull { it.name == snap.throttlePreset } ?: NetworkPreset.NONE
-        forceTimeoutSec = snap.forceTimeoutSec
-        insecureTls = snap.insecureTls
-        customCaPem = snap.customCaPem
-        clientCertPem = snap.clientCertPem
-        clientKeyPem = snap.clientKeyPem
-        followRedirects = snap.followRedirects
-        maxRedirects = snap.maxRedirects.toString()
-        assertions = snap.assertions.map { ResponseAssertion(it.type, it.expression, it.expected, it.operator) }
+        tab.authType = AuthType.entries.firstOrNull { it.name == snap.authType } ?: AuthType.NONE
+        tab.bearerToken = snap.bearerToken
+        tab.basicUsername = snap.basicUsername
+        tab.basicPassword = snap.basicPassword
+        tab.apiKeyName = snap.apiKeyName
+        tab.apiKeyValue = snap.apiKeyValue
+        tab.preScript = snap.preScript
+        tab.postScript = snap.postScript
+        tab.timeoutSec = snap.timeoutSec.takeIf { it.isNotBlank() } ?: "30"
+        tab.connectTimeoutSec = snap.connectTimeoutSec
+        tab.readTimeoutSec = snap.readTimeoutSec
+        tab.bodyFileUri = snap.bodyFileUri
+        tab.bodyFileName = snap.bodyFileName
+        tab.useProxy = snap.useProxy
+        tab.throttlePreset = NetworkPreset.entries.firstOrNull { it.name == snap.throttlePreset } ?: NetworkPreset.NONE
+        tab.forceTimeoutSec = snap.forceTimeoutSec
+        tab.insecureTls = snap.insecureTls
+        tab.customCaPem = snap.customCaPem
+        tab.clientCertPem = snap.clientCertPem
+        tab.clientKeyPem = snap.clientKeyPem
+        tab.followRedirects = snap.followRedirects
+        tab.maxRedirects = snap.maxRedirects.toString()
+        tab.assertions = snap.assertions.map { ResponseAssertion(it.type, it.expression, it.expected, it.operator) }
     }
 
     /** 活动环境变量与文件夹变量合并；文件夹变量优先，便于按集合覆盖环境默认值 */
-    fun activeEnvVars(): Map<String, String> {
+    fun activeEnvVars(): Map<String, String> = envVarsFor(selected.activeCollectionId)
+
+    /** 指定文件夹的变量视图；请求在另一个标签里发送时仍用发起时的文件夹 */
+    private fun envVarsFor(collectionId: Long?): Map<String, String> {
         val pid = currentProjectId.value
         val env = envStore.environments.value.firstOrNull { it.projectId == pid && it.isActive }
         val base = LinkedHashMap<String, String>()
         env?.variables?.forEach { (key, value) -> base[key] = value }
-        base.putAll(collectionStore.resolvedVars(activeCollectionId))
+        base.putAll(collectionStore.resolvedVars(collectionId))
         return base
     }
 
@@ -359,40 +501,40 @@ class HttpViewModel : ViewModel() {
     )
 
     /** 只按界面当前编辑状态拼配置：占位符先不解析，鉴权头先合并进来 */
-    private fun rawConfig(): HttpCallConfig {
+    private fun rawConfig(tab: HttpTab): HttpCallConfig {
         val appliedAuth = authApplier.apply(
             AuthConfig(
-                type = authType,
-                bearerToken = bearerToken,
-                basicUsername = basicUsername,
-                basicPassword = basicPassword,
-                apiKeyName = apiKeyName,
-                apiKeyValue = apiKeyValue
+                type = tab.authType,
+                bearerToken = tab.bearerToken,
+                basicUsername = tab.basicUsername,
+                basicPassword = tab.basicPassword,
+                apiKeyName = tab.apiKeyName,
+                apiKeyValue = tab.apiKeyValue
             )
         )
         return HttpCallConfig(
-            method = method,
-            url = url,
-            headers = headers.filter { it.enabled && it.key.isNotBlank() } + appliedAuth,
-            queryParams = params.filter { it.enabled && it.key.isNotBlank() },
-            bodyType = bodyType,
-            body = bodyText,
-            graphqlVariables = graphqlVariables,
-            formFields = formFields.filter { it.name.isNotBlank() },
-            timeoutMs = (timeoutSec.toLongOrNull()?.coerceAtLeast(1) ?: 30L) * 1000L,
-            connectTimeoutMs = (connectTimeoutSec.toLongOrNull()?.takeIf { it > 0 } ?: 0L) * 1000L,
-            readTimeoutMs = (readTimeoutSec.toLongOrNull()?.takeIf { it > 0 } ?: 0L) * 1000L,
-            fileUri = bodyFileUri,
-            fileName = bodyFileName,
-            proxy = if (useProxy) settingsStore.settings.value.toProxyConfig() else ProxyConfig(),
+            method = tab.method,
+            url = tab.url,
+            headers = tab.headers.filter { it.enabled && it.key.isNotBlank() } + appliedAuth,
+            queryParams = tab.params.filter { it.enabled && it.key.isNotBlank() },
+            bodyType = tab.bodyType,
+            body = tab.bodyText,
+            graphqlVariables = tab.graphqlVariables,
+            formFields = tab.formFields.filter { it.name.isNotBlank() },
+            timeoutMs = (tab.timeoutSec.toLongOrNull()?.coerceAtLeast(1) ?: 30L) * 1000L,
+            connectTimeoutMs = (tab.connectTimeoutSec.toLongOrNull()?.takeIf { it > 0 } ?: 0L) * 1000L,
+            readTimeoutMs = (tab.readTimeoutSec.toLongOrNull()?.takeIf { it > 0 } ?: 0L) * 1000L,
+            fileUri = tab.bodyFileUri,
+            fileName = tab.bodyFileName,
+            proxy = if (tab.useProxy) settingsStore.settings.value.toProxyConfig() else ProxyConfig(),
             throttle = NetworkThrottleConfig(
-                preset = throttlePreset,
-                forceTimeoutSec = forceTimeoutSec.toIntOrNull()?.coerceIn(0, 300) ?: 0
+                preset = tab.throttlePreset,
+                forceTimeoutSec = tab.forceTimeoutSec.toIntOrNull()?.coerceIn(0, 300) ?: 0
             ),
-            insecureTls = insecureTls,
-            tls = tlsConfigOf(insecureTls, customCaPem, clientCertPem, clientKeyPem),
-            followRedirects = followRedirects,
-            maxRedirects = maxRedirects.toIntOrNull()?.coerceIn(0, 20) ?: 10
+            insecureTls = tab.insecureTls,
+            tls = tlsConfigOf(tab.insecureTls, tab.customCaPem, tab.clientCertPem, tab.clientKeyPem),
+            followRedirects = tab.followRedirects,
+            maxRedirects = tab.maxRedirects.toIntOrNull()?.coerceIn(0, 20) ?: 10
         )
     }
 
@@ -430,8 +572,8 @@ class HttpViewModel : ViewModel() {
      * runScripts 为 true 时先跑前置脚本再解析占位符，
      * 这样脚本里 pm.variables.set 出来的值当次请求就能用上。
      */
-    private fun buildCall(scope: VariableScope, runScripts: Boolean): BuiltCall {
-        val raw = rawConfig()
+    private fun buildCall(tab: HttpTab, scope: VariableScope, runScripts: Boolean): BuiltCall {
+        val raw = rawConfig(tab)
         val mutable = MutableRequest(
             method = raw.method.value,
             url = raw.url,
@@ -442,9 +584,9 @@ class HttpViewModel : ViewModel() {
             formFields = raw.formFields.map { ScriptForm(it.name, it.value) }.toMutableList()
         )
 
-        val preResult = if (runScripts && preScript.isNotBlank()) {
-            val sandbox = ScriptSession(scope, collectionScope())
-            executor.runPre(preScript, mutable, sandbox)
+        val preResult = if (runScripts && tab.preScript.isNotBlank()) {
+            val sandbox = ScriptSession(scope, collectionScope(tab.activeCollectionId))
+            executor.runPre(tab.preScript, mutable, sandbox)
         } else {
             ScriptRunResult.Skipped
         }
@@ -481,8 +623,8 @@ class HttpViewModel : ViewModel() {
     }
 
     /** 文件夹变量作用域：只读写当前文件夹自身的变量 */
-    private fun collectionScope(): VariableScope? {
-        val id = activeCollectionId ?: return null
+    private fun collectionScope(id: Long?): VariableScope? {
+        id ?: return null
         return VariableScope(
             envLookup = { collectionStore.varsOf(id).filter { it.enabled && it.key.isNotBlank() }
                 .associate { it.key to it.value } },
@@ -492,33 +634,36 @@ class HttpViewModel : ViewModel() {
 
     /** 导出当前请求为 [format] 格式文本；不跑脚本，先看原始内容 */
     fun exportText(format: HttpExportFormat): String =
-        buildCall(VariableScope(::activeEnvVars, ServiceLocator.scriptEnvWriter), runScripts = false)
+        buildCall(selected, VariableScope(::activeEnvVars, ServiceLocator.scriptEnvWriter), runScripts = false)
             .config.exportTo(format)
 
     fun send() {
-        if (sending) return
-        viewModelScope.launch {
-            sending = true
-            outcome = null
+        // 捕获发起时的标签：发送过程中切到别的标签，结果仍写回本标签
+        val tab = selected
+        if (tab.sending) return
+        tab.job = viewModelScope.launch {
+            tab.sending = true
+            tab.outcome = null
             missingVars = null
-            scriptConsole = emptyList()
-            scriptTests = emptyList()
-            assertionResults = emptyList()
-            scriptError = null
+            tab.scriptConsole = emptyList()
+            tab.scriptTests = emptyList()
+            tab.assertionResults = emptyList()
+            tab.scriptError = null
             try {
                 // 前置与后置脚本共用同一个变量作用域，前置设的值后置能读到
-                val scope = VariableScope(::activeEnvVars, ServiceLocator.scriptEnvWriter)
-                val built = buildCall(scope, runScripts = true)
+                val vars = { envVarsFor(tab.activeCollectionId) }
+                val scope = VariableScope(vars, ServiceLocator.scriptEnvWriter)
+                val built = buildCall(tab, scope, runScripts = true)
                 if (built.missingVars.isNotEmpty()) {
                     missingVars = built.missingVars
-                    scriptConsole = built.preResult.consoleLines()
-                    scriptTests = built.preResult.testRecords()
-                    scriptError = built.preResult.errorMessage()
+                    tab.scriptConsole = built.preResult.consoleLines()
+                    tab.scriptTests = built.preResult.testRecords()
+                    tab.scriptError = built.preResult.errorMessage()
                     return@launch
                 }
 
                 val result = engine.execute(withCookies(built.config))
-                outcome = result
+                tab.outcome = result
                 // 历史先在这里攒好，等断言求值完再落库，详情页才能看到这次请求的断言结论
                 var historyEntry: HistoryEntry? = null
                 if (result is HttpCallOutcome.Success) {
@@ -549,15 +694,20 @@ class HttpViewModel : ViewModel() {
                         )
                 }
 
-                val postResult = if (postScript.isNotBlank()) {
-                    executor.runPost(postScript, built.config, result, ScriptSession(scope, collectionScope()))
+                val postResult = if (tab.postScript.isNotBlank()) {
+                    executor.runPost(
+                        tab.postScript,
+                        built.config,
+                        result,
+                        ScriptSession(scope, collectionScope(tab.activeCollectionId))
+                    )
                 } else {
                     ScriptRunResult.Skipped
                 }
-                publishScriptResult(built.preResult, postResult)
+                publishScriptResult(tab, built.preResult, postResult)
                 // 断言放在脚本之后求值：前置/后置脚本 set 的变量都能被 {{变量}} 引用；
                 // 请求失败（超时/断网）没有响应体可校验，结果清空
-                assertionResults = if (result is HttpCallOutcome.Success) {
+                tab.assertionResults = if (result is HttpCallOutcome.Success) {
                     ResponseAssertions.evaluate(
                         AssertionTarget(
                             body = result.body,
@@ -566,7 +716,7 @@ class HttpViewModel : ViewModel() {
                                 .mapValues { (_, values) -> values.joinToString(", ") },
                             durationMs = result.durationMs
                         ),
-                        assertions,
+                        tab.assertions,
                         scope.all()
                     )
                 } else {
@@ -575,7 +725,7 @@ class HttpViewModel : ViewModel() {
                 historyEntry?.let { entry ->
                     historyStore.add(
                         entry.copy(
-                            assertions = assertionResults.map { check ->
+                            assertions = tab.assertionResults.map { check ->
                                 HistoryAssertion(
                                     type = check.assertion.type,
                                     expression = check.assertion.expression,
@@ -589,20 +739,20 @@ class HttpViewModel : ViewModel() {
                     )
                 }
             } finally {
-                sending = false
+                tab.sending = false
             }
         }
     }
 
-    /** 把前置与后置脚本的输出合并到界面状态上 */
-    private fun publishScriptResult(pre: ScriptRunResult, post: ScriptRunResult) {
-        scriptConsole = pre.consoleLines() + post.consoleLines()
-        scriptTests = pre.testRecords() + post.testRecords()
-        scriptError = pre.errorMessage() ?: post.errorMessage()
+    /** 把前置与后置脚本的输出合并到标签界面上 */
+    private fun publishScriptResult(tab: HttpTab, pre: ScriptRunResult, post: ScriptRunResult) {
+        tab.scriptConsole = pre.consoleLines() + post.consoleLines()
+        tab.scriptTests = pre.testRecords() + post.testRecords()
+        tab.scriptError = pre.errorMessage() ?: post.errorMessage()
     }
 
     fun cancel() {
-        sending = false
+        selected.job?.cancel()
     }
 
     /** 历史里记录的请求体：表单类按 name=value 摊开，便于回看提交了什么 */

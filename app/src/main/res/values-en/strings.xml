@@ -455,6 +455,9 @@
     <string name="env_empty">No environments in this project</string>
     <string name="http_no_response">No request sent yet</string>
     <string name="http_failure">Request failed (%1$s)</string>
+    <string name="http_tab_new">New request</string>
+    <string name="cd_http_add_tab">New request tab</string>
+    <string name="cd_http_close_tab">Close request tab %1$s</string>
     <string name="http_request_label">Request</string>
     <string name="http_response_label">Response</string>
     <string name="http_response_headers">Response headers</string>
@@ -1159,6 +1162,9 @@
     <string name="monitor_trend_peak">Peak latency</string>
     <string name="monitor_trend_samples">Samples</string>
     <string name="monitor_unresolved">Cannot resolve host %1$s</string>
+    <string name="monitor_ip_ping_ok">ICMP reachable</string>
+    <string name="monitor_ip_refused_ok">Port %1$d refused the connection, host is up</string>
+    <string name="monitor_connect_refused">Connection refused</string>
     <string name="monitor_ip_ok">Port %1$d is reachable</string>
     <string name="monitor_ip_unreachable">None of ports %1$s are reachable</string>
     <string name="monitor_port_ok">%1$s:%2$d is open</string>

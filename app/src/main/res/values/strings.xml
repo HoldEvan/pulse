@@ -455,6 +455,9 @@
     <string name="env_empty">当前项目暂无环境</string>
     <string name="http_no_response">尚未发送请求</string>
     <string name="http_failure">请求失败（%1$s）</string>
+    <string name="http_tab_new">新请求</string>
+    <string name="cd_http_add_tab">新建请求标签</string>
+    <string name="cd_http_close_tab">关闭请求标签 %1$s</string>
     <string name="http_request_label">请求</string>
     <string name="http_response_label">响应</string>
     <string name="http_response_headers">响应头</string>
@@ -1159,6 +1162,9 @@
     <string name="monitor_trend_peak">峰值延迟</string>
     <string name="monitor_trend_samples">样本数</string>
     <string name="monitor_unresolved">无法解析主机 %1$s</string>
+    <string name="monitor_ip_ping_ok">ICMP 可达</string>
+    <string name="monitor_ip_refused_ok">端口 %1$d 拒绝连接，主机在线</string>
+    <string name="monitor_connect_refused">连接被拒绝</string>
     <string name="monitor_ip_ok">端口 %1$d 可连</string>
     <string name="monitor_ip_unreachable">端口 %1$s 均不可连</string>
     <string name="monitor_port_ok">%1$s:%2$d 可连</string>

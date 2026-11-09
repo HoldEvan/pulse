@@ -455,6 +455,9 @@
     <string name="env_empty">目前專案尚無環境</string>
     <string name="http_no_response">尚未傳送請求</string>
     <string name="http_failure">請求失敗（%1$s）</string>
+    <string name="http_tab_new">新請求</string>
+    <string name="cd_http_add_tab">新增請求標籤</string>
+    <string name="cd_http_close_tab">關閉請求標籤 %1$s</string>
     <string name="http_request_label">請求</string>
     <string name="http_response_label">回應</string>
     <string name="http_response_headers">回應標頭</string>
@@ -1159,6 +1162,9 @@
     <string name="monitor_trend_peak">峰值延遲</string>
     <string name="monitor_trend_samples">樣本數</string>
     <string name="monitor_unresolved">無法解析主機 %1$s</string>
+    <string name="monitor_ip_ping_ok">ICMP 可達</string>
+    <string name="monitor_ip_refused_ok">埠號 %1$d 拒絕連線，主機在線</string>
+    <string name="monitor_connect_refused">連線被拒絕</string>
     <string name="monitor_ip_ok">埠號 %1$d 可連</string>
     <string name="monitor_ip_unreachable">埠號 %1$s 均不可連</string>
     <string name="monitor_port_ok">%1$s:%2$d 可連</string>

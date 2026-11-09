@@ -4,6 +4,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -22,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Cookie
 import androidx.compose.material.icons.filled.Delete
@@ -40,6 +43,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
@@ -188,6 +192,7 @@ fun HttpScreen(
                 }
             }
         )
+        RequestTabs(viewModel)
         RequestEditorCard(viewModel)
         SectionTitleRow(label = stringResource(R.string.tab_script))
         ScriptEditorCard(viewModel, onOpenScriptEditor)
@@ -235,6 +240,91 @@ fun HttpScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
+        }
+    }
+}
+
+/**
+ * 请求标签：每个标签完整保留自己的请求配置与响应，切换标签即切回该标签的内容。
+ * 状态点表示该标签最近一次请求的进展：灰=未发送、蓝=发送中、绿=成功、红=失败。
+ */
+@Composable
+private fun RequestTabs(viewModel: HttpViewModel) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(bottom = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        viewModel.tabs.forEachIndexed { index, tab ->
+            val selected = index == viewModel.selectedIndex
+            val label = tab.label()
+            val dot = when {
+                tab.sending -> AppTheme.colors.primary
+                tab.outcome is HttpCallOutcome.Failure -> Color(0xFFD32F2F)
+                (tab.outcome as? HttpCallOutcome.Success)?.statusCode?.let { it >= 400 } == true ->
+                    Color(0xFFD32F2F)
+                tab.outcome != null -> Color(0xFF2FA37A)
+                else -> AppTheme.colors.onSurfaceSummary
+            }
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(
+                        if (selected) AppTheme.colors.primaryContainer else AppTheme.colors.surfaceContainer
+                    )
+                    .clickable { viewModel.selectTab(index) }
+                    .padding(
+                        start = 10.dp,
+                        top = 6.dp,
+                        bottom = 6.dp,
+                        end = if (viewModel.tabs.size > 1) 4.dp else 10.dp
+                    ),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(dot)
+                )
+                AppText(
+                    text = label,
+                    fontSize = 13.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = if (selected) AppTheme.colors.onPrimaryContainer else AppTheme.colors.onSurface,
+                    modifier = Modifier
+                        .padding(start = 6.dp)
+                        .widthIn(max = 160.dp)
+                )
+                if (viewModel.tabs.size > 1) {
+                    AppIcon(
+                        imageVector = MiuixIcons.Light.Close,
+                        contentDescription = stringResource(R.string.cd_http_close_tab, label),
+                        modifier = Modifier
+                            .padding(start = 2.dp)
+                            .size(22.dp)
+                            .clip(CircleShape)
+                            .clickable { viewModel.closeTab(index) }
+                            .padding(4.dp)
+                    )
+                }
+            }
+        }
+        if (viewModel.canAddTab) {
+            AppIcon(
+                imageVector = Icons.Filled.Add,
+                contentDescription = stringResource(R.string.cd_http_add_tab),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(AppTheme.colors.surfaceContainer)
+                    .clickable { viewModel.addTab() }
+                    .padding(6.dp)
+                    .size(20.dp)
+            )
         }
     }
 }

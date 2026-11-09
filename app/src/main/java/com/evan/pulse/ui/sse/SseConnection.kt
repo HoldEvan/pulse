@@ -9,12 +9,17 @@ import com.evan.pulse.di.ServiceLocator
 import com.evan.pulse.di.SseHistoryStore
 import com.evan.pulse.domain.JsonPath
 import com.evan.pulse.domain.extractString
+import com.evan.pulse.domain.model.AuthConfig
+import com.evan.pulse.domain.model.BodyType
+import com.evan.pulse.domain.model.HttpMethod
+import com.evan.pulse.domain.model.KeyValue
 import com.evan.pulse.domain.model.SseConfig
 import com.evan.pulse.domain.model.SseConnectionState
 import com.evan.pulse.domain.model.SseEvent
 import com.evan.pulse.domain.net.SseEngine
 import com.evan.pulse.domain.sse.SseStreamStats
 import com.evan.pulse.domain.sse.SseTranscript
+import com.evan.pulse.ui.collection.LoadedRequestTracker
 import com.evan.pulse.ui.history.UiEventLine
 import com.evan.pulse.ui.l10n.L10n
 import kotlinx.coroutines.CoroutineScope
@@ -35,8 +40,55 @@ class SseConnection(
     val id: Int,
     scope: CoroutineScope,
     private val history: SseHistoryStore,
+    /** 与集合条目的绑定：加载或保存过集合请求后，再保存即原地覆盖 */
+    val loadedRequest: LoadedRequestTracker,
     private val engine: SseEngine = ServiceLocator.newSseEngine()
 ) {
+
+    // ---- 连接配置：每个标签各存一份 ----
+    var method by mutableStateOf(HttpMethod.POST)
+    var url by mutableStateOf(DEFAULT_URL)
+    var params by mutableStateOf(listOf(KeyValue()))
+    var headers by mutableStateOf(listOf(KeyValue()))
+    var bodyType by mutableStateOf(BodyType.JSON)
+    var bodyText by mutableStateOf("")
+    var eventFilter by mutableStateOf("")
+    var autoReconnect by mutableStateOf(false)
+    var reconnectDelaySec by mutableStateOf("3")
+    var exponentialBackoff by mutableStateOf(true)
+    var maxBackoffSec by mutableStateOf("30")
+    var jitter by mutableStateOf(true)
+    /** 0 表示无限重连 */
+    var maxRetries by mutableStateOf("0")
+    /** 空闲超时（秒），0 表示不检测 */
+    var idleTimeoutSec by mutableStateOf("0")
+
+    /** 鉴权：与 HTTP 页相同的 Bearer / Basic / API Key，连接时合并到请求头 */
+    var auth by mutableStateOf(AuthConfig())
+
+    /** 手动断点：首次连接时作为 Last-Event-ID 发送 */
+    var lastEventIdInput by mutableStateOf("")
+
+    /** 连接建立超时（秒）：只约束握手与响应头到达，流建立后不受影响 */
+    var timeoutSec by mutableStateOf("15")
+
+    /** 是否套用设置页里的全局代理；关闭则本次连接强制直连 */
+    var useProxy by mutableStateOf(true)
+
+    /** 跳过 TLS 证书校验；仅用于调试自签名或内网 HTTPS 服务 */
+    var insecureTls by mutableStateOf(false)
+    var customCaPem by mutableStateOf("")
+    var clientCertPem by mutableStateOf("")
+    var clientKeyPem by mutableStateOf("")
+
+    /** 拼接预览：表达式 + 累计文本；改表达式无需重连即可生效 */
+    var previewPath by mutableStateOf("$.choices[0].delta.content")
+
+    /** 缺失变量提示：按标签记录，切到别的标签不会继续弹窗 */
+    var missingVars by mutableStateOf<List<String>?>(null)
+
+    /** 当前连接所属文件夹，用于合并文件夹变量；每个标签各自记录 */
+    var activeCollectionId: Long? = null
 
     val state: StateFlow<SseConnectionState> = engine.state
     val lines = mutableStateListOf<UiEventLine>()
@@ -51,10 +103,6 @@ class SseConnection(
         private set
     private var targetMethod = "GET"
 
-    /** 拼接预览表达式由页面实时提供，改表达式无需重连即可生效 */
-    private var previewPath: () -> String = { "" }
-
-    private var autoReconnect = false
     private var userClosing = false
     private var sessionStartedAt = 0L
     private var transcript: SseTranscript? = null
@@ -64,12 +112,10 @@ class SseConnection(
 
     private val collector: Job = scope.launch { engine.events.collect(::handle) }
 
-    fun connect(config: SseConfig, method: String, previewPath: () -> String) {
+    fun connect(config: SseConfig) {
         finishSession(L10n.t(R.string.sse_history_superseded))
-        this.previewPath = previewPath
         targetUrl = config.url
-        targetMethod = method
-        autoReconnect = config.autoReconnect
+        targetMethod = config.method.value
         userClosing = false
         lastError = null
         previewText = ""
@@ -107,9 +153,12 @@ class SseConnection(
         detachedScope.launch { engine.close() }
     }
 
-    /** 标签页标题：#序号 + 主机名；尚未连接过显示「新连接」 */
+    /** 空白标签：从未连接过且没有日志，加载集合请求时可以直接复用 */
+    fun isIdle(): Boolean = state.value == SseConnectionState.IDLE && lines.isEmpty()
+
+    /** 标签页标题：#序号 + 主机名；尚未填写显示「新连接」 */
     fun label(): String {
-        val host = targetUrl.substringAfter("://", targetUrl)
+        val host = url.substringAfter("://", url)
             .substringBefore('/').substringBefore('?').substringAfterLast('@')
         return "#$id " + host.ifBlank { L10n.t(R.string.sse_connection_new) }
     }
@@ -189,15 +238,16 @@ class SseConnection(
 
     /** 帧的 data 若是 JSON，按预览表达式提取并拼接；非 JSON 或表达式为空时跳过 */
     private fun appendPreview(data: String) {
-        val path = previewPath().trim()
+        val path = previewPath.trim()
         if (path.isEmpty()) return
         val hits = JsonPath.eval(data, path) ?: return
         if (hits.isEmpty()) return
         previewText += hits.joinToString("") { it.extractString() }
     }
 
-    private companion object {
+    companion object {
         const val MAX_LINES = 1000
+        const val DEFAULT_URL = "{{sseUrl}}/v1/chat/completions"
 
         /**
          * 连接与断开放到独立作用域：页面销毁时 viewModelScope 已取消，
