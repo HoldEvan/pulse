@@ -71,6 +71,9 @@ class MonitorWorker(
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result = runCatching {
+        // 进程可能刚被唤醒，读库还在后台跑：等状态就位再判断到期，
+        // 否则会对着空目标列表空转，并把这一轮拨测白白跳过
+        ServiceLocator.awaitStateLoaded()
         ServiceLocator.monitorScheduler.runDueChecks()
         Result.success()
     }.getOrElse { Result.retry() }

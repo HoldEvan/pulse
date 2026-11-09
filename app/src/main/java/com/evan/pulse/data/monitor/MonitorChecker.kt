@@ -28,10 +28,27 @@ import java.net.Socket
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 
 /** 创建一次拨测连接用的 Socket；注入以便单元测试替换 */
 typealias SocketFactory = (proxy: Proxy?) -> Socket
+
+/** ICMP 可达性探测；注入以便单元测试替换，默认走系统 isReachable */
+interface Pinger {
+    suspend fun reachable(address: InetAddress, timeoutMs: Long): Boolean
+
+    companion object {
+        val Default: Pinger = object : Pinger {
+            override suspend fun reachable(address: InetAddress, timeoutMs: Long): Boolean =
+                withContext(Dispatchers.IO) {
+                    runCatching { address.isReachable(timeoutMs.toInt()) }.getOrDefault(false)
+                }
+        }
+    }
+}
 
 /** 目标配置校验结果 */
 sealed interface TargetValidation {
@@ -44,11 +61,13 @@ sealed interface TargetValidation {
  * 拨测执行器。
  *
  * 三种检查共用一套超时语义：
- * - IP 连通：先解析主机，再依次尝试常用端口，任一可连即视为互通；
+ * - IP 连通：先解析主机，ICMP 可达即算互通；否则并发尝试常用端口，
+ *   任一可连或返回 RST（说明主机在线，只是端口没开）也算互通；
  * - 端口：对指定端口做一次 TCP 连接，等价于 telnet；
  * - 接口：发一个不带参数的 GET 请求，用期望状态码区间判定。
  *
- * Android 无 root 时拿不到 raw ICMP socket，所以 IP 连通用 TCP 探测代替 ping。
+ * Android 无 root 时 isReachable 不一定拿到 ICMP socket，所以 ICMP 只是第一层，
+ * 不通时再用 TCP 探测兜底；两者都失败才算不可达。
  */
 class MonitorChecker(
     private val httpEngine: HttpEngine = ServiceLocator.httpEngine,
@@ -56,6 +75,7 @@ class MonitorChecker(
     private val socketFactory: SocketFactory = { proxy ->
         if (proxy == null) Socket() else Socket(proxy)
     },
+    private val pinger: Pinger = Pinger.Default,
 ) {
 
     /** 执行一次拨测，永不抛异常 */
@@ -107,9 +127,28 @@ class MonitorChecker(
             L10n.t(R.string.monitor_unresolved, host),
             start
         )
-        MONITOR_IP_PROBE_PORTS.forEach { port ->
-            if (connect(address, port, target, proxy).open) {
-                return MonitorRun(true, L10n.t(R.string.monitor_ip_ok, port), elapsed(start), start)
+        // 局域网设备大多没有 Web 服务，只探端口会误判；ICMP 最接近「ping 得通」的语义
+        if (!proxy.enabled && pinger.reachable(address, icmpBudget(clampTimeout(target.timeoutMs)))) {
+            return MonitorRun(true, L10n.t(R.string.monitor_ip_ping_ok), elapsed(start), start)
+        }
+        // 端口并发探测：串行时每个端口都要等一次超时，10 个端口最坏会拖到 50 秒
+        val results = coroutineScope {
+            MONITOR_IP_PROBE_PORTS.map { port ->
+                async(Dispatchers.IO) { port to connect(address, port, target, proxy) }
+            }.awaitAll()
+        }
+        results.firstOrNull { it.second.outcome == ProbeOutcome.OPEN }?.let { (port, _) ->
+            return MonitorRun(true, L10n.t(R.string.monitor_ip_ok, port), elapsed(start), start)
+        }
+        // 连接被拒（RST）同样证明主机在线，只是该端口没有服务
+        if (!proxy.enabled) {
+            results.firstOrNull { it.second.outcome == ProbeOutcome.REFUSED }?.let { (port, _) ->
+                return MonitorRun(
+                    true,
+                    L10n.t(R.string.monitor_ip_refused_ok, port),
+                    elapsed(start),
+                    start
+                )
             }
         }
         return failed(
@@ -117,6 +156,9 @@ class MonitorChecker(
             start
         )
     }
+
+    /** ICMP 探测时长上限：等太久没有意义，端口探测会并行补上 */
+    private fun icmpBudget(timeoutMs: Long) = timeoutMs.coerceIn(1L, ICMP_TIMEOUT_MAX_MS)
 
     private suspend fun probePort(
         target: MonitorTarget,
@@ -252,18 +294,28 @@ class MonitorChecker(
     ): ConnectResult {
         if (!isValidPort(port)) return ConnectResult(false, 0L, L10n.t(R.string.monitor_port_invalid))
         val socket = try {
-            socketFactory(toProxy(proxy))
+            // 代理服务器看不到你所在的局域网，也无法回连 192.168.x.x 之类的地址，
+            // 所以内网目标必须直连，否则开了代理就整片内网拨测不通
+            socketFactory(toProxy(if (address.isLocalOrPrivate()) ProxyConfig() else proxy))
         } catch (_: Exception) {
             return ConnectResult(false, 0L, L10n.t(R.string.monitor_connect_failed))
         }
         val start = clock()
         return try {
             socket.connect(InetSocketAddress(address, port), clampTimeout(target.timeoutMs).toInt().coerceAtLeast(1))
-            ConnectResult(true, elapsed(start), "")
+            ConnectResult(true, elapsed(start), "", ProbeOutcome.OPEN)
         } catch (_: SocketTimeoutException) {
-            ConnectResult(false, elapsed(start), L10n.t(R.string.monitor_timeout))
-        } catch (_: Exception) {
-            ConnectResult(false, elapsed(start), L10n.t(R.string.monitor_connect_failed))
+            ConnectResult(false, elapsed(start), L10n.t(R.string.monitor_timeout), ProbeOutcome.TIMEOUT)
+        } catch (error: Exception) {
+            // ECONNREFUSED：对端回了 RST，链路和主机都是通的，只是端口没开
+            val refused = error.message?.contains("ECONNREFUSED", ignoreCase = true) == true ||
+                error.message?.contains("refused", ignoreCase = true) == true
+            ConnectResult(
+                false,
+                elapsed(start),
+                if (refused) L10n.t(R.string.monitor_connect_refused) else L10n.t(R.string.monitor_connect_failed),
+                if (refused) ProbeOutcome.REFUSED else ProbeOutcome.FAILED
+            )
         } finally {
             try {
                 socket.close()
@@ -354,6 +406,12 @@ class MonitorChecker(
         return null
     }
 
+    /** 回环、私网、链路本地与组播地址都不该走代理 */
+    private fun InetAddress.isLocalOrPrivate(): Boolean =
+        isLoopbackAddress || isSiteLocalAddress || isLinkLocalAddress ||
+            isAnyLocalAddress || isMulticastAddress ||
+            (this is java.net.Inet6Address && address.isNotEmpty() && (address[0].toInt() and 0xFE) == 0xFC)
+
     private fun toProxy(config: ProxyConfig): Proxy? {
         if (!config.enabled) return null
         val type = if (config.type == com.evan.pulse.domain.model.ProxyType.SOCKS5) {
@@ -372,6 +430,9 @@ class MonitorChecker(
 
     companion object {
         const val MAX_TIMEOUT_MS = 120_000L
+
+        /** ICMP 探测的时长上限：等太久没有意义，端口探测会并行补上 */
+        const val ICMP_TIMEOUT_MAX_MS = 2_000L
 
         /** 端口合法范围，与 ProxyConfig.enabled 的判定口径一致 */
         fun isValidPort(port: Int): Boolean = port in 1..65535
@@ -414,7 +475,15 @@ class MonitorChecker(
 }
 
 /** 一次 TCP 连接的结果 */
-internal data class ConnectResult(val open: Boolean, val durationMs: Long, val reason: String)
+internal data class ConnectResult(
+    val open: Boolean,
+    val durationMs: Long,
+    val reason: String,
+    val outcome: ProbeOutcome = if (open) ProbeOutcome.OPEN else ProbeOutcome.FAILED
+)
+
+/** 单次 TCP 探测的结论；REFUSED 用于区分「主机在线但端口关闭」和「完全不通」 */
+internal enum class ProbeOutcome { OPEN, REFUSED, TIMEOUT, FAILED }
 
 /** 占位符替换结果 */
 internal sealed interface ResolvedText {

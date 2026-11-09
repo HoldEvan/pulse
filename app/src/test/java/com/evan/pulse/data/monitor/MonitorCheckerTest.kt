@@ -9,6 +9,12 @@ import com.evan.pulse.domain.model.HttpCallOutcome
 import com.evan.pulse.domain.model.HttpErrorType
 import com.evan.pulse.domain.model.ProxyConfig
 import com.evan.pulse.domain.net.HttpEngine
+import java.net.ConnectException
+import java.net.InetAddress
+import java.net.Proxy
+import java.net.Socket
+import java.net.SocketAddress
+import java.net.SocketTimeoutException
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -227,6 +233,101 @@ class MonitorCheckerTest {
         resolver = passthroughResolver,
         socketFactory = { throw IllegalStateException("HTTP probe should not touch socket") }
     )
+
+
+    private class FakeSocket(private val failure: Exception?) : Socket() {
+        override fun connect(endpoint: SocketAddress?, timeout: Int) {
+            failure?.let { throw it }
+        }
+    }
+
+    private val neverPing = object : Pinger {
+        override suspend fun reachable(address: InetAddress, timeoutMs: Long) = false
+    }
+
+    private val alwaysPing = object : Pinger {
+        override suspend fun reachable(address: InetAddress, timeoutMs: Long) = true
+    }
+
+    private fun ipTarget(host: String) = target(MonitorType.IP, host = host)
+
+    @Test
+    fun `ip probe counts icmp reachability as online`() = runBlocking {
+        val checker = MonitorChecker(
+            pinger = alwaysPing,
+            socketFactory = { throw IllegalStateException("ICMP 已经通了, 不应再探端口") }
+        )
+        val run = checker.check(ipTarget("192.168.1.5"), emptyMap(), ProxyConfig())
+        assertTrue(run.ok)
+        assertFalse(run.slow)
+    }
+
+    @Test
+    fun `ip probe counts refused connection as online`() = runBlocking {
+        val checker = MonitorChecker(
+            pinger = neverPing,
+            socketFactory = {
+                FakeSocket(
+                    ConnectException(
+                        "failed to connect to /192.168.1.5 (port 80) from /192.168.1.2: " +
+                            "isConnected failed: ECONNREFUSED (Connection refused)"
+                    )
+                )
+            }
+        )
+        val run = checker.check(ipTarget("192.168.1.5"), emptyMap(), ProxyConfig())
+        assertTrue(run.ok)
+    }
+
+    @Test
+    fun `ip probe fails only when every port times out`() = runBlocking {
+        val checker = MonitorChecker(
+            pinger = neverPing,
+            socketFactory = { FakeSocket(SocketTimeoutException("timeout")) }
+        )
+        val run = checker.check(ipTarget("192.168.1.5"), emptyMap(), ProxyConfig())
+        assertFalse(run.ok)
+    }
+
+    @Test
+    fun `ip probe ignores proxy for private addresses`() = runBlocking {
+        val seen = mutableListOf<Proxy?>()
+        val checker = MonitorChecker(
+            pinger = neverPing,
+            socketFactory = { proxy ->
+                seen += proxy
+                FakeSocket(ConnectException("ECONNREFUSED"))
+            }
+        )
+        val proxy = ProxyConfig(
+            type = com.evan.pulse.domain.model.ProxyType.HTTP,
+            host = "10.0.0.9",
+            port = 8080
+        )
+        checker.check(ipTarget("192.168.1.5"), emptyMap(), proxy)
+        assertTrue(seen.isNotEmpty())
+        assertTrue(seen.all { it == null })
+    }
+
+    @Test
+    fun `ip probe keeps proxy for public addresses`() = runBlocking {
+        val seen = mutableListOf<Proxy?>()
+        val checker = MonitorChecker(
+            pinger = neverPing,
+            socketFactory = { proxy ->
+                seen += proxy
+                FakeSocket(ConnectException("ECONNREFUSED"))
+            }
+        )
+        val proxy = ProxyConfig(
+            type = com.evan.pulse.domain.model.ProxyType.HTTP,
+            host = "10.0.0.9",
+            port = 8080
+        )
+        checker.check(ipTarget("8.8.8.8"), emptyMap(), proxy)
+        assertTrue(seen.isNotEmpty())
+        assertTrue(seen.all { it != null })
+    }
 
     private class CapturingEngine : HttpEngine {
         var captured: HttpCallConfig? = null

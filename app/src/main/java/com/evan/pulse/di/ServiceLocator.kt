@@ -10,6 +10,7 @@ import com.evan.pulse.data.model.WS_TEMPLATE_LIMIT
 import com.evan.pulse.data.model.WsMessageTemplate
 import com.evan.pulse.data.model.ImportResult
 import com.evan.pulse.data.model.KeyValueEntry
+import com.evan.pulse.data.model.MIN_MONITOR_RECORD_SHARE
 import com.evan.pulse.data.model.MONITOR_HISTORY_LIMIT
 import com.evan.pulse.data.model.MonitorHistoryEntry
 import com.evan.pulse.data.model.MonitorRecord
@@ -759,12 +760,13 @@ class MonitorStore(private val persist: PersistenceHandle) {
     }
 
     fun delete(id: Long) {
-        _targets.value = _targets.value.filter { it.id != id }
-        val recordsBefore = _records.value
-        _records.value = recordsBefore.filter { it.targetId != id }
-        val historyBefore = _history.value
-        _history.value = historyBefore.filter { it.targetId != id }
-        if (_records.value == recordsBefore && _history.value == historyBefore) return
+        val targetsBefore = _targets.value
+        _targets.value = targetsBefore.filter { it.id != id }
+        if (_targets.value == targetsBefore) return
+        _records.value = _records.value.filter { it.targetId != id }
+        _history.value = _history.value.filter { it.targetId != id }
+        // 删除目标必须落盘：以前按「记录是否有变化」判断，目标刚建还没检查过时
+        // 记录与历史都没变，save 被跳过，重启后被删的目标会重新出现
         persist.save()
     }
 
@@ -787,7 +789,7 @@ class MonitorStore(private val persist: PersistenceHandle) {
             checkedAt = checkedAt,
             ok = ok
         )
-        _records.value = (listOf(record) + _records.value).take(MONITOR_RECORD_LIMIT)
+        _records.value = trimRecords(listOf(record) + _records.value)
         persist.save()
     }
 
@@ -801,7 +803,9 @@ class MonitorStore(private val persist: PersistenceHandle) {
             durationMs = durationMs,
             checkedAt = checkedAt
         )
-        _history.value = (listOf(entry) + _history.value).take(MONITOR_HISTORY_LIMIT)
+        // 历史上限是「每个目标」的额度：整体截断会让只查过的目标把其它目标的
+        // 样本挤掉，趋势图和上次状态因此看起来像丢数据
+        _history.value = trimHistory(listOf(entry) + _history.value)
         persist.save()
     }
 
@@ -814,6 +818,33 @@ class MonitorStore(private val persist: PersistenceHandle) {
         }
         if (_records.value == recordsBefore && _history.value == historyBefore) return
         persist.save()
+    }
+
+    /**
+     * 按目标均分记录额度再截断。
+     *
+     * 全局上限会让检查频繁的目标占满整条记录，其它目标的记录被挤掉；
+     * 这里先按目标各留一份均摊额度，最后再套一层全局上限兜底。
+     */
+    private fun trimRecords(list: List<MonitorRecord>): List<MonitorRecord> {
+        val targetCount = list.map { it.targetId }.distinct().size.coerceAtLeast(1)
+        val share = (MONITOR_RECORD_LIMIT / targetCount).coerceAtLeast(MIN_MONITOR_RECORD_SHARE)
+        val seen = HashMap<Long, Int>()
+        return list.filter { record ->
+            val used = seen.getOrDefault(record.targetId, 0)
+            seen[record.targetId] = used + 1
+            used < share
+        }.take(MONITOR_RECORD_LIMIT)
+    }
+
+    /** 每个目标各自保留最近 [MONITOR_HISTORY_LIMIT] 条样本 */
+    private fun trimHistory(list: List<MonitorHistoryEntry>): List<MonitorHistoryEntry> {
+        val seen = HashMap<Long, Int>()
+        return list.filter { entry ->
+            val used = seen.getOrDefault(entry.targetId, 0)
+            seen[entry.targetId] = used + 1
+            used < MONITOR_HISTORY_LIMIT
+        }
     }
 
     fun snapshot() = MonitorStoreSnapshot(
@@ -1045,6 +1076,20 @@ object ServiceLocator {
         Thread(runnable, "pulse-persist").apply { isDaemon = true }
     }
 
+    /** 持久化恢复完成的信号：后台任务据此避免在空快照上工作 */
+    private val stateLoaded = kotlinx.coroutines.CompletableDeferred<Unit>()
+
+    /**
+     * 等待状态恢复完成，最多等 [timeoutMs]。
+     *
+     * WorkManager 拉起进程时，Application.onCreate 只是把读库丢到后台，
+     * 周期任务可能先一步跑起来，此时各 Store 还是空的：既查不到到期目标，
+     * 也不该把空结果写回去。返回 false 表示超时未完成。
+     */
+    suspend fun awaitStateLoaded(timeoutMs: Long = 5_000L): Boolean = runCatching {
+        kotlinx.coroutines.withTimeout(timeoutMs) { stateLoaded.await() }
+    }.isSuccess
+
     /** 由 [init] 注入的应用级 Context，供引擎读取 content:// 文件等系统资源 */
     private var _appContext: Context? = null
     val appContext: Context
@@ -1148,6 +1193,7 @@ object ServiceLocator {
         sseHistoryPersist.onSave { persistence.saveSseHistory() }
         flushPersist.onSave { persistence.saveAll() }
         persistence.load()
+        stateLoaded.complete(Unit)
         _monitorScheduler?.sync()
     }
 

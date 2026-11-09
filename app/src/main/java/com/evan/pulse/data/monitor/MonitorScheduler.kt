@@ -68,8 +68,26 @@ class MonitorScheduler(
         }.toMap()
     }
 
+    /**
+     * 从持久化的历史样本重建「最近一次结果」。
+     *
+     * 构造函数执行时数据库还没恢复完（loadHeavy 在后台跑），那时 [runs] 只能是空的；
+     * 恢复完成后必须补一次，否则重启后界面会一直显示「从未检查」，
+     * 明明有历史数据却像丢了。
+     */
+    fun refreshRuns() {
+        val validIds = store.targets.value.map { it.id }.toSet()
+        // 已删除的目标不再保留结果；历史被裁剪到没有样本的目标，沿用内存里最新的那次
+        val kept = _runs.value.filterKeys { it in validIds }
+        val fromHistory = store.targets.value.mapNotNull { target ->
+            runner.previousRun(target.id)?.let { target.id to it }
+        }.toMap()
+        _runs.value = kept + fromHistory
+    }
+
     /** 让正在跑的目标与 store 里启用的目标保持一致：新增的补上、关闭或删除的停掉 */
     fun sync() {
+        refreshRuns()
         val enabled = store.targets.value.filter { it.enabled }
         synchronized(jobs) {
             jobs.entries.toList().filter { (id, _) -> enabled.none { it.id == id } }

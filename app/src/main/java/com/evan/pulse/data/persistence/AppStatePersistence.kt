@@ -71,6 +71,19 @@ class AppStatePersistence(
 ) {
 
     private val legacyFile = File(context.filesDir, "app_data.json")
+
+    /**
+     * 是否已完成从数据库恢复。
+     *
+     * 各 Store 在恢复完成前都是空列表，此时任何一次落库都会把「空快照」写回数据库，
+     * 也就是 clear 之后插入 0 行——用户的拨测目标、历史记录会被永久清空。
+     * 冷启动时 loadHeavy 与前台写操作是并发的，因此保存入口必须先确认恢复已完成。
+     */
+    @Volatile
+    private var loaded = false
+
+    /** 未完成恢复时所有保存都是空操作，避免用空快照覆盖既有数据 */
+    private fun canSave(): Boolean = loaded
     private val json = Json { prettyPrint = true }
 
     private val cipher = object : FieldCipher {
@@ -108,11 +121,13 @@ class AppStatePersistence(
     fun load() {
         val initialized = runCatching { metaLong(KEY_INITIALIZED, 0L) == 1L }.getOrDefault(false)
         if (initialized) {
-            runCatching { restoreFromDatabase() }
+            // 恢复失败时保持 loaded=false：宁可这次会话不落库，也不能用空快照覆盖数据库
+            runCatching { restoreFromDatabase() }.onSuccess { loaded = true }
             return
         }
         runCatching { importLegacyIfPresent() }
         // 首次启动也要落库种子数据，避免后续只写部分表时出现「半初始化」
+        loaded = true
         runCatching {
             saveAll()
             metaDao.upsert(meta(KEY_INITIALIZED, 1))
@@ -285,6 +300,7 @@ class AppStatePersistence(
     // ---- 保存 ----
 
     fun saveAll() {
+        if (!canSave()) return
         saveProjects()
         saveEnvironments()
         saveHistory()
@@ -299,6 +315,7 @@ class AppStatePersistence(
     fun save() = saveAll()
 
     fun saveProjects() {
+        if (!canSave()) return
         val snapshot = ServiceLocator.projectStore.snapshot()
         db.runInTransaction {
             projectDao.clear()
@@ -313,6 +330,7 @@ class AppStatePersistence(
     }
 
     fun saveEnvironments() {
+        if (!canSave()) return
         val snapshot = ServiceLocator.envStore.snapshot()
         db.runInTransaction {
             envDao.clear()
@@ -324,6 +342,7 @@ class AppStatePersistence(
     }
 
     fun saveHistory() {
+        if (!canSave()) return
         val snapshot = ServiceLocator.historyStore.snapshot()
         db.runInTransaction {
             historyDao.clear()
@@ -333,6 +352,7 @@ class AppStatePersistence(
     }
 
     fun saveCollections() {
+        if (!canSave()) return
         val snapshot = ServiceLocator.collectionStore.snapshot()
         db.runInTransaction {
             collectionDao.clear()
@@ -363,6 +383,7 @@ class AppStatePersistence(
     }
 
     fun saveCookies() {
+        if (!canSave()) return
         val snapshot = ServiceLocator.cookieStore.snapshot()
         db.runInTransaction {
             cookieDao.clear()
@@ -375,6 +396,7 @@ class AppStatePersistence(
     }
 
     fun saveMonitors() {
+        if (!canSave()) return
         val snapshot = ServiceLocator.monitorStore.snapshot()
         db.runInTransaction {
             monitorDao.clearTargets()
@@ -394,6 +416,7 @@ class AppStatePersistence(
     }
 
     fun saveProtocols() {
+        if (!canSave()) return
         val snapshot = ServiceLocator.protocolSessionStore.snapshot()
         db.runInTransaction {
             protocolDao.clearWs()
@@ -426,6 +449,7 @@ class AppStatePersistence(
     }
 
     fun saveSseHistory() {
+        if (!canSave()) return
         val store = ServiceLocator.sseHistoryStore
         val entries = store.entries.value
         val nextId = store.nextId

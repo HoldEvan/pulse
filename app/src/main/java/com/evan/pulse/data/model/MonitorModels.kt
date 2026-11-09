@@ -108,14 +108,23 @@ data class MonitorHistoryEntry(
 val MONITOR_INTERVAL_PRESETS: List<Long> =
     listOf(15L, 30L, 60L, 300L, 900L, 3600L, 21600L)
 
-/** IP 连通检查依次尝试的端口 */
-val MONITOR_IP_PROBE_PORTS: List<Int> = listOf(80, 443)
+/**
+ * IP 连通检查并发尝试的端口。
+ *
+ * 局域网设备经常只开一两个服务、甚至一个都不开（手机、打印机、摄像头），
+ * 只探 80/443 会把「能 ping 通但没有 Web 服务」的主机判成不通。
+ */
+val MONITOR_IP_PROBE_PORTS: List<Int> =
+    listOf(80, 443, 22, 445, 3389, 5555, 8080, 8443, 1883, 9100)
 
 /** 拨测记录的保留上限；通断都记录，上限按全部记录计 */
 const val MONITOR_RECORD_LIMIT = 2000
 
 /** 每个目标保留的趋势历史样本上限 */
 const val MONITOR_HISTORY_LIMIT = 720
+
+/** 记录均分到每个目标时的最小额度，避免目标很多时单个目标只剩个位数 */
+const val MIN_MONITOR_RECORD_SHARE = 50
 
 /** 目标的完整地址：IP 连通显示主机，端口显示主机与端口，接口显示请求地址 */
 fun MonitorTarget.addressText(): String = when (type) {
