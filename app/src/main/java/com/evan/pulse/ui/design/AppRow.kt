@@ -19,10 +19,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.ChevronForward
 import top.yukonga.miuix.kmp.preference.ArrowPreference
 import top.yukonga.miuix.kmp.basic.BasicComponent
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.preference.CheckboxPreference
 import top.yukonga.miuix.kmp.preference.RadioButtonLocation
 import top.yukonga.miuix.kmp.preference.RadioButtonPreference
@@ -262,39 +265,92 @@ fun AppSliderRow(
     }
 }
 
-/** 普通信息行：不可点的标题 + 摘要，可带行首/行尾内容 */
+/**
+ * 普通信息行：标题 + 可选摘要，可带行首/行尾内容。
+ *
+ * 默认两行文本都按内容自然换行；[titleMaxLines] / [summaryMaxLines] 限行时超出部分
+ * 以省略号收尾。Miuix 的 BasicComponent 不支持限行，限行时改用它的 content 重载自绘文本，
+ * 字号与字重取自同一套 [MiuixTheme.textStyles]，与默认分支视觉一致。
+ */
 @Composable
 fun AppInfoRow(
     title: String,
     modifier: Modifier = Modifier,
     summary: String? = null,
     enabled: Boolean = true,
+    titleMaxLines: Int = Int.MAX_VALUE,
+    summaryMaxLines: Int = Int.MAX_VALUE,
     startAction: (@Composable () -> Unit)? = null,
     endActions: (@Composable RowScope.() -> Unit)? = null,
     onClick: (() -> Unit)? = null,
 ) {
+    val limitLines = titleMaxLines != Int.MAX_VALUE || summaryMaxLines != Int.MAX_VALUE
     if (LocalUiStyle.current == UiStyle.MIUIX) {
+        if (!limitLines) {
+            BasicComponent(
+                title = title,
+                summary = summary,
+                modifier = modifier,
+                enabled = enabled,
+                startAction = startAction,
+                endActions = endActions,
+                onClick = onClick
+            )
+            return
+        }
         BasicComponent(
-            title = title,
-            summary = summary,
             modifier = modifier,
             enabled = enabled,
             startAction = startAction,
             endActions = endActions,
             onClick = onClick
-        )
+        ) {
+            val textStyles = MiuixTheme.textStyles
+            AppText(
+                text = title,
+                maxLines = titleMaxLines,
+                overflow = TextOverflow.Ellipsis,
+                color = AppTheme.colors.onSurface,
+                fontWeight = FontWeight.Medium,
+                style = textStyles.headline1
+            )
+            if (!summary.isNullOrEmpty()) {
+                AppText(
+                    text = summary,
+                    maxLines = summaryMaxLines,
+                    overflow = TextOverflow.Ellipsis,
+                    color = AppTheme.colors.onSurfaceSummary,
+                    style = textStyles.body2
+                )
+            }
+        }
         return
     }
 
     ListItem(
-        headlineContent = { AppText(text = title, style = AppTheme.typography.main) },
+        headlineContent = {
+            AppText(
+                text = title,
+                style = AppTheme.typography.main,
+                maxLines = titleMaxLines,
+                overflow = TextOverflow.Ellipsis
+            )
+        },
         modifier = if (onClick != null && enabled) {
             modifier.clickable(onClick = onClick)
         } else {
             modifier
         },
         supportingContent = summary?.let { text ->
-            { AppText(text = text, style = AppTheme.typography.footnote1, color = AppTheme.colors.onSurfaceSummary) }
+            {
+                AppText(
+                    text = text,
+                    style = AppTheme.typography.footnote1,
+                    color = AppTheme.colors.onSurfaceSummary,
+                    maxLines = summaryMaxLines,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         },
         leadingContent = startAction,
         trailingContent = endActions?.let { action -> { Row { action() } } },

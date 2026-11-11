@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -74,6 +73,7 @@ import top.yukonga.miuix.kmp.icon.extended.Folder
 import top.yukonga.miuix.kmp.icon.extended.More
 import top.yukonga.miuix.kmp.icon.extended.Play
 import com.evan.pulse.ui.design.AppIconDropdownMenu
+import com.evan.pulse.ui.design.AppInfoRow
 
 /**
  * 集合页：用面包屑逐层进入集合。
@@ -81,7 +81,7 @@ import com.evan.pulse.ui.design.AppIconDropdownMenu
  * 外层是一级集合，点进去是二级，以此类推；不再做展开折叠。当前所在集合的重命名与删除
  * 挂在面包屑右侧的工具位上，根层级没有当前集合，因此那两个按钮不显示。
  *
- * 改层级（例如把三级集合降成二级）走「移动到」弹窗：长按集合名或点行首的拖拽把手，
+ * 改层级（例如把三级集合降成二级）走「移动到」弹窗：从面包屑右侧的更多菜单打开，
  * 在候选父级里选一个，候选已排除自身与全部后代，因此不会出现移进自己子树的情况。
  *
  * 导航状态就是 [rawPath]：从根到当前集合的 id 链。空列表表示根层级。
@@ -316,49 +316,43 @@ fun CollectionScreen(
             }
         }
 
+        // 行直接铺满卡片，首行/末行的水波纹由 AppCard 内容裁剪沿圆角收边
         AppCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-            Column(modifier = Modifier.padding(12.dp)) {
-                if (children.isEmpty() && ownRequests.isEmpty()) {
-                    AppText(
-                        text = stringResource(
-                            if (current == null) R.string.collection_empty
-                            else R.string.collection_folder_empty
-                        ),
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-                }
-                children.forEach { child ->
-                    FolderRow(
-                        folder = child,
-                        onOpen = { rawPath = path + child.id },
-                        onMoveClick = {
-                            moveFolderId = child.id
-                            moveSelected = null
-                            moveFailed = false
-                        }
-                    )
-                }
-                ownRequests.forEachIndexed { index, request ->
-                    RequestRow(
-                        request = request,
-                        canMoveUp = index > 0,
-                        canMoveDown = index < ownRequests.lastIndex,
-                        onMoveUp = { viewModel.moveRequest(request.id, -1) },
-                        onMoveDown = { viewModel.moveRequest(request.id, 1) },
-                        onPin = { viewModel.pinRequest(request.id) },
-                        onLoad = { viewModel.load(request, onSwitchTab) },
-                        onRename = {
-                            renameRequestName = request.name
-                            renameRequestId = request.id
-                        },
-                        onMove = {
-                            moveRequestSelected = current?.id
-                            moveRequestId = request.id
-                        },
-                        onDuplicate = { name -> viewModel.duplicateRequest(request.id, name) },
-                        onDelete = { deleteRequestTarget = request }
-                    )
-                }
+            if (children.isEmpty() && ownRequests.isEmpty()) {
+                AppText(
+                    text = stringResource(
+                        if (current == null) R.string.collection_empty
+                        else R.string.collection_folder_empty
+                    ),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)
+                )
+            }
+            children.forEach { child ->
+                FolderRow(
+                    folder = child,
+                    onOpen = { rawPath = path + child.id }
+                )
+            }
+            ownRequests.forEachIndexed { index, request ->
+                RequestRow(
+                    request = request,
+                    canMoveUp = index > 0,
+                    canMoveDown = index < ownRequests.lastIndex,
+                    onMoveUp = { viewModel.moveRequest(request.id, -1) },
+                    onMoveDown = { viewModel.moveRequest(request.id, 1) },
+                    onPin = { viewModel.pinRequest(request.id) },
+                    onLoad = { viewModel.load(request, onSwitchTab) },
+                    onRename = {
+                        renameRequestName = request.name
+                        renameRequestId = request.id
+                    },
+                    onMove = {
+                        moveRequestSelected = current?.id
+                        moveRequestId = request.id
+                    },
+                    onDuplicate = { name -> viewModel.duplicateRequest(request.id, name) },
+                    onDelete = { deleteRequestTarget = request }
+                )
             }
         }
 
@@ -375,11 +369,13 @@ fun CollectionScreen(
                     createName = ""
                     showCreate = true
                 },
+                filled = true,
                 modifier = Modifier.weight(1f)
             )
             AppTextButton(
                 text = stringResource(R.string.collection_import_spec),
                 onClick = { showImport = true },
+                filled = true,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -805,47 +801,42 @@ private fun MoveTargetRow(
     }
 }
 
-/** 同级集合行：点整行进入下一级，长按打开移动弹窗 */
+/**
+ * 同级集合行：整行可点进入下一级。
+ *
+ * 走 [AppInfoRow]（Miuix 皮肤下就是 BasicComponent），行高与内边距交给它，
+ * 行首文件夹图标、行尾箭头；不再支持长按，改层级统一走面包屑右侧的「移动到」。
+ */
 @Composable
 private fun FolderRow(
     folder: CollectionInfo,
-    onOpen: () -> Unit,
-    onMoveClick: () -> Unit
+    onOpen: () -> Unit
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        AppIcon(
-            imageVector = MiuixIcons.Light.Folder,
-            contentDescription = null,
-            modifier = Modifier.padding(end = 6.dp)
-        )
-        AppText(
-            text = folder.name,
-            modifier = Modifier
-                .weight(1f)
-                .combinedClickable(
-                    onClick = onOpen,
-                    onLongClick = onMoveClick
-                )
-                .padding(horizontal = 6.dp, vertical = 8.dp),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-        AppIcon(
-            imageVector = MiuixIcons.Light.ChevronForward,
-            contentDescription = null,
-            modifier = Modifier.padding(end = 4.dp)
-        )
-    }
+    AppInfoRow(
+        title = folder.name,
+        onClick = onOpen,
+        startAction = {
+            AppIcon(
+                imageVector = MiuixIcons.Light.Folder,
+                contentDescription = null,
+                modifier = Modifier.padding(end = 8.dp)
+            )
+        },
+        endActions = {
+            AppIcon(
+                imageVector = MiuixIcons.Light.ChevronForward,
+                contentDescription = null
+            )
+        }
+    )
 }
 
 /**
  * 当前集合下的单个接口条目行。
  *
- * 左侧先显示协议分类（HTTP/WS/MQTT/SSE），HTTP 条目再跟一个方法徽章（GET/POST 这些），
- * 两截并排时仍能看出这条接口属于哪个协议；右侧三个图标动作分别是改名、移到其他集合、删除。
+ * 走 [AppInfoRow]（Miuix 皮肤下就是 BasicComponent）：行首先显示协议分类，
+ * HTTP 条目再跟一个方法徽章（GET/POST 这些），标题是接口名、摘要是主地址，
+ * 行尾固定的更多菜单承载改名/移到其他集合/置顶/上下移/复制/删除。
  */
 @Composable
 private fun RequestRow(
@@ -866,156 +857,137 @@ private fun RequestRow(
     // 复制后的名称跟随界面语言，在组合期算好，点击回调里不再读资源
     val copyName = stringResource(R.string.request_copy_name, request.name)
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // 协议名与方法上下居中排列，方法徽章随协议名居中，列宽固定让各行名称左缘对齐
-        Column(
-            modifier = Modifier
-                .padding(end = 8.dp)
-                .width(50.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            AppText(
-                text = request.type.name,
-                fontSize = 12.sp,
-                maxLines = 1
-            )
-            method?.let { m ->
-                MethodBadge(
-                    m,
-                    modifier = Modifier.padding(top = 1.dp),
-                    fontSize = 9.sp,
-                    horizontalPadding = 4.dp,
-                    verticalPadding = 1.dp,
-                    cornerRadius = 4.dp
-                )
-            }
-        }
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .clickable(onClick = onLoad)
-                .padding(vertical = 6.dp)
-        ) {
-            AppText(
-                text = request.name,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            if (url.isNotEmpty()) {
+    AppInfoRow(
+        title = request.name,
+        summary = url.ifEmpty { null },
+        titleMaxLines = 1,
+        summaryMaxLines = 1,
+        onClick = onLoad,
+        // 协议名与方法上下居中排列，列宽固定让各行名称左缘对齐
+        startAction = {
+            Column(
+                modifier = Modifier
+                    .padding(end = 8.dp)
+                    .width(50.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 AppText(
-                    text = url,
-                    modifier = Modifier.padding(top = 2.dp),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    fontSize = 11.sp
+                    text = request.type.name,
+                    fontSize = 12.sp,
+                    maxLines = 1
                 )
+                method?.let { m ->
+                    MethodBadge(
+                        m,
+                        modifier = Modifier.padding(top = 1.dp),
+                        fontSize = 9.sp,
+                        horizontalPadding = 4.dp,
+                        verticalPadding = 1.dp,
+                        cornerRadius = 4.dp
+                    )
+                }
             }
-        }
-        AppIconDropdownMenu(
-            entries = listOf(
-                DropdownEntry(
-                    items = listOf(
-                        DropdownItem(
-                            text = stringResource(R.string.request_pin),
-                            enabled = canMoveUp,
-                            icon = { m ->
-                                AppIcon(
-                                    imageVector = Icons.Filled.VerticalAlignTop,
-                                    contentDescription = null,
-                                    modifier = m
-                                )
-                            },
-                            onClick = onPin
-                        ),
-                        DropdownItem(
-                            text = stringResource(R.string.request_move_up),
-                            enabled = canMoveUp,
-                            icon = { m ->
-                                AppIcon(
-                                    imageVector = Icons.Filled.ArrowUpward,
-                                    contentDescription = null,
-                                    modifier = m
-                                )
-                            },
-                            onClick = onMoveUp
-                        ),
-                        DropdownItem(
-                            text = stringResource(R.string.request_move_down),
-                            enabled = canMoveDown,
-                            icon = { m ->
-                                AppIcon(
-                                    imageVector = Icons.Filled.ArrowDownward,
-                                    contentDescription = null,
-                                    modifier = m
-                                )
-                            },
-                            onClick = onMoveDown
-                        ),
-                        DropdownItem(
-                            text = stringResource(R.string.cd_rename),
-                            icon = { m ->
-                                AppIcon(
-                                    imageVector = MiuixIcons.Light.Edit,
-                                    contentDescription = null,
-                                    modifier = m
-                                )
-                            },
-                            onClick = onRename
-                        ),
-                        DropdownItem(
-                            text = stringResource(R.string.request_duplicate),
-                            icon = { m ->
-                                AppIcon(
-                                    imageVector = Icons.Filled.ContentCopy,
-                                    contentDescription = null,
-                                    modifier = m
-                                )
-                            },
-                            onClick = { onDuplicate(copyName) }
-                        ),
-                        DropdownItem(
-                            text = stringResource(R.string.cd_move_request),
-                            icon = { m ->
-                                AppIcon(
-                                    imageVector = Icons.Filled.DragIndicator,
-                                    contentDescription = null,
-                                    modifier = m
-                                )
-                            },
-                            onClick = onMove
-                        ),
-                        DropdownItem(
-                            text = stringResource(R.string.action_delete),
-                            icon = { m ->
-                                AppIcon(
-                                    imageVector = MiuixIcons.Light.Delete,
-                                    contentDescription = null,
-                                    modifier = m
-                                )
-                            },
-                            onClick = onDelete
+        },
+        endActions = {
+            AppIconDropdownMenu(
+                entries = listOf(
+                    DropdownEntry(
+                        items = listOf(
+                            DropdownItem(
+                                text = stringResource(R.string.request_pin),
+                                enabled = canMoveUp,
+                                icon = { m ->
+                                    AppIcon(
+                                        imageVector = Icons.Filled.VerticalAlignTop,
+                                        contentDescription = null,
+                                        modifier = m
+                                    )
+                                },
+                                onClick = onPin
+                            ),
+                            DropdownItem(
+                                text = stringResource(R.string.request_move_up),
+                                enabled = canMoveUp,
+                                icon = { m ->
+                                    AppIcon(
+                                        imageVector = Icons.Filled.ArrowUpward,
+                                        contentDescription = null,
+                                        modifier = m
+                                    )
+                                },
+                                onClick = onMoveUp
+                            ),
+                            DropdownItem(
+                                text = stringResource(R.string.request_move_down),
+                                enabled = canMoveDown,
+                                icon = { m ->
+                                    AppIcon(
+                                        imageVector = Icons.Filled.ArrowDownward,
+                                        contentDescription = null,
+                                        modifier = m
+                                    )
+                                },
+                                onClick = onMoveDown
+                            ),
+                            DropdownItem(
+                                text = stringResource(R.string.cd_rename),
+                                icon = { m ->
+                                    AppIcon(
+                                        imageVector = MiuixIcons.Light.Edit,
+                                        contentDescription = null,
+                                        modifier = m
+                                    )
+                                },
+                                onClick = onRename
+                            ),
+                            DropdownItem(
+                                text = stringResource(R.string.request_duplicate),
+                                icon = { m ->
+                                    AppIcon(
+                                        imageVector = Icons.Filled.ContentCopy,
+                                        contentDescription = null,
+                                        modifier = m
+                                    )
+                                },
+                                onClick = { onDuplicate(copyName) }
+                            ),
+                            DropdownItem(
+                                text = stringResource(R.string.cd_move_request),
+                                icon = { m ->
+                                    AppIcon(
+                                        imageVector = Icons.Filled.DragIndicator,
+                                        contentDescription = null,
+                                        modifier = m
+                                    )
+                                },
+                                onClick = onMove
+                            ),
+                            DropdownItem(
+                                text = stringResource(R.string.action_delete),
+                                icon = { m ->
+                                    AppIcon(
+                                        imageVector = MiuixIcons.Light.Delete,
+                                        contentDescription = null,
+                                        modifier = m
+                                    )
+                                },
+                                onClick = onDelete
+                            )
                         )
                     )
+                ),
+                minWidth = 28.dp,
+                minHeight = 28.dp,
+                modifier = Modifier.size(28.dp)
+            ) {
+                AppIcon(
+                    imageVector = MiuixIcons.Light.More,
+                    contentDescription = stringResource(R.string.cd_more),
+                    modifier = Modifier.size(20.dp)
                 )
-            ),
-            minWidth = 28.dp,
-            minHeight = 28.dp,
-            modifier = Modifier
-                .size(28.dp)
-                .offset(x = 4.dp)
-        ) {
-            AppIcon(
-                imageVector = MiuixIcons.Light.More,
-                contentDescription = stringResource(R.string.cd_more),
-                modifier = Modifier.size(20.dp)
-            )
+            }
         }
-    }
+    )
 }
 
 /** 移动候选：父级 id、展示用的完整路径名链、层级深度 */
