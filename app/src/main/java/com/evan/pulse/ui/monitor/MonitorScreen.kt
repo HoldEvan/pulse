@@ -200,8 +200,9 @@ fun MonitorScreen(
                 .fillMaxWidth()
                 .padding(top = 12.dp)
         ) {
-            // 横向内边距交给分组标题与行内容，卡片本身不再留边，分组标题的水波纹才能贴住左右边缘
-            Column(modifier = Modifier.padding(vertical = 8.dp)) {
+            // 纵向不再留整体内边距：首组的标题行贴住卡片上沿、末组收起时贴住下沿，
+            // 折叠水波纹由 AppCard 的内容裁剪沿卡片圆角收边。组间距只加在组与组之间。
+            Column(modifier = Modifier.fillMaxWidth()) {
                 if (targets.isNotEmpty()) {
                     val grouped = targets.groupBy { it.group }
                     val groups: List<Pair<String, List<MonitorTarget>>> = buildList {
@@ -210,7 +211,7 @@ fun MonitorScreen(
                             add(name to list)
                         }
                     }
-                    groups.forEach { (groupName, groupTargets) ->
+                    groups.forEachIndexed { index, (groupName, groupTargets) ->
                         val groupEnabled = isGroupFullyEnabled(targets, groupName)
                         CollapsibleSection(
                             title = if (groupName.isBlank()) {
@@ -219,7 +220,7 @@ fun MonitorScreen(
                                 groupName
                             },
                             itemCount = groupTargets.size,
-                            modifier = Modifier.padding(top = 2.dp),
+                            modifier = Modifier.padding(top = if (index == 0) 0.dp else 6.dp),
                             horizontalPadding = 8.dp,
                             trailing = {
                                 AppIconButton(
@@ -256,6 +257,11 @@ fun MonitorScreen(
                                         .fillMaxWidth()
                                         .padding(vertical = 2.dp)
                                 )
+                            }
+                            // 末组展开时给卡片底部留一点呼吸空间；收起时不加，
+                            // 末组标题行才能贴住卡片下沿、水波纹沿圆角收边
+                            if (index == groups.lastIndex) {
+                                Spacer(modifier = Modifier.height(6.dp))
                             }
                         }
                     }
