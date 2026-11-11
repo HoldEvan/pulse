@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
@@ -128,6 +129,9 @@ fun SpecImportScreen(
                 }
             )
         } else {
+            // 输入框用 weight 参与剩余空间分配：Column 先按自然高度量其余子项（说明、按钮），
+            // 最后才把剩余高度给输入框，所以键盘弹出、可用高度变矮时压缩的是输入框，
+            // 按钮始终拿到完整的 48dp 行高。空间充足时输入框固定 200dp，弹窗保持紧凑。
             Column(modifier = Modifier.fillMaxWidth()) {
                 if (format == null) {
                     AppTabRow(
@@ -151,7 +155,8 @@ fun SpecImportScreen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(180.dp)
+                        .weight(1f, fill = false)
+                        .height(200.dp)
                 )
                 AppText(
                     text = stringResource(
@@ -172,6 +177,7 @@ fun SpecImportScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .heightIn(min = 48.dp)
                         .padding(top = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
