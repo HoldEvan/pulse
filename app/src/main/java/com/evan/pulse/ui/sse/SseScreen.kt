@@ -182,7 +182,7 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                     label = stateLabel(state)
                 )
             },
-            onSaveClick = { if (!viewModel.saveOverLoaded()) showSave = true }
+            onSaveClick = { showSave = true }
         )
         ConnectionTabs(viewModel)
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -550,7 +550,8 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
         defaultName = viewModel.url.pathOnly().ifEmpty { viewModel.url },
         snapshotProvider = { viewModel.snapshot() },
         onDismiss = { showSave = false },
-        onSaved = viewModel::markSaved
+        onSaved = viewModel::markSaved,
+        existingRequestId = viewModel.loadedRequestId()
     )
 }
 

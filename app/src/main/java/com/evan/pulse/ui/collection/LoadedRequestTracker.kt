@@ -3,16 +3,13 @@ package com.evan.pulse.ui.collection
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.evan.pulse.R
 import com.evan.pulse.di.CollectionStore
-import com.evan.pulse.ui.common.AppToast
-import com.evan.pulse.ui.l10n.L10n
 
 /**
  * 协议页与集合条目的绑定关系。
  *
- * 从集合点开的请求、或刚通过保存对话框新建的请求都会记住 id；之后再点保存
- * 直接原地覆盖快照，既不弹保存窗口也不会多出一条记录。
+ * 从集合点开的请求、或刚通过保存对话框新建的请求都会记住 id。每页保存时仍然弹出
+ * 保存对话框（可以改名、换集合），确认时若已绑定条目就原地更新该条，不再新建记录。
  */
 class LoadedRequestTracker(private val store: CollectionStore) {
 
@@ -24,17 +21,20 @@ class LoadedRequestTracker(private val store: CollectionStore) {
         if (id > 0) requestId = id
     }
 
+    /** 解绑：条目被删除后不再指向不存在的记录 */
+    fun unbind() {
+        requestId = null
+    }
+
     /**
-     * 已绑定条目时原地覆盖并提示成功；返回 false 表示没有可覆盖的条目
-     * （未绑定，或条目已被删除），调用方应弹出保存对话框。
+     * 已绑定条目时原地更新名称、所属集合与快照（保持条目位置与创建时间）；
+     * 返回 false 表示没有可更新的条目（未绑定，或条目已被删除），调用方应改为新建。
      */
-    fun saveOver(snapshot: () -> String): Boolean {
+    fun update(collectionId: Long, name: String, data: String): Boolean {
         val id = requestId ?: return false
-        if (!store.updateRequest(id, snapshot())) {
-            requestId = null
-            return false
-        }
-        AppToast.show(L10n.t(R.string.toast_request_updated))
-        return true
+        if (name.isBlank()) return false
+        val updated = store.updateRequest(id, collectionId, name, data)
+        if (!updated) requestId = null
+        return updated
     }
 }

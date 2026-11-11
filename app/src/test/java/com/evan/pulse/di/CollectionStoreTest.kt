@@ -35,7 +35,8 @@ class CollectionStoreTest {
         val id = s.save("one", """{"url":"a"}""")
         s.save("two", """{"url":"b"}""")
 
-        assertTrue(s.updateRequest(id, """{"url":"c"}"""))
+        val collectionId = s.requests.value.first { it.id == id }.collectionId
+        assertTrue(s.updateRequest(id, collectionId, "one", """{"url":"c"}"""))
 
         val list = s.requests.value
         assertEquals(listOf("two", "one"), list.map { it.name })
@@ -44,15 +45,32 @@ class CollectionStoreTest {
     }
 
     @Test
-    fun `update keeps name and collection`() {
+    fun `update can rename and move request to another collection`() {
+        val (s, _) = store()
+        val id = s.save("one")
+        val other = s.saveRequest(1L, -1L, RequestType.HTTP, "two", "{}", "Default")
+        val targetCollection = s.requests.value.first { it.id == other }.collectionId
+        val before = s.requests.value.first { it.id == id }
+
+        assertTrue(s.updateRequest(id, targetCollection, "renamed", """{"url":"c"}"""))
+
+        val after = s.requests.value.first { it.id == id }
+        assertEquals("renamed", after.name)
+        assertEquals(targetCollection, after.collectionId)
+        assertEquals(before.createdAt, after.createdAt)
+        assertEquals(id, after.id)
+    }
+
+    @Test
+    fun `update falls back to current collection when target is missing`() {
         val (s, _) = store()
         val id = s.save("one")
         val before = s.requests.value.first { it.id == id }
-        s.updateRequest(id, """{"url":"c"}""")
+
+        assertTrue(s.updateRequest(id, 999L, "one", """{"url":"c"}"""))
+
         val after = s.requests.value.first { it.id == id }
-        assertEquals(before.name, after.name)
         assertEquals(before.collectionId, after.collectionId)
-        assertEquals(before.createdAt, after.createdAt)
     }
 
     @Test
@@ -60,7 +78,7 @@ class CollectionStoreTest {
         val (s, saves) = store()
         s.save("one")
         val before = saves.size
-        assertFalse(s.updateRequest(999L, "{}"))
+        assertFalse(s.updateRequest(999L, -1L, "x", "{}"))
         assertEquals(before, saves.size)
         assertEquals(1, s.requests.value.size)
     }

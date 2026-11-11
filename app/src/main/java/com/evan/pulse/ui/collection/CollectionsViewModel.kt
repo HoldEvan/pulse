@@ -182,6 +182,13 @@ class CollectionsViewModel : ViewModel() {
         fallbackCollectionName
     )
 
+    /** 更新已保存接口的名称、所属集合与快照；条目已不存在时返回 false */
+    fun updateRequest(id: Long, collectionId: Long, name: String, data: String): Boolean =
+        store.updateRequest(id, collectionId, name, data)
+
+    /** 按 id 查已保存接口，用于保存对话框回填名称与所属集合 */
+    fun requestById(id: Long): SavedRequest? = requests.value.firstOrNull { it.id == id }
+
     /** 搜索结果条目：接口本体、所在文件夹路径与主地址 */
     data class CollectionSearchHit(
         val request: SavedRequest,

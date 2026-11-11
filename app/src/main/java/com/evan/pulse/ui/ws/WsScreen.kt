@@ -122,7 +122,7 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
                     label = stateLabel(state)
                 )
             },
-            onSaveClick = { if (!viewModel.saveOverLoaded()) showSave = true }
+            onSaveClick = { showSave = true }
         )
         viewModel.negotiatedSubprotocol?.let { sp ->
             AppText(
@@ -523,7 +523,8 @@ fun WsScreen(modifier: Modifier = Modifier, viewModel: WsViewModel = viewModel()
         defaultName = viewModel.url.pathOnly().ifEmpty { viewModel.url },
         snapshotProvider = { viewModel.snapshot() },
         onDismiss = { showSave = false },
-        onSaved = viewModel::markSaved
+        onSaved = viewModel::markSaved,
+        existingRequestId = viewModel.loadedRequestId()
     )
 }
 

@@ -117,7 +117,7 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
                     label = stateLabel(state)
                 )
             },
-            onSaveClick = { if (!viewModel.saveOverLoaded()) showSave = true }
+            onSaveClick = { showSave = true }
         )
         Column(modifier = Modifier.fillMaxWidth()) {
         AppCard(modifier = Modifier.fillMaxWidth()) {
@@ -470,7 +470,8 @@ fun MqttScreen(modifier: Modifier = Modifier, viewModel: MqttViewModel = viewMod
         defaultName = viewModel.pubTopic.ifEmpty { viewModel.brokerUrl },
         snapshotProvider = { viewModel.snapshot() },
         onDismiss = { showSave = false },
-        onSaved = viewModel::markSaved
+        onSaved = viewModel::markSaved,
+        existingRequestId = viewModel.loadedRequestId()
     )
 }
 

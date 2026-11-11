@@ -291,8 +291,9 @@ class HttpViewModel : ViewModel() {
         }
     }
 
-    /** 已绑定集合条目时原地覆盖；返回 false 表示需要弹出保存对话框 */
-    fun saveOverLoaded(): Boolean = selected.loadedRequest.saveOver { snapshot() }
+
+    /** 当前所属集合条目 id；保存对话框据此切换为原地更新 */
+    fun loadedRequestId(): Long? = selected.loadedRequest.requestId
 
     /** 保存对话框新建成功后绑定新条目，避免下次保存再建一条 */
     fun markSaved(id: Long) {

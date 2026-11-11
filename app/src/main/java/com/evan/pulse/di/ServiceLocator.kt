@@ -600,13 +600,23 @@ class CollectionStore(private val persist: PersistenceHandle) {
         return created.id
     }
 
-    /** 原地覆盖已保存接口的快照，保持条目位置与名称不变；条目已不存在时返回 false */
-    fun updateRequest(id: Long, data: String): Boolean {
+    /**
+     * 原地更新已保存接口的名称、所属集合与快照，保持条目位置与创建时间。
+     *
+     * 集合 id 不存在时保留原集合，避免调用方传入过期 id 把条目移到不存在的文件夹；
+     * 条目已不存在时返回 false，调用方应改为新建。
+     */
+    fun updateRequest(id: Long, collectionId: Long, name: String, data: String): Boolean {
         var found = false
+        val targetCollectionId = _collections.value.firstOrNull { it.id == collectionId }?.id
         _requests.value = _requests.value.map { request ->
             if (request.id == id) {
                 found = true
-                request.copy(data = data)
+                request.copy(
+                    collectionId = targetCollectionId ?: request.collectionId,
+                    name = name,
+                    data = data
+                )
             } else {
                 request
             }

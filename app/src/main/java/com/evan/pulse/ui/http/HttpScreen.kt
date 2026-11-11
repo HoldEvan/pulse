@@ -182,7 +182,7 @@ fun HttpScreen(
                     )
                 }
                 AppIconButton(
-                    onClick = { if (!viewModel.saveOverLoaded()) showSave = true },
+                    onClick = { showSave = true },
                     modifier = Modifier.size(36.dp)
                 ) {
                     AppIcon(
@@ -216,7 +216,8 @@ fun HttpScreen(
         defaultName = viewModel.url.pathOnly().ifEmpty { viewModel.url },
         snapshotProvider = { viewModel.snapshot() },
         onDismiss = { showSave = false },
-        onSaved = viewModel::markSaved
+        onSaved = viewModel::markSaved,
+        existingRequestId = viewModel.loadedRequestId()
     )
     ExportFormatDialog(show = showExport, viewModel = viewModel, onDismiss = { showExport = false })
 
