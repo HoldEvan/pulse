@@ -5,13 +5,15 @@
 [![MinSdk](https://img.shields.io/badge/minSdk-26-blue)](https://developer.android.com/about/versions/oreo)
 [![Language](https://img.shields.io/badge/language-Kotlin-orange)](https://kotlinlang.org)
 
+简体中文 | [English](README.en.md)
+
 Pulse 是一款 Android 原生 API 调试工具，覆盖 HTTP / SSE / WebSocket / MQTT 全协议调试，内置接口集合管理、环境变量、前后置脚本、Postman / HAR / OpenAPI 导入、接口监控与 WebDAV 备份，界面基于 Jetpack Compose 构建，提供 Miuix 与 Material 双皮肤。
 
 ## 功能
 
 ### 协议调试
-- **HTTP**：完整请求编辑（Query 参数、请求头、请求体 JSON / RAW / form-urlencoded / form-data），鉴权支持 Bearer、Basic、API Key；请求体可直接引用本地文件流式发送，连接与读取超时可分别设置，重定向逐跳展示完整链路，支持跳过 TLS 校验
-- **响应正文**：格式化查看、大响应体分页渲染，HTML 默认展示源码并可跳转全屏 WebView 预览，媒体预览入口由响应头 Content-Type 决定，一键导出与分享完整响应
+- **HTTP**：最多 5 个请求标签并行调试，每个标签持有独立的请求配置、响应与断言；完整请求编辑（Query 参数、请求头、请求体 JSON / RAW / form-urlencoded / form-data），鉴权支持 Bearer、Basic、API Key；请求体可直接引用本地文件流式发送，连接与读取超时可分别设置，重定向逐跳展示完整链路，支持跳过 TLS 校验
+- **响应正文**：格式化查看、大响应体分页渲染，HTML 默认展示源码并可跳转全屏 WebView 预览，图片按原始字节解码绘制并支持双指缩放与拖拽，不再受超长 base64 data URI 拖累；媒体预览入口由响应头 Content-Type 决定，一键导出与分享完整响应
 - **响应断言**：断言类型覆盖包含 / 不包含 / JSONPath / 状态码 / 响应头 / 耗时，JSONPath 支持等于 / 包含 / 数值比较 / 类型校验等运算符；HTTP 发送后自动校验并汇总 PASS / FAIL，WebSocket 与 MQTT 也可对每条收到的消息实时断言并累计通过率，配置随快照保存
 - **Cookie / 会话**：自动跟随 `Set-Cookie` 并在后续请求注入，按域名分组查看、单条删除、按域名清除，数据按项目隔离
 - **响应时间线**：DNS / TCP / TLS / 首字节等待 / 内容下载分段水瀑图
@@ -24,7 +26,7 @@ Pulse 是一款 Android 原生 API 调试工具，覆盖 HTTP / SSE / WebSocket 
 - **代理**：全局 HTTP / SOCKS5 代理（支持认证），每次连接前本地化提示当前代理状态
 
 ### 请求管理
-- **集合**：多级文件夹 + 面包屑逐层下钻，接口重命名、移动、排序、原地复制，删除接口与递归删除文件夹均有二次确认；支持关键字跨文件夹搜索、curl 命令导入、文件夹级变量（子文件夹继承）以及导出为 Postman / OpenAPI 文档
+- **集合**：多级文件夹 + 面包屑逐层下钻，接口重命名、移动、排序、原地复制，删除接口与递归删除文件夹均有二次确认；从集合加载的接口再次保存时弹窗确认，可改名或换集合并原地更新，不产生重复记录；支持关键字跨文件夹搜索、curl 命令导入、文件夹级变量（子文件夹继承）以及导出为 Postman / OpenAPI 文档
 - **集合运行器**：顺序运行一组请求，前序响应提取变量传给后序，配合脚本断言完成接口链路测试
 - **历史**：完整请求/响应历史，详情页复现请求并回看当时的断言结论，支持收藏与置顶
 - **响应对比**：任选两条历史响应做行级 diff，JSON / XML 先格式化再比较
@@ -34,7 +36,7 @@ Pulse 是一款 Android 原生 API 调试工具，覆盖 HTTP / SSE / WebSocket 
 
 ### 自动化
 - **前置/后置脚本**：Rhino JavaScript 引擎，`pm` API 支持变量读写、断言与控制台输出，原生 `console` 输出日志；脚本编辑器基于 sora-editor + TextMate 高亮，提供 `pm.*` / `console.*` / 内置对象成员补全、脚本内自定义变量补全、一键格式化、行号、双指缩放与底部符号栏，并内置语法文档
-- **接口监控**：定时探测目标接口，支持 IP 连通、TCP 端口、HTTP 三类探测，HTTP 可配置方法、头、请求体与鉴权；响应断言支持包含 / 不包含 / JSONPath；通过与否全量记录，可按状态与检查类型筛选；延迟趋势曲线支持拖动查看样本详情；分组与批量开关；异常时发送系统通知，并可通过 Webhook 推送到企业微信、钉钉、飞书、Slack 或自定义端点
+- **接口监控**：定时探测目标接口，支持 IP 连通、TCP 端口、HTTP 三类探测；IP 探测优先 ICMP，失败后并发探测常用端口，连接被拒（RST）同样视为在线，局域网目标自动绕过代理；HTTP 可配置方法、头、请求体与鉴权；响应断言支持包含 / 不包含 / JSONPath；通过与否全量记录，可按状态与检查类型筛选；延迟趋势曲线支持拖动查看样本详情；分组与批量开关；异常时发送系统通知，并可通过 Webhook 推送到企业微信、钉钉、飞书、Slack 或自定义端点
 - **桌面小组件**：展示最近拨测状态，支持手动刷新与逐目标立即拨测；长按图标可直达常用工具
 
 ### 工具箱
