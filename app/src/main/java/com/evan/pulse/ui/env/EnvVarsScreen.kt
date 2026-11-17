@@ -21,24 +21,20 @@ import com.evan.pulse.ui.common.DialogActions
 import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.subPageOverScroll
 import com.evan.pulse.ui.common.subPageScrollState
-import top.yukonga.miuix.kmp.basic.DropdownEntry
-import top.yukonga.miuix.kmp.basic.DropdownItem
 import com.evan.pulse.ui.design.AppTheme
 import com.evan.pulse.ui.design.AppInfoRow
 import com.evan.pulse.ui.design.AppCard
 import com.evan.pulse.ui.design.AppDialog
 import com.evan.pulse.ui.design.AppIcon
+import com.evan.pulse.ui.design.AppIconButton
 import com.evan.pulse.ui.design.AppText
 import com.evan.pulse.ui.design.AppTextField
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Delete
-import top.yukonga.miuix.kmp.icon.extended.Edit
-import top.yukonga.miuix.kmp.icon.extended.More
 import top.yukonga.miuix.kmp.icon.extended.Settings
-import com.evan.pulse.ui.design.AppIconDropdownMenu
 
 /**
- * 环境变量二级页：列表展示每个变量的名称与值，修改/删除收在每项的更多菜单里，
+ * 环境变量二级页：列表展示每个变量的名称与值，单击整行进入编辑，行尾只留一个删除按钮；
  * 新增由顶栏加号触发；编辑弹窗为两行输入框（变量名、值各占一行）。
  */
 @Composable
@@ -60,54 +56,28 @@ fun EnvVarsScreen(
             .padding(start = 12.dp, top = LocalTopBarInset.current, end = 12.dp)
             .padding(bottom = 12.dp)
     ) {
+        // 行直接铺满卡片，首行/末行的水波纹由 AppCard 内容裁剪沿圆角收边
         AppCard(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(vertical = 8.dp)) {
+            Column(modifier = Modifier) {
                 val variables = env?.variables.orEmpty()
                 variables.forEachIndexed { index, pair ->
                     AppInfoRow(
                         title = pair.first,
                         summary = pair.second.ifEmpty { null },
                         modifier = Modifier.fillMaxWidth(),
+                        onClick = { viewModel.openVarEditor(envId, index) },
                         endActions = {
-                            AppIconDropdownMenu(
-                                entries = listOf(
-                                    DropdownEntry(
-                                        items = listOf(
-                                            DropdownItem(
-                                                text = stringResource(R.string.cd_edit),
-                                                icon = { m ->
-                                                    AppIcon(
-                                                        imageVector = MiuixIcons.Light.Edit,
-                                                        contentDescription = null,
-                                                        modifier = m
-                                                    )
-                                                },
-                                                onClick = { viewModel.openVarEditor(envId, index) }
-                                            ),
-                                            DropdownItem(
-                                                text = stringResource(R.string.action_delete),
-                                                icon = { m ->
-                                                    AppIcon(
-                                                        imageVector = MiuixIcons.Light.Delete,
-                                                        contentDescription = null,
-                                                        modifier = m
-                                                    )
-                                                },
-                                                onClick = { viewModel.requestDeleteVar(envId, index) }
-                                            )
-                                        )
-                                    )
-                                ),
-                                minWidth = 28.dp,
-                                minHeight = 28.dp,
+                            AppIconButton(
+                                onClick = { viewModel.requestDeleteVar(envId, index) },
                                 modifier = Modifier
                                     .size(28.dp)
                                     .offset(x = 4.dp)
                             ) {
                                 AppIcon(
-                                    imageVector = MiuixIcons.Light.More,
-                                    contentDescription = stringResource(R.string.cd_more),
-                                    modifier = Modifier.size(20.dp)
+                                    imageVector = MiuixIcons.Light.Delete,
+                                    contentDescription = stringResource(R.string.action_delete),
+                                    modifier = Modifier.size(20.dp),
+                                    tint = AppTheme.colors.onSurfaceSummary
                                 )
                             }
                         }
@@ -117,7 +87,7 @@ fun EnvVarsScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 20.dp),
+                            .padding(horizontal = 16.dp, vertical = 20.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         AppIcon(
