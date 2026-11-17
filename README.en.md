@@ -55,7 +55,7 @@ Pulse is a native Android API debugging tool covering HTTP, SSE, WebSocket and M
 
 ## Download
 
-Get the latest APK from [Releases](https://github.com/HoldEvan/pulse/releases) (for example `Pulse-v0.2.2-release.apk`). Android 8.0 (API 26) and above.
+Get the latest APK from [Releases](https://github.com/HoldEvan/pulse/releases) (for example `Pulse-v0.2.3-release.apk`). Android 8.0 (API 26) and above.
 
 ## Build
 

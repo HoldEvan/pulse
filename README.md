@@ -55,7 +55,7 @@ Pulse 是一款 Android 原生 API 调试工具，覆盖 HTTP / SSE / WebSocket 
 
 ## 下载
 
-前往 [Releases](https://github.com/HoldEvan/pulse/releases) 下载最新 APK（如 `Pulse-v0.2.2-release.apk`），Android 8.0（API 26）及以上可安装。
+前往 [Releases](https://github.com/HoldEvan/pulse/releases) 下载最新 APK（如 `Pulse-v0.2.3-release.apk`），Android 8.0（API 26）及以上可安装。
 
 ## 构建
 
