@@ -1,5 +1,6 @@
 package com.evan.pulse.ui.design
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,15 +28,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
-import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference as MiuixDropdownPreference
+import top.yukonga.miuix.kmp.glass.GlassDropdownPreference as MiuixDropdownPreference
 
 /**
- * 下拉选择行：Miuix 皮肤沿用 OverlayDropdownPreference（行内展开选项面板），
- * Material 皮肤用 M3 的 DropdownMenu 从行下方弹出。
+ * 下拉选择行：Miuix 皮肤用 miuix-glass 的 GlassDropdownPreference（半透明玻璃面板，
+ * 不压暗窗口），Material 皮肤用 M3 的 DropdownMenu 从行下方弹出。
  *
  * 参数只表达语义（标题、摘要、候选项、当前选中、选中回调），
  * 两套皮肤各自决定展开方式与行高。
@@ -63,6 +65,8 @@ fun AppDropdown(
             summary = summary.ifBlank { null },
             showValue = showValue,
             enabled = enabled,
+            backdrop = LocalPopupBackdrop.current,
+            visuals = rememberGlassPopupVisuals(),
             modifier = if (filled) {
                 modifier.clip(shape).background(AppTheme.colors.surfaceContainer, shape)
             } else {
@@ -143,7 +147,12 @@ fun AppDropdown(
             Spacer(modifier = Modifier.size(20.dp))
             DropdownMenu(
                 expanded = expanded && enabled && items.isNotEmpty(),
-                onDismissRequest = { expanded = false }
+                onDismissRequest = { expanded = false },
+                shape = RoundedCornerShape(16.dp),
+                containerColor = colors.surfaceContainer.copy(alpha = 0.92f),
+                tonalElevation = 0.dp,
+                shadowElevation = 8.dp,
+                border = BorderStroke(1.dp, colors.outline.copy(alpha = 0.12f))
             ) {
                 items.forEachIndexed { index, label ->
                     val isSelected = index == selectedIndex
@@ -153,7 +162,7 @@ fun AppDropdown(
                             .clip(RoundedCornerShape(12.dp))
                             .background(
                                 if (isSelected) MaterialTheme.colorScheme.primaryContainer
-                                else MaterialTheme.colorScheme.surfaceContainer,
+                                else Color.Transparent,
                                 RoundedCornerShape(12.dp)
                             )
                             .semantics { this.selected = isSelected },

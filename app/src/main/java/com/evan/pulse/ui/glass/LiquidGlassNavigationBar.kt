@@ -34,7 +34,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -82,109 +81,44 @@ import com.evan.pulse.ui.design.AppText
 import top.yukonga.miuix.kmp.blur.LayerBackdrop
 import top.yukonga.miuix.kmp.blur.blur
 import top.yukonga.miuix.kmp.blur.drawBackdrop
-import top.yukonga.miuix.kmp.blur.highlight.BloomStroke
-import top.yukonga.miuix.kmp.blur.highlight.Highlight
-import top.yukonga.miuix.kmp.blur.highlight.LightPosition
-import top.yukonga.miuix.kmp.blur.highlight.LightSource
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
-import top.yukonga.miuix.kmp.blur.sensor.rememberDeviceTilt
+import top.yukonga.miuix.kmp.material.EdgeLightSource
+import top.yukonga.miuix.kmp.material.EdgePeak
+import top.yukonga.miuix.kmp.material.EdgeStroke
+import top.yukonga.miuix.kmp.material.drawEdgeStroke
+import top.yukonga.miuix.kmp.material.rememberTiltLight
 import top.yukonga.miuix.kmp.theme.LocalContentColor
 import top.yukonga.miuix.kmp.utils.Platform
 import top.yukonga.miuix.kmp.utils.platform
-import kotlin.math.PI
 import kotlin.math.abs
-import kotlin.math.atan2
-import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sign
-import kotlin.math.sin
 import kotlinx.coroutines.launch
 
 private val LocalIosTabScale = staticCompositionLocalOf { { 1f } }
 
-private val iosIndicatorSpecular: Highlight = Highlight(
+/**
+ * 胶囊边缘的高光描边：`Dual` 峰值让一个光源在轮廓上产生对称的两个亮点，
+ * 对应原来 `BloomStroke(dualPeak = true)` 的效果。光源位置由 [rememberTiltLight]
+ * 随设备倾角偏移，替代旧版手写的重力角旋转。
+ */
+private val iosIndicatorSpecular: EdgeStroke = EdgeStroke(
     width = 1.dp,
-    alpha = 1f,
-    style = BloomStroke(
-        color = Color.White.copy(alpha = 0.12f),
-        innerBlurRadius = 2.0.dp,
-        primaryLight = LightSource(
-            position = LightPosition(0.5f, -0.3f, -0.05f),
-            color = Color.White,
-            intensity = 1f,
-        ),
-        secondaryLight = LightSource(
-            position = LightPosition(0.5f, 0.8f, -0.5f),
-            color = Color.White,
-            intensity = 0.4f,
-        ),
-        dualPeak = true,
-    ),
+    bevel = 2.dp,
+    color = Color.White.copy(alpha = 0.12f),
+    primary = EdgeLightSource(0.5f, -0.3f, -0.05f, Color.White, 1f),
+    secondary = EdgeLightSource(0.5f, 0.8f, -0.5f, Color.White, 0.4f),
+    peak = EdgePeak.Dual,
 )
 
-// 与 HighlightStyle.kt 中的 LIGHT_REF 保持一致
-private const val LIGHT_REF_X = 0.5f
-private const val LIGHT_REF_Y = 0.7f
-private const val GRAVITY_DIR_THRESHOLD_SQ = 0.01f // |g_xy| > 0.1，约 6° 倾角
-
-// 重力方向的 3° 量化步长：更细的变化人眼分辨不出
-private const val GRAVITY_ANGLE_STEP_RAD = (3.0 * PI / 180.0).toFloat()
-
-/**
- * 屏幕平面内的重力方向角（弧度，按 3° 量化）。
- *
- * 以 [State] 返回，把读取推迟到绘制阶段：传感器以约 50Hz 无节流地写入倾角，
- * 若在合成阶段读取会让整个调用方作用域每个 tick 都重组。随后的等值判定
- * 再把绘制失效收敛到量化步长跳变处。
- */
+/** 让高光的两路光源跟随设备倾角，避免胶囊边缘的亮点固定死在一个方向 */
 @Composable
-private fun rememberQuantizedGravityAngle(): State<Float> {
-    val tiltState = rememberDeviceTilt()
-    return remember(tiltState) {
-        derivedStateOf {
-            val tilt = tiltState.value
-            val gx = tilt.gravityX
-            val gy = tilt.gravityY
-            val gMagSq = gx * gx + gy * gy
-            if (gMagSq > GRAVITY_DIR_THRESHOLD_SQ) {
-                (atan2(gy, gx) / GRAVITY_ANGLE_STEP_RAD).roundToInt() * GRAVITY_ANGLE_STEP_RAD
-            } else {
-                // 接近平放时屏幕内重力方向不稳定，固定为 (0, -1)
-                (-PI / 2).toFloat()
-            }
-        }
-    }
-}
-
-/**
- * 把 [base] 的 `dualPeak` 主光源旋转到重力方向角再加 [extraDegrees]。
- * 只在绘制阶段读 `.value`（见 [rememberQuantizedGravityAngle]）；旋转后的副本会被缓存，
- * 仅在角度跨过量化步长时重新分配。
- */
-@Composable
-private fun rememberGravityRotatedHighlight(
-    base: Highlight,
-    extraDegrees: Float,
-): State<Highlight> {
-    val gravityAngle = rememberQuantizedGravityAngle()
-    return remember(gravityAngle, base, extraDegrees) {
-        derivedStateOf {
-            val baseStyle = base.style as BloomStroke
-            val basePrimary = baseStyle.primaryLight
-            val rad = gravityAngle.value + (extraDegrees * PI / 180.0).toFloat()
-            base.copy(
-                style = baseStyle.copy(
-                    primaryLight = basePrimary.copy(
-                        position = LightPosition(
-                            x = LIGHT_REF_X + cos(rad),
-                            y = LIGHT_REF_Y + sin(rad),
-                            z = basePrimary.position.z,
-                        ),
-                    ),
-                ),
-            )
-        }
+private fun rememberTiltedSpecular(base: EdgeStroke): EdgeStroke {
+    val primary = rememberTiltLight(base.primary)
+    val secondary = rememberTiltLight(base.secondary)
+    return remember(base, primary, secondary) {
+        base.copy(primary = primary, secondary = secondary)
     }
 }
 
@@ -340,9 +274,7 @@ internal fun LiquidGlassNavigationBar(
         )
     }
 
-    // 只在 highlight lambda（绘制阶段）里读 .value，合成阶段不要读
-    val baseHighlight = rememberGravityRotatedHighlight(iosIndicatorSpecular, extraDegrees = -45f)
-    val pillHighlight = rememberGravityRotatedHighlight(iosIndicatorSpecular, extraDegrees = 90f)
+    val specular = rememberTiltedSpecular(iosIndicatorSpecular)
 
     val combinedBackdrop = backdrop?.let { rememberCombinedBackdrop(it, tabsBackdrop) }
 
@@ -452,14 +384,16 @@ internal fun LiquidGlassNavigationBar(
                                             refractionAmount = 24.dp.toPx(),
                                         )
                                     },
-                                    highlight = { baseHighlight.value.copy(alpha = 0.75f) },
                                     layerBlock = {
                                         val width = size.width.coerceAtLeast(1f)
                                         val s = lerp(1f, 1f + 16.dp.toPx() / width, dampedDrag.pressProgress)
                                         scaleX = s
                                         scaleY = s
                                     },
-                                    onDrawSurface = { drawRect(containerColor) },
+                                    onDrawSurface = {
+                                        drawRect(containerColor)
+                                        drawEdgeStroke(pillShape, specular, alpha = 0.75f)
+                                    },
                                 )
                             } else {
                                 Modifier
@@ -538,10 +472,6 @@ internal fun LiquidGlassNavigationBar(
                                         chromaticAberration = 0.5f,
                                     )
                                 },
-                                highlight = {
-                                    val progress = dampedDrag.pressProgress
-                                    pillHighlight.value.copy(alpha = 0.5f + 0.5f * progress)
-                                },
                                 layerBlock = {
                                     scaleX = dampedDrag.scaleX
                                     scaleY = dampedDrag.scaleY
@@ -559,6 +489,11 @@ internal fun LiquidGlassNavigationBar(
                                         )
                                     )
                                     drawRect(Color.Black.copy(alpha = 0.06f * progress))
+                                    drawEdgeStroke(
+                                        shape = pillShape,
+                                        stroke = specular,
+                                        alpha = 0.5f + 0.5f * progress,
+                                    )
                                 },
                             )
                             .innerShadow(shape = pillShape) {

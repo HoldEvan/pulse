@@ -77,14 +77,14 @@ Android Studio (Ladybug or newer) with JDK 21+ is recommended.
 | Area | Choice |
 |------|--------|
 | Language | Kotlin 2.4.20 |
-| UI | Jetpack Compose (BOM 2026.09.00) + Miuix 0.9.4 |
+| UI | Jetpack Compose (BOM 2026.09.00) + Miuix 0.9.5-beta02 |
 | Code editor | sora-editor 0.24.7 + TextMate syntax highlighting |
 | Networking | OkHttp, Ktor 3.1.3 (SSE / WebSocket), HiveMQ MQTT Client 1.4.1 |
 | Storage | Room 2.8.5 (SQLite) + DataStore Preferences |
 | Scripting | Mozilla Rhino 1.7.15 |
 | Serialization / spec parsing | kotlinx.serialization 1.9.0, kaml (YAML) |
 | Coroutines | kotlinx.coroutines 1.10.2 |
-| Minimum | Android 8.0 (API 26), compileSdk 37 / targetSdk 36 |
+| Minimum | Android 8.0 (API 26), compileSdk 37.2 / targetSdk 36 |
 
 ## Project layout
 

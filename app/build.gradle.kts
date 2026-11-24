@@ -43,6 +43,7 @@ val signingProps = Properties().apply {
 android {
     namespace = "com.evan.pulse"
     compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdkMinor = libs.versions.compileSdkMinor.get().toInt()
 
     defaultConfig {
         applicationId = "com.evan.pulse"
@@ -142,6 +143,7 @@ dependencies {
     implementation(libs.miuix.icons)
     implementation(libs.miuix.nav)
     implementation(libs.miuix.squircle)
+    implementation(libs.miuix.glass)
 
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.okhttp)

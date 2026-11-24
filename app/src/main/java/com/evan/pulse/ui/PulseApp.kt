@@ -99,10 +99,11 @@ import com.evan.pulse.ui.tools.CronToolScreen
 import com.evan.pulse.ui.tools.LanScanToolScreen
 import top.yukonga.miuix.kmp.basic.NavigationItem
 import com.evan.pulse.ui.design.AppScaffold
+import com.evan.pulse.ui.design.LocalPopupBackdrop
 import com.evan.pulse.ui.resources.ResourceTabBar
 import com.evan.pulse.ui.test.ProtocolTabBar
 import top.yukonga.miuix.kmp.blur.LayerBackdrop
-import top.yukonga.miuix.kmp.blur.isRuntimeShaderSupported
+import top.yukonga.miuix.kmp.material.isRuntimeShaderSupported
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.icon.MiuixIcons
@@ -275,216 +276,218 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
             settingsViewModel.selectTab(0)
         }
 
-        AppScaffold(
-            bottomBar = {
-                if (glassBottomBar) {
-                    LiquidGlassNavigationBar(
-                        items = navigationItems,
-                        selectedIndex = tabState.selectedTab,
-                        onItemClick = { settingsViewModel.selectTab(it) },
-                        backdrop = backdrop,
-                        isBlurActive = backdrop != null,
-                        showLabels = settings.bottomBarLabelVisible
-                    )
-                } else {
-                    AppBottomBar(
-                        items = bottomBarItems,
-                        selectedIndex = tabState.selectedTab,
-                        onItemSelected = { settingsViewModel.selectTab(it) },
-                        showLabels = settings.bottomBarLabelVisible,
-                        floating = settings.floatingBottomBar
-                    )
+        CompositionLocalProvider(LocalPopupBackdrop provides backdrop) {
+            AppScaffold(
+                bottomBar = {
+                    if (glassBottomBar) {
+                        LiquidGlassNavigationBar(
+                            items = navigationItems,
+                            selectedIndex = tabState.selectedTab,
+                            onItemClick = { settingsViewModel.selectTab(it) },
+                            backdrop = backdrop,
+                            isBlurActive = backdrop != null,
+                            showLabels = settings.bottomBarLabelVisible
+                        )
+                    } else {
+                        AppBottomBar(
+                            items = bottomBarItems,
+                            selectedIndex = tabState.selectedTab,
+                            onItemSelected = { settingsViewModel.selectTab(it) },
+                            showLabels = settings.bottomBarLabelVisible,
+                            floating = settings.floatingBottomBar
+                        )
+                    }
                 }
-            }
-        ) { _ ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    // 仅玻璃底栏开启时才在整块区域外层录制全局采样层；否则不录制，
-                    // 避免与各页顶栏自己的采样层嵌套录制，顶栏磨砂取样更干净
-                    .then(
-                        if (backdrop != null && glassBottomBar) {
-                            Modifier.layerBackdrop(backdrop)
-                        } else {
-                            Modifier
-                        }
-                    )
-            ) {
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier.fillMaxSize(),
-                    // 预组合相邻页，滑动更顺滑；越界一页即弃
-                    beyondViewportPageCount = 1
-                ) { tab ->
-                    // 每页自带整条顶栏，随 pager 一起横向滑动，标题自然跟页
-                    // 每页独立的内容采样层：只采本页内容 Box，避免顶栏把模糊背景中的自己再采进去；
-                    // 与本页顶栏在同一页作用域内创建，和 miuix example 的用法保持一致
-                    val pageBackdrop = rememberBlurBackdrop()
-                    val pageBehavior = tabScrollBehaviors[tab]
-                    TabPageScaffold(
-                        // 调试页/资源页的标签条与顶栏共用磨砂背景并盖在内容之上，不让位给内容
-                        overlappingTopBarHeight = when (tab) {
-                            1 -> protocolTabsHeight
-                            2 -> resourceTabsHeight
-                            else -> 0.dp
-                        },
-                        topBar = {
-                            when (tab) {
-                                1 -> ProjectBar(
-                                    title = stringResource(tabs[1].label),
-                                    showProjectSelector = true,
-                                    showEnvSelector = true,
-                                    // 协议标签条放在磨砂顶栏内部：与顶栏共享同一块模糊背景，
-                                    // 内容滚动时从标签条下方穿过
-                                    bottomContent = {
-                                        ProtocolTabBar(
-                                            selectedIndex = tabState.homeProtocolTab,
-                                            onTabSelected = { settingsViewModel.selectHomeProtocol(it) },
-                                            onHeightChange = { protocolTabsHeight = it }
-                                        )
-                                    },
-                                    viewModel = projectViewModel,
-                                    behavior = pageBehavior,
-                                    backdrop = pageBackdrop,
-                                    isBlurActive = pageBackdrop != null
-                                )
-                                2 -> ProjectBar(
-                                    title = stringResource(tabs[2].label),
-                                    // 资源页仅在集合/环境子页显示项目选择（项目子页自带管理）
-                                    showProjectSelector = tabState.resourceTab != 0,
-                                    // 资源页-项目 tab 时顶栏显示"新建项目"
-                                    onAddProject = if (tabState.resourceTab == 0) {
-                                        { projectViewModel.openCreate() }
-                                    } else {
-                                        null
-                                    },
-                                    // 资源页-环境 tab 时顶栏显示"新建环境"
-                                    onAddEnv = if (tabState.resourceTab == 2) {
-                                        { envViewModel.openCreate() }
-                                    } else {
-                                        null
-                                    },
-                                    // 项目/集合/环境标签条同样挂在磨砂顶栏内部
-                                    bottomContent = {
-                                        ResourceTabBar(
-                                            selectedIndex = tabState.resourceTab,
-                                            onTabSelected = { settingsViewModel.selectResourceTab(it) },
-                                            onHeightChange = { resourceTabsHeight = it }
-                                        )
-                                    },
-                                    viewModel = projectViewModel,
-                                    behavior = pageBehavior,
-                                    backdrop = pageBackdrop,
-                                    isBlurActive = pageBackdrop != null
-                                )
-                                3 -> ProjectBar(
-                                    title = stringResource(tabs[3].label),
-                                    onAddMonitor = { monitorViewModel.openCreate() },
-                                    viewModel = projectViewModel,
-                                    behavior = pageBehavior,
-                                    backdrop = pageBackdrop,
-                                    isBlurActive = pageBackdrop != null
-                                )
-                                else -> ProjectBar(
-                                    title = stringResource(tabs[tab].label),
-                                    viewModel = projectViewModel,
-                                    behavior = pageBehavior,
-                                    backdrop = pageBackdrop,
-                                    isBlurActive = pageBackdrop != null
-                                )
+            ) { _ ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        // 开启模糊时在整块区域外层录制全局采样层：玻璃底栏与弹出面板共用；
+                        // 关闭模糊时不录制，各页顶栏仍用自己更干净的页内采样层
+                        .then(
+                            if (backdrop != null) {
+                                Modifier.layerBackdrop(backdrop)
+                            } else {
+                                Modifier
                             }
-                        }
-                    ) { padding ->
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .nestedScroll(pageBehavior.nestedScrollConnection)
-                                .then(
-                                    if (pageBackdrop != null) {
-                                        Modifier.layerBackdrop(pageBackdrop)
-                                    } else {
-                                        Modifier
-                                    }
-                                )
-                        ) {
-                            CompositionLocalProvider(
-                                LocalTopBarInset provides padding.calculateTopPadding(),
-                                LocalSubPageCanScroll provides tabCanScroll[tab]
-                            ) {
+                        )
+                ) {
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.fillMaxSize(),
+                        // 预组合相邻页，滑动更顺滑；越界一页即弃
+                        beyondViewportPageCount = 1
+                    ) { tab ->
+                        // 每页自带整条顶栏，随 pager 一起横向滑动，标题自然跟页
+                        // 每页独立的内容采样层：只采本页内容 Box，避免顶栏把模糊背景中的自己再采进去；
+                        // 与本页顶栏在同一页作用域内创建，和 miuix example 的用法保持一致
+                        val pageBackdrop = rememberBlurBackdrop()
+                        val pageBehavior = tabScrollBehaviors[tab]
+                        TabPageScaffold(
+                            // 调试页/资源页的标签条与顶栏共用磨砂背景并盖在内容之上，不让位给内容
+                            overlappingTopBarHeight = when (tab) {
+                                1 -> protocolTabsHeight
+                                2 -> resourceTabsHeight
+                                else -> 0.dp
+                            },
+                            topBar = {
                                 when (tab) {
-                                    0 -> DashboardScreen(
-                                        modifier = Modifier.fillMaxSize(),
-                                        onOpenEncoding = { navController.pushRoute(PulseRoute.EncodingTool) },
-                                        onOpenImageBase64 = { navController.pushRoute(PulseRoute.ImageBase64Tool) },
-                                        onOpenJson = { navController.pushRoute(PulseRoute.JsonTool) },
-                                        onOpenJsonSchema = {
-                                            navController.pushRoute(PulseRoute.JsonSchemaTool)
+                                    1 -> ProjectBar(
+                                        title = stringResource(tabs[1].label),
+                                        showProjectSelector = true,
+                                        showEnvSelector = true,
+                                        // 协议标签条放在磨砂顶栏内部：与顶栏共享同一块模糊背景，
+                                        // 内容滚动时从标签条下方穿过
+                                        bottomContent = {
+                                            ProtocolTabBar(
+                                                selectedIndex = tabState.homeProtocolTab,
+                                                onTabSelected = { settingsViewModel.selectHomeProtocol(it) },
+                                                onHeightChange = { protocolTabsHeight = it }
+                                            )
                                         },
-                                        onOpenYamlJson = {
-                                            navController.pushRoute(PulseRoute.YamlJsonTool)
-                                        },
-                                        onOpenUrlParser = {
-                                            navController.pushRoute(PulseRoute.UrlParserTool)
-                                        },
-                                        onOpenQrCode = {
-                                            navController.pushRoute(PulseRoute.QrCodeTool)
-                                        },
-                                        onOpenTimestamp = { navController.pushRoute(PulseRoute.TimestampTool) },
-                                        onOpenJwt = { navController.pushRoute(PulseRoute.JwtTool) },
-                                        onOpenHash = { navController.pushRoute(PulseRoute.HashTool) },
-                                        onOpenUuid = { navController.pushRoute(PulseRoute.UuidTool) },
-                                        onOpenRegex = { navController.pushRoute(PulseRoute.RegexTool) },
-                                        onOpenCron = { navController.pushRoute(PulseRoute.CronTool) },
-                                        onOpenLanScan = { navController.pushRoute(PulseRoute.LanScanTool) },
-                                        onOpenProjects = { settingsViewModel.openResourceTab(0) },
-                                        onOpenHistory = { navController.pushRoute(PulseRoute.History) },
-                                        onOpenRequests = { settingsViewModel.openResourceTab(1) },
-                                        onOpenMonitors = { settingsViewModel.selectTab(3) }
+                                        viewModel = projectViewModel,
+                                        behavior = pageBehavior,
+                                        backdrop = pageBackdrop,
+                                        isBlurActive = pageBackdrop != null
                                     )
-                                    1 -> TestScreen(
-                                        modifier = Modifier.fillMaxSize(),
-                                        protocolTab = tabState.homeProtocolTab,
-                                        stickyTabInset = protocolTabsHeight,
-                                        onOpenScriptEditor = { navController.pushRoute(PulseRoute.ScriptEditor(it)) },
-                                        onOpenHistory = { navController.pushRoute(PulseRoute.History) },
-                                        onOpenCookies = { navController.pushRoute(PulseRoute.Cookies) },
-                                        onOpenHtmlPreview = { navController.pushRoute(PulseRoute.HtmlPreview) },
-                                        httpViewModel = httpViewModel
-                                    )
-                                    2 -> ResourcesScreen(
-                                        modifier = Modifier.fillMaxSize(),
-                                        resourceTab = tabState.resourceTab,
-                                        stickyTabInset = resourceTabsHeight,
-                                        onSwitchTab = { settingsViewModel.openHomeProtocol(it) },
-                                        projectViewModel = projectViewModel,
-                                        envViewModel = envViewModel,
-                                        onOpenEnvVars = { navController.pushRoute(PulseRoute.EnvVars(it)) },
-                                        onRunCollection = { navController.pushRoute(PulseRoute.CollectionRunner(it)) }
-                                    )
-                                    3 -> MonitorScreen(
-                                        modifier = Modifier.fillMaxSize(),
-                                        viewModel = monitorViewModel,
-                                        onOpenRecordsList = {
-                                            monitorViewModel.openAllRecords()
-                                            navController.pushRoute(PulseRoute.MonitorRecords)
+                                    2 -> ProjectBar(
+                                        title = stringResource(tabs[2].label),
+                                        // 资源页仅在集合/环境子页显示项目选择（项目子页自带管理）
+                                        showProjectSelector = tabState.resourceTab != 0,
+                                        // 资源页-项目 tab 时顶栏显示"新建项目"
+                                        onAddProject = if (tabState.resourceTab == 0) {
+                                            { projectViewModel.openCreate() }
+                                        } else {
+                                            null
                                         },
-                                        onOpenTargetRecords = { target ->
-                                            monitorViewModel.openRecordsForTarget(target)
-                                            navController.pushRoute(PulseRoute.MonitorRecords)
+                                        // 资源页-环境 tab 时顶栏显示"新建环境"
+                                        onAddEnv = if (tabState.resourceTab == 2) {
+                                            { envViewModel.openCreate() }
+                                        } else {
+                                            null
                                         },
-                                        onOpenTrend = { target ->
-                                        monitorViewModel.openTrend(target)
-                                        navController.pushRoute(PulseRoute.MonitorTrend(target.id))
+                                        // 项目/集合/环境标签条同样挂在磨砂顶栏内部
+                                        bottomContent = {
+                                            ResourceTabBar(
+                                                selectedIndex = tabState.resourceTab,
+                                                onTabSelected = { settingsViewModel.selectResourceTab(it) },
+                                                onHeightChange = { resourceTabsHeight = it }
+                                            )
+                                        },
+                                        viewModel = projectViewModel,
+                                        behavior = pageBehavior,
+                                        backdrop = pageBackdrop,
+                                        isBlurActive = pageBackdrop != null
+                                    )
+                                    3 -> ProjectBar(
+                                        title = stringResource(tabs[3].label),
+                                        onAddMonitor = { monitorViewModel.openCreate() },
+                                        viewModel = projectViewModel,
+                                        behavior = pageBehavior,
+                                        backdrop = pageBackdrop,
+                                        isBlurActive = pageBackdrop != null
+                                    )
+                                    else -> ProjectBar(
+                                        title = stringResource(tabs[tab].label),
+                                        viewModel = projectViewModel,
+                                        behavior = pageBehavior,
+                                        backdrop = pageBackdrop,
+                                        isBlurActive = pageBackdrop != null
+                                    )
+                                }
+                            }
+                        ) { padding ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .nestedScroll(pageBehavior.nestedScrollConnection)
+                                    .then(
+                                        if (pageBackdrop != null) {
+                                            Modifier.layerBackdrop(pageBackdrop)
+                                        } else {
+                                            Modifier
                                         }
                                     )
-                                    else -> SettingsScreen(
-                                        modifier = Modifier.fillMaxSize(),
-                                        viewModel = settingsViewModel,
-                                        onOpenAppearance = { navController.pushRoute(PulseRoute.Appearance) },
-                                        onOpenWebhook = { navController.pushRoute(PulseRoute.Webhook) },
-                                        onOpenLogSettings = { navController.pushRoute(PulseRoute.LogSettings) },
-                                        onOpenAbout = { navController.pushRoute(PulseRoute.About) }
-                                    )
+                            ) {
+                                CompositionLocalProvider(
+                                    LocalTopBarInset provides padding.calculateTopPadding(),
+                                    LocalSubPageCanScroll provides tabCanScroll[tab]
+                                ) {
+                                    when (tab) {
+                                        0 -> DashboardScreen(
+                                            modifier = Modifier.fillMaxSize(),
+                                            onOpenEncoding = { navController.pushRoute(PulseRoute.EncodingTool) },
+                                            onOpenImageBase64 = { navController.pushRoute(PulseRoute.ImageBase64Tool) },
+                                            onOpenJson = { navController.pushRoute(PulseRoute.JsonTool) },
+                                            onOpenJsonSchema = {
+                                                navController.pushRoute(PulseRoute.JsonSchemaTool)
+                                            },
+                                            onOpenYamlJson = {
+                                                navController.pushRoute(PulseRoute.YamlJsonTool)
+                                            },
+                                            onOpenUrlParser = {
+                                                navController.pushRoute(PulseRoute.UrlParserTool)
+                                            },
+                                            onOpenQrCode = {
+                                                navController.pushRoute(PulseRoute.QrCodeTool)
+                                            },
+                                            onOpenTimestamp = { navController.pushRoute(PulseRoute.TimestampTool) },
+                                            onOpenJwt = { navController.pushRoute(PulseRoute.JwtTool) },
+                                            onOpenHash = { navController.pushRoute(PulseRoute.HashTool) },
+                                            onOpenUuid = { navController.pushRoute(PulseRoute.UuidTool) },
+                                            onOpenRegex = { navController.pushRoute(PulseRoute.RegexTool) },
+                                            onOpenCron = { navController.pushRoute(PulseRoute.CronTool) },
+                                            onOpenLanScan = { navController.pushRoute(PulseRoute.LanScanTool) },
+                                            onOpenProjects = { settingsViewModel.openResourceTab(0) },
+                                            onOpenHistory = { navController.pushRoute(PulseRoute.History) },
+                                            onOpenRequests = { settingsViewModel.openResourceTab(1) },
+                                            onOpenMonitors = { settingsViewModel.selectTab(3) }
+                                        )
+                                        1 -> TestScreen(
+                                            modifier = Modifier.fillMaxSize(),
+                                            protocolTab = tabState.homeProtocolTab,
+                                            stickyTabInset = protocolTabsHeight,
+                                            onOpenScriptEditor = { navController.pushRoute(PulseRoute.ScriptEditor(it)) },
+                                            onOpenHistory = { navController.pushRoute(PulseRoute.History) },
+                                            onOpenCookies = { navController.pushRoute(PulseRoute.Cookies) },
+                                            onOpenHtmlPreview = { navController.pushRoute(PulseRoute.HtmlPreview) },
+                                            httpViewModel = httpViewModel
+                                        )
+                                        2 -> ResourcesScreen(
+                                            modifier = Modifier.fillMaxSize(),
+                                            resourceTab = tabState.resourceTab,
+                                            stickyTabInset = resourceTabsHeight,
+                                            onSwitchTab = { settingsViewModel.openHomeProtocol(it) },
+                                            projectViewModel = projectViewModel,
+                                            envViewModel = envViewModel,
+                                            onOpenEnvVars = { navController.pushRoute(PulseRoute.EnvVars(it)) },
+                                            onRunCollection = { navController.pushRoute(PulseRoute.CollectionRunner(it)) }
+                                        )
+                                        3 -> MonitorScreen(
+                                            modifier = Modifier.fillMaxSize(),
+                                            viewModel = monitorViewModel,
+                                            onOpenRecordsList = {
+                                                monitorViewModel.openAllRecords()
+                                                navController.pushRoute(PulseRoute.MonitorRecords)
+                                            },
+                                            onOpenTargetRecords = { target ->
+                                                monitorViewModel.openRecordsForTarget(target)
+                                                navController.pushRoute(PulseRoute.MonitorRecords)
+                                            },
+                                            onOpenTrend = { target ->
+                                            monitorViewModel.openTrend(target)
+                                            navController.pushRoute(PulseRoute.MonitorTrend(target.id))
+                                            }
+                                        )
+                                        else -> SettingsScreen(
+                                            modifier = Modifier.fillMaxSize(),
+                                            viewModel = settingsViewModel,
+                                            onOpenAppearance = { navController.pushRoute(PulseRoute.Appearance) },
+                                            onOpenWebhook = { navController.pushRoute(PulseRoute.Webhook) },
+                                            onOpenLogSettings = { navController.pushRoute(PulseRoute.LogSettings) },
+                                            onOpenAbout = { navController.pushRoute(PulseRoute.About) }
+                                        )
+                                    }
                                 }
                             }
                         }
