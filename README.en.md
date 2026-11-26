@@ -77,7 +77,7 @@ Android Studio (Ladybug or newer) with JDK 21+ is recommended.
 | Area | Choice |
 |------|--------|
 | Language | Kotlin 2.4.20 |
-| UI | Jetpack Compose (BOM 2026.09.00) + Miuix 0.9.5-beta02 |
+| UI | Jetpack Compose (BOM 2026.09.00) + Miuix 0.9.5-rc01 |
 | Code editor | sora-editor 0.24.7 + TextMate syntax highlighting |
 | Networking | OkHttp, Ktor 3.1.3 (SSE / WebSocket), HiveMQ MQTT Client 1.4.1 |
 | Storage | Room 2.8.5 (SQLite) + DataStore Preferences |

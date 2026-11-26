@@ -52,7 +52,6 @@ import com.evan.pulse.ui.design.rememberAppTopBarBehavior
 import com.evan.pulse.ui.design.uiCapabilities
 import com.evan.pulse.ui.env.EnvViewModel
 import com.evan.pulse.ui.env.EnvVarsScreen
-import com.evan.pulse.ui.glass.LiquidGlassNavigationBar
 import com.evan.pulse.ui.history.HistoryDetailScreen
 import com.evan.pulse.ui.history.HistoryScreen
 import com.evan.pulse.ui.history.HistoryViewModel
@@ -97,7 +96,8 @@ import com.evan.pulse.ui.tools.UuidToolScreen
 import com.evan.pulse.ui.tools.RegexToolScreen
 import com.evan.pulse.ui.tools.CronToolScreen
 import com.evan.pulse.ui.tools.LanScanToolScreen
-import top.yukonga.miuix.kmp.basic.NavigationItem
+import top.yukonga.miuix.kmp.glass.GlassNavigationBar
+import top.yukonga.miuix.kmp.glass.GlassNavigationItem
 import com.evan.pulse.ui.design.AppScaffold
 import com.evan.pulse.ui.design.LocalPopupBackdrop
 import com.evan.pulse.ui.resources.ResourceTabBar
@@ -218,9 +218,12 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
     }
     val topAppBarScrollBehavior = tabScrollBehaviors[tabState.selectedTab]
 
-    /** 供玻璃底栏使用的标签项 */
+    /** 供玻璃底栏使用的标签项：关闭标签显示时传 null，只留图标 */
     val navigationItems = tabs.map { tab ->
-        NavigationItem(icon = tab.icon, label = stringResource(tab.label))
+        GlassNavigationItem(
+            icon = tab.icon,
+            label = if (settings.bottomBarLabelVisible) stringResource(tab.label) else null
+        )
     }
 
     /** 供皮肤无关底栏使用的标签项 */
@@ -280,13 +283,11 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
             AppScaffold(
                 bottomBar = {
                     if (glassBottomBar) {
-                        LiquidGlassNavigationBar(
+                        GlassNavigationBar(
                             items = navigationItems,
                             selectedIndex = tabState.selectedTab,
-                            onItemClick = { settingsViewModel.selectTab(it) },
-                            backdrop = backdrop,
-                            isBlurActive = backdrop != null,
-                            showLabels = settings.bottomBarLabelVisible
+                            onSelect = { settingsViewModel.selectTab(it) },
+                            backdrop = backdrop
                         )
                     } else {
                         AppBottomBar(

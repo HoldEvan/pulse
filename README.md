@@ -77,7 +77,7 @@ Pulse 是一款 Android 原生 API 调试工具，覆盖 HTTP / SSE / WebSocket 
 | 类别 | 选型 |
 |------|------|
 | 语言 | Kotlin 2.4.20 |
-| UI | Jetpack Compose（BOM 2026.09.00）+ Miuix 0.9.5-beta02 |
+| UI | Jetpack Compose（BOM 2026.09.00）+ Miuix 0.9.5-rc01 |
 | 代码编辑器 | sora-editor 0.24.7 + TextMate 语法高亮 |
 | 网络 | OkHttp、Ktor 3.1.3（SSE / WebSocket）、HiveMQ MQTT Client 1.4.1 |
 | 存储 | Room 2.8.5（SQLite）+ DataStore Preferences |
