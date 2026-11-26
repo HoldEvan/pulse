@@ -52,7 +52,7 @@ fun AppIconDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
             shape = RoundedCornerShape(16.dp),
-            containerColor = colors.surfaceContainer.copy(alpha = 0.92f),
+            containerColor = colors.surfaceContainer,
             tonalElevation = 0.dp,
             shadowElevation = 8.dp,
             border = BorderStroke(1.dp, colors.outline.copy(alpha = 0.12f))
