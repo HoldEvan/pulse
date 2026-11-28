@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -43,7 +45,6 @@ import top.yukonga.miuix.kmp.icon.extended.Create
 import top.yukonga.miuix.kmp.icon.extended.Search
 import top.yukonga.miuix.kmp.icon.extended.Timer
 import top.yukonga.miuix.kmp.icon.extended.Scan
-import top.yukonga.miuix.kmp.icon.extended.SearchDevice
 
 /** 首页：统计概览 + 工具箱。统计卡来自各内存 Store，工具入口打开对应二级页 */
 @Composable
@@ -211,7 +212,7 @@ fun DashboardScreen(
                     summary = stringResource(R.string.tool_qr_code_summary),
                     startAction = {
                         AppIcon(
-                            imageVector = MiuixIcons.Light.SearchDevice,
+                            imageVector = Icons.Filled.QrCode2,
                             contentDescription = null
                         )
                     },

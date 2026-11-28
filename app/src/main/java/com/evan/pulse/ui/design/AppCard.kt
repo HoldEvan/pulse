@@ -55,7 +55,10 @@ fun AppCard(
     val resolvedContentColor = contentColor ?: AppTheme.colors.onSurface
     val resolvedContainerColor = containerColor ?: AppTheme.colors.surfaceContainer
     val cardContent: @Composable ColumnScope.() -> Unit = {
-        CompositionLocalProvider(LocalContentColor provides resolvedContentColor) {
+        CompositionLocalProvider(
+            LocalContentColor provides resolvedContentColor,
+            LocalTabSurfaceColor provides resolvedContainerColor,
+        ) {
             Column(modifier = Modifier.cardContentClip().padding(contentPadding)) {
                 content()
             }

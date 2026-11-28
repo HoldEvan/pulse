@@ -1,5 +1,8 @@
 package com.evan.pulse.ui.common
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -25,6 +28,21 @@ import com.evan.pulse.R
 import com.evan.pulse.ui.design.AppIcon
 import com.evan.pulse.ui.design.AppText
 import com.evan.pulse.ui.design.AppTheme
+import com.evan.pulse.ui.design.LocalUiStyle
+import com.evan.pulse.ui.design.UiStyle
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.glass.ExpandList
+
+@Composable
+internal fun Modifier.expandListRotation(expanded: Boolean): Modifier {
+    if (LocalUiStyle.current != UiStyle.MIUIX) return this
+    val angle by animateFloatAsState(
+        targetValue = if (expanded) 180f else 0f,
+        animationSpec = tween(200),
+        label = "ExpandListRotation"
+    )
+    return graphicsLayer { rotationZ = angle }
+}
 
 /**
  * 可折叠的分组区块：标题行点击展开/收起，标题右侧显示条目数。
@@ -67,13 +85,19 @@ fun CollapsibleSection(
                 color = AppTheme.colors.onSurfaceSummary
             )
             AppIcon(
-                // 与接口头表格一致，用 Material 实心箭头
-                imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                // Miuix 用列表展开图标；MD3 保留方向箭头表达当前折叠状态。
+                imageVector = if (LocalUiStyle.current == UiStyle.MIUIX) {
+                    MiuixIcons.Glass.Light.ExpandList
+                } else if (expanded) {
+                    Icons.Filled.ExpandLess
+                } else {
+                    Icons.Filled.ExpandMore
+                },
                 contentDescription = stringResource(
                     if (expanded) R.string.kv_table_collapse else R.string.kv_table_expand
                 ),
                 tint = AppTheme.colors.onSurfaceSummary,
-                modifier = Modifier.padding(start = 4.dp)
+                modifier = Modifier.padding(start = 4.dp).expandListRotation(expanded)
             )
         }
         if (expanded) {

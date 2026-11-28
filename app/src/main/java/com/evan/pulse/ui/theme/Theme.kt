@@ -226,18 +226,21 @@ fun PulseTheme(settings: AppSettings, content: @Composable () -> Unit) {
             scheme.onBackground
         } else colors.onBackground
     ) {
-        MiuixTheme(colors = colors) {
-            val typography = materialTypography(MiuixTheme.textStyles)
-            val tokens = when (uiStyle) {
-                UiStyle.MIUIX -> currentAppTokens()
-                UiStyle.MATERIAL -> materialAppTokens(scheme, typography)
-            }
-            // Keep the content at one composition location so changing skins preserves navigation.
-            MaterialTheme(colorScheme = scheme, typography = typography) {
-                CompositionLocalProvider(
-                    LocalAppTokens provides tokens,
-                    content = content
-                )
+        // Pass the color mode to Miuix glass, then retain our pure-black color overrides.
+        MiuixTheme(controller = controller) {
+            MiuixTheme(colors = colors) {
+                val typography = materialTypography(MiuixTheme.textStyles)
+                val tokens = when (uiStyle) {
+                    UiStyle.MIUIX -> currentAppTokens()
+                    UiStyle.MATERIAL -> materialAppTokens(scheme, typography)
+                }
+                // Keep the content at one composition location so changing skins preserves navigation.
+                MaterialTheme(colorScheme = scheme, typography = typography) {
+                    CompositionLocalProvider(
+                        LocalAppTokens provides tokens,
+                        content = content
+                    )
+                }
             }
         }
     }

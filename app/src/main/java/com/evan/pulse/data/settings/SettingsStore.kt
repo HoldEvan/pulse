@@ -2,6 +2,7 @@ package com.evan.pulse.data.settings
 
 import android.content.Context
 import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
@@ -47,6 +48,8 @@ private val KEY_WEBDAV_PATH = stringPreferencesKey("webdav_path")
 private val KEY_WEBDAV_USER = stringPreferencesKey("webdav_username")
 private val KEY_WEBDAV_PASS = stringPreferencesKey("webdav_password")
 private val KEY_MONITOR_NOTIFY = booleanPreferencesKey("monitor_notify")
+private val KEY_BOTTOM_BAR_STYLE = stringPreferencesKey("bottom_bar_style")
+// 旧布尔键仅用于读取迁移，下一次写入设置时清理。
 private val KEY_FLOATING_BOTTOM_BAR = booleanPreferencesKey("floating_bottom_bar")
 private val KEY_LIQUID_GLASS_BOTTOM_BAR = booleanPreferencesKey("liquid_glass_bottom_bar")
 private val KEY_BOTTOM_BAR_LABEL_VISIBLE = booleanPreferencesKey("bottom_bar_label_visible")
@@ -113,8 +116,15 @@ internal fun Preferences.toAppSettings(secrets: SecretBox? = null): AppSettings 
     webdavUsername = get(KEY_WEBDAV_USER) ?: "",
     webdavPassword = SecretField.open(get(KEY_WEBDAV_PASS) ?: "", secrets),
     monitorNotify = get(KEY_MONITOR_NOTIFY) ?: true,
-    floatingBottomBar = get(KEY_FLOATING_BOTTOM_BAR) ?: false,
-    liquidGlassBottomBar = get(KEY_LIQUID_GLASS_BOTTOM_BAR) ?: false,
+    bottomBarStyle = when (val storedStyle = get(KEY_BOTTOM_BAR_STYLE)) {
+        // rc01 的旧双开组合实际使用官方玻璃底栏，迁移时保留该效果。
+        null -> if (get(KEY_FLOATING_BOTTOM_BAR) == true && get(KEY_LIQUID_GLASS_BOTTOM_BAR) == true) {
+            BottomBarStyle.OS4_GLASS
+        } else {
+            BottomBarStyle.FLOATING
+        }
+        else -> BottomBarStyle.entries.firstOrNull { it.name == storedStyle } ?: BottomBarStyle.FLOATING
+    },
     bottomBarLabelVisible = get(KEY_BOTTOM_BAR_LABEL_VISIBLE) ?: true,
     blurEnabled = get(KEY_BLUR_ENABLED) ?: true,
     barBlurStyleIndex = (get(KEY_BAR_BLUR_STYLE) ?: 0).coerceAtLeast(0),
@@ -134,6 +144,14 @@ internal fun Preferences.toAppSettings(secrets: SecretBox? = null): AppSettings 
     webhookParams = decodeKeyValueList(get(KEY_WEBHOOK_PARAMS) ?: "", secrets),
     logLevelIndex = (get(KEY_LOG_LEVEL) ?: 2).coerceIn(0, 4),
 )
+
+/** 底栏写入与更新共用同一路径；标签可见性独立保留，旧布尔键不再落盘。 */
+internal fun MutablePreferences.writeBottomBarSettings(settings: AppSettings) {
+    this[KEY_BOTTOM_BAR_STYLE] = settings.bottomBarStyle.name
+    remove(KEY_FLOATING_BOTTOM_BAR)
+    remove(KEY_LIQUID_GLASS_BOTTOM_BAR)
+    this[KEY_BOTTOM_BAR_LABEL_VISIBLE] = settings.bottomBarLabelVisible
+}
 
 class SettingsStore(context: Context) {
 
@@ -187,9 +205,7 @@ class SettingsStore(context: Context) {
             prefs[KEY_WEBDAV_USER] = next.webdavUsername
             prefs[KEY_WEBDAV_PASS] = seal(next.webdavPassword)
             prefs[KEY_MONITOR_NOTIFY] = next.monitorNotify
-            prefs[KEY_FLOATING_BOTTOM_BAR] = next.floatingBottomBar
-            prefs[KEY_LIQUID_GLASS_BOTTOM_BAR] = next.liquidGlassBottomBar
-            prefs[KEY_BOTTOM_BAR_LABEL_VISIBLE] = next.bottomBarLabelVisible
+            prefs.writeBottomBarSettings(next)
             prefs[KEY_BLUR_ENABLED] = next.blurEnabled
             prefs[KEY_BAR_BLUR_STYLE] = next.barBlurStyleIndex
             prefs[KEY_PURE_BLACK_IN_DARK] = next.pureBlackInDark

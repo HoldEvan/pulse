@@ -3,6 +3,8 @@ package com.evan.pulse.data.export
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.LocalDate
+import java.time.ZoneId
 
 class ResponseExportTest {
 
@@ -37,7 +39,10 @@ class ResponseExportTest {
 
     @Test
     fun `suggested name carries a timestamp and the right extension`() {
-        val name = ResponseExport.suggestedName("application/json", now = 0L)
+        // The filename uses local time, so construct local midnight instead of the UTC epoch.
+        val localMidnight = LocalDate.of(1970, 1, 1)
+            .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val name = ResponseExport.suggestedName("application/json", now = localMidnight)
         assertTrue(name.startsWith("response_"))
         assertTrue(name.endsWith(".json"))
         assertEquals("response_19700101_000000.json", name)

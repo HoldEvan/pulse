@@ -56,7 +56,7 @@ fun AppBottomBar(
                             modifier = Modifier.size(56.dp),
                             selected = selectedIndex == index,
                             onClick = { onItemSelected(index) },
-                            icon = item.icon,
+                            icon = miuixAppIcon(item.icon),
                             label = item.label
                         )
                     }
@@ -75,7 +75,7 @@ fun AppBottomBar(
                     MiuixNavigationBarItem(
                         selected = selectedIndex == index,
                         onClick = { onItemSelected(index) },
-                        icon = item.icon,
+                        icon = miuixAppIcon(item.icon),
                         label = item.label
                     )
                 }

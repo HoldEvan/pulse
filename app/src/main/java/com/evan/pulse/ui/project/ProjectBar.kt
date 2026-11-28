@@ -37,12 +37,15 @@ import com.evan.pulse.ui.design.AppTextButton
 import com.evan.pulse.ui.design.AppTextField
 import com.evan.pulse.ui.design.AppTopBar
 import com.evan.pulse.ui.design.AppTopBarBehavior
+import com.evan.pulse.ui.design.LocalUiStyle
+import com.evan.pulse.ui.design.UiStyle
 import com.evan.pulse.ui.design.rememberAppTopBarBehavior
 import top.yukonga.miuix.kmp.blur.LayerBackdrop
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Add
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Edit
+import top.yukonga.miuix.kmp.icon.glass.ExpandList
 
 @Composable
 fun ProjectBar(
@@ -95,7 +98,11 @@ fun ProjectBar(
                             color = AppTheme.colors.onSurface
                         )
                         AppIcon(
-                            imageVector = Icons.Filled.ArrowDropDown,
+                            imageVector = if (LocalUiStyle.current == UiStyle.MIUIX) {
+                                MiuixIcons.Glass.Light.ExpandList
+                            } else {
+                                Icons.Filled.ArrowDropDown
+                            },
                             contentDescription = stringResource(R.string.cd_switch_project)
                         )
                     }
@@ -118,7 +125,11 @@ fun ProjectBar(
                             color = AppTheme.colors.onSurface
                         )
                         AppIcon(
-                            imageVector = Icons.Filled.ArrowDropDown,
+                            imageVector = if (LocalUiStyle.current == UiStyle.MIUIX) {
+                                MiuixIcons.Glass.Light.ExpandList
+                            } else {
+                                Icons.Filled.ArrowDropDown
+                            },
                             contentDescription = stringResource(R.string.cd_switch_env)
                         )
                     }

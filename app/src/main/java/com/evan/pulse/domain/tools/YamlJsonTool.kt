@@ -38,7 +38,7 @@ object YamlJsonTool {
         prettyPrintIndent = "  "
     }
 
-    private val composer = Compose(LoadSettings.builder().build())
+    private val composer = Compose(LoadSettings())
 
     private val SCALAR_NUMBER =
         Regex("[-+]?(?:0|[1-9][0-9]*)(?:\\.(?:0|[1-9][0-9]*))?(?:[eE][-+]?[1-9][0-9]*)?")

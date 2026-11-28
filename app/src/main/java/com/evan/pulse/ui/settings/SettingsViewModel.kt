@@ -15,6 +15,7 @@ import android.content.Context
 import com.evan.pulse.data.model.KeyValueEntry
 import com.evan.pulse.data.settings.AUTO_BACKUP_INTERVAL_HOURS
 import com.evan.pulse.data.settings.AppSettings
+import com.evan.pulse.data.settings.BottomBarStyle
 import com.evan.pulse.data.settings.MAX_AUTO_BACKUP_KEEP
 import com.evan.pulse.data.settings.MIN_AUTO_BACKUP_KEEP
 import com.evan.pulse.data.settings.SettingsStore
@@ -171,12 +172,8 @@ class SettingsViewModel(
         viewModelScope.launch { store.update { it.copy(monitorNotify = enabled) } }
     }
 
-    fun setFloatingBottomBar(enabled: Boolean) {
-        viewModelScope.launch { store.update { it.copy(floatingBottomBar = enabled) } }
-    }
-
-    fun setLiquidGlassBottomBar(enabled: Boolean) {
-        viewModelScope.launch { store.update { it.copy(liquidGlassBottomBar = enabled) } }
+    fun setBottomBarStyle(style: BottomBarStyle) {
+        viewModelScope.launch { store.update { it.copy(bottomBarStyle = style) } }
     }
 
     fun setBottomBarLabelVisible(visible: Boolean) {

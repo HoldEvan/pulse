@@ -53,11 +53,14 @@ import com.evan.pulse.ui.design.AppDialog
 import com.evan.pulse.ui.design.AppIcon
 import com.evan.pulse.ui.design.AppIconButton
 import com.evan.pulse.ui.design.AppText
+import com.evan.pulse.ui.design.LocalUiStyle
+import com.evan.pulse.ui.design.UiStyle
 import com.evan.pulse.ui.design.AppTextButton
 import com.evan.pulse.ui.design.AppTextField
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.ExpandMore
+import top.yukonga.miuix.kmp.icon.glass.ExpandList
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -324,7 +327,11 @@ private fun ProjectFilterChip(label: String, onClick: () -> Unit) {
                 overflow = TextOverflow.Ellipsis
             )
             AppIcon(
-                imageVector = MiuixIcons.Light.ExpandMore,
+                imageVector = if (LocalUiStyle.current == UiStyle.MIUIX) {
+                    MiuixIcons.Glass.Light.ExpandList
+                } else {
+                    MiuixIcons.Light.ExpandMore
+                },
                 contentDescription = stringResource(R.string.history_filter_label)
             )
         }

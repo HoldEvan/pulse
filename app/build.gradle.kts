@@ -144,6 +144,7 @@ dependencies {
     implementation(libs.miuix.nav)
     implementation(libs.miuix.squircle)
     implementation(libs.miuix.glass)
+    implementation(libs.miuix.glass.icons)
 
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.okhttp)

@@ -702,14 +702,15 @@
     <string name="ui_scale_invalid">請輸入 80 到 120 之間的數值</string>
     <string name="ui_scale_value">%1$d%%</string>
     <string name="settings_bottom_bar">底欄</string>
-    <string name="floating_bottom_bar_label">懸浮底欄</string>
-    <string name="floating_bottom_bar_summary">底欄以懸浮膠囊樣式顯示</string>
-    <string name="liquid_glass_label">液態玻璃</string>
-    <string name="liquid_glass_summary">為懸浮底欄啟用半透明玻璃質感</string>
     <string name="bottom_bar_style_label">底欄樣式</string>
-    <string name="bottom_bar_style_summary">選擇底欄顯示圖示或圖示加文字</string>
-    <string name="bottom_bar_style_icon_only">僅圖示</string>
-    <string name="bottom_bar_style_icon_text">圖示和文字</string>
+    <string name="bottom_bar_style_summary">選擇懸浮、液態玻璃或 OS4 玻璃</string>
+    <string name="bottom_bar_style_floating">懸浮</string>
+    <string name="bottom_bar_style_liquid_glass">液態玻璃</string>
+    <string name="bottom_bar_style_os4_glass">OS4 玻璃</string>
+    <string name="bottom_bar_labels_label">標籤顯示</string>
+    <string name="bottom_bar_labels_summary">選擇底欄顯示圖示或圖示加文字</string>
+    <string name="bottom_bar_labels_icon_only">僅圖示</string>
+    <string name="bottom_bar_labels_icon_text">圖示和文字</string>
 
     <!-- 環境頁 -->
     <string name="env_title">環境列表（目前專案）</string>

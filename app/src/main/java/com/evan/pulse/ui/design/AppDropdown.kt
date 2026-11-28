@@ -36,7 +36,7 @@ import androidx.compose.ui.semantics.selected
 import top.yukonga.miuix.kmp.glass.GlassDropdownPreference as MiuixDropdownPreference
 
 /**
- * 下拉选择行：Miuix 皮肤用 miuix-glass 的 GlassDropdownPreference（半透明玻璃面板，
+ * 下拉选择行：Miuix 皮肤用官方 GlassDropdownPreference（半透明玻璃面板、默认圆角水波纹，
  * 不压暗窗口），Material 皮肤用 M3 的 DropdownMenu 从行下方弹出。
  *
  * 参数只表达语义（标题、摘要、候选项、当前选中、选中回调），

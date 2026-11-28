@@ -7,6 +7,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -80,12 +81,14 @@ fun ResponseBodyView(
         )
     }
     Column(modifier = modifier) {
-        // 七个标签平铺会把宽度压到 44dp 左右，Base64/预览等文字被截断且整排
-        // 刚好占满屏幕导致无法滑动；抬高最小宽度让整排溢出，两种皮肤都可横向滚动
+        // 外层卡片已提供水平留白；底座与下方正文等宽，只在垂直方向留阴影空间。
+        // 格式较多，保留内部滚动，避免压缩 Base64/预览等标签。
         AppTabRow(
             tabs = modes.map { stringResource(modeLabelRes.getValue(it)) },
             selectedTabIndex = modes.indexOf(currentMode),
             onTabSelected = { mode = modes[it] },
+            modifier = Modifier.fillMaxWidth(),
+            shadowPadding = PaddingValues(vertical = 10.dp),
             minWidth = 84.dp,
             maxWidth = 160.dp,
             height = 40.dp,

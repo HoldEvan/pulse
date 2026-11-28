@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.evan.pulse.R
 import com.evan.pulse.data.settings.AppSettings
+import com.evan.pulse.data.settings.BottomBarStyle
 import com.evan.pulse.ui.common.DialogActions
 import com.evan.pulse.ui.common.LocalTopBarInset
 import com.evan.pulse.ui.common.SectionTitle
@@ -58,6 +59,12 @@ private val BackGestureModeLabels: List<Int> = listOf(
 private val BackGestureModeSummaries: Map<Int, Int> = mapOf(
     0 to R.string.back_mode_miuix_summary,
     1 to R.string.back_mode_aosp_summary
+)
+
+private val BottomBarStyleEntries: List<Pair<Int, BottomBarStyle>> = listOf(
+    R.string.bottom_bar_style_floating to BottomBarStyle.FLOATING,
+    R.string.bottom_bar_style_liquid_glass to BottomBarStyle.LIQUID_GLASS,
+    R.string.bottom_bar_style_os4_glass to BottomBarStyle.OS4_GLASS,
 )
 
 @Composable
@@ -210,32 +217,26 @@ private fun ThemeSettingsContent(
 
         AppPreferenceGroup(modifier = Modifier.fillMaxWidth()) {
             if (miuix) item {
-                AppSwitchRow(
-                    title = stringResource(R.string.floating_bottom_bar_label),
-                    summary = stringResource(R.string.floating_bottom_bar_summary),
-                    checked = settings.floatingBottomBar,
-                    onCheckedChange = { viewModel.setFloatingBottomBar(it) }
+                AppDropdown(
+                    title = stringResource(R.string.bottom_bar_style_label),
+                    summary = stringResource(R.string.bottom_bar_style_summary),
+                    items = BottomBarStyleEntries.map { it.first }.localizedLabels(),
+                    selectedIndex = BottomBarStyleEntries
+                        .indexOfFirst { it.second == settings.bottomBarStyle }
+                        .coerceAtLeast(0),
+                    onSelectedIndexChange = { index ->
+                        viewModel.setBottomBarStyle(BottomBarStyleEntries[index].second)
+                    }
                 )
-            }
-
-            if (miuix && settings.floatingBottomBar) {
-                item {
-                    AppSwitchRow(
-                        title = stringResource(R.string.liquid_glass_label),
-                        summary = stringResource(R.string.liquid_glass_summary),
-                        checked = settings.liquidGlassBottomBar,
-                        onCheckedChange = { viewModel.setLiquidGlassBottomBar(it) }
-                    )
-                }
             }
 
             item {
                 AppDropdown(
-                    title = stringResource(R.string.bottom_bar_style_label),
-                    summary = stringResource(R.string.bottom_bar_style_summary),
+                    title = stringResource(R.string.bottom_bar_labels_label),
+                    summary = stringResource(R.string.bottom_bar_labels_summary),
                     items = listOf(
-                        stringResource(R.string.bottom_bar_style_icon_only),
-                        stringResource(R.string.bottom_bar_style_icon_text)
+                        stringResource(R.string.bottom_bar_labels_icon_only),
+                        stringResource(R.string.bottom_bar_labels_icon_text)
                     ),
                     selectedIndex = if (settings.bottomBarLabelVisible) 1 else 0,
                     onSelectedIndexChange = { viewModel.setBottomBarLabelVisible(it == 1) }

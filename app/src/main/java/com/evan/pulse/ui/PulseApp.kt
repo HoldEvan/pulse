@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -29,6 +30,9 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.evan.pulse.R
+import com.evan.pulse.data.settings.BottomBarStyle
+import com.evan.pulse.ui.glass.LiquidGlassNavigationBar
+import top.yukonga.miuix.kmp.basic.NavigationItem
 import com.evan.pulse.ui.about.AboutScreen
 import com.evan.pulse.ui.about.LegalScreen
 import com.evan.pulse.ui.common.BlurredBar
@@ -45,6 +49,7 @@ import com.evan.pulse.ui.design.AppTheme
 import com.evan.pulse.ui.design.AppBottomBar
 import com.evan.pulse.ui.design.AppBottomBarItem
 import com.evan.pulse.ui.design.AppIcon
+import com.evan.pulse.ui.design.miuixAppIcon
 import com.evan.pulse.ui.design.AppIconButton
 import com.evan.pulse.ui.design.AppTopBar
 import com.evan.pulse.ui.design.AppTopBarBehavior
@@ -100,6 +105,7 @@ import top.yukonga.miuix.kmp.glass.GlassNavigationBar
 import top.yukonga.miuix.kmp.glass.GlassNavigationItem
 import com.evan.pulse.ui.design.AppScaffold
 import com.evan.pulse.ui.design.LocalPopupBackdrop
+import com.evan.pulse.ui.design.LocalTabBackdrop
 import com.evan.pulse.ui.resources.ResourceTabBar
 import com.evan.pulse.ui.test.ProtocolTabBar
 import top.yukonga.miuix.kmp.blur.LayerBackdrop
@@ -178,11 +184,13 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
         fadeTransition
     }
 
-    /** 液态玻璃悬浮底栏开关：悬浮栏、玻璃效果、皮肤能力同时具备时才生效，只在标签页显示 */
+    /** 三种悬浮底栏仅在 Miuix 下切换；Material 保留自身的导航栏。 */
     val capabilities = uiCapabilities
-    val glassBottomBar = settings.floatingBottomBar &&
-        settings.liquidGlassBottomBar &&
-        capabilities.glassBottomBar
+    val bottomBarStyle = if (capabilities.glassBottomBar) {
+        settings.bottomBarStyle
+    } else {
+        BottomBarStyle.FLOATING
+    }
 
     /** 顶栏磨砂与底栏玻璃共用的内容采样层：捕获页面内容供实时模糊取样；
      *  关闭模糊或运行时不支持 RuntimeShader 时返回 null，顶栏退化为纯色、底栏退化为纯色胶囊 */
@@ -221,7 +229,7 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
     /** 供玻璃底栏使用的标签项：关闭标签显示时传 null，只留图标 */
     val navigationItems = tabs.map { tab ->
         GlassNavigationItem(
-            icon = tab.icon,
+            icon = miuixAppIcon(tab.icon),
             label = if (settings.bottomBarLabelVisible) stringResource(tab.label) else null
         )
     }
@@ -282,20 +290,32 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
         CompositionLocalProvider(LocalPopupBackdrop provides backdrop) {
             AppScaffold(
                 bottomBar = {
-                    if (glassBottomBar) {
-                        GlassNavigationBar(
-                            items = navigationItems,
-                            selectedIndex = tabState.selectedTab,
-                            onSelect = { settingsViewModel.selectTab(it) },
-                            backdrop = backdrop
-                        )
-                    } else {
-                        AppBottomBar(
+                    when (bottomBarStyle) {
+                        BottomBarStyle.FLOATING -> AppBottomBar(
                             items = bottomBarItems,
                             selectedIndex = tabState.selectedTab,
                             onItemSelected = { settingsViewModel.selectTab(it) },
                             showLabels = settings.bottomBarLabelVisible,
-                            floating = settings.floatingBottomBar
+                            floating = true
+                        )
+                        BottomBarStyle.LIQUID_GLASS -> LiquidGlassNavigationBar(
+                            items = bottomBarItems.map { item ->
+                                NavigationItem(icon = item.icon, label = item.label)
+                            },
+                            selectedIndex = tabState.selectedTab,
+                            onItemClick = { settingsViewModel.selectTab(it) },
+                            backdrop = backdrop,
+                            isBlurActive = backdrop != null,
+                            showLabels = settings.bottomBarLabelVisible
+                        )
+                        BottomBarStyle.OS4_GLASS -> GlassNavigationBar(
+                            items = navigationItems,
+                            selectedIndex = tabState.selectedTab,
+                            onSelect = { settingsViewModel.selectTab(it) },
+                            backdrop = backdrop,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp)
                         )
                     }
                 }
@@ -340,11 +360,13 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                                         // 协议标签条放在磨砂顶栏内部：与顶栏共享同一块模糊背景，
                                         // 内容滚动时从标签条下方穿过
                                         bottomContent = {
-                                            ProtocolTabBar(
-                                                selectedIndex = tabState.homeProtocolTab,
-                                                onTabSelected = { settingsViewModel.selectHomeProtocol(it) },
-                                                onHeightChange = { protocolTabsHeight = it }
-                                            )
+                                            CompositionLocalProvider(LocalTabBackdrop provides pageBackdrop) {
+                                                ProtocolTabBar(
+                                                    selectedIndex = tabState.homeProtocolTab,
+                                                    onTabSelected = { settingsViewModel.selectHomeProtocol(it) },
+                                                    onHeightChange = { protocolTabsHeight = it }
+                                                )
+                                            }
                                         },
                                         viewModel = projectViewModel,
                                         behavior = pageBehavior,
@@ -369,11 +391,13 @@ fun PulseApp(settingsViewModel: SettingsViewModel) {
                                         },
                                         // 项目/集合/环境标签条同样挂在磨砂顶栏内部
                                         bottomContent = {
-                                            ResourceTabBar(
-                                                selectedIndex = tabState.resourceTab,
-                                                onTabSelected = { settingsViewModel.selectResourceTab(it) },
-                                                onHeightChange = { resourceTabsHeight = it }
-                                            )
+                                            CompositionLocalProvider(LocalTabBackdrop provides pageBackdrop) {
+                                                ResourceTabBar(
+                                                    selectedIndex = tabState.resourceTab,
+                                                    onTabSelected = { settingsViewModel.selectResourceTab(it) },
+                                                    onHeightChange = { resourceTabsHeight = it }
+                                                )
+                                            }
                                         },
                                         viewModel = projectViewModel,
                                         behavior = pageBehavior,

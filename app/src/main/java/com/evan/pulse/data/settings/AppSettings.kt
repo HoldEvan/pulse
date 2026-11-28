@@ -54,10 +54,8 @@ data class AppSettings(
     val webdavPassword: String = "",
     /** 拨测未通时是否发送系统通知 */
     val monitorNotify: Boolean = true,
-    /** 底栏是否以悬浮胶囊样式显示 */
-    val floatingBottomBar: Boolean = false,
-    /** 悬浮底栏是否启用半透明玻璃质感 */
-    val liquidGlassBottomBar: Boolean = false,
+    /** Miuix 底栏样式，默认使用悬浮胶囊 */
+    val bottomBarStyle: BottomBarStyle = BottomBarStyle.FLOATING,
     /** 底栏是否在图标下方显示文字（false 为仅图标） */
     val bottomBarLabelVisible: Boolean = true,
     /** 顶栏磨砂效果开关，关闭后顶栏退化为纯色 */

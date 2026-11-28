@@ -120,7 +120,7 @@ class DiagnosticCollector(private val context: Context) {
         "webhookUrl" to settings.webhookUrl,
         "webhookFormatIndex" to settings.webhookFormatIndex.toString(),
         "monitorNotify" to settings.monitorNotify.toString(),
-        "floatingBottomBar" to settings.floatingBottomBar.toString(),
+        "bottomBarStyle" to settings.bottomBarStyle.name,
         "blurEnabled" to settings.blurEnabled.toString(),
         "bottomBarLabelVisible" to settings.bottomBarLabelVisible.toString()
     )

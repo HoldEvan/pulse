@@ -3,6 +3,7 @@ package com.evan.pulse.ui.monitor
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,6 +21,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -74,6 +76,7 @@ import com.evan.pulse.ui.design.AppIconButton
 import com.evan.pulse.ui.design.AppText
 import com.evan.pulse.ui.design.AppTextButton
 import com.evan.pulse.ui.design.AppTextField
+import com.evan.pulse.ui.design.LocalAppTextFieldOutline
 import top.yukonga.miuix.kmp.preference.CheckboxLocation
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Delete
@@ -81,7 +84,6 @@ import top.yukonga.miuix.kmp.icon.extended.Edit
 import top.yukonga.miuix.kmp.icon.extended.More
 import top.yukonga.miuix.kmp.icon.extended.Pause
 import top.yukonga.miuix.kmp.icon.extended.Play
-import top.yukonga.miuix.kmp.icon.extended.Promotions
 import com.evan.pulse.ui.design.AppIconDropdownMenu
 
 private val recordTimeFormat = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
@@ -296,7 +298,7 @@ fun MonitorScreen(
         }
     }
 
-    if (viewModel.showEditor) {
+    if (viewModel.showEditor) CompositionLocalProvider(LocalAppTextFieldOutline provides true) {
         AppDialog(
             show = true,
             title = if (viewModel.creating) {
@@ -826,7 +828,7 @@ private fun MonitorTargetRow(
                                 text = stringResource(R.string.monitor_trend),
                                 icon = { m ->
                                     AppIcon(
-                                        imageVector = MiuixIcons.Light.Promotions,
+                                        imageVector = Icons.Filled.TrendingUp,
                                         contentDescription = null,
                                         modifier = m
                                     )

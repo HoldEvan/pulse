@@ -8,6 +8,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -34,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -251,66 +254,58 @@ fun HttpScreen(
  */
 @Composable
 private fun RequestTabs(viewModel: HttpViewModel) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
+    RequestTabsRow(
+        viewModel = viewModel,
+        modifier = Modifier.fillMaxWidth()
             .horizontalScroll(rememberScrollState())
             .padding(bottom = 8.dp),
+    )
+}
+
+@Composable
+private fun RequestTabsRow(
+    viewModel: HttpViewModel,
+    modifier: Modifier,
+) {
+    Row(
+        modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         viewModel.tabs.forEachIndexed { index, tab ->
-            val selected = index == viewModel.selectedIndex
-            val label = tab.label()
-            val dot = when {
-                tab.sending -> AppTheme.colors.primary
-                tab.outcome is HttpCallOutcome.Failure -> Color(0xFFD32F2F)
-                (tab.outcome as? HttpCallOutcome.Success)?.statusCode?.let { it >= 400 } == true ->
-                    Color(0xFFD32F2F)
-                tab.outcome != null -> Color(0xFF2FA37A)
-                else -> AppTheme.colors.onSurfaceSummary
-            }
-            Row(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(
-                        if (selected) AppTheme.colors.primaryContainer else AppTheme.colors.surfaceContainer
-                    )
-                    .clickable { viewModel.selectTab(index) }
-                    .padding(
-                        start = 10.dp,
-                        top = 6.dp,
-                        bottom = 6.dp,
-                        end = if (viewModel.tabs.size > 1) 4.dp else 10.dp
-                    ),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .clip(CircleShape)
-                        .background(dot)
+            key(tab.id) {
+                val selected = index == viewModel.selectedIndex
+                val label = tab.label()
+                val dot = when {
+                    tab.sending -> AppTheme.colors.primary
+                    tab.outcome is HttpCallOutcome.Failure -> Color(0xFFD32F2F)
+                    (tab.outcome as? HttpCallOutcome.Success)?.statusCode?.let { it >= 400 } == true ->
+                        Color(0xFFD32F2F)
+                    tab.outcome != null -> Color(0xFF2FA37A)
+                    else -> AppTheme.colors.onSurfaceSummary
+                }
+                val contentPadding = PaddingValues(
+                    start = 10.dp,
+                    top = 6.dp,
+                    bottom = 6.dp,
+                    end = if (viewModel.tabs.size > 1) 4.dp else 10.dp
                 )
-                AppText(
-                    text = label,
-                    fontSize = 13.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    color = if (selected) AppTheme.colors.onPrimaryContainer else AppTheme.colors.onSurface,
+                Row(
                     modifier = Modifier
-                        .padding(start = 6.dp)
-                        .widthIn(max = 160.dp)
-                )
-                if (viewModel.tabs.size > 1) {
-                    AppIcon(
-                        imageVector = MiuixIcons.Light.Close,
-                        contentDescription = stringResource(R.string.cd_http_close_tab, label),
-                        modifier = Modifier
-                            .padding(start = 2.dp)
-                            .size(22.dp)
-                            .clip(CircleShape)
-                            .clickable { viewModel.closeTab(index) }
-                            .padding(4.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(
+                            if (selected) AppTheme.colors.primaryContainer else AppTheme.colors.surfaceContainer
+                        )
+                        .clickable { viewModel.selectTab(index) }
+                        .padding(contentPadding),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RequestTabContent(
+                        label = label,
+                        dot = dot,
+                        textColor = if (selected) AppTheme.colors.onPrimaryContainer else AppTheme.colors.onSurface,
+                        showClose = viewModel.tabs.size > 1,
+                        onClose = { viewModel.closeTab(index) },
                     )
                 }
             }
@@ -331,6 +326,44 @@ private fun RequestTabs(viewModel: HttpViewModel) {
 }
 
 @Composable
+private fun RequestTabContent(
+    label: String,
+    dot: Color,
+    textColor: Color,
+    showClose: Boolean,
+    onClose: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .size(8.dp)
+            .clip(CircleShape)
+            .background(dot)
+    )
+    AppText(
+        text = label,
+        fontSize = 13.sp,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        color = textColor,
+        modifier = Modifier
+            .padding(start = 6.dp)
+            .widthIn(max = 160.dp)
+    )
+    if (showClose) {
+        AppIcon(
+            imageVector = MiuixIcons.Light.Close,
+            contentDescription = stringResource(R.string.cd_http_close_tab, label),
+            modifier = Modifier
+                .padding(start = 2.dp)
+                .size(22.dp)
+                .clip(CircleShape)
+                .clickable(onClick = onClose)
+                .padding(4.dp)
+        )
+    }
+}
+
+@Composable
 private fun RequestEditorCard(viewModel: HttpViewModel) {
     AppCard(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
         MethodPicker(
@@ -344,6 +377,7 @@ private fun RequestEditorCard(viewModel: HttpViewModel) {
                 value = viewModel.url,
                 onValueChange = { viewModel.url = it },
                 label = stringResource(R.string.http_url_label),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, autoCorrectEnabled = false),
                 modifier = Modifier.fillMaxWidth()
             )
             ValueHints(hints = viewModel.placeholderHints(viewModel.url))
@@ -366,7 +400,10 @@ private fun RequestEditorCard(viewModel: HttpViewModel) {
                 tabs = httpTabLabels.localizedLabels(),
                 selectedTabIndex = viewModel.activeTab,
                 onTabSelected = { viewModel.activeTab = it },
-                modifier = Modifier.padding(top = 12.dp)
+                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                // The card's 12dp side padding already leaves room for the 8dp shadow.
+                shadowPadding = PaddingValues(vertical = 10.dp),
+                fillEqually = true,
             )
         }
         // Tab 内容区贴卡片边缘：类型下拉行与“请求方法”行对齐，具体内容再自行内缩；
@@ -581,7 +618,9 @@ private fun ScriptEditorCard(viewModel: HttpViewModel, onOpenScriptEditor: (Int)
                 tabs = scriptTabLabels.localizedLabels(),
                 selectedTabIndex = viewModel.scriptTab,
                 onTabSelected = { viewModel.scriptTab = it },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                shadowPadding = PaddingValues(vertical = 10.dp),
+                fillEqually = true
             )
             Column(modifier = Modifier.padding(top = 12.dp)) {
                 ScriptEditor(viewModel, onOpenScriptEditor)

@@ -27,6 +27,7 @@ import top.yukonga.miuix.kmp.icon.extended.Close
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -237,7 +238,9 @@ fun SseScreen(modifier: Modifier = Modifier, viewModel: SseViewModel = viewModel
                         tabs = sseTabLabels.localizedLabels(),
                         selectedTabIndex = viewModel.activeTab,
                         onTabSelected = { viewModel.activeTab = it },
-                        modifier = Modifier.padding(top = 10.dp)
+                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                        shadowPadding = PaddingValues(vertical = 10.dp),
+                        fillEqually = true
                     )
                 }
                 // Tab 内容区贴卡片边缘（与 HTTP 请求卡一致）：类型下拉行贴左右卡边，

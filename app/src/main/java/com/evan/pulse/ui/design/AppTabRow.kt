@@ -3,6 +3,7 @@ package com.evan.pulse.ui.design
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,18 +22,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import top.yukonga.miuix.kmp.basic.TabRowWithContour as MiuixTabRowWithContour
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.rememberTextMeasurer
+import top.yukonga.miuix.kmp.glass.GlassSegmentedTabRow
+import top.yukonga.miuix.kmp.glass.GlassSegmentedTabRowDefaults
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /**
- * 分段选择器：Miuix 皮肤使用带滑动轮廓的标签栏（内部 LazyList 自带滚动），
- * Material 皮肤使用文字下方短横线指示器的标签样式；[scrollable] 只影响
- * Material 皮肤，令其改为可横向滚动。
- *
- * 尺寸参数只在非默认值时生效，两套皮肤都按同一份几何约束渲染，
- * 因此同一页面换肤后标签栏占位一致，不会把下方内容顶来顶去。
+ * Miuix 使用固定的玻璃底座，官方 GlassSegmentedTabRow 的选项在内部滚动并跟随选中项。
+ * Material 保留文字下划线标签；[scrollable] 控制其是否允许横向滚动。
+ * [minWidth] / [maxWidth] 约束单个标签宽度，[height] 保留页面占位。
+ * [cornerRadius] 为原轮廓版本的兼容参数，Miuix 使用官方胶囊形状和固定间距；
+ * [itemSpacing] 仅用于 Material 的可滚动标签。
+ * [shadowPadding] 为 Miuix 底座预留阴影空间，父容器已有边距时可单独调整。
+ * [fillEqually] 让 Miuix 选项均分可用宽度，适合 HTTP 编辑栏这类固定选项。
  */
 @Composable
 fun AppTabRow(
@@ -46,11 +58,11 @@ fun AppTabRow(
     cornerRadius: Dp = 10.dp,
     itemSpacing: Dp = 4.dp,
     scrollable: Boolean = false,
+    shadowPadding: PaddingValues = AppSegmentedTabShadowPadding,
+    fillEqually: Boolean = false,
 ) {
     if (LocalUiStyle.current == UiStyle.MIUIX) {
-        // TabRowWithContour 内部用 LazyList 实现并自带滚动（自动滚到选中项），
-        // 外层再包 horizontalScroll 会让 LazyRow 拿到无限宽度约束直接崩溃。
-        MiuixTabRowWithContour(
+        MiuixGlassTabs(
             tabs = tabs,
             selectedTabIndex = selectedTabIndex,
             onTabSelected = onTabSelected,
@@ -58,8 +70,8 @@ fun AppTabRow(
             minWidth = minWidth,
             maxWidth = maxWidth,
             height = height,
-            cornerRadius = cornerRadius,
-            itemSpacing = itemSpacing
+            shadowPadding = shadowPadding,
+            fillEqually = fillEqually,
         )
         return
     }
@@ -111,6 +123,140 @@ fun AppTabRow(
                             shape = RoundedCornerShape(2.dp)
                         )
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MiuixGlassTabs(
+    tabs: List<String>,
+    selectedTabIndex: Int,
+    onTabSelected: (Int) -> Unit,
+    modifier: Modifier,
+    minWidth: Dp,
+    maxWidth: Dp,
+    height: Dp,
+    shadowPadding: PaddingValues,
+    fillEqually: Boolean,
+) {
+    if (tabs.isEmpty()) return
+    val density = LocalDensity.current
+    val textMeasurer = rememberTextMeasurer()
+    val selectedStyle = MiuixTheme.textStyles.subtitle
+    val normalStyle = MiuixTheme.textStyles.body2
+    val measuredWidth = remember(tabs, textMeasurer, density, selectedStyle, normalStyle) {
+        with(density) {
+            tabs.maxOf { label ->
+                maxOf(
+                    textMeasurer.measure(AnnotatedString(label), style = selectedStyle, softWrap = false, maxLines = 1).size.width,
+                    textMeasurer.measure(AnnotatedString(label), style = normalStyle, softWrap = false, maxLines = 1).size.width,
+                )
+            }.toDp()
+        }
+    }
+    val widthLimit = if (maxWidth.value.isNaN()) null else maxOf(maxWidth, minWidth)
+    val naturalItemWidth = maxOf(minWidth, measuredWidth + GlassSegmentedTabRowDefaults.TabPaddingHorizontal * 2)
+    val itemWidth = widthLimit?.let { minOf(naturalItemWidth, it) } ?: naturalItemWidth
+    val gap = GlassSegmentedTabRowDefaults.TabGap
+    val trackPadding = GlassSegmentedTabRowDefaults.TrackPadding
+    val gapsWidth = gap * (tabs.size - 1)
+    val desiredWidth = itemWidth * tabs.size + gapsWidth + trackPadding * 2
+    val scrollState = rememberScrollState()
+
+    AppTabGlassBackdrop(modifier = modifier.padding(shadowPadding)) { backdrop, glassEnabled ->
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val viewportWidth = if (constraints.hasBoundedWidth) this.maxWidth else desiredWidth
+            val expandedWidth = maxOf(viewportWidth, desiredWidth)
+            val rowWidth = if (fillEqually) {
+                viewportWidth
+            } else {
+                widthLimit?.let {
+                    minOf(expandedWidth, it * tabs.size + gapsWidth + trackPadding * 2)
+                } ?: expandedWidth
+            }
+            val actualItemWidth = (rowWidth - gapsWidth - trackPadding * 2) / tabs.size
+            val index = selectedTabIndex.coerceIn(0, tabs.lastIndex)
+            val compactLabels = fillEqually && actualItemWidth < naturalItemWidth
+            val contentColor = MiuixTheme.colorScheme.onSurface
+            val selectedColor = if (MiuixTheme.isDynamicColor) MiuixTheme.colorScheme.primary else contentColor
+            LaunchedEffect(index, tabs, rowWidth, viewportWidth, density, scrollState.maxValue) {
+                if (viewportWidth <= 0.dp || scrollState.maxValue == Int.MAX_VALUE) return@LaunchedEffect
+                val start = with(density) { ((actualItemWidth + gap) * index).roundToPx() }
+                val end = start + with(density) { (actualItemWidth + trackPadding * 2).roundToPx() }
+                val viewport = with(density) { viewportWidth.roundToPx() }
+                val current = scrollState.value
+                val target = when {
+                    start < current -> start
+                    end > current + viewport -> end - viewport
+                    else -> current
+                }.coerceIn(0, scrollState.maxValue)
+                if (target != current) scrollState.animateScrollTo(target)
+            }
+            AppSegmentedTabSurface(
+                backdrop = backdrop,
+                glassEnabled = glassEnabled,
+                modifier = Modifier.width(minOf(rowWidth, viewportWidth)),
+                height = height,
+            ) {
+                Box(
+                    Modifier.fillMaxWidth()
+                        .then(if (fillEqually) Modifier else Modifier.horizontalScroll(scrollState))
+                ) {
+                    // The surface stays fixed; only overflowing, natural-width options scroll.
+                    Box(Modifier.width(rowWidth)) {
+                        GlassSegmentedTabRow(
+                            tabs = tabs,
+                            selectedIndex = index,
+                            onSelect = onTabSelected,
+                            backdrop = backdrop,
+                            modifier = Modifier.fillMaxWidth(),
+                            surfaceAlpha = 0f,
+                            material = null,
+                            stroke = null,
+                            shadow = null,
+                            trackColor = Color.Transparent,
+                            height = height,
+                            selectedContentColor = if (compactLabels) Color.Transparent else selectedColor,
+                            contentColor = if (compactLabels) Color.Transparent else contentColor,
+                        )
+                        if (compactLabels) {
+                            // The library reserves 16dp per side. Compact visual labels let the
+                            // existing options fit, while its tabs keep semantics, focus and input.
+                            Row(
+                                modifier = Modifier.matchParentSize()
+                                    .padding(trackPadding)
+                                    .clearAndSetSemantics {},
+                                horizontalArrangement = Arrangement.spacedBy(gap),
+                            ) {
+                                tabs.forEachIndexed { tabIndex, label ->
+                                    Box(
+                                        modifier = Modifier.weight(1f).height(height - trackPadding * 2),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        AppText(
+                                            text = label,
+                                            modifier = Modifier.padding(horizontal = 4.dp),
+                                            style = if (index == tabIndex) selectedStyle else normalStyle,
+                                            color = if (index == tabIndex) selectedColor else contentColor,
+                                            textAlign = TextAlign.Center,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        if (rowWidth > viewportWidth) {
+                            AppSegmentedTabOverflowTargets(
+                                tabCount = tabs.size,
+                                onSelect = onTabSelected,
+                                modifier = Modifier.matchParentSize(),
+                                height = height,
+                            )
+                        }
+                    }
+                }
             }
         }
     }

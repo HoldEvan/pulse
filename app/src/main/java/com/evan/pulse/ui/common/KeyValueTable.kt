@@ -17,13 +17,17 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import com.evan.pulse.R
 import com.evan.pulse.ui.design.AppIcon
 import com.evan.pulse.ui.design.AppText
 import com.evan.pulse.ui.design.AppTheme
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
+import com.evan.pulse.ui.design.LocalUiStyle
+import com.evan.pulse.ui.design.UiStyle
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.glass.ExpandList
 import top.yukonga.miuix.kmp.squircle.squircleBackground
 
 /**
@@ -67,13 +71,19 @@ fun CollapsibleKeyValueTable(
                 color = AppTheme.colors.onSurfaceSummary
             )
             AppIcon(
-                // 用 Material 的实心箭头：Miuix 的细线箭头在折叠标题行里太不显眼
-                imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                // Miuix 用列表展开图标；MD3 保留方向箭头表达当前折叠状态。
+                imageVector = if (LocalUiStyle.current == UiStyle.MIUIX) {
+                    MiuixIcons.Glass.Light.ExpandList
+                } else if (expanded) {
+                    Icons.Filled.ExpandLess
+                } else {
+                    Icons.Filled.ExpandMore
+                },
                 contentDescription = stringResource(
                     if (expanded) R.string.kv_table_collapse else R.string.kv_table_expand
                 ),
                 tint = AppTheme.colors.onSurfaceSummary,
-                modifier = Modifier.padding(start = 4.dp)
+                modifier = Modifier.padding(start = 4.dp).expandListRotation(expanded)
             )
         }
         if (!expanded) return@Column

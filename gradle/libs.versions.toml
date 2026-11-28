@@ -1,30 +1,31 @@
 [versions]
 agp = "9.4.1"
-kotlin = "2.4.20"
+kotlin = "2.4.21"
 compileSdk = "37"
 compileSdkMinor = "2"
 minSdk = "26"
 targetSdk = "36"
-composeBom = "2026.09.00"
+composeBom = "2026.11.01"
 activityCompose = "1.13.0"
 coreKtx = "1.19.1"
-coreSplashscreen = "1.0.1"
-lifecycle = "2.11.0"
-miuix = "0.9.5-rc01"
-ktor = "3.1.3"
-hivemqMqtt = "1.4.1"
-netty = "4.1.139.Final"
+coreSplashscreen = "1.2.0"
+lifecycle = "2.11.1"
+miuix = "0.9.5-rc02"
+ktor = "3.6.2"
+hivemqMqtt = "1.4.2"
+netty = "4.1.141.Final"
 room = "2.8.5"
-ksp = "2.3.12"
-datastore = "1.1.7"
-serializationJson = "1.9.0"
-kaml = "0.83.0"
-snakeyamlEngine = "3.1.1"
-zxing = "3.5.3"
-coroutines = "1.10.2"
-markdownRenderer = "0.45.0"
-rhino = "1.7.15"
-work = "2.11.2"
+ksp = "2.3.14"
+datastore = "1.3.0"
+serializationJson = "1.13.0"
+kaml = "0.104.0"
+# 与 Kaml 的运行时依赖保持一致，否则 OpenAPI YAML 导入会出现 NoSuchMethodError。
+snakeyamlEngine = "4.0.1"
+zxing = "3.5.4"
+coroutines = "1.11.0"
+markdownRenderer = "0.46.0"
+rhino = "1.7.15.1"
+work = "2.12.0"
 junit = "4.13.2"
 soraEditor = "0.24.7"
 desugarJdkLibs = "2.1.5"
@@ -50,6 +51,7 @@ miuix-icons = { group = "top.yukonga.miuix.kmp", name = "miuix-icons-android", v
 miuix-nav = { group = "top.yukonga.miuix.kmp", name = "miuix-nav-android", version.ref = "miuix" }
 miuix-squircle = { group = "top.yukonga.miuix.kmp", name = "miuix-squircle-android", version.ref = "miuix" }
 miuix-glass = { group = "top.yukonga.miuix.kmp", name = "miuix-glass-android", version.ref = "miuix" }
+miuix-glass-icons = { group = "top.yukonga.miuix.kmp", name = "miuix-glass-icons-android", version.ref = "miuix" }
 ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
 ktor-client-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
 ktor-client-websockets = { group = "io.ktor", name = "ktor-client-websockets", version.ref = "ktor" }

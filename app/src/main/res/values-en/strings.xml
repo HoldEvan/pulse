@@ -702,14 +702,15 @@
     <string name="ui_scale_invalid">Enter a number between 80 and 120</string>
     <string name="ui_scale_value">%1$d%%</string>
     <string name="settings_bottom_bar">Bottom bar</string>
-    <string name="floating_bottom_bar_label">Floating bottom bar</string>
-    <string name="floating_bottom_bar_summary">Show the bottom bar as a floating pill</string>
-    <string name="liquid_glass_label">Liquid glass</string>
-    <string name="liquid_glass_summary">Enable a translucent glass look for the floating bar</string>
     <string name="bottom_bar_style_label">Bottom bar style</string>
-    <string name="bottom_bar_style_summary">Choose icons only or icons with text</string>
-    <string name="bottom_bar_style_icon_only">Icons only</string>
-    <string name="bottom_bar_style_icon_text">Icons and text</string>
+    <string name="bottom_bar_style_summary">Choose floating, liquid glass, or OS4 glass</string>
+    <string name="bottom_bar_style_floating">Floating</string>
+    <string name="bottom_bar_style_liquid_glass">Liquid glass</string>
+    <string name="bottom_bar_style_os4_glass">OS4 glass</string>
+    <string name="bottom_bar_labels_label">Label display</string>
+    <string name="bottom_bar_labels_summary">Choose icons only or icons with text</string>
+    <string name="bottom_bar_labels_icon_only">Icons only</string>
+    <string name="bottom_bar_labels_icon_text">Icons and text</string>
 
     <!-- Environment screen -->
     <string name="env_title">Environments (current project)</string>
